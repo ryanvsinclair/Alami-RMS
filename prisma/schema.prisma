@@ -1,0 +1,214 @@
+generator client {
+  provider        = "prisma-client"
+  output          = "../lib/generated/prisma"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  extensions = [pg_trgm]
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum UnitType {
+  kg
+  g
+  lb
+  oz
+  l
+  ml
+  gal
+  each
+  case_unit @map("case")
+  pack
+  box
+  bag
+  dozen
+  slice
+  portion
+}
+
+enum InputMethod {
+  barcode
+  photo
+  manual
+  receipt
+}
+
+enum TransactionType {
+  purchase
+  adjustment
+  waste
+  transfer
+}
+
+enum MatchConfidence {
+  high
+  medium
+  low
+  none
+}
+
+enum ReceiptStatus {
+  pending
+  parsing
+  review
+  committed
+  failed
+}
+
+enum LineItemStatus {
+  matched
+  suggested
+  unresolved
+  confirmed
+  skipped
+}
+
+// ============================================================
+// TABLES
+// ============================================================
+
+model Category {
+  id         String          @id @default(uuid())
+  name       String          @unique
+  created_at DateTime        @default(now())
+  items      InventoryItem[]
+
+  @@map("categories")
+}
+
+model Supplier {
+  id         String          @id @default(uuid())
+  name       String          @unique
+  created_at DateTime        @default(now())
+  items      InventoryItem[]
+  receipts   Receipt[]
+
+  @@map("suppliers")
+}
+
+model InventoryItem {
+  id             String    @id @default(uuid())
+  name           String
+  category_id    String?
+  unit           UnitType  @default(each)
+  units_per_case Decimal?
+  default_cost   Decimal?  @db.Decimal(10, 2)
+  supplier_id    String?
+  par_level      Decimal?
+  is_active      Boolean   @default(true)
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  category     Category?              @relation(fields: [category_id], references: [id], onDelete: SetNull)
+  supplier     Supplier?              @relation(fields: [supplier_id], references: [id], onDelete: SetNull)
+  barcodes     ItemBarcode[]
+  aliases      ItemAlias[]
+  transactions InventoryTransaction[]
+  line_items   ReceiptLineItem[]
+
+  @@index([category_id])
+  @@index([supplier_id])
+  @@map("inventory_items")
+}
+
+model ItemBarcode {
+  id                String        @id @default(uuid())
+  inventory_item_id String
+  barcode           String        @unique
+  created_at        DateTime      @default(now())
+
+  inventory_item InventoryItem @relation(fields: [inventory_item_id], references: [id], onDelete: Cascade)
+
+  @@index([inventory_item_id])
+  @@map("item_barcodes")
+}
+
+model ItemAlias {
+  id                String       @id @default(uuid())
+  inventory_item_id String
+  alias_text        String
+  source            InputMethod?
+  created_at        DateTime     @default(now())
+
+  inventory_item InventoryItem @relation(fields: [inventory_item_id], references: [id], onDelete: Cascade)
+
+  @@unique([inventory_item_id, alias_text])
+  @@index([inventory_item_id])
+  @@map("item_aliases")
+}
+
+model Receipt {
+  id          String        @id @default(uuid())
+  image_url   String?
+  raw_text    String?
+  parsed_data Json?
+  supplier_id String?
+  status      ReceiptStatus @default(pending)
+  created_at  DateTime      @default(now())
+  updated_at  DateTime      @updatedAt
+
+  supplier     Supplier?              @relation(fields: [supplier_id], references: [id], onDelete: SetNull)
+  line_items   ReceiptLineItem[]
+  transactions InventoryTransaction[]
+
+  @@index([status])
+  @@map("receipts")
+}
+
+model ReceiptLineItem {
+  id              String          @id @default(uuid())
+  receipt_id      String
+  line_number     Int
+  raw_text        String
+  parsed_name     String?
+  quantity        Decimal?
+  unit            UnitType?
+  line_cost       Decimal?        @db.Decimal(10, 2)
+  unit_cost       Decimal?        @db.Decimal(10, 2)
+  matched_item_id String?
+  confidence      MatchConfidence @default(none)
+  status          LineItemStatus  @default(unresolved)
+  created_at      DateTime        @default(now())
+  updated_at      DateTime        @updatedAt
+
+  receipt      Receipt        @relation(fields: [receipt_id], references: [id], onDelete: Cascade)
+  matched_item InventoryItem? @relation(fields: [matched_item_id], references: [id], onDelete: SetNull)
+  transactions InventoryTransaction[]
+
+  @@index([receipt_id])
+  @@index([matched_item_id])
+  @@map("receipt_line_items")
+}
+
+model InventoryTransaction {
+  id                   String          @id @default(uuid())
+  inventory_item_id    String
+  transaction_type     TransactionType @default(purchase)
+  quantity             Decimal
+  unit                 UnitType
+  unit_cost            Decimal?        @db.Decimal(10, 2)
+  total_cost           Decimal?        @db.Decimal(10, 2)
+  input_method         InputMethod
+  source               String?
+  receipt_id           String?
+  receipt_line_item_id String?
+  notes                String?
+  raw_data             Json?
+  created_at           DateTime        @default(now())
+
+  inventory_item  InventoryItem    @relation(fields: [inventory_item_id], references: [id], onDelete: Restrict)
+  receipt         Receipt?         @relation(fields: [receipt_id], references: [id], onDelete: SetNull)
+  receipt_line_item ReceiptLineItem? @relation(fields: [receipt_line_item_id], references: [id], onDelete: SetNull)
+
+  @@index([inventory_item_id])
+  @@index([created_at(sort: Desc)])
+  @@index([receipt_id])
+  @@index([transaction_type])
+  @@index([input_method])
+  @@map("inventory_transactions")
+}
