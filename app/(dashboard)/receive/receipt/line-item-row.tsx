@@ -44,7 +44,7 @@ export function ReceiptLineItemRow({
 
   if (showNotFound) {
     return (
-      <div className="rounded-lg border border-amber-200 p-3 space-y-2 bg-amber-50/50">
+      <div className="rounded-lg border border-amber-400/35 p-3 space-y-2 bg-amber-500/10">
         <p className="text-xs text-muted font-medium">
           Resolving: <span className="font-mono">{lineItem.parsed_name ?? lineItem.raw_text}</span>
         </p>
@@ -64,7 +64,7 @@ export function ReceiptLineItemRow({
     <div
       className={`
         rounded-lg border p-3 space-y-2 transition-opacity
-        ${isResolved ? "opacity-60 border-border" : "border-border bg-white"}
+        ${isResolved ? "opacity-60 border-border" : "border-border bg-white/6"}
         ${lineItem.status === "skipped" ? "line-through" : ""}
       `}
     >
@@ -109,7 +109,7 @@ export function ReceiptLineItemRow({
               )}
               <button
                 onClick={onSkip}
-                className="px-3 py-1 text-xs font-medium rounded-md bg-gray-100 text-gray-600 hover:bg-gray-200"
+                className="px-3 py-1 text-xs font-medium rounded-md bg-white/10 text-white/70 hover:bg-white/16"
               >
                 Skip
               </button>

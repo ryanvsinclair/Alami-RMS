@@ -36,6 +36,7 @@ const methodColors: Record<string, "info" | "success" | "warning" | "default"> =
   receipt: "success",
   photo: "warning",
   manual: "default",
+  shopping: "info",
 };
 
 export default function ItemDetailPage({
@@ -56,9 +57,9 @@ export default function ItemDetailPage({
         getInventoryLevel(id),
         getTransactionsForItem(id, 20),
       ]);
-      setItem(itemData as unknown as ItemDetail);
+      setItem(itemData as ItemDetail);
       setLevel(levelData);
-      setTransactions(txData as unknown as Transaction[]);
+      setTransactions(txData as Transaction[]);
       setLoading(false);
     }
     fetch();

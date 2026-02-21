@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { ItemNotFound } from "@/components/flows/item-not-found";
 import { ingestByPhoto } from "@/app/actions/ingestion";
 import { ocrImage } from "@/app/actions/ocr";
+import { compressImage } from "@/lib/utils/compress-image";
+import type { ProductInfo } from "@/lib/parsers/product-name";
 import type { MatchResult } from "@/lib/matching/engine";
 import type { UnitType } from "@/lib/generated/prisma/client";
 
@@ -37,7 +39,9 @@ interface SelectedItem {
 
 export default function PhotoScanPage() {
   const [step, setStep] = useState<Step>("capture");
-  const [parsedText, setParsedText] = useState("");
+  const [rawText, setRawText] = useState("");
+  const [productInfo, setProductInfo] = useState<ProductInfo | null>(null);
+  const [editableName, setEditableName] = useState("");
   const [ocrLoading, setOcrLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<MatchResult[]>([]);
   const [selectedItem, setSelectedItem] = useState<SelectedItem | null>(null);
@@ -48,6 +52,9 @@ export default function PhotoScanPage() {
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // The text used for matching
+  const matchText = editableName || productInfo?.product_name || rawText;
+
   async function handleImageCapture(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -56,16 +63,15 @@ export default function PhotoScanPage() {
     setError("");
 
     try {
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-
+      const base64 = await compressImage(file, 1600, 1600, 0.8);
       const result = await ocrImage(base64);
+
       if (result.success && result.raw_text) {
-        setParsedText(result.raw_text);
+        setRawText(result.raw_text);
+        if (result.product_info) {
+          setProductInfo(result.product_info);
+          setEditableName(result.product_info.product_name);
+        }
       } else {
         setError(result.error ?? "OCR failed. Try typing the product text manually.");
       }
@@ -78,13 +84,13 @@ export default function PhotoScanPage() {
   }
 
   async function handleAnalyze() {
-    if (!parsedText.trim()) return;
+    if (!matchText.trim()) return;
     setLoading(true);
     setError("");
 
     try {
       const result = await ingestByPhoto({
-        parsed_text: parsedText.trim(),
+        parsed_text: matchText.trim(),
         quantity: 1,
         unit: "each",
       });
@@ -127,7 +133,7 @@ export default function PhotoScanPage() {
 
     try {
       const result = await ingestByPhoto({
-        parsed_text: parsedText.trim(),
+        parsed_text: matchText.trim(),
         quantity: parseFloat(quantity),
         unit: unit as UnitType,
         unit_cost: unitCost ? parseFloat(unitCost) : undefined,
@@ -146,7 +152,9 @@ export default function PhotoScanPage() {
 
   function reset() {
     setStep("capture");
-    setParsedText("");
+    setRawText("");
+    setProductInfo(null);
+    setEditableName("");
     setSuggestions([]);
     setSelectedItem(null);
     setQuantity("1");
@@ -176,7 +184,7 @@ export default function PhotoScanPage() {
               className="hidden"
             />
 
-            {!parsedText ? (
+            {!rawText ? (
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={ocrLoading}
@@ -201,33 +209,104 @@ export default function PhotoScanPage() {
                 )}
               </button>
             ) : (
-              <Card>
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-xs text-muted uppercase tracking-wide font-medium">Detected Text</p>
-                  <button onClick={() => { setParsedText(""); setError(""); }} className="text-xs text-primary">
-                    Clear
-                  </button>
-                </div>
-                <pre className="text-sm font-mono whitespace-pre-wrap text-foreground max-h-32 overflow-y-auto">
-                  {parsedText}
-                </pre>
-              </Card>
+              <>
+                {/* Structured product info card */}
+                <Card>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-xs text-muted uppercase tracking-wide font-medium">Detected Product</p>
+                    <button onClick={() => { setRawText(""); setProductInfo(null); setEditableName(""); setError(""); }} className="text-xs text-primary">
+                      Clear
+                    </button>
+                  </div>
+
+                  {productInfo && productInfo.product_name !== "Unknown Product" ? (
+                    <div className="space-y-3">
+                      {/* Product name — editable */}
+                      <div>
+                        <label className="text-xs text-muted font-medium">Product Name</label>
+                        <Input
+                          value={editableName}
+                          onChange={(e) => setEditableName(e.target.value)}
+                          placeholder="Edit product name..."
+                        />
+                      </div>
+
+                      {/* Info grid */}
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        {productInfo.brand && (
+                          <div>
+                            <p className="text-xs text-muted">Brand</p>
+                            <p className="font-medium">{productInfo.brand}</p>
+                          </div>
+                        )}
+                        {productInfo.category && productInfo.category !== "Other" && (
+                          <div>
+                            <p className="text-xs text-muted">Category</p>
+                            <p className="font-medium">{productInfo.category}</p>
+                          </div>
+                        )}
+                        {productInfo.weight && (
+                          <div>
+                            <p className="text-xs text-muted mb-1">Weight</p>
+                            <Badge variant="info">{productInfo.weight}</Badge>
+                          </div>
+                        )}
+                        {productInfo.quantity_description && (
+                          <div>
+                            <p className="text-xs text-muted mb-1">Pack Size</p>
+                            <Badge>{productInfo.quantity_description}</Badge>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted italic">Could not detect product info. Type the name below.</p>
+                  )}
+                </Card>
+
+                {/* Retake photo button */}
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={ocrLoading}
+                  className="w-full text-sm text-primary font-medium py-2"
+                >
+                  Retake Photo
+                </button>
+              </>
             )}
 
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
-              <div className="relative flex justify-center"><span className="bg-background px-2 text-xs text-muted">or type manually</span></div>
-            </div>
+            {/* Manual input fallback */}
+            {!productInfo && rawText && (
+              <>
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
+                  <div className="relative flex justify-center"><span className="bg-[#080d14] px-2 text-xs text-muted">or type manually</span></div>
+                </div>
+                <Input
+                  placeholder="e.g., Chicken Breast Boneless 2kg"
+                  value={editableName}
+                  onChange={(e) => setEditableName(e.target.value)}
+                />
+              </>
+            )}
 
-            <Input
-              placeholder="e.g., Chicken Breast Boneless 2kg"
-              value={parsedText}
-              onChange={(e) => setParsedText(e.target.value)}
-            />
+            {!rawText && (
+              <>
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
+                  <div className="relative flex justify-center"><span className="bg-[#080d14] px-2 text-xs text-muted">or type manually</span></div>
+                </div>
+                <Input
+                  placeholder="e.g., Chicken Breast Boneless 2kg"
+                  value={editableName}
+                  onChange={(e) => { setEditableName(e.target.value); setRawText(e.target.value); }}
+                />
+              </>
+            )}
 
             {error && <p className="text-sm text-danger">{error}</p>}
 
-            <Button onClick={handleAnalyze} loading={loading} disabled={!parsedText.trim()} className="w-full" size="lg">
+            <Button onClick={handleAnalyze} loading={loading} disabled={!matchText.trim()} className="w-full" size="lg">
               Analyze Product
             </Button>
           </>
@@ -236,9 +315,12 @@ export default function PhotoScanPage() {
         {/* ── STEP: Match suggestions ── */}
         {step === "match" && (
           <>
-            <Card className="bg-gray-50">
+            <Card className="bg-white/5">
               <p className="text-xs text-muted">Detected</p>
-              <p className="font-medium">{parsedText}</p>
+              <p className="font-medium">{matchText}</p>
+              {productInfo?.brand && (
+                <p className="text-xs text-muted mt-0.5">by {productInfo.brand}</p>
+              )}
             </Card>
 
             <p className="text-sm text-muted">Select the matching item:</p>
@@ -270,7 +352,7 @@ export default function PhotoScanPage() {
 
             <div className="relative">
               <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
-              <div className="relative flex justify-center"><span className="bg-background px-2 text-xs text-muted">not what you&apos;re looking for?</span></div>
+              <div className="relative flex justify-center"><span className="bg-[#080d14] px-2 text-xs text-muted">not what you&apos;re looking for?</span></div>
             </div>
 
             <Button variant="secondary" onClick={() => setStep("not_found")} className="w-full">
@@ -282,7 +364,7 @@ export default function PhotoScanPage() {
         {/* ── STEP: Item not found ── */}
         {step === "not_found" && (
           <ItemNotFound
-            detectedText={parsedText}
+            detectedText={matchText}
             onItemSelected={handleNewItemSelected}
             onCancel={reset}
           />
@@ -294,6 +376,13 @@ export default function PhotoScanPage() {
             <Card>
               <p className="text-xs text-muted">Adding inventory for</p>
               <p className="font-semibold text-lg">{selectedItem.name}</p>
+              {productInfo?.brand && (
+                <p className="text-sm text-muted">{productInfo.brand}</p>
+              )}
+              <div className="flex gap-2 mt-1">
+                {productInfo?.weight && <Badge variant="info">{productInfo.weight}</Badge>}
+                {productInfo?.quantity_description && <Badge>{productInfo.quantity_description}</Badge>}
+              </div>
             </Card>
 
             <div className="grid grid-cols-2 gap-3">

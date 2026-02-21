@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { processReceiptText, updateLineItemMatch } from "@/app/actions/receipts";
 import { commitReceiptTransactions } from "@/app/actions/transactions";
 import { ocrImage } from "@/app/actions/ocr";
+import { compressImage } from "@/lib/utils/compress-image";
 import { ReceiptLineItemRow } from "./line-item-row";
 
 type Step = "input" | "review" | "success";
@@ -55,13 +56,8 @@ export default function ReceiptPage() {
     setError("");
 
     try {
-      // Convert to base64
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
+      // Compress image before sending — mobile photos can be 5-10 MB
+      const base64 = await compressImage(file, 1600, 1600, 0.8);
 
       const result = await ocrImage(base64);
 
@@ -89,7 +85,7 @@ export default function ReceiptPage() {
     try {
       const result = await processReceiptText(rawText.trim());
       if (result) {
-        setReceipt(result as unknown as ReceiptData);
+        setReceipt(result as ReceiptData);
         setStep("review");
       }
     } catch {
@@ -156,7 +152,7 @@ export default function ReceiptPage() {
     setCommitting(true);
 
     const confirmedLines = receipt.line_items.filter(
-      (li) => (li.status === "confirmed" || li.status === "matched" || li.status === "suggested") && li.matched_item
+      (li) => (li.status === "confirmed" || li.status === "matched") && li.matched_item
     );
 
     if (confirmedLines.length === 0) {
@@ -209,7 +205,7 @@ export default function ReceiptPage() {
               <button
                 onClick={() => setInputMode("camera")}
                 className={`flex-1 py-2 text-sm font-medium transition-colors ${
-                  inputMode === "camera" ? "bg-primary text-white" : "text-muted hover:bg-gray-50"
+                  inputMode === "camera" ? "bg-primary text-white" : "text-muted hover:bg-white/8"
                 }`}
               >
                 Camera / Upload
@@ -217,7 +213,7 @@ export default function ReceiptPage() {
               <button
                 onClick={() => setInputMode("text")}
                 className={`flex-1 py-2 text-sm font-medium transition-colors ${
-                  inputMode === "text" ? "bg-primary text-white" : "text-muted hover:bg-gray-50"
+                  inputMode === "text" ? "bg-primary text-white" : "text-muted hover:bg-white/8"
                 }`}
               >
                 Paste Text
@@ -280,7 +276,7 @@ export default function ReceiptPage() {
 
             {inputMode === "text" && (
               <textarea
-                className="w-full rounded-lg border border-border bg-white px-3 py-2.5 text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/50 min-h-[200px] text-sm font-mono"
+                className="w-full rounded-lg border border-border bg-white/6 px-3 py-2.5 text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/50 min-h-[200px] text-sm font-mono"
                 placeholder={"2x Chicken Breast 2kg   $15.98\n1x BBQ Sauce 1L          $4.99\n3x Napkins 200pk         $8.97\n..."}
                 value={rawText}
                 onChange={(e) => setRawText(e.target.value)}
@@ -332,7 +328,7 @@ export default function ReceiptPage() {
 
             {error && <p className="text-sm text-danger">{error}</p>}
 
-            <div className="sticky bottom-20 bg-white border-t border-border pt-3 -mx-4 px-4">
+            <div className="sticky bottom-20 bg-[#080d14]/95 border-t border-border pt-3 -mx-4 px-4 backdrop-blur">
               <Button
                 onClick={handleCommitAll}
                 loading={committing}

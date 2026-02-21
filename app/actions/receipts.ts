@@ -1,8 +1,10 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { serialize } from "@/lib/utils/serialize";
 import { parseReceiptText } from "@/lib/parsers/receipt";
 import { matchText, learnAlias } from "@/lib/matching/engine";
+import { requireRestaurantId } from "@/lib/auth/tenant";
 
 // ============================================================
 // Receipt lifecycle actions
@@ -18,14 +20,17 @@ export async function createReceipt(data: {
   raw_text?: string;
   supplier_id?: string;
 }) {
-  return prisma.receipt.create({
+  const restaurantId = await requireRestaurantId();
+  const receipt = await prisma.receipt.create({
     data: {
+      restaurant_id: restaurantId,
       image_url: data.image_url,
       raw_text: data.raw_text,
       supplier_id: data.supplier_id,
       status: data.raw_text ? "parsing" : "pending",
     },
   });
+  return serialize(receipt);
 }
 
 /**
@@ -33,8 +38,9 @@ export async function createReceipt(data: {
  * This is the core receipt processing pipeline.
  */
 export async function parseAndMatchReceipt(receiptId: string) {
-  const receipt = await prisma.receipt.findUniqueOrThrow({
-    where: { id: receiptId },
+  const restaurantId = await requireRestaurantId();
+  const receipt = await prisma.receipt.findFirstOrThrow({
+    where: { id: receiptId, restaurant_id: restaurantId },
   });
 
   if (!receipt.raw_text) {
@@ -52,7 +58,7 @@ export async function parseAndMatchReceipt(receiptId: string) {
   const lineItemsWithMatches = await Promise.all(
     parsedLines.map(async (line) => {
       const searchText = line.parsed_name ?? line.raw_text;
-      const matches = await matchText(searchText, 1);
+      const matches = await matchText(searchText, 1, restaurantId);
       const topMatch = matches[0] ?? null;
 
       return {
@@ -62,7 +68,9 @@ export async function parseAndMatchReceipt(receiptId: string) {
         status: topMatch
           ? topMatch.confidence === "high"
             ? ("matched" as const)
-            : ("suggested" as const)
+            : topMatch.confidence === "medium"
+              ? ("suggested" as const)
+              : ("unresolved" as const)
           : ("unresolved" as const),
       };
     })
@@ -133,6 +141,24 @@ export async function updateLineItemMatch(
     unit?: string;
   }
 ) {
+  const restaurantId = await requireRestaurantId();
+  const lineExists = await prisma.receiptLineItem.findFirst({
+    where: { id: lineItemId, receipt: { restaurant_id: restaurantId } },
+    select: { id: true },
+  });
+  if (!lineExists) {
+    throw new Error("Line item not found");
+  }
+  if (data.matched_item_id) {
+    const matchItem = await prisma.inventoryItem.findFirst({
+      where: { id: data.matched_item_id, restaurant_id: restaurantId },
+      select: { id: true },
+    });
+    if (!matchItem) {
+      throw new Error("Invalid inventory item");
+    }
+  }
+
   const lineItem = await prisma.receiptLineItem.update({
     where: { id: lineItemId },
     data: {
@@ -152,7 +178,7 @@ export async function updateLineItemMatch(
     }
   }
 
-  return lineItem;
+  return serialize(lineItem);
 }
 
 // ============================================================
@@ -160,8 +186,9 @@ export async function updateLineItemMatch(
 // ============================================================
 
 export async function getReceiptWithLineItems(receiptId: string) {
-  return prisma.receipt.findUnique({
-    where: { id: receiptId },
+  const restaurantId = await requireRestaurantId();
+  const receipt = await prisma.receipt.findFirst({
+    where: { id: receiptId, restaurant_id: restaurantId },
     include: {
       supplier: true,
       line_items: {
@@ -172,17 +199,22 @@ export async function getReceiptWithLineItems(receiptId: string) {
       },
     },
   });
+  return receipt ? serialize(receipt) : null;
 }
 
 export async function getReceipts(status?: string) {
-  return prisma.receipt.findMany({
-    where: status ? { status: status as never } : undefined,
+  const restaurantId = await requireRestaurantId();
+  const receipts = await prisma.receipt.findMany({
+    where: status
+      ? { restaurant_id: restaurantId, status: status as never }
+      : { restaurant_id: restaurantId },
     orderBy: { created_at: "desc" },
     include: {
       supplier: true,
       _count: { select: { line_items: true } },
     },
   });
+  return serialize(receipts);
 }
 
 /**

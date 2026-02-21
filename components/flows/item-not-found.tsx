@@ -110,16 +110,16 @@ export function ItemNotFound({
       {mode === "prompt" && (
         <>
           {/* Alert card */}
-          <Card className="border-amber-200 bg-amber-50">
+          <Card className="border-amber-400/35 bg-amber-500/12">
             <div className="flex gap-3">
               <div className="shrink-0">
-                <svg className="w-6 h-6 text-amber-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <svg className="w-6 h-6 text-amber-300" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
                 </svg>
               </div>
               <div>
-                <h3 className="font-semibold text-amber-900">Item not in inventory</h3>
-                <p className="text-sm text-amber-700 mt-0.5">
+                <h3 className="font-semibold text-amber-200">Item not in inventory</h3>
+                <p className="text-sm text-amber-100/80 mt-0.5">
                   {detectedText ? (
                     <>
                       &ldquo;{detectedText}&rdquo; doesn&apos;t match any existing items.
@@ -146,7 +146,7 @@ export function ItemNotFound({
 
       {mode === "create" && (
         <>
-          <Card className="bg-gray-50">
+          <Card className="bg-white/5">
             <p className="text-xs text-muted uppercase tracking-wide font-medium mb-2">New Inventory Item</p>
             <div className="space-y-3">
               <Input

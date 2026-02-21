@@ -1,6 +1,8 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { serialize } from "@/lib/utils/serialize";
+import { requireRestaurantId } from "@/lib/auth/tenant";
 import type {
   InputMethod,
   TransactionType,
@@ -25,9 +27,19 @@ export async function createTransaction(data: {
   notes?: string;
   raw_data?: Record<string, unknown>;
 }) {
+  const restaurantId = await requireRestaurantId();
+  const item = await prisma.inventoryItem.findFirst({
+    where: { id: data.inventory_item_id, restaurant_id: restaurantId },
+    select: { id: true },
+  });
+  if (!item) {
+    throw new Error("Inventory item not found");
+  }
+
   const { raw_data, ...rest } = data;
-  return prisma.inventoryTransaction.create({
+  const tx = await prisma.inventoryTransaction.create({
     data: {
+      restaurant_id: restaurantId,
       ...rest,
       transaction_type: data.transaction_type ?? "purchase",
       raw_data: raw_data ? (raw_data as never) : undefined,
@@ -36,6 +48,7 @@ export async function createTransaction(data: {
       inventory_item: true,
     },
   });
+  return serialize(tx);
 }
 
 // ============================================================
@@ -55,44 +68,118 @@ export async function commitReceiptTransactions(
     source?: string;
   }[]
 ) {
+  const restaurantId = await requireRestaurantId();
+  const requestedLineIds = Array.from(
+    new Set(lines.map((line) => line.receipt_line_item_id))
+  );
+
+  if (requestedLineIds.length === 0) {
+    throw new Error("No receipt lines provided");
+  }
+
   return prisma.$transaction(async (tx) => {
-    // Create all ledger entries
+    const receipt = await tx.receipt.findFirst({
+      where: { id: receiptId, restaurant_id: restaurantId },
+      select: { id: true, status: true },
+    });
+
+    if (!receipt) {
+      throw new Error("Receipt not found");
+    }
+
+    // Idempotency: if every requested line already has a transaction, return them.
+    const existingTransactions = await tx.inventoryTransaction.findMany({
+      where: {
+        restaurant_id: restaurantId,
+        receipt_id: receiptId,
+        receipt_line_item_id: { in: requestedLineIds },
+      },
+    });
+
+    if (existingTransactions.length === requestedLineIds.length) {
+      if (receipt.status !== "committed") {
+        await tx.receipt.update({
+          where: { id: receiptId },
+          data: { status: "committed" },
+        });
+      }
+      return serialize(existingTransactions);
+    }
+
+    if (existingTransactions.length > 0) {
+      throw new Error("Partial receipt commit detected; manual reconciliation required");
+    }
+
+    // Validate that requested line ids belong to this receipt and are committable.
+    const lineItems = await tx.receiptLineItem.findMany({
+      where: {
+        id: { in: requestedLineIds },
+        receipt_id: receiptId,
+        receipt: { restaurant_id: restaurantId },
+      },
+      select: {
+        id: true,
+        matched_item_id: true,
+        quantity: true,
+        unit: true,
+        unit_cost: true,
+        line_cost: true,
+        status: true,
+      },
+    });
+
+    if (lineItems.length !== requestedLineIds.length) {
+      throw new Error("One or more receipt lines do not belong to this receipt");
+    }
+
+    const uncommittable = lineItems.filter(
+      (line) =>
+        !line.matched_item_id ||
+        (line.status !== "confirmed" && line.status !== "matched")
+    );
+    if (uncommittable.length > 0) {
+      throw new Error("Only matched or confirmed receipt lines can be committed");
+    }
+
+    const lineById = new Map(lineItems.map((line) => [line.id, line]));
+    const orderedLineItems = requestedLineIds.map((id) => {
+      const line = lineById.get(id);
+      if (!line) {
+        throw new Error("Invalid receipt line mapping");
+      }
+      return line;
+    });
+
     const transactions = await Promise.all(
-      lines.map((line) =>
+      orderedLineItems.map((line) =>
         tx.inventoryTransaction.create({
           data: {
-            inventory_item_id: line.inventory_item_id,
+            restaurant_id: restaurantId,
+            inventory_item_id: line.matched_item_id!,
             transaction_type: "purchase",
-            quantity: line.quantity,
-            unit: line.unit,
-            unit_cost: line.unit_cost,
-            total_cost: line.total_cost,
+            quantity: line.quantity ?? 1,
+            unit: line.unit ?? "each",
+            unit_cost: line.unit_cost ?? undefined,
+            total_cost: line.line_cost ?? undefined,
             input_method: "receipt",
-            source: line.source,
             receipt_id: receiptId,
-            receipt_line_item_id: line.receipt_line_item_id,
+            receipt_line_item_id: line.id,
           },
         })
       )
     );
 
-    // Mark all line items as confirmed
-    await Promise.all(
-      lines.map((line) =>
-        tx.receiptLineItem.update({
-          where: { id: line.receipt_line_item_id },
-          data: { status: "confirmed" },
-        })
-      )
-    );
+    await tx.receiptLineItem.updateMany({
+      where: { id: { in: requestedLineIds } },
+      data: { status: "confirmed" },
+    });
 
-    // Mark receipt as committed
     await tx.receipt.update({
       where: { id: receiptId },
       data: { status: "committed" },
     });
 
-    return transactions;
+    return serialize(transactions);
   });
 }
 
@@ -104,70 +191,84 @@ export async function getTransactionsForItem(
   inventoryItemId: string,
   limit = 50
 ) {
-  return prisma.inventoryTransaction.findMany({
-    where: { inventory_item_id: inventoryItemId },
+  const restaurantId = await requireRestaurantId();
+  const rows = await prisma.inventoryTransaction.findMany({
+    where: { inventory_item_id: inventoryItemId, restaurant_id: restaurantId },
     orderBy: { created_at: "desc" },
     take: limit,
     include: {
       receipt: true,
     },
   });
+  return serialize(rows);
 }
 
 export async function getInventoryLevel(inventoryItemId: string) {
+  const restaurantId = await requireRestaurantId();
   const result = await prisma.inventoryTransaction.aggregate({
-    where: { inventory_item_id: inventoryItemId },
+    where: { inventory_item_id: inventoryItemId, restaurant_id: restaurantId },
     _sum: { quantity: true },
     _count: true,
     _max: { created_at: true },
   });
 
-  return {
+  return serialize({
     current_quantity: result._sum.quantity?.toNumber() ?? 0,
     transaction_count: result._count,
     last_transaction_at: result._max.created_at,
-  };
+  });
 }
 
 export async function getAllInventoryLevels() {
-  const items = await prisma.inventoryItem.findMany({
-    where: { is_active: true },
-    include: {
-      category: true,
-      supplier: true,
-      transactions: {
-        select: { quantity: true, created_at: true },
+  const restaurantId = await requireRestaurantId();
+  const [items, stats] = await Promise.all([
+    prisma.inventoryItem.findMany({
+      where: { is_active: true, restaurant_id: restaurantId },
+      include: {
+        category: true,
+        supplier: true,
       },
-    },
-    orderBy: { name: "asc" },
-  });
+      orderBy: { name: "asc" },
+    }),
+    prisma.inventoryTransaction.groupBy({
+      where: { restaurant_id: restaurantId },
+      by: ["inventory_item_id"],
+      _sum: { quantity: true },
+      _count: { _all: true },
+      _max: { created_at: true },
+    }),
+  ]);
 
-  return items.map((item) => {
-    const totalQty = item.transactions.reduce(
-      (sum, t) => sum + t.quantity.toNumber(),
-      0
-    );
-    const lastTx = item.transactions.length
-      ? item.transactions.reduce((latest, t) =>
-          t.created_at > latest.created_at ? t : latest
-        ).created_at
-      : null;
+  const statsByItemId = new Map(
+    stats.map((row) => [
+      row.inventory_item_id,
+      {
+        current_quantity: row._sum.quantity?.toNumber() ?? 0,
+        transaction_count: row._count._all,
+        last_transaction_at: row._max.created_at ?? null,
+      },
+    ])
+  );
 
+  return serialize(items.map((item) => {
+    const itemStats = statsByItemId.get(item.id);
     return {
       id: item.id,
       name: item.name,
       unit: item.unit,
       category: item.category,
       supplier: item.supplier,
-      current_quantity: totalQty,
-      transaction_count: item.transactions.length,
-      last_transaction_at: lastTx,
+      current_quantity: itemStats?.current_quantity ?? 0,
+      transaction_count: itemStats?.transaction_count ?? 0,
+      last_transaction_at: itemStats?.last_transaction_at ?? null,
     };
-  });
+  }));
 }
 
 export async function getRecentTransactions(limit = 20) {
-  return prisma.inventoryTransaction.findMany({
+  const restaurantId = await requireRestaurantId();
+  const rows = await prisma.inventoryTransaction.findMany({
+    where: { restaurant_id: restaurantId },
     orderBy: { created_at: "desc" },
     take: limit,
     include: {
@@ -175,4 +276,5 @@ export async function getRecentTransactions(limit = 20) {
       receipt: true,
     },
   });
+  return serialize(rows);
 }

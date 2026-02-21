@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { similarity, normalizeText, wordOverlap } from "./fuzzy";
 import { scoreToConfidence } from "./confidence";
 import type { MatchConfidence } from "@/lib/generated/prisma/client";
+import { requireRestaurantId } from "@/lib/auth/tenant";
 
 // ============================================================
 // Match result type
@@ -27,8 +28,10 @@ export interface MatchResult {
  */
 export async function matchText(
   rawText: string,
-  limit = 5
+  limit = 5,
+  restaurantId?: string
 ): Promise<MatchResult[]> {
+  const tenantId = restaurantId ?? await requireRestaurantId();
   const normalized = normalizeText(rawText);
   if (!normalized) return [];
 
@@ -36,6 +39,7 @@ export async function matchText(
   const exactAlias = await prisma.itemAlias.findFirst({
     where: {
       alias_text: { equals: normalized, mode: "insensitive" },
+      inventory_item: { restaurant_id: tenantId },
     },
     include: { inventory_item: true },
   });
@@ -57,10 +61,13 @@ export async function matchText(
   // For MVP scale (<1000 items), in-memory is fine.
   const [aliases, items] = await Promise.all([
     prisma.itemAlias.findMany({
+      where: {
+        inventory_item: { restaurant_id: tenantId },
+      },
       include: { inventory_item: { select: { id: true, name: true } } },
     }),
     prisma.inventoryItem.findMany({
-      where: { is_active: true },
+      where: { is_active: true, restaurant_id: tenantId },
       select: { id: true, name: true },
     }),
   ]);
@@ -132,8 +139,15 @@ export async function learnAlias(
   rawText: string,
   source: "barcode" | "photo" | "manual" | "receipt"
 ) {
+  const restaurantId = await requireRestaurantId();
   const normalized = normalizeText(rawText);
   if (!normalized) return;
+
+  const item = await prisma.inventoryItem.findFirst({
+    where: { id: inventoryItemId, restaurant_id: restaurantId },
+    select: { id: true },
+  });
+  if (!item) return;
 
   // Upsert to avoid duplicates
   await prisma.itemAlias.upsert({

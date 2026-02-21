@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(DATABASE_URL=\"postgresql://postgres:Alamisystem2026@db.jxuolowrblorrxgutkuo.supabase.co:5432/postgres\" npx prisma migrate dev:*)",
-      "Bash(DATABASE_URL=\"postgresql://postgres%2Ejxuolowrblorrxgutkuo:rZtmDz8RLZXNMK4E@aws-1-ca-central-1.pooler.supabase.com:5432/postgres\" npx prisma db push:*)"
+      "Bash(DATABASE_URL=\"postgresql://postgres%2Ejxuolowrblorrxgutkuo:rZtmDz8RLZXNMK4E@aws-1-ca-central-1.pooler.supabase.com:5432/postgres\" npx prisma db push:*)",
+      "Bash(npx next build:*)",
+      "Bash(ls:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(npx prisma migrate deploy:*)"
     ]
   }
 }

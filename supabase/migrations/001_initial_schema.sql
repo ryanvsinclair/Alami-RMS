@@ -185,6 +185,9 @@ create index idx_transactions_created on inventory_transactions (created_at desc
 create index idx_transactions_receipt on inventory_transactions (receipt_id);
 create index idx_transactions_type on inventory_transactions (transaction_type);
 create index idx_transactions_method on inventory_transactions (input_method);
+create unique index idx_transactions_receipt_line_item_unique
+  on inventory_transactions (receipt_line_item_id)
+  where receipt_line_item_id is not null;
 
 -- ============================================================
 -- VIEW: Current inventory levels (computed from ledger)
@@ -285,3 +288,118 @@ create policy "Authenticated users full access" on receipt_line_items
 
 create policy "Authenticated users full access" on inventory_transactions
   for all using (auth.role() = 'authenticated');
+
+-- ============================================================
+-- SHOPPING MODE (draft-first purchase staging)
+-- ============================================================
+
+alter type input_method add value if not exists 'shopping';
+
+create type shopping_session_status as enum (
+  'draft',
+  'reconciling',
+  'ready',
+  'committed',
+  'cancelled'
+);
+
+create type shopping_item_origin as enum (
+  'staged',
+  'receipt'
+);
+
+create type shopping_reconciliation_status as enum (
+  'pending',
+  'exact',
+  'quantity_mismatch',
+  'price_mismatch',
+  'missing_on_receipt',
+  'extra_on_receipt'
+);
+
+create type shopping_item_resolution as enum (
+  'pending',
+  'accept_staged',
+  'accept_receipt',
+  'skip'
+);
+
+create table shopping_sessions (
+  id uuid primary key default uuid_generate_v4(),
+  supplier_id uuid references suppliers(id) on delete set null,
+  google_place_id text,
+  store_name text,
+  store_address text,
+  store_lat numeric(10, 7),
+  store_lng numeric(10, 7),
+  receipt_id uuid unique references receipts(id) on delete set null,
+  status shopping_session_status not null default 'draft',
+  started_at timestamptz not null default now(),
+  completed_at timestamptz,
+  staged_subtotal numeric(10, 2),
+  receipt_subtotal numeric(10, 2),
+  tax_total numeric(10, 2),
+  receipt_total numeric(10, 2),
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index idx_shopping_sessions_status on shopping_sessions(status);
+create index idx_shopping_sessions_supplier on shopping_sessions(supplier_id);
+create index idx_shopping_sessions_place on shopping_sessions(google_place_id);
+
+create table shopping_session_items (
+  id uuid primary key default uuid_generate_v4(),
+  session_id uuid not null references shopping_sessions(id) on delete cascade,
+  inventory_item_id uuid references inventory_items(id) on delete set null,
+  receipt_line_item_id uuid references receipt_line_items(id) on delete set null,
+  origin shopping_item_origin not null default 'staged',
+  raw_name text not null,
+  normalized_name text not null,
+  quantity numeric not null default 1,
+  unit unit_type not null default 'each',
+  staged_unit_price numeric(10, 2),
+  staged_line_total numeric(10, 2),
+  receipt_quantity numeric,
+  receipt_unit_price numeric(10, 2),
+  receipt_line_total numeric(10, 2),
+  delta_quantity numeric,
+  delta_price numeric(10, 2),
+  reconciliation_status shopping_reconciliation_status not null default 'pending',
+  resolution shopping_item_resolution not null default 'pending',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index idx_shopping_session_items_session on shopping_session_items(session_id);
+create index idx_shopping_session_items_inventory on shopping_session_items(inventory_item_id);
+create index idx_shopping_session_items_recon_status on shopping_session_items(reconciliation_status);
+
+alter table inventory_transactions
+  add column if not exists shopping_session_id uuid references shopping_sessions(id) on delete set null;
+
+create index if not exists idx_transactions_shopping_session on inventory_transactions(shopping_session_id);
+
+create trigger set_updated_at_shopping_sessions
+  before update on shopping_sessions
+  for each row execute function update_updated_at();
+
+create trigger set_updated_at_shopping_session_items
+  before update on shopping_session_items
+  for each row execute function update_updated_at();
+
+alter table shopping_sessions enable row level security;
+alter table shopping_session_items enable row level security;
+
+create policy "Authenticated users full access" on shopping_sessions
+  for all using (auth.role() = 'authenticated');
+
+create policy "Authenticated users full access" on shopping_session_items
+  for all using (auth.role() = 'authenticated');
+
+alter table suppliers
+  add column if not exists google_place_id text unique,
+  add column if not exists formatted_address text,
+  add column if not exists latitude numeric(10, 7),
+  add column if not exists longitude numeric(10, 7);

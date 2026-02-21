@@ -29,7 +29,7 @@ export default function InventoryPage() {
     async function fetch() {
       setLoading(true);
       const data = await getAllInventoryLevels();
-      setItems(data as unknown as InventoryLevel[]);
+      setItems(data as InventoryLevel[]);
       setLoading(false);
     }
     fetch();

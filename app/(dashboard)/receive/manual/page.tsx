@@ -60,7 +60,7 @@ export default function ManualEntryPage() {
         search: search || undefined,
         activeOnly: true,
       });
-      setItems(result as unknown as ItemOption[]);
+      setItems(result as ItemOption[]);
     }
     const timeout = setTimeout(fetchItems, 200);
     return () => clearTimeout(timeout);

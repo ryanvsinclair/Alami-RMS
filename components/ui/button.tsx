@@ -4,16 +4,16 @@ type Variant = "primary" | "secondary" | "danger" | "ghost";
 type Size = "sm" | "md" | "lg";
 
 const variantStyles: Record<Variant, string> = {
-  primary: "bg-primary text-white hover:bg-primary-hover",
-  secondary: "bg-white text-foreground border border-border hover:bg-gray-50",
+  primary: "bg-primary text-white shadow-[0_8px_20px_rgba(6,193,103,0.35)] hover:bg-primary-hover",
+  secondary: "bg-white/8 text-foreground border border-border hover:border-white/20 hover:bg-white/12",
   danger: "bg-danger text-white hover:bg-red-700",
-  ghost: "text-muted hover:text-foreground hover:bg-gray-100",
+  ghost: "text-muted hover:text-foreground hover:bg-white/10",
 };
 
 const sizeStyles: Record<Size, string> = {
-  sm: "px-3 py-1.5 text-sm",
-  md: "px-4 py-2.5 text-sm",
-  lg: "px-6 py-3 text-base",
+  sm: "h-10 px-3 text-sm",
+  md: "h-12 px-4 text-sm",
+  lg: "h-14 px-6 text-base",
 };
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -29,9 +29,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         disabled={disabled || loading}
         className={`
-          inline-flex items-center justify-center rounded-lg font-medium
-          transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50
+          inline-flex items-center justify-center rounded-2xl font-semibold tracking-tight
+          transition-all duration-200 active:scale-[0.98]
+          focus:outline-none focus:ring-2 focus:ring-foreground/20
           disabled:opacity-50 disabled:pointer-events-none
+          min-w-[44px]
           ${variantStyles[variant]} ${sizeStyles[size]} ${className}
         `}
         {...props}
