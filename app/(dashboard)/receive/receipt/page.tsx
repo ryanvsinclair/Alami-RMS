@@ -5,9 +5,8 @@ import { PageHeader } from "@/components/nav/page-header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { processReceiptText, updateLineItemMatch } from "@/app/actions/receipts";
+import { processReceiptText, processReceiptImage, updateLineItemMatch } from "@/app/actions/receipts";
 import { commitReceiptTransactions } from "@/app/actions/transactions";
-import { ocrImage } from "@/app/actions/ocr";
 import { compressImage } from "@/lib/utils/compress-image";
 import { ReceiptLineItemRow } from "./line-item-row";
 
@@ -43,7 +42,7 @@ export default function ReceiptPage() {
   const [rawText, setRawText] = useState("");
   const [receipt, setReceipt] = useState<ReceiptData | null>(null);
   const [loading, setLoading] = useState(false);
-  const [ocrLoading, setOcrLoading] = useState(false);
+  const [scanning, setScanning] = useState(false);
   const [committing, setCommitting] = useState(false);
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -52,27 +51,25 @@ export default function ReceiptPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setOcrLoading(true);
+    setScanning(true);
     setError("");
 
     try {
-      // Compress image before sending — mobile photos can be 5-10 MB
       const base64 = await compressImage(file, 1600, 1600, 0.8);
+      const result = await processReceiptImage(base64);
 
-      const result = await ocrImage(base64);
-
-      if (result.success) {
-        setRawText(result.raw_text);
+      if (result.success && "receipt" in result && result.receipt) {
+        setReceipt(result.receipt as ReceiptData);
+        setStep("review");
       } else {
-        setError(result.error ?? "OCR failed. Try pasting text manually.");
+        setError("error" in result ? (result.error ?? "Scan failed") : "Scan failed. Try pasting text manually.");
         setInputMode("text");
       }
     } catch {
-      setError("Failed to process image. Try pasting text manually.");
+      setError("Failed to scan receipt. Try pasting text manually.");
       setInputMode("text");
     } finally {
-      setOcrLoading(false);
-      // Reset file input
+      setScanning(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   }
@@ -231,70 +228,55 @@ export default function ReceiptPage() {
                   className="hidden"
                 />
 
-                {!rawText ? (
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={ocrLoading}
-                    className="w-full border-2 border-dashed border-border rounded-xl p-8 text-center space-y-3 hover:border-primary/50 transition-colors"
-                  >
-                    {ocrLoading ? (
-                      <>
-                        <svg className="animate-spin w-10 h-10 text-primary mx-auto" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                        </svg>
-                        <p className="text-sm text-primary font-medium">Processing image...</p>
-                      </>
-                    ) : (
-                      <>
-                        <svg className="w-10 h-10 text-muted mx-auto" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Z" />
-                        </svg>
-                        <p className="text-sm text-muted">Tap to take photo or upload receipt image</p>
-                      </>
-                    )}
-                  </button>
-                ) : (
-                  <Card>
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-xs text-muted uppercase tracking-wide font-medium">OCR Result</p>
-                      <button
-                        onClick={() => { setRawText(""); setError(""); }}
-                        className="text-xs text-primary"
-                      >
-                        Clear
-                      </button>
-                    </div>
-                    <pre className="text-sm font-mono whitespace-pre-wrap text-foreground max-h-48 overflow-y-auto">
-                      {rawText}
-                    </pre>
-                  </Card>
-                )}
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={scanning}
+                  className="w-full border-2 border-dashed border-border rounded-xl p-8 text-center space-y-3 hover:border-primary/50 transition-colors"
+                >
+                  {scanning ? (
+                    <>
+                      <svg className="animate-spin w-10 h-10 text-primary mx-auto" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      <p className="text-sm text-primary font-medium">Scanning receipt...</p>
+                      <p className="text-xs text-muted animate-pulse">This may take a few seconds</p>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-10 h-10 text-muted mx-auto" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Z" />
+                      </svg>
+                      <p className="text-sm text-muted">Tap to take photo or upload receipt image</p>
+                    </>
+                  )}
+                </button>
               </>
             )}
 
             {inputMode === "text" && (
-              <textarea
-                className="w-full rounded-lg border border-border bg-white/6 px-3 py-2.5 text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/50 min-h-[200px] text-sm font-mono"
-                placeholder={"2x Chicken Breast 2kg   $15.98\n1x BBQ Sauce 1L          $4.99\n3x Napkins 200pk         $8.97\n..."}
-                value={rawText}
-                onChange={(e) => setRawText(e.target.value)}
-                autoFocus
-              />
+              <>
+                <textarea
+                  className="w-full rounded-lg border border-border bg-white/6 px-3 py-2.5 text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/50 min-h-[200px] text-sm font-mono"
+                  placeholder={"2x Chicken Breast 2kg   $15.98\n1x BBQ Sauce 1L          $4.99\n3x Napkins 200pk         $8.97\n..."}
+                  value={rawText}
+                  onChange={(e) => setRawText(e.target.value)}
+                  autoFocus
+                />
+                <Button
+                  onClick={handleParse}
+                  loading={loading}
+                  disabled={!rawText.trim()}
+                  className="w-full"
+                  size="lg"
+                >
+                  Parse Receipt
+                </Button>
+              </>
             )}
 
             {error && <p className="text-sm text-danger">{error}</p>}
-
-            <Button
-              onClick={handleParse}
-              loading={loading}
-              disabled={!rawText.trim()}
-              className="w-full"
-              size="lg"
-            >
-              Parse Receipt
-            </Button>
           </>
         )}
 

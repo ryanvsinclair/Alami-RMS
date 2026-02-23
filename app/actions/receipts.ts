@@ -5,6 +5,7 @@ import { serialize } from "@/lib/utils/serialize";
 import { parseReceiptText } from "@/lib/parsers/receipt";
 import { matchText, learnAlias } from "@/lib/matching/engine";
 import { requireRestaurantId } from "@/lib/auth/tenant";
+import { scanReceipt } from "@/lib/ocr/tabscanner";
 
 // ============================================================
 // Receipt lifecycle actions
@@ -231,4 +232,123 @@ export async function processReceiptText(
   });
 
   return parseAndMatchReceipt(receipt.id);
+}
+
+/**
+ * Full pipeline: scan receipt image with TabScanner, create receipt, and match line items.
+ * Replaces the ocrImage + processReceiptText two-step flow.
+ */
+export async function processReceiptImage(base64Image: string, supplierId?: string) {
+  const restaurantId = await requireRestaurantId();
+
+  const scanResult = await scanReceipt(base64Image);
+  if (!scanResult.success || !scanResult.result) {
+    return {
+      success: false as const,
+      error: scanResult.error ?? "Receipt scan failed",
+    };
+  }
+
+  const ts = scanResult.result;
+
+  // Build raw text from TabScanner for storage
+  const rawTextLines = ts.lineItems.map(
+    (li) =>
+      `${li.descClean || li.desc}${li.qty > 1 ? ` x${li.qty}` : ""} $${li.lineTotal.toFixed(2)}`
+  );
+  if (ts.establishment) rawTextLines.unshift(ts.establishment);
+  if (ts.subTotal != null) rawTextLines.push(`Subtotal $${ts.subTotal.toFixed(2)}`);
+  if (ts.tax != null) rawTextLines.push(`Tax $${ts.tax.toFixed(2)}`);
+  if (ts.total != null) rawTextLines.push(`Total $${ts.total.toFixed(2)}`);
+  const rawText = rawTextLines.join("\n");
+
+  // Create receipt record
+  const receipt = await prisma.receipt.create({
+    data: {
+      restaurant_id: restaurantId,
+      raw_text: rawText,
+      supplier_id: supplierId,
+      status: "review",
+      parsed_data: {
+        source: "tabscanner",
+        establishment: ts.establishment,
+        date: ts.date,
+        currency: ts.currency,
+        paymentMethod: ts.paymentMethod,
+      },
+    },
+  });
+
+  // Create line items from TabScanner structured data and match against inventory
+  const lineItemsWithMatches = await Promise.all(
+    ts.lineItems.map(async (tsLine, index) => {
+      const searchText = tsLine.descClean || tsLine.desc;
+      const matches = await matchText(searchText, 1, restaurantId);
+      const topMatch = matches[0] ?? null;
+
+      const unitPrice =
+        tsLine.qty > 0
+          ? Math.round((tsLine.lineTotal / tsLine.qty) * 100) / 100
+          : tsLine.price;
+
+      return {
+        line_number: index + 1,
+        raw_text: tsLine.desc,
+        parsed_name: tsLine.descClean || tsLine.desc,
+        quantity: tsLine.qty || 1,
+        unit: "each",
+        line_cost: tsLine.lineTotal,
+        unit_cost: unitPrice,
+        matched_item_id: topMatch?.inventory_item_id ?? null,
+        confidence: topMatch?.confidence ?? "none",
+        status: topMatch
+          ? topMatch.confidence === "high"
+            ? ("matched" as const)
+            : topMatch.confidence === "medium"
+              ? ("suggested" as const)
+              : ("unresolved" as const)
+          : ("unresolved" as const),
+      };
+    })
+  );
+
+  // Write line items to database
+  await prisma.$transaction(async (tx) => {
+    await Promise.all(
+      lineItemsWithMatches.map((line) =>
+        tx.receiptLineItem.create({
+          data: {
+            receipt_id: receipt.id,
+            line_number: line.line_number,
+            raw_text: line.raw_text,
+            parsed_name: line.parsed_name,
+            quantity: line.quantity,
+            unit: line.unit as never,
+            line_cost: line.line_cost,
+            unit_cost: line.unit_cost,
+            matched_item_id: line.matched_item_id,
+            confidence: line.confidence,
+            status: line.status,
+          },
+        })
+      )
+    );
+
+    await tx.receipt.update({
+      where: { id: receipt.id },
+      data: {
+        parsed_data: {
+          source: "tabscanner",
+          establishment: ts.establishment,
+          line_count: lineItemsWithMatches.length,
+          matched_count: lineItemsWithMatches.filter((l) => l.status === "matched").length,
+          suggested_count: lineItemsWithMatches.filter((l) => l.status === "suggested").length,
+          unresolved_count: lineItemsWithMatches.filter((l) => l.status === "unresolved").length,
+        },
+      },
+    });
+  });
+
+  const result = await getReceiptWithLineItems(receipt.id);
+  return { success: true as const, receipt: result };
 }

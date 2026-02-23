@@ -8,6 +8,7 @@ import { parseReceiptText } from "@/lib/parsers/receipt";
 import { parseShelfLabel, type ShelfLabelResult } from "@/lib/parsers/shelf-label";
 import { extractProductName } from "@/lib/parsers/product-name";
 import { extractTextFromImage } from "@/lib/ocr/google-vision";
+import { scanReceipt, type TabScannerResult } from "@/lib/ocr/tabscanner";
 import { requireRestaurantId } from "@/lib/auth/tenant";
 import type {
   Prisma,
@@ -550,6 +551,270 @@ export async function reconcileShoppingSessionReceipt(data: {
     }
 
     await recomputeSessionState(tx, session.id);
+    const result = await tx.shoppingSession.findUnique({
+      where: { id: session.id },
+      include: {
+        supplier: true,
+        items: {
+          orderBy: { created_at: "asc" },
+          include: { inventory_item: true, receipt_line: true },
+        },
+        receipt: {
+          include: {
+            line_items: {
+              orderBy: { line_number: "asc" },
+              include: { matched_item: true },
+            },
+          },
+        },
+      },
+    });
+    return result ? serialize(result) : null;
+  });
+}
+
+/**
+ * Scan a receipt image with TabScanner and reconcile with the shopping session.
+ * Combines image upload, OCR, and reconciliation into a single action.
+ */
+export async function scanAndReconcileReceipt(data: {
+  session_id: string;
+  base64_image: string;
+  image_url?: string;
+}) {
+  const restaurantId = await requireRestaurantId();
+
+  // Step 1: Scan receipt with TabScanner
+  const scanResult = await scanReceipt(data.base64_image);
+  if (!scanResult.success || !scanResult.result) {
+    throw new Error(scanResult.error ?? "Receipt scan failed");
+  }
+
+  const ts = scanResult.result;
+
+  // Step 2: Reconcile using TabScanner structured data
+  return reconcileWithTabScannerData({
+    session_id: data.session_id,
+    restaurant_id: restaurantId,
+    tabscanner: ts,
+    image_url: data.image_url,
+  });
+}
+
+async function reconcileWithTabScannerData(params: {
+  session_id: string;
+  restaurant_id: string;
+  tabscanner: TabScannerResult;
+  image_url?: string;
+}) {
+  const { session_id, restaurant_id, tabscanner, image_url } = params;
+
+  // Build a synthetic raw_text from TabScanner for storage
+  const rawTextLines = tabscanner.lineItems.map(
+    (li) =>
+      `${li.descClean || li.desc}${li.qty > 1 ? ` x${li.qty}` : ""} $${li.lineTotal.toFixed(2)}`
+  );
+  if (tabscanner.subTotal != null) rawTextLines.push(`Subtotal $${tabscanner.subTotal.toFixed(2)}`);
+  if (tabscanner.tax != null) rawTextLines.push(`Tax $${tabscanner.tax.toFixed(2)}`);
+  if (tabscanner.total != null) rawTextLines.push(`Total $${tabscanner.total.toFixed(2)}`);
+  const rawText = rawTextLines.join("\n");
+
+  return prisma.$transaction(async (tx) => {
+    const session = await tx.shoppingSession.findFirstOrThrow({
+      where: { id: session_id, restaurant_id: restaurant_id },
+      include: {
+        items: { orderBy: { created_at: "asc" } },
+      },
+    });
+
+    if (session.status === "committed" || session.status === "cancelled") {
+      throw new Error("Session is closed");
+    }
+
+    // Create receipt record
+    const receipt = await tx.receipt.create({
+      data: {
+        restaurant_id: restaurant_id,
+        raw_text: rawText,
+        image_url: image_url,
+        supplier_id: session.supplier_id,
+        status: "review",
+        parsed_data: {
+          source: "tabscanner",
+          establishment: tabscanner.establishment,
+          date: tabscanner.date,
+          currency: tabscanner.currency,
+          paymentMethod: tabscanner.paymentMethod,
+        } as never,
+      },
+    });
+
+    // Create receipt line items from TabScanner structured data
+    const createdLines = await Promise.all(
+      tabscanner.lineItems.map(async (tsLine, index) => {
+        const searchText = tsLine.descClean || tsLine.desc;
+        const matches = await matchText(searchText, 1, restaurant_id);
+        const top = matches[0] ?? null;
+
+        const unitPrice =
+          tsLine.qty > 0 ? round(tsLine.lineTotal / tsLine.qty) : tsLine.price;
+
+        return tx.receiptLineItem.create({
+          data: {
+            receipt_id: receipt.id,
+            line_number: index + 1,
+            raw_text: tsLine.desc,
+            parsed_name: tsLine.descClean || tsLine.desc,
+            quantity: tsLine.qty || 1,
+            unit: "each",
+            line_cost: tsLine.lineTotal,
+            unit_cost: unitPrice,
+            matched_item_id: top?.inventory_item_id ?? null,
+            confidence: top?.confidence ?? "none",
+            status: top?.confidence === "high" ? "matched" : "unresolved",
+          },
+          include: { matched_item: true },
+        });
+      })
+    );
+
+    // Use TabScanner totals directly
+    const subtotal = tabscanner.subTotal;
+    const tax = tabscanner.tax;
+    const total =
+      tabscanner.total ??
+      (subtotal != null ? round(subtotal + (tax ?? 0)) : null);
+
+    await tx.shoppingSession.update({
+      where: { id: session.id },
+      data: {
+        receipt_id: receipt.id,
+        tax_total: tax,
+        receipt_subtotal: subtotal,
+        receipt_total: total,
+      },
+    });
+
+    // Remove old receipt-origin items
+    await tx.shoppingSessionItem.deleteMany({
+      where: { session_id: session.id, origin: "receipt" },
+    });
+
+    // Reconcile staged items against TabScanner line items
+    const stagedItems = await tx.shoppingSessionItem.findMany({
+      where: { session_id: session.id, origin: "staged" },
+      orderBy: { created_at: "asc" },
+    });
+
+    const usedLineIds = new Set<string>();
+
+    for (const item of stagedItems) {
+      let bestLine: (typeof createdLines)[number] | null = null;
+      let bestScore = -1;
+
+      for (const line of createdLines) {
+        if (usedLineIds.has(line.id)) continue;
+
+        let score = 0;
+        if (
+          item.inventory_item_id &&
+          line.matched_item_id === item.inventory_item_id
+        ) {
+          score = 1;
+        } else {
+          const lineName = normalizeName(line.parsed_name ?? line.raw_text);
+          score = similarity(item.normalized_name, lineName);
+        }
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestLine = line;
+        }
+      }
+
+      if (!bestLine || bestScore < 0.35) {
+        await tx.shoppingSessionItem.update({
+          where: { id: item.id },
+          data: {
+            receipt_line_item_id: null,
+            receipt_quantity: null,
+            receipt_unit_price: null,
+            receipt_line_total: null,
+            delta_quantity: null,
+            delta_price: null,
+            reconciliation_status: "missing_on_receipt",
+            resolution: "pending",
+          },
+        });
+        continue;
+      }
+
+      usedLineIds.add(bestLine.id);
+
+      const stagedQty = toNumber(item.quantity) ?? 1;
+      const stagedUnitPrice = toNumber(item.staged_unit_price);
+      const receiptQty = toNumber(bestLine.quantity) ?? 1;
+      const receiptUnitPrice =
+        toNumber(bestLine.unit_cost) ??
+        (toNumber(bestLine.line_cost) != null && receiptQty > 0
+          ? round((toNumber(bestLine.line_cost) as number) / receiptQty)
+          : null);
+      const qtyDelta = round(receiptQty - stagedQty, 4);
+      const priceDelta =
+        stagedUnitPrice != null && receiptUnitPrice != null
+          ? round(receiptUnitPrice - stagedUnitPrice)
+          : null;
+
+      let reconciliationStatus: ShoppingReconciliationStatus = "exact";
+      if (Math.abs(qtyDelta) > 0.001) {
+        reconciliationStatus = "quantity_mismatch";
+      } else if (priceDelta != null && Math.abs(priceDelta) >= 0.01) {
+        reconciliationStatus = "price_mismatch";
+      }
+
+      await tx.shoppingSessionItem.update({
+        where: { id: item.id },
+        data: {
+          inventory_item_id:
+            item.inventory_item_id ?? bestLine.matched_item_id,
+          receipt_line_item_id: bestLine.id,
+          receipt_quantity: receiptQty,
+          receipt_unit_price: receiptUnitPrice,
+          receipt_line_total: toNumber(bestLine.line_cost),
+          delta_quantity: qtyDelta,
+          delta_price: priceDelta,
+          reconciliation_status: reconciliationStatus,
+          resolution:
+            reconciliationStatus === "exact" ? "accept_receipt" : "pending",
+        },
+      });
+    }
+
+    // Create shopping items for unmatched receipt lines
+    for (const line of createdLines) {
+      if (usedLineIds.has(line.id)) continue;
+      const lineName = line.parsed_name ?? line.raw_text;
+      await tx.shoppingSessionItem.create({
+        data: {
+          session_id: session.id,
+          inventory_item_id: line.matched_item_id,
+          receipt_line_item_id: line.id,
+          origin: "receipt",
+          raw_name: lineName,
+          normalized_name: normalizeName(lineName),
+          quantity: line.quantity ?? 1,
+          unit: (line.unit as UnitType) ?? "each",
+          receipt_quantity: line.quantity ?? 1,
+          receipt_unit_price: toNumber(line.unit_cost),
+          receipt_line_total: toNumber(line.line_cost),
+          reconciliation_status: "extra_on_receipt",
+          resolution: "pending",
+        },
+      });
+    }
+
+    await recomputeSessionState(tx, session.id);
+
     const result = await tx.shoppingSession.findUnique({
       where: { id: session.id },
       include: {

@@ -12,7 +12,7 @@ import {
   addShelfLabelItem,
   commitShoppingSession,
   getActiveShoppingSession,
-  reconcileShoppingSessionReceipt,
+  scanAndReconcileReceipt,
   removeShoppingSessionItem,
   resolveShoppingSessionItem,
   scanShelfLabel,
@@ -22,7 +22,6 @@ import {
 import { ItemNotFound } from "@/components/flows/item-not-found";
 import type { ShelfLabelResult } from "@/lib/parsers/shelf-label";
 import type { MatchResult } from "@/lib/matching/engine";
-import { ocrImage } from "@/app/actions/ocr";
 import { uploadReceiptImageAction } from "@/app/actions/upload";
 import { compressImage } from "@/lib/utils/compress-image";
 import {
@@ -111,10 +110,7 @@ export default function ShoppingPage() {
   const [qty, setQty] = useState("1");
   const [price, setPrice] = useState("");
 
-  const [rawText, setRawText] = useState("");
-  const [receiptImageUrl, setReceiptImageUrl] = useState<string | null>(null);
-  const [ocrLoading, setOcrLoading] = useState(false);
-  const [reconLoading, setReconLoading] = useState(false);
+  const [receiptScanning, setReceiptScanning] = useState(false);
   const [commitLoading, setCommitLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -273,47 +269,38 @@ export default function ShoppingPage() {
     }
   }
 
-  async function handleImageCapture(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleReceiptScan(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !session) return;
 
-    setOcrLoading(true);
+    setReceiptScanning(true);
     setError("");
     try {
       const base64 = await compressImage(file, 1600, 1600, 0.8);
-      const [ocrResult, imageUrl] = await Promise.all([
-        ocrImage(base64),
-        session ? uploadReceiptImageAction(base64, session.id).catch(() => null) : null,
-      ]);
-      if (ocrResult.success) {
-        setRawText(ocrResult.raw_text);
-      } else {
-        setError(ocrResult.error ?? "OCR failed");
-      }
-      if (imageUrl) setReceiptImageUrl(imageUrl);
-    } catch {
-      setError("Failed to process receipt image");
-    } finally {
-      setOcrLoading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
-  }
 
-  async function handleReconcile() {
-    if (!session || !rawText.trim()) return;
-    setReconLoading(true);
-    setError("");
-    try {
-      const updated = await reconcileShoppingSessionReceipt({
-        session_id: session.id,
-        raw_text: rawText.trim(),
-        image_url: receiptImageUrl ?? undefined,
-      });
+      // Upload image to storage in parallel (non-blocking)
+      const imageUrlPromise = uploadReceiptImageAction(base64, session.id).catch(() => null);
+
+      // Scan and reconcile in one step via TabScanner
+      const [updated, imageUrl] = await Promise.all([
+        scanAndReconcileReceipt({
+          session_id: session.id,
+          base64_image: base64,
+        }),
+        imageUrlPromise,
+      ]);
+
+      // If image upload finished, attach it to the session (best effort)
+      if (imageUrl && updated) {
+        // Image URL is already stored via the upload action
+      }
+
       setSession(updated as ShoppingSession);
-    } catch {
-      setError("Failed to reconcile receipt");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to scan receipt");
     } finally {
-      setReconLoading(false);
+      setReceiptScanning(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   }
 
@@ -337,7 +324,6 @@ export default function ShoppingPage() {
     try {
       await commitShoppingSession(session.id);
       setSession(null);
-      setRawText("");
     } catch {
       setError("Failed to commit shopping session");
     } finally {
@@ -738,36 +724,29 @@ export default function ShoppingPage() {
 
         <Card className="p-5">
           <p className="text-sm font-semibold mb-2">Checkout Receipt</p>
+          <p className="text-xs text-muted mb-3">
+            Take a photo of your receipt to auto-scan and reconcile items.
+          </p>
           <input
             ref={fileInputRef}
             type="file"
             accept="image/*"
             capture="environment"
-            onChange={handleImageCapture}
+            onChange={handleReceiptScan}
             className="hidden"
           />
           <Button
-            variant="secondary"
             className="w-full"
             onClick={() => fileInputRef.current?.click()}
-            loading={ocrLoading}
+            loading={receiptScanning}
           >
-            Capture / Upload Receipt
+            {receiptScanning ? "Scanning Receipt..." : "Scan Receipt"}
           </Button>
-          <textarea
-            className="w-full rounded-2xl border border-border bg-white/6 px-4 py-3 mt-2 text-sm font-mono min-h-[120px]"
-            placeholder="Paste OCR text here..."
-            value={rawText}
-            onChange={(e) => setRawText(e.target.value)}
-          />
-          <Button
-            className="w-full mt-2"
-            onClick={handleReconcile}
-            loading={reconLoading}
-            disabled={!rawText.trim()}
-          >
-            Reconcile Receipt
-          </Button>
+          {receiptScanning && (
+            <p className="text-xs text-muted text-center mt-2 animate-pulse">
+              Processing with TabScanner — this may take a few seconds...
+            </p>
+          )}
         </Card>
 
         {error && <p className="text-sm text-danger">{error}</p>}
