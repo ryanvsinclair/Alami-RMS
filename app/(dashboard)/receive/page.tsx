@@ -1,8 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { PageHeader } from "@/components/nav/page-header";
 import { Card } from "@/components/ui/card";
+import { useTerm } from "@/lib/config/context";
 
 const ingestionMethods = [
   {
@@ -55,12 +55,14 @@ const ingestionMethods = [
 
 export default function ReceivePage() {
   const router = useRouter();
+  const receiveTerm = useTerm("receive");
+  const itemTerm = useTerm("item");
+  const itemLabel = `${itemTerm.toLowerCase()}${itemTerm.toLowerCase().endsWith("s") ? "" : "s"}`;
 
   return (
     <>
-      <PageHeader title="Receive Inventory" />
       <div className="p-4 space-y-3">
-        <p className="text-sm text-muted">Choose an input method to add inventory.</p>
+        <p className="text-sm text-muted">Choose an input method to add {itemLabel}.</p>
         {ingestionMethods.map((method) => (
           <Card
             key={method.href}

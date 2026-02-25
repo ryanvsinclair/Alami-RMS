@@ -11,6 +11,63 @@
   --muted: #b1c0d3;
   --border: #213448;
   --card: #102239;
+  --body-bg-image:
+    radial-gradient(circle at 86% 10%, rgba(6, 193, 103, 0.14) 0, rgba(6, 193, 103, 0) 38%),
+    radial-gradient(circle at 20% 0%, rgba(27, 100, 180, 0.16) 0, rgba(27, 100, 180, 0) 42%),
+    linear-gradient(180deg, #09111c 0%, #070c14 100%);
+  --surface-card-border: rgba(128, 164, 202, 0.24);
+  --surface-card-bg: linear-gradient(
+    150deg,
+    rgba(20, 42, 67, 0.72) 0%,
+    rgba(14, 30, 50, 0.7) 60%,
+    rgba(10, 22, 39, 0.8) 100%
+  );
+  --surface-card-shadow: 0 14px 34px rgba(2, 8, 18, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --surface-card-border-hover: rgba(128, 164, 202, 0.34);
+  --surface-card-shadow-hover: 0 20px 36px rgba(2, 8, 18, 0.44), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --surface-nav-border: rgba(128, 164, 202, 0.28);
+  --surface-nav-bg: linear-gradient(
+    160deg,
+    rgba(8, 24, 43, 0.86) 0%,
+    rgba(5, 17, 32, 0.8) 55%,
+    rgba(7, 18, 34, 0.88) 100%
+  );
+  --surface-nav-shadow: 0 18px 42px rgba(3, 8, 18, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="light"] {
+  --background: #edf3f9;
+  --foreground: #0f1b2d;
+  --primary: #06b865;
+  --primary-hover: #069b57;
+  --success: #0f8d5d;
+  --warning: #c26b0a;
+  --danger: #c93b3b;
+  --muted: #60738a;
+  --border: #cfdae7;
+  --card: #ffffff;
+  --body-bg-image:
+    radial-gradient(circle at 88% 10%, rgba(6, 193, 103, 0.08) 0, rgba(6, 193, 103, 0) 38%),
+    radial-gradient(circle at 16% 0%, rgba(27, 100, 180, 0.08) 0, rgba(27, 100, 180, 0) 44%),
+    linear-gradient(180deg, #f8fbff 0%, #edf3f9 100%);
+  --surface-card-border: rgba(33, 63, 96, 0.14);
+  --surface-card-bg: linear-gradient(
+    150deg,
+    rgba(255, 255, 255, 0.92) 0%,
+    rgba(249, 252, 255, 0.94) 60%,
+    rgba(245, 249, 255, 0.96) 100%
+  );
+  --surface-card-shadow: 0 14px 30px rgba(17, 31, 48, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --surface-card-border-hover: rgba(33, 63, 96, 0.2);
+  --surface-card-shadow-hover: 0 18px 34px rgba(17, 31, 48, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.94);
+  --surface-nav-border: rgba(33, 63, 96, 0.16);
+  --surface-nav-bg: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(247, 250, 255, 0.92) 55%,
+    rgba(242, 247, 255, 0.96) 100%
+  );
+  --surface-nav-shadow: 0 14px 28px rgba(17, 31, 48, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 @theme inline {
@@ -31,10 +88,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  background-image:
-    radial-gradient(circle at 86% 10%, rgba(6, 193, 103, 0.14) 0, rgba(6, 193, 103, 0) 38%),
-    radial-gradient(circle at 20% 0%, rgba(27, 100, 180, 0.16) 0, rgba(27, 100, 180, 0) 42%),
-    linear-gradient(180deg, #09111c 0%, #070c14 100%);
+  background-image: var(--body-bg-image);
   font-family: var(--font-heading-sans), "Segoe UI", sans-serif;
   -webkit-tap-highlight-color: transparent;
 }

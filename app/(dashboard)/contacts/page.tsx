@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PageHeader } from "@/components/nav/page-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +9,7 @@ import {
   createContact,
   updateContact,
   deleteContact,
-} from "@/app/actions/contacts";
+} from "@/app/actions/core/contacts";
 
 interface Contact {
   id: string;
@@ -162,18 +161,15 @@ export default function ContactsPage() {
 
   return (
     <>
-      <PageHeader
-        title="Contacts"
-        action={
-          !showAdd && (
+      <div className="p-4 space-y-3">
+        {/* Add button - replaces PageHeader action */}
+        {!showAdd && (
+          <div className="flex justify-end">
             <Button size="sm" onClick={() => { setShowAdd(true); setEditId(null); }}>
               + Add
             </Button>
-          )
-        }
-      />
-
-      <div className="p-4 space-y-3">
+          </div>
+        )}
         {error && (
           <div className="rounded-2xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-danger">
             {error}

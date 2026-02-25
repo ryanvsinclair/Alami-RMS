@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { PageHeader } from "@/components/nav/page-header";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { processReceiptText, processReceiptImage, updateLineItemMatch } from "@/app/actions/receipts";
-import { commitReceiptTransactions } from "@/app/actions/transactions";
-import { compressImage } from "@/lib/utils/compress-image";
+import { processReceiptText, processReceiptImage, updateLineItemMatch } from "@/app/actions/modules/receipts";
+import { commitReceiptTransactions } from "@/app/actions/core/transactions";
+import { compressImage } from "@/core/utils/compress-image";
 import { ReceiptLineItemRow } from "./line-item-row";
 
 type Step = "input" | "review" | "success";
@@ -193,7 +193,7 @@ export default function ReceiptPage() {
 
   return (
     <>
-      <PageHeader title="Scan Receipt" backHref="/receive" />
+
       <div className="p-4 space-y-4">
         {step === "input" && (
           <>
@@ -334,6 +334,14 @@ export default function ReceiptPage() {
               <h3 className="font-semibold text-lg">Receipt Committed</h3>
               <p className="text-muted">{confirmedCount} items added to inventory</p>
             </div>
+            {receipt && (
+              <Link
+                href={`/receive/receipt/${receipt.id}`}
+                className="block w-full rounded-2xl border border-white/10 bg-white/5 py-3 text-sm font-medium text-white/70 hover:text-white transition-colors"
+              >
+                View Receipt
+              </Link>
+            )}
             <Button onClick={reset} className="w-full" size="lg">
               Scan Another Receipt
             </Button>

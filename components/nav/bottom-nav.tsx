@@ -2,8 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useBusinessConfig, useTerm } from "@/lib/config/context";
 
-const navItems = [
+type NavItem = {
+  href: string;
+  label: string;
+  exact: boolean;
+  moduleId?: string;
+  icon: React.ReactNode;
+};
+
+const navItems: NavItem[] = [
   {
     href: "/",
     label: "Home",
@@ -28,6 +37,7 @@ const navItems = [
     href: "/receive",
     label: "Receive",
     exact: false,
+    moduleId: "receipts",
     icon: (
       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -48,6 +58,7 @@ const navItems = [
     href: "/shopping",
     label: "Shopping",
     exact: false,
+    moduleId: "shopping",
     icon: (
       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.085.837l.383 1.437m0 0L6.75 12h10.5l2.01-5.69a.75.75 0 0 0-.707-.997H5.104Zm1.146 6.69a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Zm10.5 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Z" />
@@ -56,15 +67,28 @@ const navItems = [
   },
 ];
 
-export function BottomNav() {
+export function BottomNav({ enabledModules }: { enabledModules?: string[] }) {
   const pathname = usePathname();
+  const config = useBusinessConfig();
+  const receiveLabel = useTerm("receive");
+  const shoppingLabel = useTerm("shopping");
+  const effectiveEnabledModules = enabledModules ?? config.enabledModules;
+  const moduleSet = effectiveEnabledModules ? new Set(effectiveEnabledModules) : null;
+  const visibleItems = navItems.filter(
+    (item) => !item.moduleId || !moduleSet || moduleSet.has(item.moduleId)
+  );
 
   return (
     <nav className="fixed inset-x-0 bottom-4 z-50 px-3 pointer-events-none safe-bottom">
       <div
-        className="pointer-events-auto mx-auto flex h-[72px] max-w-lg items-center justify-between gap-1 rounded-full border border-[rgba(128,164,202,0.28)] bg-[linear-gradient(160deg,rgba(8,24,43,0.86)_0%,rgba(5,17,32,0.8)_55%,rgba(7,18,34,0.88)_100%)] px-2 py-1.5 text-white shadow-[0_18px_42px_rgba(3,8,18,0.5),inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl"
+        className="pointer-events-auto mx-auto flex h-[72px] max-w-lg items-center justify-between gap-1 rounded-full px-2 py-1.5 text-foreground backdrop-blur-xl"
+        style={{
+          border: "1px solid var(--surface-nav-border)",
+          background: "var(--surface-nav-bg)",
+          boxShadow: "var(--surface-nav-shadow)",
+        }}
       >
-        {navItems.map((item) => {
+        {visibleItems.map((item) => {
           const isActive = item.exact
             ? pathname === item.href
             : pathname.startsWith(item.href);
@@ -74,16 +98,20 @@ export function BottomNav() {
               href={item.href}
               className={`
                 flex h-full min-h-[58px] w-full flex-col items-center justify-center gap-1 rounded-full px-2
-                text-[10px] font-semibold tracking-wide transition-all duration-200 uppercase
+                text-[10px] font-semibold tracking-wide transition-all duration-200 capitalize
                 ${
                   isActive
-                    ? "bg-white/12 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_8px_18px_rgba(0,0,0,0.26)]"
-                    : "text-white/72 hover:bg-white/8 hover:text-white"
+                    ? "bg-foreground/10 text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_8px_18px_rgba(0,0,0,0.14)]"
+                    : "text-foreground/70 hover:bg-foreground/6 hover:text-foreground"
                 }
               `}
             >
               {item.icon}
-              {item.label}
+              {item.moduleId === "receipts"
+                ? receiveLabel
+                : item.moduleId === "shopping"
+                  ? shoppingLabel
+                  : item.label}
             </Link>
           );
         })}

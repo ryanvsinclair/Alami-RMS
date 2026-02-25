@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { signInAction } from "@/app/actions/auth";
+import { signInAction } from "@/app/actions/core/auth";
 
 export default async function LoginPage({
   searchParams,

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { acceptStaffInviteAction, getInviteByToken } from "@/app/actions/staff";
+import { acceptStaffInviteAction, getInviteByToken } from "@/app/actions/core/staff";
 
 export default async function AcceptInvitePage({
   searchParams,
@@ -13,7 +13,7 @@ export default async function AcceptInvitePage({
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-xs uppercase tracking-[0.16em] text-muted">Restaurant invite</p>
+        <p className="text-xs uppercase tracking-[0.16em] text-muted">Team invite</p>
         <h1 className="mt-1 text-3xl font-bold text-foreground">Join team</h1>
       </div>
 
@@ -26,7 +26,7 @@ export default async function AcceptInvitePage({
           <div className="space-y-3">
             <p className="text-sm text-foreground">
               You were invited to join{" "}
-              <span className="font-semibold">{invite.restaurant?.name ?? "this restaurant"}</span>{" "}
+              <span className="font-semibold">{invite.business?.name ?? "this business"}</span>{" "}
               as <span className="font-semibold">{invite.role}</span>.
             </p>
             <p className="text-xs text-muted">Invite email: {invite.email}</p>

@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { PageHeader } from "@/components/nav/page-header";
+import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ingestManual } from "@/app/actions/ingestion";
-import { getInventoryItems } from "@/app/actions/inventory";
+import { ingestManual } from "@/app/actions/core/ingestion";
+import { getInventoryItems } from "@/app/actions/core/inventory";
 import type { UnitType } from "@/lib/generated/prisma/client";
 
 const UNIT_OPTIONS = [
@@ -125,7 +125,7 @@ export default function ManualEntryPage() {
 
   return (
     <>
-      <PageHeader title="Manual Entry" backHref="/receive" />
+
       <div className="p-4 space-y-4">
         {step === "search" && (
           <>

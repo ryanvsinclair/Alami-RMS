@@ -117,17 +117,47 @@ enum SyncStatus {
   failed
 }
 
-enum RestaurantRole {
+enum BusinessRole {
   owner
   manager
   staff
 }
 
-enum RestaurantInviteStatus {
+enum BusinessInviteStatus {
   pending
   accepted
   revoked
   expired
+}
+
+enum IndustryType {
+  restaurant
+  salon
+  retail
+  contractor
+  general
+}
+
+enum BarcodeResolutionStatus {
+  resolved
+  unresolved
+  needs_review
+}
+
+enum BarcodeSourceProvider {
+  internal_tenant_lookup
+  open_food_facts
+  open_beauty_facts
+  upcdatabase
+  upcitemdb
+  manual
+}
+
+enum BarcodeResolutionEventOutcome {
+  hit
+  miss
+  error
+  throttled
 }
 
 // ============================================================
@@ -135,42 +165,42 @@ enum RestaurantInviteStatus {
 // ============================================================
 
 model Category {
-  id         String          @id @default(uuid())
-  restaurant_id String
-  name       String
-  created_at DateTime        @default(now())
-  items      InventoryItem[]
-  restaurant Restaurant      @relation(fields: [restaurant_id], references: [id], onDelete: Cascade)
+  id          String          @id @default(uuid())
+  business_id String
+  name        String
+  created_at  DateTime        @default(now())
+  items       InventoryItem[]
+  business    Business        @relation(fields: [business_id], references: [id], onDelete: Cascade)
 
-  @@unique([restaurant_id, name])
-  @@index([restaurant_id])
+  @@unique([business_id, name])
+  @@index([business_id])
   @@map("categories")
 }
 
 model Supplier {
-  id         String          @id @default(uuid())
-  restaurant_id String
-  name       String
-  google_place_id String?
+  id                String          @id @default(uuid())
+  business_id       String
+  name              String
+  google_place_id   String?
   formatted_address String?
-  latitude   Decimal?        @db.Decimal(10, 7)
-  longitude  Decimal?        @db.Decimal(10, 7)
-  created_at DateTime        @default(now())
-  items      InventoryItem[]
-  receipts   Receipt[]
+  latitude          Decimal?        @db.Decimal(10, 7)
+  longitude         Decimal?        @db.Decimal(10, 7)
+  created_at        DateTime        @default(now())
+  items             InventoryItem[]
+  receipts          Receipt[]
   shopping_sessions ShoppingSession[]
-  price_history ItemPriceHistory[]
-  restaurant Restaurant      @relation(fields: [restaurant_id], references: [id], onDelete: Cascade)
+  price_history     ItemPriceHistory[]
+  business          Business        @relation(fields: [business_id], references: [id], onDelete: Cascade)
 
-  @@unique([restaurant_id, name])
-  @@unique([restaurant_id, google_place_id])
-  @@index([restaurant_id])
+  @@unique([business_id, name])
+  @@unique([business_id, google_place_id])
+  @@index([business_id])
   @@map("suppliers")
 }
 
 model InventoryItem {
   id             String    @id @default(uuid())
-  restaurant_id  String
+  business_id    String
   name           String
   category_id    String?
   unit           UnitType  @default(each)
@@ -186,13 +216,14 @@ model InventoryItem {
   supplier     Supplier?              @relation(fields: [supplier_id], references: [id], onDelete: SetNull)
   barcodes     ItemBarcode[]
   aliases      ItemAlias[]
+  receipt_aliases ReceiptItemAlias[]
   transactions InventoryTransaction[]
   line_items   ReceiptLineItem[]
   shopping_session_items ShoppingSessionItem[]
   price_history ItemPriceHistory[]
-  restaurant  Restaurant            @relation(fields: [restaurant_id], references: [id], onDelete: Cascade)
+  business     Business               @relation(fields: [business_id], references: [id], onDelete: Cascade)
 
-  @@index([restaurant_id])
+  @@index([business_id])
   @@index([category_id])
   @@index([supplier_id])
   @@map("inventory_items")
@@ -200,16 +231,16 @@ model InventoryItem {
 
 model ItemBarcode {
   id                String        @id @default(uuid())
-  restaurant_id     String
+  business_id       String
   inventory_item_id String
   barcode           String
   created_at        DateTime      @default(now())
 
   inventory_item InventoryItem @relation(fields: [inventory_item_id], references: [id], onDelete: Cascade)
-  restaurant     Restaurant    @relation(fields: [restaurant_id], references: [id], onDelete: Cascade)
+  business       Business      @relation(fields: [business_id], references: [id], onDelete: Cascade)
 
-  @@unique([restaurant_id, barcode])
-  @@index([restaurant_id])
+  @@unique([business_id, barcode])
+  @@index([business_id])
   @@index([inventory_item_id])
   @@map("item_barcodes")
 }
@@ -228,10 +259,76 @@ model ItemAlias {
   @@map("item_aliases")
 }
 
+model ReceiptItemAlias {
+  id                String          @id @default(uuid())
+  business_id       String
+  google_place_id   String
+  alias_text        String
+  inventory_item_id String
+  confidence        MatchConfidence @default(high)
+  created_at        DateTime        @default(now())
+
+  business       Business       @relation(fields: [business_id], references: [id], onDelete: Cascade)
+  inventory_item InventoryItem  @relation(fields: [inventory_item_id], references: [id], onDelete: Cascade)
+
+  @@unique([business_id, google_place_id, alias_text])
+  @@index([business_id, google_place_id])
+  @@index([inventory_item_id])
+  @@map("receipt_item_aliases")
+}
+
+model GlobalBarcodeCatalog {
+  id                 String                  @id @default(uuid())
+  barcode_normalized String                  @unique
+  gtin_format        String?
+  resolution_status  BarcodeResolutionStatus @default(unresolved)
+  canonical_title    String?
+  brand              String?
+  size_text          String?
+  category_hint      String?
+  image_url          String?
+  confidence         MatchConfidence         @default(none)
+  source_provider    BarcodeSourceProvider?
+  source_updated_at  DateTime?
+  first_seen_at      DateTime                @default(now())
+  last_seen_at       DateTime                @default(now())
+  retry_after_at     DateTime?
+  failure_count      Int                     @default(0)
+
+  resolution_events BarcodeResolutionEvent[]
+
+  @@index([resolution_status])
+  @@index([retry_after_at])
+  @@index([source_provider])
+  @@map("global_barcode_catalog")
+}
+
+model BarcodeResolutionEvent {
+  id                         String                       @id @default(uuid())
+  barcode_catalog_id         String?
+  barcode_normalized         String
+  provider                   BarcodeSourceProvider
+  outcome                    BarcodeResolutionEventOutcome
+  confidence                 MatchConfidence              @default(none)
+  normalized_fields_snapshot Json?
+  error_code                 String?
+  duration_ms                Int?
+  created_at                 DateTime                     @default(now())
+
+  barcode_catalog GlobalBarcodeCatalog? @relation(fields: [barcode_catalog_id], references: [id], onDelete: SetNull)
+
+  @@index([barcode_catalog_id])
+  @@index([barcode_normalized])
+  @@index([provider, outcome])
+  @@index([created_at])
+  @@map("barcode_resolution_events")
+}
+
 model Receipt {
   id          String        @id @default(uuid())
-  restaurant_id String
+  business_id String
   image_url   String?
+  image_path  String?       /// Private bucket path for the original receipt photo
   raw_text    String?
   parsed_data Json?
   supplier_id String?
@@ -243,9 +340,9 @@ model Receipt {
   line_items   ReceiptLineItem[]
   transactions InventoryTransaction[]
   shopping_session ShoppingSession?
-  restaurant   Restaurant            @relation(fields: [restaurant_id], references: [id], onDelete: Cascade)
+  business     Business               @relation(fields: [business_id], references: [id], onDelete: Cascade)
 
-  @@index([restaurant_id])
+  @@index([business_id])
   @@index([status])
   @@map("receipts")
 }
@@ -278,7 +375,7 @@ model ReceiptLineItem {
 
 model InventoryTransaction {
   id                   String          @id @default(uuid())
-  restaurant_id        String
+  business_id          String
   inventory_item_id    String
   transaction_type     TransactionType @default(purchase)
   quantity             Decimal
@@ -298,9 +395,9 @@ model InventoryTransaction {
   receipt         Receipt?         @relation(fields: [receipt_id], references: [id], onDelete: SetNull)
   receipt_line_item ReceiptLineItem? @relation(fields: [receipt_line_item_id], references: [id], onDelete: SetNull)
   shopping_session ShoppingSession? @relation(fields: [shopping_session_id], references: [id], onDelete: SetNull)
-  restaurant      Restaurant       @relation(fields: [restaurant_id], references: [id], onDelete: Cascade)
+  business        Business         @relation(fields: [business_id], references: [id], onDelete: Cascade)
 
-  @@index([restaurant_id])
+  @@index([business_id])
   @@index([inventory_item_id])
   @@index([created_at(sort: Desc)])
   @@index([receipt_id])
@@ -312,7 +409,7 @@ model InventoryTransaction {
 
 model ShoppingSession {
   id              String                @id @default(uuid())
-  restaurant_id   String
+  business_id     String
   supplier_id     String?
   google_place_id String?
   store_name      String?
@@ -337,9 +434,9 @@ model ShoppingSession {
   transactions InventoryTransaction[]
   price_history ItemPriceHistory[]
   financial_transactions FinancialTransaction[]
-  restaurant Restaurant                @relation(fields: [restaurant_id], references: [id], onDelete: Cascade)
+  business     Business                @relation(fields: [business_id], references: [id], onDelete: Cascade)
 
-  @@index([restaurant_id])
+  @@index([business_id])
   @@index([status])
   @@index([supplier_id])
   @@index([google_place_id])
@@ -380,7 +477,7 @@ model ShoppingSessionItem {
 
 model ItemPriceHistory {
   id                  String   @id @default(uuid())
-  restaurant_id       String
+  business_id         String
   inventory_item_id   String
   supplier_id         String?
   shopping_session_id String?
@@ -390,9 +487,9 @@ model ItemPriceHistory {
   inventory_item   InventoryItem    @relation(fields: [inventory_item_id], references: [id], onDelete: Cascade)
   supplier         Supplier?        @relation(fields: [supplier_id], references: [id], onDelete: SetNull)
   shopping_session ShoppingSession? @relation(fields: [shopping_session_id], references: [id], onDelete: SetNull)
-  restaurant       Restaurant       @relation(fields: [restaurant_id], references: [id], onDelete: Cascade)
+  business         Business         @relation(fields: [business_id], references: [id], onDelete: Cascade)
 
-  @@index([restaurant_id])
+  @@index([business_id])
   @@index([inventory_item_id, recorded_at(sort: Desc)])
   @@index([supplier_id])
   @@map("item_price_history")
@@ -400,7 +497,7 @@ model ItemPriceHistory {
 
 model FinancialTransaction {
   id                  String                   @id @default(uuid())
-  restaurant_id       String
+  business_id         String
   type                FinancialTransactionType
   source              FinancialSource
   amount              Decimal                  @db.Decimal(10, 2)
@@ -412,10 +509,10 @@ model FinancialTransaction {
   created_at          DateTime                 @default(now())
 
   shopping_session ShoppingSession? @relation(fields: [shopping_session_id], references: [id], onDelete: SetNull)
-  restaurant       Restaurant       @relation(fields: [restaurant_id], references: [id], onDelete: Cascade)
+  business         Business         @relation(fields: [business_id], references: [id], onDelete: Cascade)
 
-  @@index([restaurant_id])
-  @@unique([restaurant_id, source, external_id])
+  @@index([business_id])
+  @@unique([business_id, source, external_id])
   @@index([type, occurred_at(sort: Desc)])
   @@index([source, occurred_at(sort: Desc)])
   @@index([occurred_at(sort: Desc)])
@@ -424,7 +521,7 @@ model FinancialTransaction {
 
 model ExternalSyncLog {
   id              String          @id @default(uuid())
-  restaurant_id   String
+  business_id     String
   source          FinancialSource
   status          SyncStatus
   started_at      DateTime        @default(now())
@@ -433,43 +530,46 @@ model ExternalSyncLog {
   error_message   String?
   period_start    DateTime?
   period_end      DateTime?
-  restaurant      Restaurant      @relation(fields: [restaurant_id], references: [id], onDelete: Cascade)
+  business        Business        @relation(fields: [business_id], references: [id], onDelete: Cascade)
 
-  @@index([restaurant_id])
+  @@index([business_id])
   @@index([source, started_at(sort: Desc)])
   @@map("external_sync_logs")
 }
 
 model Contact {
-  id            String   @id @default(uuid())
-  restaurant_id String
-  name          String
-  company       String?
-  role          String?
-  phone         String?
-  email         String?
-  website       String?
-  notes         String?
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
+  id          String   @id @default(uuid())
+  business_id String
+  name        String
+  company     String?
+  role        String?
+  phone       String?
+  email       String?
+  website     String?
+  notes       String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
 
-  restaurant Restaurant @relation(fields: [restaurant_id], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [business_id], references: [id], onDelete: Cascade)
 
-  @@index([restaurant_id])
+  @@index([business_id])
   @@map("contacts")
 }
 
-model Restaurant {
+model Business {
   id             String                 @id @default(uuid())
   name           String
+  industry_type  IndustryType           @default(general)
   created_at     DateTime               @default(now())
   updated_at     DateTime               @updatedAt
-  memberships    UserRestaurant[]
-  invites        RestaurantInvite[]
+  memberships    UserBusiness[]
+  invites        BusinessInvite[]
+  modules        BusinessModule[]
   categories     Category[]
   suppliers      Supplier[]
   inventory_items InventoryItem[]
   item_barcodes  ItemBarcode[]
+  receipt_item_aliases ReceiptItemAlias[]
   receipts       Receipt[]
   inventory_transactions InventoryTransaction[]
   shopping_sessions ShoppingSession[]
@@ -478,35 +578,49 @@ model Restaurant {
   external_sync_logs ExternalSyncLog[]
   contacts       Contact[]
 
-  @@map("restaurants")
+  @@map("businesses")
 }
 
-model UserRestaurant {
-  user_id       String
-  restaurant_id String
-  role          RestaurantRole @default(owner)
-  created_at    DateTime       @default(now())
-  restaurant    Restaurant     @relation(fields: [restaurant_id], references: [id], onDelete: Cascade)
+model BusinessModule {
+  id          String   @id @default(uuid())
+  business_id String
+  module_id   String
+  enabled     Boolean  @default(true)
+  config      Json?
+  created_at  DateTime @default(now())
+  business    Business @relation(fields: [business_id], references: [id], onDelete: Cascade)
 
-  @@id([user_id, restaurant_id])
-  @@index([restaurant_id])
-  @@map("user_restaurants")
+  @@unique([business_id, module_id])
+  @@index([business_id])
+  @@map("business_modules")
 }
 
-model RestaurantInvite {
-  id                 String                @id @default(uuid())
-  restaurant_id      String
+model UserBusiness {
+  user_id     String
+  business_id String
+  role        BusinessRole @default(owner)
+  created_at  DateTime     @default(now())
+  business    Business     @relation(fields: [business_id], references: [id], onDelete: Cascade)
+
+  @@id([user_id, business_id])
+  @@index([business_id])
+  @@map("user_businesses")
+}
+
+model BusinessInvite {
+  id                 String             @id @default(uuid())
+  business_id        String
   email              String
-  role               RestaurantRole        @default(staff)
-  token              String                @unique
+  role               BusinessRole       @default(staff)
+  token              String             @unique
   invited_by_user_id String
-  status             RestaurantInviteStatus @default(pending)
+  status             BusinessInviteStatus @default(pending)
   expires_at         DateTime
   accepted_at        DateTime?
-  created_at         DateTime              @default(now())
-  restaurant         Restaurant            @relation(fields: [restaurant_id], references: [id], onDelete: Cascade)
+  created_at         DateTime           @default(now())
+  business           Business           @relation(fields: [business_id], references: [id], onDelete: Cascade)
 
-  @@index([restaurant_id, status])
+  @@index([business_id, status])
   @@index([email])
-  @@map("restaurant_invites")
+  @@map("business_invites")
 }

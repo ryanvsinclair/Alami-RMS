@@ -2,11 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { PageHeader } from "@/components/nav/page-header";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { getAllInventoryLevels } from "@/app/actions/transactions";
+import { getAllInventoryLevels } from "@/app/actions/core/transactions";
 
 interface InventoryLevel {
   id: string;
@@ -43,7 +42,6 @@ export default function InventoryPage() {
 
   return (
     <>
-      <PageHeader title="Inventory" />
       <div className="p-4 space-y-4">
         <Input
           placeholder="Search inventory..."

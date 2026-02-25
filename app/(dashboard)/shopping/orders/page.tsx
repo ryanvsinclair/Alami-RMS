@@ -2,14 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { PageHeader } from "@/components/nav/page-header";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   getCommittedShoppingSessions,
   reorderShoppingSession,
-} from "@/app/actions/shopping";
+} from "@/app/actions/modules/shopping";
 
 interface PastSession {
   id: string;
@@ -63,7 +62,6 @@ export default function PastOrdersPage() {
 
   return (
     <>
-      <PageHeader title="Past Orders" backHref="/shopping" />
       <div className="p-4 space-y-3">
         {loading && (
           <p className="text-sm text-muted text-center py-8">Loading orders...</p>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PageHeader } from "@/components/nav/page-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +10,7 @@ import {
   getPendingInvites,
   getStaffMembers,
   revokeStaffInvite,
-} from "@/app/actions/staff";
+} from "@/app/actions/core/staff";
 
 type Member = {
   user_id: string;
@@ -90,7 +89,6 @@ export default function StaffPage() {
 
   return (
     <>
-      <PageHeader title="Staff" />
       <div className="space-y-4 p-4 pb-28">
         <Card className="space-y-3">
           <p className="text-sm font-semibold text-foreground">Invite Staff</p>

@@ -2,14 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { PageHeader } from "@/components/nav/page-header";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   getShoppingSession,
   reorderShoppingSession,
-} from "@/app/actions/shopping";
+} from "@/app/actions/modules/shopping";
 
 interface SessionItem {
   id: string;
@@ -88,7 +87,6 @@ export default function OrderDetailPage() {
   if (loading) {
     return (
       <>
-        <PageHeader title="Order Details" backHref="/shopping/orders" />
         <div className="p-6 text-sm text-muted">Loading...</div>
       </>
     );
@@ -97,7 +95,6 @@ export default function OrderDetailPage() {
   if (!session) {
     return (
       <>
-        <PageHeader title="Order Details" backHref="/shopping/orders" />
         <div className="p-6 text-sm text-danger">{error || "Order not found"}</div>
       </>
     );
@@ -113,7 +110,6 @@ export default function OrderDetailPage() {
 
   return (
     <>
-      <PageHeader title={session.store_name ?? "Order Details"} backHref="/shopping/orders" />
       <div className="p-4 space-y-4">
         {/* Store + Summary */}
         <Card className="p-5">

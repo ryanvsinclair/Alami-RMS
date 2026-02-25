@@ -2,14 +2,15 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { PageHeader } from "@/components/nav/page-header";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   addShoppingSessionItem,
+  addShoppingSessionItemByBarcodeQuick,
   addShelfLabelItem,
+  cancelShoppingSession,
   commitShoppingSession,
   getActiveShoppingSession,
   scanAndReconcileReceipt,
@@ -18,12 +19,12 @@ import {
   scanShelfLabel,
   startShoppingSession,
   updateShoppingSessionItem,
-} from "@/app/actions/shopping";
+} from "@/app/actions/modules/shopping";
 import { ItemNotFound } from "@/components/flows/item-not-found";
-import type { ShelfLabelResult } from "@/lib/parsers/shelf-label";
-import type { MatchResult } from "@/lib/matching/engine";
-import { uploadReceiptImageAction } from "@/app/actions/upload";
-import { compressImage } from "@/lib/utils/compress-image";
+import type { ShelfLabelResult } from "@/core/parsers/shelf-label";
+import type { MatchResult } from "@/core/matching/engine";
+import { uploadReceiptImageAction } from "@/app/actions/core/upload";
+import { compressImage } from "@/core/utils/compress-image";
 import {
   autocompletePlaces,
   getPlaceDetails,
@@ -31,6 +32,7 @@ import {
   type PlaceDetails,
   type PlacePrediction,
 } from "@/lib/google/places";
+import { useTerm } from "@/lib/config/context";
 
 type SessionStatus = "draft" | "reconciling" | "ready" | "committed" | "cancelled";
 
@@ -60,11 +62,13 @@ interface ShoppingItem {
 interface ShoppingSession {
   id: string;
   status: SessionStatus;
+  receipt_id: string | null;
   store_name: string | null;
   store_address: string | null;
   store_lat: number | string | null;
   store_lng: number | string | null;
   staged_subtotal: number | string | null;
+  receipt_subtotal: number | string | null;
   receipt_total: number | string | null;
   tax_total: number | string | null;
   items: ShoppingItem[];
@@ -99,8 +103,22 @@ function formatMoney(value: number | string | null | undefined): string {
   return `$${asNumber(value).toFixed(2)}`;
 }
 
+function roundMoney(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+function extractEmbeddedUpc(rawName: string): string | null {
+  const match = rawName.match(/\[UPC:(\d{8,14})\]$/);
+  return match ? match[1] : null;
+}
+
+function displayShoppingItemName(rawName: string): string {
+  return extractEmbeddedUpc(rawName) ? "Unresolved Item" : rawName;
+}
+
 export default function ShoppingPage() {
   const router = useRouter();
+  const shoppingTerm = useTerm("shopping");
   const [session, setSession] = useState<ShoppingSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -109,10 +127,21 @@ export default function ShoppingPage() {
   const [itemName, setItemName] = useState("");
   const [qty, setQty] = useState("1");
   const [price, setPrice] = useState("");
+  const [quickBarcode, setQuickBarcode] = useState("");
+  const [quickScanLoading, setQuickScanLoading] = useState(false);
+  const [quickScanFeedback, setQuickScanFeedback] = useState<{
+    status: "resolved" | "unresolved";
+    display_name: string;
+    normalized_barcode: string;
+    deferred_resolution: boolean;
+  } | null>(null);
 
   const [receiptScanning, setReceiptScanning] = useState(false);
   const [commitLoading, setCommitLoading] = useState(false);
+  const [cancelLoading, setCancelLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const quickBarcodeInputRef = useRef<HTMLInputElement>(null);
+  const receiptSectionRef = useRef<HTMLDivElement>(null);
 
   // Shelf label scan state
   type ScanStep = "idle" | "scanning" | "matched" | "not_found";
@@ -142,11 +171,47 @@ export default function ShoppingPage() {
     return session.items
       .filter((item) => item.resolution !== "skip")
       .reduce((sum, item) => {
-        const receipt = asNumber(item.receipt_line_total);
-        if (receipt > 0) return sum + receipt;
+        const useReceipt =
+          item.origin === "receipt" || item.resolution === "accept_receipt";
+        if (useReceipt) {
+          const receipt = asNumber(item.receipt_line_total);
+          if (receipt > 0) return sum + receipt;
+        }
         return sum + asNumber(item.staged_line_total);
       }, 0);
   }, [session]);
+
+  const selectedTotalWithTax = useMemo(() => {
+    if (!session) return 0;
+    return roundMoney(basketTotal + asNumber(session.tax_total));
+  }, [basketTotal, session]);
+
+  const receiptTotalDelta = useMemo(() => {
+    if (!session?.receipt_id || session.receipt_total == null) return null;
+    return roundMoney(selectedTotalWithTax - asNumber(session.receipt_total));
+  }, [selectedTotalWithTax, session]);
+
+  const receiptSubtotalDelta = useMemo(() => {
+    if (!session?.receipt_id || session.receipt_subtotal == null) return null;
+    return roundMoney(basketTotal - asNumber(session.receipt_subtotal));
+  }, [basketTotal, session]);
+
+  const receiptTotalMissing = Boolean(session?.receipt_id) && session?.receipt_total == null;
+  const receiptSubtotalMismatch =
+    Boolean(session?.receipt_id) &&
+    receiptSubtotalDelta != null &&
+    Math.abs(receiptSubtotalDelta) > 0.01;
+  const receiptTotalMismatch =
+    Boolean(session?.receipt_id) &&
+    (
+      receiptTotalMissing ||
+      receiptTotalDelta == null ||
+      Math.abs(receiptTotalDelta) > 0.01 ||
+      receiptSubtotalMismatch
+    );
+  const receiptScanIncomplete =
+    Boolean(session?.receipt_id) && session?.status !== "ready";
+  const blockingIssueCount = unresolvedCount + (receiptTotalMismatch ? 1 : 0);
 
   useEffect(() => {
     async function load() {
@@ -243,6 +308,28 @@ export default function ShoppingPage() {
     }
   }
 
+  async function handleQuickBarcodeAdd() {
+    if (!session || !quickBarcode.trim()) return;
+    setQuickScanLoading(true);
+    setError("");
+    try {
+      const result = await addShoppingSessionItemByBarcodeQuick({
+        session_id: session.id,
+        barcode: quickBarcode.trim(),
+      });
+      setSession(result.session as ShoppingSession);
+      setQuickScanFeedback(result.quick_scan);
+      setQuickBarcode("");
+      if (typeof window !== "undefined") {
+        window.requestAnimationFrame(() => quickBarcodeInputRef.current?.focus());
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to add barcode item");
+    } finally {
+      setQuickScanLoading(false);
+    }
+  }
+
   async function handleUpdateItem(item: ShoppingItem, updates: { quantity?: number; unit_price?: number | null; name?: string }) {
     setSaving(true);
     setError("");
@@ -310,8 +397,8 @@ export default function ShoppingPage() {
     try {
       const updated = await resolveShoppingSessionItem(itemId, { resolution });
       setSession(updated as ShoppingSession);
-    } catch {
-      setError("Failed to resolve mismatch");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to resolve mismatch");
     } finally {
       setSaving(false);
     }
@@ -324,11 +411,37 @@ export default function ShoppingPage() {
     try {
       await commitShoppingSession(session.id);
       setSession(null);
-    } catch {
-      setError("Failed to commit shopping session");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to commit shopping session");
     } finally {
       setCommitLoading(false);
     }
+  }
+
+  async function handleCancelSession() {
+    if (!session) return;
+    const confirmed = typeof window === "undefined"
+      ? true
+      : window.confirm("Cancel this shopping session? Your staged items and reconciliation state will be discarded.");
+    if (!confirmed) return;
+
+    setCancelLoading(true);
+    setError("");
+    try {
+      await cancelShoppingSession(session.id);
+      setSession(null);
+      setStoreQuery("");
+      setSelectedStore(null);
+      setSuggestions([]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to cancel session");
+    } finally {
+      setCancelLoading(false);
+    }
+  }
+
+  function handleConcludeQuickShop() {
+    receiptSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function resetScan() {
@@ -409,18 +522,13 @@ export default function ShoppingPage() {
 
   if (loading) {
     return (
-      <>
-        <PageHeader title="Shopping" />
-        <div className="p-6 text-sm text-muted">Loading Shopping Mode...</div>
-      </>
+      <div className="p-6 text-sm text-muted">Loading Shopping Mode...</div>
     );
   }
 
   if (!session) {
     return (
-      <>
-        <PageHeader title="Choose Store" />
-        <div className="p-4 space-y-4">
+      <div className="p-4 space-y-4">
           <Card className="p-5">
             <p className="text-sm font-semibold mb-1">Start Shopping Session</p>
             <p className="text-xs text-muted mb-4">
@@ -490,15 +598,13 @@ export default function ShoppingPage() {
           >
             View Past Orders
           </button>
-        </div>
-      </>
+      </div>
     );
   }
 
   return (
     <>
-      <PageHeader title={session.store_name ?? "Shopping"} />
-      <div className="p-4 pb-36 space-y-4">
+      <div className="p-4 pb-44 space-y-4">
         <Card className="p-5">
           <div className="flex items-center justify-between gap-3">
             <div>
@@ -509,6 +615,16 @@ export default function ShoppingPage() {
             <Badge variant={session.status === "ready" ? "success" : "warning"}>
               {session.status}
             </Badge>
+          </div>
+          <div className="mt-3 flex justify-end">
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={handleCancelSession}
+              loading={cancelLoading}
+            >
+              Cancel Session
+            </Button>
           </div>
           <div className="grid grid-cols-3 gap-2 mt-4">
             <div>
@@ -521,9 +637,101 @@ export default function ShoppingPage() {
             </div>
             <div>
               <p className="text-xs text-muted">Issues</p>
-              <p className="font-bold">{unresolvedCount}</p>
+              <p className="font-bold">{blockingIssueCount}</p>
             </div>
           </div>
+          {receiptScanIncomplete && !receiptScanning && (
+            <div className="mt-3 rounded-xl border border-amber-400/30 bg-amber-500/10 p-3">
+              <p className="text-sm font-semibold text-amber-300">
+                Receipt scan incomplete
+              </p>
+              <p className="mt-1 text-xs text-amber-200/90">
+                {receiptTotalMismatch
+                  ? (
+                      receiptTotalMissing
+                        ? "We could not read the receipt total from this scan. Please rescan the receipt before committing."
+                        : `Selected items + tax = ${formatMoney(selectedTotalWithTax)}, but scanned receipt total = ${formatMoney(session.receipt_total)}. Please rescan the receipt before committing.`
+                    )
+                  : "This receipt scan was not 100% successful. Please rescan the receipt before committing."}
+              </p>
+              {receiptTotalMismatch && receiptSubtotalMismatch && session.receipt_subtotal != null && (
+                <p className="mt-1 text-xs text-amber-200/80">
+                  Selected subtotal = {formatMoney(basketTotal)}; scanned subtotal = {formatMoney(session.receipt_subtotal)}.
+                </p>
+              )}
+              <Button
+                variant="secondary"
+                size="sm"
+                className="mt-3"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                Rescan Receipt
+              </Button>
+            </div>
+          )}
+        </Card>
+
+        <Card className="p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold">Quick Shop (Barcode)</p>
+              <p className="mt-1 text-xs text-muted">
+                Scan UPC/EAN, save to cart, scan next item. This uses a quick internal lookup while shopping and defers expensive fallback resolution until after receipt scan.
+              </p>
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleConcludeQuickShop}
+              disabled={receiptScanning}
+            >
+              Conclude Quick Shop
+            </Button>
+          </div>
+
+          <div className="mt-3 flex items-end gap-2">
+            <div className="flex-1">
+              <Input
+                ref={quickBarcodeInputRef}
+                label="Scan UPC / EAN"
+                placeholder="Scan or type barcode..."
+                value={quickBarcode}
+                onChange={(e) => setQuickBarcode(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key !== "Enter") return;
+                  e.preventDefault();
+                  if (!quickScanLoading) void handleQuickBarcodeAdd();
+                }}
+              />
+            </div>
+            <Button onClick={handleQuickBarcodeAdd} loading={quickScanLoading}>
+              Scan & Save
+            </Button>
+          </div>
+
+          {quickScanFeedback && (
+            <div
+              className={`mt-3 rounded-xl border p-3 ${
+                quickScanFeedback.status === "resolved"
+                  ? "border-emerald-400/25 bg-emerald-500/10"
+                  : "border-amber-400/25 bg-amber-500/10"
+              }`}
+            >
+              <p className="text-sm font-semibold">
+                {quickScanFeedback.status === "resolved"
+                  ? quickScanFeedback.display_name
+                  : "Unresolved Item"}
+              </p>
+              <p className="mt-1 text-xs text-muted">
+                UPC {quickScanFeedback.normalized_barcode}
+              </p>
+              {quickScanFeedback.deferred_resolution && (
+                <p className="mt-1 text-xs text-muted">
+                  Added as a provisional cart item. Receipt scan remains the authoritative phase for final matching.
+                </p>
+              )}
+            </div>
+          )}
         </Card>
 
         <Card className="p-5">
@@ -659,12 +867,15 @@ export default function ShoppingPage() {
             <Card key={item.id} className="p-4">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="font-semibold truncate">{item.raw_name}</p>
+                  <p className="font-semibold truncate">{displayShoppingItemName(item.raw_name)}</p>
                   <div className="flex gap-1 mt-1">
                     <Badge variant={item.origin === "staged" ? "info" : "default"}>{item.origin}</Badge>
                     <Badge variant={reconVariant[item.reconciliation_status]}>
                       {reconLabel[item.reconciliation_status]}
                     </Badge>
+                    {extractEmbeddedUpc(item.raw_name) && (
+                      <Badge variant="warning">UPC {extractEmbeddedUpc(item.raw_name)}</Badge>
+                    )}
                   </div>
                 </div>
                 <button
@@ -703,17 +914,33 @@ export default function ShoppingPage() {
               </div>
 
               {item.reconciliation_status !== "exact" && item.resolution === "pending" && (
-                <div className="grid grid-cols-3 gap-1 mt-3">
-                  <Button size="sm" variant="secondary" onClick={() => handleResolve(item.id, "accept_staged")}>
-                    Keep Staged
-                  </Button>
-                  <Button size="sm" variant="secondary" onClick={() => handleResolve(item.id, "accept_receipt")}>
-                    Use Receipt
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => handleResolve(item.id, "skip")}>
-                    Skip
-                  </Button>
-                </div>
+                receiptScanIncomplete ? (
+                  <div className="mt-3 rounded-xl border border-amber-400/25 bg-amber-500/10 p-3">
+                    <p className="text-xs text-amber-200/90">
+                      Receipt scan is incomplete. Rescan the receipt instead of resolving this item manually.
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="mt-2"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      Rescan Receipt
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 gap-1 mt-3">
+                    <Button size="sm" variant="secondary" onClick={() => handleResolve(item.id, "accept_staged")}>
+                      Keep Staged
+                    </Button>
+                    <Button size="sm" variant="secondary" onClick={() => handleResolve(item.id, "accept_receipt")}>
+                      Use Receipt
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => handleResolve(item.id, "skip")}>
+                      Skip
+                    </Button>
+                  </div>
+                )
               )}
             </Card>
           ))}
@@ -722,10 +949,11 @@ export default function ShoppingPage() {
           )}
         </div>
 
-        <Card className="p-5">
+        <div ref={receiptSectionRef}>
+          <Card className="p-5">
           <p className="text-sm font-semibold mb-2">Checkout Receipt</p>
           <p className="text-xs text-muted mb-3">
-            Take a photo of your receipt to auto-scan and reconcile items.
+            Take a photo of your receipt to auto-scan and reconcile items. This is the authoritative phase for final matching and deferred fallback resolution.
           </p>
           <input
             ref={fileInputRef}
@@ -747,12 +975,13 @@ export default function ShoppingPage() {
               Processing with TabScanner — this may take a few seconds...
             </p>
           )}
-        </Card>
+          </Card>
+        </div>
 
         {error && <p className="text-sm text-danger">{error}</p>}
       </div>
 
-      <div className="fixed left-0 right-0 bottom-16 z-40 px-3">
+      <div className="fixed left-0 right-0 bottom-24 z-40 px-3">
         <div className="max-w-lg mx-auto rounded-2xl border border-white/18 bg-[linear-gradient(160deg,rgba(8,24,43,0.9)_0%,rgba(5,17,32,0.86)_55%,rgba(7,18,34,0.9)_100%)] p-3 text-white shadow-[0_18px_42px_rgba(3,8,18,0.5),inset_0_1px_0_rgba(255,255,255,0.2)] backdrop-blur-xl">
           <div className="flex items-center justify-between gap-3">
             <div>
@@ -763,11 +992,18 @@ export default function ShoppingPage() {
               className="min-w-[160px]"
               onClick={handleCommit}
               loading={commitLoading}
-              disabled={session.status !== "ready"}
+              disabled={session.status !== "ready" || receiptTotalMismatch}
             >
               Confirm & Commit
             </Button>
           </div>
+          {session.receipt_id && (
+            <p className="mt-2 text-xs text-white/65">
+              Receipt total: {formatMoney(session.receipt_total)}{" "}
+              <span className="text-white/35">|</span>{" "}
+              Selected + tax: {formatMoney(selectedTotalWithTax)}
+            </p>
+          )}
         </div>
       </div>
     </>

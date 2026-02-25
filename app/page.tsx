@@ -2,9 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { getDashboardSummary, type DashboardPeriod } from "@/app/actions/financial";
-import { signOutAction } from "@/app/actions/auth";
+import { getDashboardSummary, type DashboardPeriod } from "@/app/actions/core/financial";
+import { getCurrentBusinessConfigAction } from "@/app/actions/core/modules";
 import { BottomNav } from "@/components/nav/bottom-nav";
+import { BusinessConfigProvider } from "@/lib/config/context";
+import { getTerminology } from "@/lib/config/terminology";
+import type { IndustryType } from "@/lib/generated/prisma/client";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -15,16 +18,21 @@ interface FinancialTx {
   amount: number | string;
   description: string | null;
   occurred_at: string;
-  shopping_session: { store_name: string | null; store_address: string | null } | null;
+  shopping_session: { store_name: string | null; store_address: string | null; receipt_id: string | null } | null;
 }
 
 interface DashboardData {
   period: DashboardPeriod;
-  restaurantName: string;
+  businessName: string;
   income: number;
   expenses: number;
   net: number;
   transactions: FinancialTx[];
+}
+
+interface BusinessConfigData {
+  industryType: IndustryType;
+  enabledModules: string[];
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -130,8 +138,23 @@ function Skeleton({ className = "" }: { className?: string }) {
 export default function HomePage() {
   const [period, setPeriod] = useState<DashboardPeriod>("month");
   const [data, setData] = useState<DashboardData | null>(null);
+  const [industryType, setIndustryType] = useState<IndustryType>("general");
+  const [enabledModules, setEnabledModules] = useState<string[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    getCurrentBusinessConfigAction()
+      .then((config) => {
+        const cfg = config as BusinessConfigData;
+        setIndustryType(cfg.industryType);
+        setEnabledModules(cfg.enabledModules);
+      })
+      .catch(() => {
+        setIndustryType("general");
+        setEnabledModules(null);
+      });
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -146,48 +169,62 @@ export default function HomePage() {
   const expenses = data?.expenses ?? 0;
   const net = data?.net ?? 0;
   const maxBar = Math.max(income, expenses, 1);
+  const terminology = getTerminology(industryType);
 
   return (
-    <div className="min-h-screen bg-[#080d14] max-w-lg mx-auto pb-24">
-      {/* ── Header ─────────────────────────────────────────────────────── */}
-      <div className="px-5 pt-12 pb-6 flex items-center justify-between">
-        <div>
-          <p className="text-[11px] font-semibold text-white/40 uppercase tracking-widest mb-0.5">
-            Restaurant
-          </p>
-          <h1 className="text-xl font-bold text-white leading-none">{data?.restaurantName ?? "…"}</h1>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* Period pill switcher */}
-          <div className="flex items-center gap-1 bg-white/[0.07] rounded-2xl p-1">
-            {(["today", "week", "month"] as DashboardPeriod[]).map((p) => (
-              <button
-                key={p}
-                onClick={() => setPeriod(p)}
-                className={`px-3 py-1.5 rounded-xl text-[11px] font-semibold tracking-wide uppercase transition-all ${
-                  period === p
-                    ? "bg-[#06c167] text-white shadow-sm"
-                    : "text-white/50 hover:text-white/70"
-                }`}
-              >
-                {p === "today" ? "Day" : p === "week" ? "Wk" : "Mo"}
-              </button>
-            ))}
-          </div>
-          <form action={signOutAction}>
-            <button
-              type="submit"
-              className="h-9 rounded-xl border border-white/14 bg-white/8 px-3 text-[11px] font-semibold uppercase tracking-wide text-white/80"
+    <BusinessConfigProvider
+      config={{
+        industryType,
+        enabledModules: enabledModules ?? [],
+        terminology,
+      }}
+    >
+      <div className="min-h-screen bg-background text-foreground max-w-lg mx-auto pb-24">
+      <div className="px-4 pt-4">
+        <div className="mx-auto flex items-center gap-2">
+            <Link
+              href="/profile"
+              aria-label="Profile"
+              className="group relative grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full border border-white/18 bg-[radial-gradient(circle_at_30%_28%,#eedbc8_0%,#cfae93_36%,#6f5240_72%,#322821_100%)] shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_6px_16px_rgba(0,0,0,0.28)] transition-transform hover:scale-[1.02]"
             >
-              Logout
-            </button>
-          </form>
+              <svg className="h-5 w-5 text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+              </svg>
+              <span className="pointer-events-none absolute inset-0 rounded-full bg-[linear-gradient(180deg,rgba(255,255,255,0.14),rgba(255,255,255,0))]" />
+            </Link>
+
+            <div className="relative flex-1">
+              <svg
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/45"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2}
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-4.35-4.35m1.85-5.15a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z" />
+              </svg>
+              <input
+                type="search"
+                readOnly
+                placeholder="Search"
+                aria-label="Search (coming soon)"
+                className="h-10 w-full rounded-full border border-[rgba(128,164,202,0.22)] bg-[linear-gradient(180deg,rgba(10,24,42,0.9)_0%,rgba(8,19,34,0.92)_100%)] pl-9 pr-3 text-sm text-white/90 placeholder:text-white/35 outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+              />
+            </div>
+
+            <Link
+              href="/reports"
+              aria-label="Reports"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[rgba(128,164,202,0.22)] bg-[linear-gradient(180deg,rgba(10,24,42,0.9)_0%,rgba(8,19,34,0.92)_100%)] text-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-colors hover:border-white/20 hover:text-[#3de38d]"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 18.75V14.5m5.25 4.25V9.5m5.25 9.25V5.25" />
+              </svg>
+            </Link>
         </div>
       </div>
-
-      {/* ── Hero Balance Card ───────────────────────────────────────────── */}
-      <div className="mx-4">
+      {/* ── Header ─────────────────────────────────────────────────────── */}
+      <div className="mx-4 mt-4">
         <div
           className="rounded-3xl p-6 relative overflow-hidden"
           style={{
@@ -206,9 +243,26 @@ export default function HomePage() {
             }}
           />
 
-          <p className="text-[11px] font-semibold text-white/50 uppercase tracking-widest mb-1">
-            Net Position
-          </p>
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <p className="text-[11px] font-semibold text-white/50 uppercase tracking-widest">
+              Net Position
+            </p>
+            <div className="flex items-center gap-1 rounded-2xl bg-white/[0.07] p-1">
+              {(["today", "week", "month"] as DashboardPeriod[]).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setPeriod(p)}
+                  className={`px-3 py-1.5 rounded-xl text-[11px] font-semibold tracking-wide uppercase transition-all ${
+                    period === p
+                      ? "bg-[#06c167] text-white shadow-sm"
+                      : "text-white/50 hover:text-white/70"
+                  }`}
+                >
+                  {p === "today" ? "Day" : p === "week" ? "Wk" : "Mo"}
+                </button>
+              ))}
+            </div>
+          </div>
 
           {loading ? (
             <>
@@ -386,11 +440,12 @@ export default function HomePage() {
                 tx.description ??
                 tx.shopping_session?.store_name ??
                 meta.label;
+              const receiptId = tx.shopping_session?.receipt_id;
 
-              return (
+              const card = (
                 <div
                   key={tx.id}
-                  className="flex items-center gap-3 rounded-2xl px-4 py-3.5"
+                  className={`flex items-center gap-3 rounded-2xl px-4 py-3.5 ${receiptId ? "active:scale-[0.98] transition-transform" : ""}`}
                   style={{
                     background: "rgba(255,255,255,0.04)",
                     border: "1px solid rgba(255,255,255,0.06)",
@@ -417,7 +472,20 @@ export default function HomePage() {
                     {isIncome ? "+" : "-"}
                     {formatMoney(amount)}
                   </p>
+                  {receiptId && (
+                    <svg className="w-4 h-4 text-white/20 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                    </svg>
+                  )}
                 </div>
+              );
+
+              return receiptId ? (
+                <Link key={tx.id} href={`/receive/receipt/${receiptId}`}>
+                  {card}
+                </Link>
+              ) : (
+                card
               );
             })}
           </div>
@@ -425,7 +493,8 @@ export default function HomePage() {
       </div>
 
       {/* ── Bottom Nav ─────────────────────────────────────────────────── */}
-      <BottomNav />
-    </div>
+      <BottomNav enabledModules={enabledModules ?? undefined} />
+      </div>
+    </BusinessConfigProvider>
   );
 }

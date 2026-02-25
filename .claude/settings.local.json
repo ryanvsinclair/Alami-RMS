@@ -7,7 +7,8 @@
       "Bash(ls:*)",
       "Bash(npx prisma generate:*)",
       "Bash(npx prisma migrate deploy:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(mkdir \"c:\\Users\\XFlor\\OneDrive\\Desktop\\alamirms\\prisma\\migrations\\20260224200000_identity_refactor_business\")"
     ]
   }
 }

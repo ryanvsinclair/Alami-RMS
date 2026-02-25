@@ -1,18 +1,18 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { PageHeader } from "@/components/nav/page-header";
+
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ItemNotFound } from "@/components/flows/item-not-found";
-import { ingestByPhoto } from "@/app/actions/ingestion";
-import { ocrImage } from "@/app/actions/ocr";
-import { compressImage } from "@/lib/utils/compress-image";
-import type { ProductInfo } from "@/lib/parsers/product-name";
-import type { MatchResult } from "@/lib/matching/engine";
+import { ingestByPhoto } from "@/app/actions/core/ingestion";
+import { ocrImage } from "@/app/actions/modules/ocr";
+import { compressImage } from "@/core/utils/compress-image";
+import type { ProductInfo } from "@/core/parsers/product-name";
+import type { MatchResult } from "@/core/matching/engine";
 import type { UnitType } from "@/lib/generated/prisma/client";
 
 const UNIT_OPTIONS = [
@@ -165,7 +165,7 @@ export default function PhotoScanPage() {
 
   return (
     <>
-      <PageHeader title="Photo Scan" backHref="/receive" />
+
       <div className="p-4 space-y-4">
 
         {/* ── STEP: Capture ── */}

@@ -2,6 +2,10 @@ import { createServiceClient } from "./server";
 
 const BUCKET = "receipt-images";
 
+/**
+ * Upload a receipt image to the private bucket.
+ * Returns the storage path (NOT a public URL).
+ */
 export async function uploadReceiptImage(
   base64DataUri: string,
   path: string
@@ -19,6 +23,24 @@ export async function uploadReceiptImage(
 
   if (error) throw new Error(`Storage upload failed: ${error.message}`);
 
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
-  return data.publicUrl;
+  return path;
+}
+
+/**
+ * Generate a short-lived signed URL for a private receipt image.
+ * Default expiry: 5 minutes (300 seconds).
+ */
+export async function getReceiptImageSignedUrl(
+  path: string,
+  expiresIn = 300
+): Promise<string | null> {
+  if (!path) return null;
+
+  const supabase = createServiceClient();
+  const { data, error } = await supabase.storage
+    .from(BUCKET)
+    .createSignedUrl(path, expiresIn);
+
+  if (error || !data?.signedUrl) return null;
+  return data.signedUrl;
 }

@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect, use } from "react";
-import { PageHeader } from "@/components/nav/page-header";
+import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { getInventoryItem } from "@/app/actions/inventory";
-import { getTransactionsForItem, getInventoryLevel } from "@/app/actions/transactions";
+import { getInventoryItem } from "@/app/actions/core/inventory";
+import { getTransactionsForItem, getInventoryLevel } from "@/app/actions/core/transactions";
 
 interface ItemDetail {
   id: string;
@@ -68,7 +68,6 @@ export default function ItemDetailPage({
   if (loading) {
     return (
       <>
-        <PageHeader title="Loading..." backHref="/inventory" />
         <div className="p-4 text-center text-muted text-sm">Loading item...</div>
       </>
     );
@@ -77,7 +76,6 @@ export default function ItemDetailPage({
   if (!item) {
     return (
       <>
-        <PageHeader title="Not Found" backHref="/inventory" />
         <div className="p-4 text-center text-muted text-sm">Item not found</div>
       </>
     );
@@ -85,7 +83,6 @@ export default function ItemDetailPage({
 
   return (
     <>
-      <PageHeader title={item.name} backHref="/inventory" />
       <div className="p-4 space-y-4">
         {/* Stock level */}
         <Card>

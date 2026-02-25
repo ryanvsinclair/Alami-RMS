@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { signUpAction } from "@/app/actions/auth";
+import { signUpAction } from "@/app/actions/core/auth";
+import { INDUSTRY_LABELS, INDUSTRY_TYPES } from "@/lib/config/presets";
 
 export default async function SignupPage({
   searchParams,
@@ -13,18 +14,18 @@ export default async function SignupPage({
     <div className="space-y-6">
       <div>
         <p className="text-xs uppercase tracking-[0.16em] text-muted">Get started</p>
-        <h1 className="mt-1 text-3xl font-bold text-foreground">Create your restaurant account</h1>
+        <h1 className="mt-1 text-3xl font-bold text-foreground">Create your account</h1>
       </div>
 
       <form action={signUpAction} className="space-y-3 rounded-3xl border border-[rgba(128,164,202,0.24)] bg-[linear-gradient(150deg,rgba(20,42,67,0.72)_0%,rgba(14,30,50,0.7)_60%,rgba(10,22,39,0.8)_100%)] p-5">
         <input type="hidden" name="next" value={next} />
         <div className="space-y-1.5">
-          <label htmlFor="restaurant_name" className="text-xs font-semibold uppercase tracking-wide text-muted">
-            Restaurant name
+          <label htmlFor="business_name" className="text-xs font-semibold uppercase tracking-wide text-muted">
+            Business name
           </label>
           <input
-            id="restaurant_name"
-            name="restaurant_name"
+            id="business_name"
+            name="business_name"
             required
             className="h-12 w-full rounded-2xl border border-border bg-white/7 px-4 text-foreground outline-none focus:ring-2 focus:ring-primary/30"
           />
@@ -40,6 +41,24 @@ export default async function SignupPage({
             required
             className="h-12 w-full rounded-2xl border border-border bg-white/7 px-4 text-foreground outline-none focus:ring-2 focus:ring-primary/30"
           />
+        </div>
+        <div className="space-y-1.5">
+          <label htmlFor="industry_type" className="text-xs font-semibold uppercase tracking-wide text-muted">
+            Industry
+          </label>
+          <select
+            id="industry_type"
+            name="industry_type"
+            defaultValue="general"
+            className="h-12 w-full rounded-2xl border border-border bg-white/7 px-4 text-foreground outline-none focus:ring-2 focus:ring-primary/30"
+          >
+            {INDUSTRY_TYPES.map((industry) => (
+              <option key={industry} value={industry} className="bg-[#0b1522] text-foreground">
+                {INDUSTRY_LABELS[industry]}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-muted/80">We use this to set module defaults and terminology.</p>
         </div>
         <div className="space-y-1.5">
           <label htmlFor="password" className="text-xs font-semibold uppercase tracking-wide text-muted">

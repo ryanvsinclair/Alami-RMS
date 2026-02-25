@@ -6,7 +6,7 @@ import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { createInventoryItem, addBarcode, getInventoryItems } from "@/app/actions/inventory";
+import { createInventoryItem, addBarcode, getInventoryItems } from "@/app/actions/core/inventory";
 
 const UNIT_OPTIONS = [
   { value: "each", label: "Each" },
@@ -38,16 +38,18 @@ export function ItemNotFound({
   barcode,
   onItemSelected,
   onCancel,
+  suggestedName,
 }: {
   detectedText: string;
   barcode?: string;
   onItemSelected: (item: ItemResult) => void;
   onCancel: () => void;
+  suggestedName?: string;
 }) {
   const [mode, setMode] = useState<Mode>("prompt");
-  const [newName, setNewName] = useState(detectedText);
+  const [newName, setNewName] = useState(suggestedName ?? detectedText);
   const [newUnit, setNewUnit] = useState("each");
-  const [search, setSearch] = useState(detectedText);
+  const [search, setSearch] = useState(suggestedName ?? detectedText);
   const [searchResults, setSearchResults] = useState<ItemResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");

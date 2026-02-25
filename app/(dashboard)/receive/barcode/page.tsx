@@ -1,17 +1,16 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { PageHeader } from "@/components/nav/page-header";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ItemNotFound } from "@/components/flows/item-not-found";
-import { ingestByBarcode } from "@/app/actions/ingestion";
-import { lookupBarcode } from "@/app/actions/inventory";
-import { createTransaction } from "@/app/actions/transactions";
+import { ingestByBarcode } from "@/app/actions/core/ingestion";
+import { resolveBarcode } from "@/app/actions/core/barcode-resolver";
+import { createTransaction } from "@/app/actions/core/transactions";
 
-type Step = "scan" | "quantity" | "not_found" | "success";
+type Step = "scan" | "quantity" | "not_found" | "external_found" | "success";
 
 interface FoundItem {
   id: string;
@@ -20,10 +19,21 @@ interface FoundItem {
   category?: { name: string } | null;
 }
 
+interface ExternalMatch {
+  name: string;
+  brand: string | null;
+  size_text: string | null;
+  category_hint: string | null;
+  image_url: string | null;
+  source: string;
+  confidence: string;
+}
+
 export default function BarcodeScanPage() {
   const [step, setStep] = useState<Step>("scan");
   const [barcode, setBarcode] = useState("");
   const [foundItem, setFoundItem] = useState<FoundItem | null>(null);
+  const [externalMatch, setExternalMatch] = useState<ExternalMatch | null>(null);
   const [quantity, setQuantity] = useState("1");
   const [unitCost, setUnitCost] = useState("");
   const [loading, setLoading] = useState(false);
@@ -36,10 +46,17 @@ export default function BarcodeScanPage() {
     setError("");
 
     try {
-      const item = await lookupBarcode(barcode.trim());
-      if (item) {
-        setFoundItem(item as FoundItem);
+      const resolution = await resolveBarcode({ barcode: barcode.trim() });
+      if (resolution.status === "resolved") {
+        setFoundItem(resolution.item as FoundItem);
         setStep("quantity");
+      } else if (resolution.status === "resolved_external") {
+        setExternalMatch({
+          ...resolution.metadata,
+          source: resolution.source,
+          confidence: resolution.confidence,
+        });
+        setStep("external_found");
       } else {
         setStep("not_found");
       }
@@ -89,10 +106,17 @@ export default function BarcodeScanPage() {
     }
   }
 
+  function handleExternalItemCreated(item: { id: string; name: string; unit: string; category?: { name: string } | null }) {
+    setFoundItem(item);
+    setExternalMatch(null);
+    setStep("quantity");
+  }
+
   function reset() {
     setStep("scan");
     setBarcode("");
     setFoundItem(null);
+    setExternalMatch(null);
     setQuantity("1");
     setUnitCost("");
     setError("");
@@ -101,7 +125,6 @@ export default function BarcodeScanPage() {
 
   return (
     <>
-      <PageHeader title="Scan Barcode" backHref="/receive" />
       <div className="p-4 space-y-4">
 
         {/* ── STEP: Scan ── */}
@@ -135,6 +158,55 @@ export default function BarcodeScanPage() {
             onItemSelected={handleNewItemSelected}
             onCancel={reset}
           />
+        )}
+
+        {/* ── STEP: External Match Found ── */}
+        {step === "external_found" && externalMatch && (
+          <>
+            <Card>
+              <div className="space-y-2">
+                <div className="flex items-start gap-3">
+                  {externalMatch.image_url && (
+                    <img
+                      src={externalMatch.image_url}
+                      alt={externalMatch.name}
+                      className="w-16 h-16 rounded-xl object-cover shrink-0"
+                    />
+                  )}
+                  <div className="space-y-1 min-w-0">
+                    <h3 className="font-semibold text-lg leading-tight">{externalMatch.name}</h3>
+                    {externalMatch.brand && (
+                      <p className="text-sm text-muted">{externalMatch.brand}</p>
+                    )}
+                    <div className="flex flex-wrap gap-1.5">
+                      {externalMatch.size_text && (
+                        <Badge>{externalMatch.size_text}</Badge>
+                      )}
+                      {externalMatch.category_hint && (
+                        <Badge variant="info">{externalMatch.category_hint}</Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-muted">
+                  Found via {externalMatch.source.replace(/_/g, " ")} ({externalMatch.confidence} confidence)
+                </p>
+                <p className="text-xs text-muted">Barcode: {barcode}</p>
+              </div>
+            </Card>
+
+            <p className="text-sm text-muted text-center">
+              This product was found in an external database but is not in your inventory yet.
+            </p>
+
+            <ItemNotFound
+              detectedText={externalMatch.name}
+              barcode={barcode}
+              onItemSelected={handleExternalItemCreated}
+              onCancel={reset}
+              suggestedName={externalMatch.name}
+            />
+          </>
         )}
 
         {/* ── STEP: Quantity ── */}
