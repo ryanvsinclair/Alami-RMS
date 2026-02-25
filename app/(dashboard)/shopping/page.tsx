@@ -10,10 +10,13 @@ import {
   addShoppingSessionItem,
   addShoppingSessionItemByBarcodeQuick,
   addShelfLabelItem,
+  analyzeShoppingSessionBarcodeItemPhoto,
   cancelShoppingSession,
   commitShoppingSession,
   getActiveShoppingSession,
+  pairShoppingSessionBarcodeItemToReceiptItem,
   scanAndReconcileReceipt,
+  suggestShoppingSessionBarcodeReceiptPairWithWebFallback,
   removeShoppingSessionItem,
   resolveShoppingSessionItem,
   scanShelfLabel,
@@ -23,6 +26,7 @@ import {
 import { ItemNotFound } from "@/components/flows/item-not-found";
 import type { ShelfLabelResult } from "@/core/parsers/shelf-label";
 import type { MatchResult } from "@/core/matching/engine";
+import type { ProductInfo } from "@/core/parsers/product-name";
 import { uploadReceiptImageAction } from "@/app/actions/core/upload";
 import { compressImage } from "@/core/utils/compress-image";
 import {
@@ -39,6 +43,9 @@ type SessionStatus = "draft" | "reconciling" | "ready" | "committed" | "cancelle
 interface ShoppingItem {
   id: string;
   origin: "staged" | "receipt";
+  inventory_item_id?: string | null;
+  receipt_line_item_id?: string | null;
+  scanned_barcode?: string | null;
   raw_name: string;
   quantity: number | string;
   unit: string;
@@ -73,6 +80,52 @@ interface ShoppingSession {
   tax_total: number | string | null;
   items: ShoppingItem[];
 }
+
+type ShoppingFallbackPhotoAnalysis = {
+  raw_text: string;
+  product_info: ProductInfo | null;
+};
+
+type ShoppingWebFallbackSuggestion = {
+  status:
+    | "ok"
+    | "unavailable"
+    | "no_results"
+    | "no_unmatched_receipt_items";
+  query: string;
+  rationale: string;
+  web_result:
+    | null
+    | {
+        confidence_label: "low" | "medium" | "high" | "none";
+        confidence_score: number;
+        structured: {
+          canonical_name: string;
+          brand: string | null;
+          size: string | null;
+          unit: string | null;
+          pack_count: number | null;
+        };
+        candidates: Array<{
+          title: string;
+          link: string;
+          snippet: string;
+        }>;
+      };
+  pair_suggestions: Array<{
+    receipt_item_id: string;
+    receipt_line_item_id: string | null;
+    receipt_name: string;
+    receipt_line_total: number | null;
+    score: number;
+    confidence: "low" | "medium" | "high";
+  }>;
+  suggested_receipt_item_id?: string | null;
+  suggested_confidence?: "low" | "medium" | "high";
+  ambiguous?: boolean;
+  auto_apply_eligible?: boolean;
+  auto_apply_reason?: string;
+};
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
@@ -116,6 +169,11 @@ function displayShoppingItemName(rawName: string): string {
   return extractEmbeddedUpc(rawName) ? "Unresolved Item" : rawName;
 }
 
+function getItemBarcodeBadgeValue(item: ShoppingItem): string | null {
+  if (item.scanned_barcode) return item.scanned_barcode;
+  return extractEmbeddedUpc(item.raw_name);
+}
+
 export default function ShoppingPage() {
   const router = useRouter();
   const shoppingTerm = useTerm("shopping");
@@ -130,10 +188,12 @@ export default function ShoppingPage() {
   const [quickBarcode, setQuickBarcode] = useState("");
   const [quickScanLoading, setQuickScanLoading] = useState(false);
   const [quickScanFeedback, setQuickScanFeedback] = useState<{
-    status: "resolved" | "unresolved";
+    status: "resolved_inventory" | "resolved_barcode_metadata" | "unresolved";
     display_name: string;
     normalized_barcode: string;
     deferred_resolution: boolean;
+    source: string;
+    confidence: string;
   } | null>(null);
 
   const [receiptScanning, setReceiptScanning] = useState(false);
@@ -142,6 +202,17 @@ export default function ShoppingPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const quickBarcodeInputRef = useRef<HTMLInputElement>(null);
   const receiptSectionRef = useRef<HTMLDivElement>(null);
+  const fallbackPhotoInputRef = useRef<HTMLInputElement>(null);
+  const [fallbackPhotoTargetItemId, setFallbackPhotoTargetItemId] = useState<string | null>(null);
+  const [photoFallbackAnalysisByItemId, setPhotoFallbackAnalysisByItemId] = useState<
+    Record<string, ShoppingFallbackPhotoAnalysis>
+  >({});
+  const [webFallbackSuggestionByItemId, setWebFallbackSuggestionByItemId] = useState<
+    Record<string, ShoppingWebFallbackSuggestion>
+  >({});
+  const [fallbackPhotoLoadingItemId, setFallbackPhotoLoadingItemId] = useState<string | null>(null);
+  const [webFallbackLoadingItemId, setWebFallbackLoadingItemId] = useState<string | null>(null);
+  const [notice, setNotice] = useState("");
 
   // Shelf label scan state
   type ScanStep = "idle" | "scanning" | "matched" | "not_found";
@@ -185,6 +256,29 @@ export default function ShoppingPage() {
     if (!session) return 0;
     return roundMoney(basketTotal + asNumber(session.tax_total));
   }, [basketTotal, session]);
+
+  const unresolvedScannedBarcodeItems = useMemo(
+    () =>
+      (session?.items ?? []).filter(
+        (item) =>
+          item.origin === "staged" &&
+          Boolean(item.scanned_barcode) &&
+          !item.receipt_line_item_id &&
+          item.resolution === "pending"
+      ),
+    [session]
+  );
+
+  const unmatchedReceiptItems = useMemo(
+    () =>
+      (session?.items ?? []).filter(
+        (item) =>
+          item.origin === "receipt" &&
+          Boolean(item.receipt_line_item_id) &&
+          item.resolution === "pending"
+      ),
+    [session]
+  );
 
   const receiptTotalDelta = useMemo(() => {
     if (!session?.receipt_id || session.receipt_total == null) return null;
@@ -415,6 +509,112 @@ export default function ShoppingPage() {
       setError(err instanceof Error ? err.message : "Failed to commit shopping session");
     } finally {
       setCommitLoading(false);
+    }
+  }
+
+  async function handleManualPairBarcodeToReceipt(
+    stagedItemId: string,
+    receiptItemId: string,
+    source: "manual" | "web_suggestion_manual" | "web_suggestion_auto" = "manual"
+  ) {
+    setSaving(true);
+    setError("");
+    setNotice("");
+    try {
+      const updated = await pairShoppingSessionBarcodeItemToReceiptItem({
+        staged_item_id: stagedItemId,
+        receipt_item_id: receiptItemId,
+        source,
+      });
+      setSession(updated as ShoppingSession);
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to pair barcode item to receipt item");
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function handleRequestFallbackPhoto(itemId: string) {
+    setFallbackPhotoTargetItemId(itemId);
+    fallbackPhotoInputRef.current?.click();
+  }
+
+  async function handleFallbackPhotoCapture(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    const itemId = fallbackPhotoTargetItemId;
+    if (!file || !itemId) return;
+
+    setFallbackPhotoLoadingItemId(itemId);
+    setError("");
+    setNotice("");
+    try {
+      const base64 = await compressImage(file, 1600, 1600, 0.8);
+      const result = await analyzeShoppingSessionBarcodeItemPhoto({
+        staged_item_id: itemId,
+        base64_image: base64,
+      });
+
+      if (!result.success || !result.analysis) {
+        setError(result.error ?? "Failed to analyze item photo");
+        return;
+      }
+
+      setPhotoFallbackAnalysisByItemId((prev) => ({
+        ...prev,
+        [itemId]: result.analysis,
+      }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to analyze item photo");
+    } finally {
+      setFallbackPhotoLoadingItemId(null);
+      setFallbackPhotoTargetItemId(null);
+      if (fallbackPhotoInputRef.current) fallbackPhotoInputRef.current.value = "";
+    }
+  }
+
+  async function handleTryWebFallbackSuggestion(itemId: string) {
+    setWebFallbackLoadingItemId(itemId);
+    setError("");
+    setNotice("");
+    try {
+      const result = await suggestShoppingSessionBarcodeReceiptPairWithWebFallback({
+        staged_item_id: itemId,
+        photo_analysis: photoFallbackAnalysisByItemId[itemId] ?? null,
+      });
+
+      if (!result.success) {
+        setError("Web fallback suggestion failed");
+        return;
+      }
+
+      setWebFallbackSuggestionByItemId((prev) => ({
+        ...prev,
+        [itemId]: result.fallback as ShoppingWebFallbackSuggestion,
+      }));
+
+      const fallback = result.fallback as ShoppingWebFallbackSuggestion;
+      if (
+        fallback.status === "ok" &&
+        fallback.auto_apply_eligible &&
+        fallback.suggested_receipt_item_id
+      ) {
+        const paired = await handleManualPairBarcodeToReceipt(
+          itemId,
+          fallback.suggested_receipt_item_id,
+          "web_suggestion_auto"
+        );
+        if (paired) {
+          setNotice(
+            "High-confidence web/AI suggestion auto-applied. Review the updated reconciliation before commit."
+          );
+        }
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Web fallback suggestion failed");
+    } finally {
+      setWebFallbackLoadingItemId(null);
     }
   }
 
@@ -676,7 +876,7 @@ export default function ShoppingPage() {
             <div>
               <p className="text-sm font-semibold">Quick Shop (Barcode)</p>
               <p className="mt-1 text-xs text-muted">
-                Scan UPC/EAN, save to cart, scan next item. This uses a quick internal lookup while shopping and defers expensive fallback resolution until after receipt scan.
+                Scan UPC/EAN, save to cart, scan next item. We check internal barcode mappings first, then the layered barcode provider stack, and defer web/AI fallback until after receipt scan.
               </p>
             </div>
             <Button
@@ -712,22 +912,27 @@ export default function ShoppingPage() {
           {quickScanFeedback && (
             <div
               className={`mt-3 rounded-xl border p-3 ${
-                quickScanFeedback.status === "resolved"
+                quickScanFeedback.status === "resolved_inventory"
                   ? "border-emerald-400/25 bg-emerald-500/10"
+                  : quickScanFeedback.status === "resolved_barcode_metadata"
+                    ? "border-sky-400/25 bg-sky-500/10"
                   : "border-amber-400/25 bg-amber-500/10"
               }`}
             >
               <p className="text-sm font-semibold">
-                {quickScanFeedback.status === "resolved"
+                {quickScanFeedback.status !== "unresolved"
                   ? quickScanFeedback.display_name
                   : "Unresolved Item"}
               </p>
               <p className="mt-1 text-xs text-muted">
                 UPC {quickScanFeedback.normalized_barcode}
               </p>
+              <p className="mt-1 text-xs text-muted">
+                Source: {quickScanFeedback.source} • Confidence: {quickScanFeedback.confidence}
+              </p>
               {quickScanFeedback.deferred_resolution && (
                 <p className="mt-1 text-xs text-muted">
-                  Added as a provisional cart item. Receipt scan remains the authoritative phase for final matching.
+                  Added as a provisional cart item. Receipt scan remains the authoritative phase for final matching, unresolved pairing, and any deferred web/AI fallback.
                 </p>
               )}
             </div>
@@ -873,8 +1078,8 @@ export default function ShoppingPage() {
                     <Badge variant={reconVariant[item.reconciliation_status]}>
                       {reconLabel[item.reconciliation_status]}
                     </Badge>
-                    {extractEmbeddedUpc(item.raw_name) && (
-                      <Badge variant="warning">UPC {extractEmbeddedUpc(item.raw_name)}</Badge>
+                    {getItemBarcodeBadgeValue(item) && (
+                      <Badge variant="warning">UPC {getItemBarcodeBadgeValue(item)}</Badge>
                     )}
                   </div>
                 </div>
@@ -949,6 +1154,232 @@ export default function ShoppingPage() {
           )}
         </div>
 
+        <input
+          ref={fallbackPhotoInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handleFallbackPhotoCapture}
+          className="hidden"
+        />
+
+        {session.receipt_id && !receiptScanIncomplete && unresolvedScannedBarcodeItems.length > 0 && (
+          <Card className="p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold">Manual Barcode-to-Receipt Pairing</p>
+                <p className="mt-1 text-xs text-muted">
+                  Use this when automatic pairing could not confidently match scanned barcodes to receipt items. You can optionally add an item photo first to improve web/AI fallback hints before pairing.
+                </p>
+              </div>
+              <Badge variant="warning">
+                {unresolvedScannedBarcodeItems.length} unresolved barcode{unresolvedScannedBarcodeItems.length === 1 ? "" : "s"}
+              </Badge>
+            </div>
+
+            {unmatchedReceiptItems.length === 0 ? (
+              <p className="mt-3 text-xs text-muted">
+                No unmatched receipt items remain to pair.
+              </p>
+            ) : (
+              <div className="mt-3 space-y-3">
+                {unresolvedScannedBarcodeItems.map((barcodeItem) => (
+                  <div
+                    key={`pair-${barcodeItem.id}`}
+                    className="rounded-2xl border border-border p-3"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="text-sm font-semibold">
+                          {displayShoppingItemName(barcodeItem.raw_name)}
+                        </p>
+                        <p className="mt-1 text-xs text-muted">
+                          UPC {getItemBarcodeBadgeValue(barcodeItem)}
+                          {barcodeItem.staged_line_total != null
+                            ? ` • Staged ${formatMoney(barcodeItem.staged_line_total)}`
+                            : ""}
+                        </p>
+                      </div>
+                      <Badge variant="info">Scanned Barcode</Badge>
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        loading={fallbackPhotoLoadingItemId === barcodeItem.id}
+                        onClick={() => handleRequestFallbackPhoto(barcodeItem.id)}
+                      >
+                        Take Item Photo
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        loading={webFallbackLoadingItemId === barcodeItem.id}
+                        onClick={() => handleTryWebFallbackSuggestion(barcodeItem.id)}
+                      >
+                        Try Web/AI Suggestion
+                      </Button>
+                    </div>
+
+                    {photoFallbackAnalysisByItemId[barcodeItem.id] && (
+                      <div className="mt-3 rounded-xl border border-border p-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                          Photo Hints
+                        </p>
+                        <p className="mt-1 text-sm">
+                          {photoFallbackAnalysisByItemId[barcodeItem.id].product_info?.product_name &&
+                          photoFallbackAnalysisByItemId[barcodeItem.id].product_info?.product_name !== "Unknown Product"
+                            ? photoFallbackAnalysisByItemId[barcodeItem.id].product_info?.product_name
+                            : "OCR captured item text"}
+                        </p>
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {photoFallbackAnalysisByItemId[barcodeItem.id].product_info?.brand && (
+                            <Badge variant="info">
+                              {photoFallbackAnalysisByItemId[barcodeItem.id].product_info?.brand}
+                            </Badge>
+                          )}
+                          {photoFallbackAnalysisByItemId[barcodeItem.id].product_info?.quantity_description && (
+                            <Badge>
+                              {photoFallbackAnalysisByItemId[barcodeItem.id].product_info?.quantity_description}
+                            </Badge>
+                          )}
+                          {photoFallbackAnalysisByItemId[barcodeItem.id].product_info?.weight && (
+                            <Badge>
+                              {photoFallbackAnalysisByItemId[barcodeItem.id].product_info?.weight}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {webFallbackSuggestionByItemId[barcodeItem.id] && (
+                      <div className="mt-3 rounded-xl border border-border p-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                          Web/AI Fallback Suggestion
+                        </p>
+                        <p className="mt-1 text-xs text-muted">
+                          {webFallbackSuggestionByItemId[barcodeItem.id].rationale}
+                        </p>
+                        {webFallbackSuggestionByItemId[barcodeItem.id].auto_apply_reason && (
+                          <p className="mt-1 text-xs text-muted">
+                            {webFallbackSuggestionByItemId[barcodeItem.id].auto_apply_reason}
+                          </p>
+                        )}
+                        {webFallbackSuggestionByItemId[barcodeItem.id].auto_apply_eligible && (
+                          <div className="mt-2">
+                            <Badge variant="success">Auto-Apply Eligible</Badge>
+                          </div>
+                        )}
+
+                        {webFallbackSuggestionByItemId[barcodeItem.id].web_result && (
+                          <>
+                            <p className="mt-2 text-sm font-semibold">
+                              {webFallbackSuggestionByItemId[barcodeItem.id].web_result?.structured.canonical_name}
+                            </p>
+                            <div className="mt-1 flex flex-wrap gap-1">
+                              {webFallbackSuggestionByItemId[barcodeItem.id].web_result?.structured.brand && (
+                                <Badge variant="info">
+                                  {webFallbackSuggestionByItemId[barcodeItem.id].web_result?.structured.brand}
+                                </Badge>
+                              )}
+                              {webFallbackSuggestionByItemId[barcodeItem.id].web_result?.structured.size && (
+                                <Badge>
+                                  {webFallbackSuggestionByItemId[barcodeItem.id].web_result?.structured.size}
+                                </Badge>
+                              )}
+                              <Badge
+                                variant={
+                                  webFallbackSuggestionByItemId[barcodeItem.id].web_result?.confidence_label === "high"
+                                    ? "success"
+                                    : webFallbackSuggestionByItemId[barcodeItem.id].web_result?.confidence_label === "medium"
+                                      ? "warning"
+                                      : "danger"
+                                }
+                              >
+                                Web {Math.round((webFallbackSuggestionByItemId[barcodeItem.id].web_result?.confidence_score ?? 0) * 100)}%
+                              </Badge>
+                            </div>
+                          </>
+                        )}
+
+                        {webFallbackSuggestionByItemId[barcodeItem.id].suggested_receipt_item_id && (
+                          <div className="mt-3">
+                            <Button
+                              size="sm"
+                              className="w-full"
+                              onClick={() =>
+                                handleManualPairBarcodeToReceipt(
+                                  barcodeItem.id,
+                                  webFallbackSuggestionByItemId[barcodeItem.id]
+                                    .suggested_receipt_item_id as string,
+                                  "web_suggestion_manual"
+                                )
+                              }
+                              loading={saving}
+                            >
+                              Apply Suggested Pair
+                            </Button>
+                          </div>
+                        )}
+
+                        {webFallbackSuggestionByItemId[barcodeItem.id].pair_suggestions.length > 0 && (
+                          <div className="mt-3 space-y-2">
+                            {webFallbackSuggestionByItemId[barcodeItem.id].pair_suggestions
+                              .slice(0, 3)
+                              .map((suggestion) => (
+                                <Button
+                                  key={`web-suggest-${barcodeItem.id}-${suggestion.receipt_item_id}`}
+                                  variant="secondary"
+                                  size="sm"
+                                  className="w-full justify-between"
+                                  onClick={() =>
+                                    handleManualPairBarcodeToReceipt(
+                                      barcodeItem.id,
+                                      suggestion.receipt_item_id,
+                                      "web_suggestion_manual"
+                                    )
+                                  }
+                                  loading={saving}
+                                >
+                                  <span className="truncate text-left">{suggestion.receipt_name}</span>
+                                  <span className="ml-2 text-xs opacity-80">
+                                    {Math.round(suggestion.score * 100)}%
+                                  </span>
+                                </Button>
+                              ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="mt-3 grid gap-2">
+                      {unmatchedReceiptItems.map((receiptItem) => (
+                        <Button
+                          key={`pair-choice-${barcodeItem.id}-${receiptItem.id}`}
+                          variant="secondary"
+                          className="w-full justify-between"
+                          loading={saving}
+                          onClick={() =>
+                            handleManualPairBarcodeToReceipt(barcodeItem.id, receiptItem.id)
+                          }
+                        >
+                          <span className="truncate text-left">
+                            {displayShoppingItemName(receiptItem.raw_name)}
+                          </span>
+                          <span className="ml-2 text-xs opacity-80">
+                            {formatMoney(receiptItem.receipt_line_total ?? receiptItem.staged_line_total)}
+                          </span>
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        )}
+
         <div ref={receiptSectionRef}>
           <Card className="p-5">
           <p className="text-sm font-semibold mb-2">Checkout Receipt</p>
@@ -978,6 +1409,7 @@ export default function ShoppingPage() {
           </Card>
         </div>
 
+        {notice && <p className="text-sm text-cyan-300">{notice}</p>}
         {error && <p className="text-sm text-danger">{error}</p>}
       </div>
 

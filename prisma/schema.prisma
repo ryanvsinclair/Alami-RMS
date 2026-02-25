@@ -448,6 +448,7 @@ model ShoppingSessionItem {
   session_id            String
   inventory_item_id     String?
   receipt_line_item_id  String?
+  scanned_barcode       String?
   origin                ShoppingItemOrigin           @default(staged)
   raw_name              String
   normalized_name       String
@@ -462,6 +463,7 @@ model ShoppingSessionItem {
   delta_price           Decimal?                     @db.Decimal(10, 2)
   reconciliation_status ShoppingReconciliationStatus @default(pending)
   resolution            ShoppingItemResolution       @default(pending)
+  resolution_audit      Json?
   created_at            DateTime                     @default(now())
   updated_at            DateTime                     @updatedAt
 
@@ -471,6 +473,7 @@ model ShoppingSessionItem {
 
   @@index([session_id])
   @@index([inventory_item_id])
+  @@index([scanned_barcode])
   @@index([reconciliation_status])
   @@map("shopping_session_items")
 }

@@ -23,6 +23,171 @@ Recommended progress note format (short and repeatable):
 
 ## Latest Update
 
+- **Phase E hardening slice: aggregate web fallback outcome counters + provider depth/latency summaries** (February 25, 2026):
+  - Added lightweight process-local aggregate metrics in `lib/modules/shopping/web-fallback.ts` for the post-receipt constrained web/AI fallback.
+  - Metrics now track and periodically log cumulative counters for:
+    - fallback outcomes (`success`, `no_results`, `throttled`, `error`, other unavailable cases)
+    - raw result statuses (`ok`, `no_results`, `unavailable`) and unavailable reasons
+    - parser mode usage (`none`, `deterministic`, `gemini`)
+    - Serper attempt-depth histogram (`0/1/2...`) plus retry/throttle/timeout counts
+  - Added latency summaries (count/avg/max) for:
+    - total fallback runtime
+    - Serper search runtime
+    - Gemini parser runtime (when attempted)
+  - Existing fallback behavior is unchanged; this is observability-only instrumentation with periodic structured console summary logs.
+  - Validation:
+    - `npx tsc --noEmit --incremental false` -- 0 errors
+  - Next:
+    - tighten retry/rate-limit policy for the web fallback provider (cooldown/backoff thresholds and emit reasoned logs for repeated transient failures)
+    - extend similar lightweight counters to the layered barcode provider stack (OFF/OBF/UPCDatabase/UPCitemdb) for Phase E parity
+
+- **Phase E hardening slice: structured web fallback provider timeout/retry/cooldown + observability metadata** (February 25, 2026):
+  - Hardened `lib/modules/shopping/web-fallback.ts` (Serper path):
+    - request timeout
+    - transient retry (single retry for timeout/network/5xx)
+    - provider cooldown on `429` rate-limit responses (and short cooldown on repeated timeouts)
+    - structured console logging for success/failure/throttle outcomes
+  - Hardened optional Gemini parser call with request timeout and safe fallback to deterministic parsing if the parser errors.
+  - Added provider observability metadata to web fallback results (attempt count, duration, throttle/cooldown state, parser mode/timing).
+  - Persisted provider observability metadata into `ShoppingSessionItem.resolution_audit.web_fallback` during post-receipt fallback attempts.
+  - Validation:
+    - `npx tsc --noEmit` -- 0 errors
+  - Next:
+    - add lightweight aggregate counters/metrics for fallback usage outcomes (success/no-results/throttled/error) and provider depth/latency summaries
+
+- **Fallback audit metadata persistence added for unresolved barcode resolution traceability** (February 25, 2026):
+  - Added `ShoppingSessionItem.resolution_audit` (`Json`) to persist fallback evidence and pairing decision metadata.
+  - Added Prisma migration `20260225223000_shopping_session_item_resolution_audit` and applied it successfully.
+  - Shopping fallback photo analysis now stores `photo_fallback` audit data on the staged barcode item:
+    - barcode
+    - OCR excerpt
+    - parsed product hints (brand/product/size-related fields when available)
+  - Post-receipt constrained web/AI fallback now stores `web_fallback` audit data on the staged barcode item:
+    - query + rationale + status
+    - photo-hint usage summary
+    - structured web result snapshot + top candidates
+    - pair-suggestion scores
+    - suggested pair / ambiguity / auto-apply eligibility + reason
+  - Manual and suggestion-driven barcode-to-receipt pairing now store `final_pairing_decision` audit metadata:
+    - pairing source (`manual`, `web_suggestion_manual`, `web_suggestion_auto`)
+    - staged item snapshot + barcode
+    - receipt item snapshot
+    - resolved inventory item id
+    - reconciliation deltas/status
+  - UI pairing actions now correctly tag suggestion-derived pair confirmations as `web_suggestion_manual`.
+  - Validation:
+    - `npx prisma validate --schema prisma/schema.prisma` -- success
+    - `npx prisma generate` -- success
+    - `npx prisma migrate deploy` -- applied `20260225223000_shopping_session_item_resolution_audit`
+    - `npx tsc --noEmit` -- 0 errors
+  - Next:
+    - add lightweight observability around fallback usage/outcomes (counters/logs) and rate-limit/backoff hardening for external fallback providers
+
+- **Strict auto-apply threshold added for post-receipt web/AI pairing suggestions (user-triggered)** (February 25, 2026):
+  - Added explicit auto-apply eligibility logic to shopping web/AI fallback suggestions in `app/actions/modules/shopping.ts`:
+    - requires high web/AI confidence
+    - requires high receipt-pair confidence score
+    - blocks auto-apply when top candidate is ambiguous vs second-best
+  - `Try Web/AI Suggestion` in the Shopping manual pairing panel can now auto-apply the suggested receipt pair **only** when the strict threshold is met.
+  - Auto-apply remains user-triggered (runs after the user taps the fallback suggestion button), not background/silent.
+  - UI now shows auto-apply eligibility / reason messaging for web/AI suggestions.
+  - Validation:
+    - `npx tsc --noEmit` -- 0 errors
+  - Next:
+    - persist fallback evidence/audit metadata (photo hints + web rationale + confidence snapshot) for traceability/hardening
+
+- **Photo-assisted web/AI fallback added to unresolved barcode pairing (authoritative phase)** (February 25, 2026):
+  - Added optional item-photo analysis for unresolved scanned-barcode shopping items in `app/actions/modules/shopping.ts`:
+    - validates the staged barcode item + receipt-scanned session
+    - runs OCR (`extractTextFromImage`)
+    - runs structured product parsing (`extractProductInfo`, same seam used by `/receive/photo`)
+  - Added constrained post-receipt web fallback suggestion pipeline (`lib/modules/shopping/web-fallback.ts`):
+    - structured search via Serper (env-gated on `SERPER_API_KEY`)
+    - optional Gemini parsing of search results into structured fields (falls back to deterministic extraction if Gemini key is unavailable)
+    - returns canonical name + brand/size/unit/pack hints + confidence
+  - Added shopping action to suggest receipt-line pairing from web/AI fallback for a staged barcode item:
+    - combines web/AI structured product result with unmatched receipt items
+    - ranks likely receipt-line pairings with confidence
+    - remains confirmation-first (no silent auto-pair)
+  - Added UI in the Shopping manual pairing panel:
+    - `Take Item Photo` (optional, improves fallback hints)
+    - `Try Web/AI Suggestion`
+    - displays suggested canonical product + confidence + ranked receipt pairing options
+    - `Apply Suggested Pair` uses the existing manual-pair confirmation action
+  - Validation:
+    - `npx tsc --noEmit` -- 0 errors
+  - Notes:
+    - If `SERPER_API_KEY` is not configured, structured web fallback returns `unavailable` and the UI continues to support manual pairing.
+    - This preserves the plan rule: web/AI fallback only runs in the post-receipt authoritative phase.
+  - Next:
+    - add stricter auto-apply threshold (optional) for web/AI pair suggestions when both web confidence and receipt-pair confidence are high
+    - persist photo-assisted fallback evidence/audit metadata on the shopping session item or receipt line (optional hardening)
+
+- **Manual unresolved barcode vs receipt-item pairing added (authoritative phase fallback UI)** (February 25, 2026):
+  - Added a manual pairing action in `app/actions/modules/shopping.ts` to pair a staged scanned-barcode item to an unmatched receipt-origin shopping item after receipt scan.
+  - Pairing action behavior:
+    - validates both items belong to the same open shopping session with a scanned receipt
+    - transfers the receipt line linkage/amounts onto the staged barcode item
+    - deletes the consumed receipt-origin extra item to prevent duplicate receipt accounting
+    - recomputes session state
+    - treats manual pairing as a strong confirmation signal for barcode mapping persistence when an inventory item is known
+  - Added a shopping UI fallback panel in `app/(dashboard)/shopping/page.tsx`:
+    - lists unresolved scanned-barcode staged items
+    - lists unmatched receipt items as tap-to-pair choices
+    - appears after receipt scan when the scan is complete enough for reconciliation
+  - This implements the user-confirmation fallback path while constrained web query + AI fallback is still pending.
+  - Validation:
+    - `npx tsc --noEmit` -- 0 errors
+  - Next:
+    - implement constrained web query + AI fallback for post-receipt unresolved barcode/receipt pairs before this manual UI is used in the majority of cases
+
+- **Post-receipt unresolved-barcode pairing heuristics added before web/AI fallback** (February 25, 2026):
+  - Improved shopping receipt reconciliation scoring in `app/actions/modules/shopping.ts` for staged items with saved `scanned_barcode`:
+    - sequence/order proximity heuristic (staged scan order vs receipt line order)
+    - price proximity boost (when staged price exists)
+    - quantity agreement boost
+    - small boost when receipt line already has a high-confidence matched item
+  - Added stricter auto-pair gating for scanned-barcode items during receipt reconciliation:
+    - higher score threshold than normal text matching
+    - ambiguity margin check (top candidate must sufficiently beat second-best candidate)
+  - Behavior now matches the planned authoritative-phase rule:
+    - high-confidence scanned-barcode pairings are auto-linked
+    - low-confidence or ambiguous pairings stay unresolved (deferred for future web/AI fallback or manual pairing UI)
+  - This was applied in both shopping receipt reconciliation paths:
+    - parsed raw-text receipt flow
+    - TabScanner structured receipt flow
+  - Validation:
+    - `npx tsc --noEmit` -- 0 errors
+  - Next:
+    - implement constrained web query + AI fallback for post-receipt unresolved barcode/receipt pairs only
+    - add explicit manual pairing UI for unresolved barcodes vs receipt items when confidence remains low
+
+- **Shopping quick-shop barcode resolver now runs layered barcode APIs + structured UPC persistence** (February 25, 2026):
+  - Updated quick-shop barcode scan action (`addShoppingSessionItemByBarcodeQuick(...)`) in `app/actions/modules/shopping.ts` to use the shared layered barcode resolver stack:
+    - internal lookup first
+    - then Layer 1-4 barcode providers until first hit
+    - still **no** constrained web query / AI fallback during live shopping
+  - Added structured `scanned_barcode` persistence on `ShoppingSessionItem`:
+    - Prisma schema field: `shopping_session_items.scanned_barcode` (nullable)
+    - migration file: `prisma/migrations/20260225213000_shopping_session_item_scanned_barcode/migration.sql`
+    - migration also includes a best-effort backfill from legacy provisional `[UPC:...]` labels
+  - Applied the migration with `npx prisma migrate deploy` and regenerated Prisma client.
+  - Shopping UI quick-scan feedback now reflects layered-barcode resolution outcomes:
+    - inventory hit
+    - external barcode metadata hit (still provisional for receipt-phase pairing)
+    - unresolved barcode (deferred)
+  - Cart rows now surface scanned UPC from the structured field (with fallback to older provisional-label parsing for previously staged rows).
+  - Receipt reconciliation now auto-links a saved scanned barcode to an inventory item when the matched receipt line resolves with **high confidence** (authoritative-phase pairing bootstrap).
+  - Validation:
+    - `npx prisma validate --schema prisma/schema.prisma` -- succeeds
+    - `npx prisma generate` -- succeeds
+    - `npx prisma migrate deploy` -- succeeds (applied `20260225213000_shopping_session_item_scanned_barcode`)
+    - `npx tsc --noEmit` -- 0 errors
+  - Next:
+    - improve post-receipt unresolved-barcode pairing heuristics before web/AI fallback (price/order/context-aware pairing)
+    - implement constrained web query + AI fallback only for post-receipt low-confidence unresolved pairs
+    - add explicit UI for manual pairing of unresolved barcodes vs receipt items when confidence remains low
+
 - **Shopping quick-shop barcode loop added (internal-only lookup; deferred fallback)** (February 25, 2026):
   - Added `addShoppingSessionItemByBarcodeQuick(...)` to `app/actions/modules/shopping.ts` for in-session barcode adds during Shopping Mode.
   - Quick-shop barcode behavior now:
@@ -228,31 +393,27 @@ Previous updates (retained for history):
 - [x] Phase B (external provider integrations) complete. All four providers (OFF, OBF, UPCDatabase, UPCitemdb) implemented with real API calls, fallback chain enabled, 4s timeouts, confidence scoring, `resolved_external` result type, UI support in barcode page, and 7 total resolver tests passing.
 - [~] Phase C (place-scoped receipt aliasing) partially implemented in code; migration apply/generate + verification still pending.
 - [ ] Phase D (enrichment queue) not started.
-- [ ] Phase E (observability/hardening) not started.
+- [~] Phase E (observability/hardening) partially implemented. Audit trails plus shopping web fallback timeout/retry/rate-limit cooldown, provider observability metadata, and aggregate process-local counters are now in place. Broader provider-stack metrics/aggregate dashboards, background retries, and stricter abuse controls remain.
 
 ## Pick Up Here (Next Continuation)
 
-Primary continuation task: **Phase C -- runtime verification of place-scoped receipt aliasing**.
+Primary continuation task: **Phase E -- tighten retry/rate-limit policy after aggregate fallback metrics (then extend comparable counters to layered barcode providers)**.
 
 Phases A and B are complete. The barcode resolver supports internal inventory lookups and 4 external providers (OFF, OBF, UPCDatabase, UPCitemdb) with fallback chain, timeouts, confidence scoring, and global barcode catalog caching.
 
 Do this next:
 
-1. `[x]` Add `ReceiptItemAlias` model to Prisma schema (done).
-2. `[x]` Create and apply the migration:
-   - SQL migration file created: `prisma/migrations/20260225180000_receipt_item_aliases_phase_c/migration.sql`
-   - Applied with `npx prisma migrate deploy`
-   - Prisma client regenerated with `npx prisma generate`
-3. `[x]` Build receipt alias resolution pipeline in `lib/core/matching/receipt-line.ts` (exact place alias -> fuzzy -> unresolved).
-4. `[x]` Integrate alias lookup into `resolveReceiptLineMatch()` and pass `google_place_id` from receipt/shopping flows.
-5. `[~]` Add alias creation on user confirmation:
-   - Implemented in receipt line confirmation and shopping item resolution for receipt-linked lines.
-   - Still needs runtime verification in UI flows.
-6. `[x]` Add receipt idempotency guard (`receipt.status === "committed"`) before processing.
-7. `[~]` Verify and test end-to-end (receipt parse/review/commit + shopping reconcile paths):
-   - Static validation completed (`prisma validate`, `migrate status`, `tsc`)
-   - Added and ran targeted core tests for receipt alias resolution/learning payloads (`lib/core/matching/receipt-line-core.test.mjs`) -- 7/7 pass
-   - Runtime/UI verification still pending
+1. `[x]` Add aggregate fallback counters + provider depth/latency summary logging in `lib/modules/shopping/web-fallback.ts` (process-local, structured console metrics).
+2. `[ ]` Validate the current web fallback hardening slice (`npx tsc --noEmit --incremental false`; optional manual run of `Try Web/AI Suggestion` flow to inspect summary logs).
+3. `[ ]` Tighten retry/rate-limit policy for repeated transient web fallback failures:
+   - review timeout cooldown thresholds and repeated-error escalation behavior
+   - add clearer summary logs when cooldown is entered due to repeated transient failures (not only `429`)
+4. `[ ]` Add lightweight aggregate counters for the layered barcode provider stack (OFF / OBF / UPCDatabase / UPCitemdb):
+   - provider hit/miss/error/throttle counts
+   - fallback depth distribution
+   - timeout/error-code counts
+   - latency summaries (count/avg/max)
+5. `[ ]` Revisit Phase E section wording/status after the above metrics are added across both web fallback and barcode provider paths
 
 Notes:
 
@@ -457,6 +618,8 @@ Scan UPC
 
 Attempt quick DB lookup
 
+If no DB hit -> run layered barcode APIs (Layer 1-4) until first hit
+
 If found -> show clean name
 
 If not found -> show provisional label (e.g., "Unresolved Item")
@@ -468,7 +631,19 @@ Store UPC locally (shopping session/cart)
 Repeat scan -> save to cart -> next item until user selects Conclude Quick Shop
 ```
 
-Note: while the user is actively shopping, the system may attempt lightweight barcode decoding/normalization and internal lookup, but expensive web-query fallback should be deferred until the receipt-backed reconciliation phase.
+Note: while the user is actively shopping, the system may attempt barcode normalization plus layered barcode-provider resolution (internal + Layer 1-4), but expensive constrained web-query / AI fallback should be deferred until the receipt-backed reconciliation phase.
+
+Shopping-mode barcode provider behavior (layered barcode APIs, no web/AI during live shopping):
+
+- When an item is scanned in Shopping Mode:
+  - Run internal barcode lookup first.
+  - If no internal hit, run the layered barcode provider stack in order (Layer 1 -> Layer 4) until a hit is returned.
+  - Stop on first barcode-provider hit (internal or external barcode metadata hit).
+- If no hit is returned from the full barcode provider stack:
+  - save/store the scanned barcode on the shopping session item first
+  - keep the item as unresolved/provisional during live shopping
+  - wait for final receipt scan (authoritative phase) before attempting expensive web/AI fallback
+- Live shopping should not trigger the constrained web query / AI search fallback.
 
 ### Receipt Ingestion Intelligence
 
@@ -527,6 +702,13 @@ If web confidence high -> save canonical mapping
 
 Otherwise -> request user confirmation
 ```
+
+If barcode provider stack did not resolve during live shopping:
+
+- Use the saved unresolved barcode + receipt reconciliation context to attempt pairing with a receipt item.
+- If receipt-based pairing confidence is high, pair them and persist the barcode mapping.
+- If still low confidence, prompt for an optional item photo, then run the constrained web query + AI canonicalization fallback using receipt context plus photo-derived hints (brand/size/pack text) when available.
+- If web/AI still cannot produce a high-confidence result, show unresolved barcodes vs receipt items and require user pairing/confirmation.
 
 Design requirement:
 
@@ -621,8 +803,9 @@ Never auto-commit low-confidence matches without confirmation.
 Updated Resolution Pipeline (summary):
 
 ```text
-Quick Shop (in-session): scan UPC -> quick DB lookup -> show clean name or provisional unresolved -> save to cart -> next scan -> Conclude Quick Shop
-Post-receipt (authoritative): UPC exact -> Store SKU mapped -> fuzzy/PLU -> constrained web query (last failsafe)
+Quick Shop (in-session): scan UPC -> internal lookup -> layered barcode APIs (Layer 1-4, stop on first hit) -> save to cart -> next scan -> Conclude Quick Shop
+If barcode stack misses: save unresolved barcode and defer web/AI
+Post-receipt (authoritative): UPC exact -> Store SKU mapped -> fuzzy/PLU -> pair unresolved barcodes to receipt lines -> constrained web query + AI (last failsafe) -> user pairing if still unresolved
 Persist only validated mappings; reuse UPC -> Canonical Product globally (UPC is the anchor)
 ```
 
@@ -691,7 +874,7 @@ Planned work:
 
 ### Phase E - Observability & Hardening
 
-Status (as of February 25, 2026): Not started.
+Status (as of February 25, 2026): Partially implemented (shopping web fallback audit trails, timeout/retry/cooldown hardening, provider metadata, and aggregate process-local counters are in place; broader provider-stack metrics, background retries, and abuse controls remain).
 
 Planned work:
 
