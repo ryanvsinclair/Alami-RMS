@@ -4,6 +4,7 @@
  */
 
 import type { Prisma, MatchConfidence, LineItemStatus } from "@/lib/generated/prisma/client";
+import type { ReceiptPostOcrCorrectionSummary } from "./receipt-correction.contracts";
 
 // ---- Standard Prisma includes ----------------------------------------
 
@@ -64,6 +65,7 @@ export type ParsedDataSummary = {
   date?: string | null;
   currency?: string | null;
   paymentMethod?: string | null;
+  correction?: ReceiptPostOcrCorrectionSummary;
   line_count: number;
   matched_count: number;
   suggested_count: number;

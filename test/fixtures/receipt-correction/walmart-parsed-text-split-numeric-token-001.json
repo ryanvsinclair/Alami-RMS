@@ -1,0 +1,15 @@
+{
+  "id": "walmart-parsed-text-split-numeric-token-001",
+  "source": "parsed_text",
+  "store": {
+    "name": "Walmart",
+    "google_place_id": "test_walmart_place"
+  },
+  "raw_text": "WALMART\nMILK 2% 9 49\nBREAD 3.29\nTax 0.64\nTotal 13.42",
+  "expected": {
+    "notes": [
+      "Line 'MILK 2% 9 49' should generate dual numeric interpretations.",
+      "9.49 should be preferred over 949.00 based on total consistency."
+    ]
+  }
+}

@@ -2,7 +2,7 @@
 
 Status: Active (living document)
 Last Updated: 2026-02-26
-Primary Purpose: Current architecture reference, implementation summary, feature-placement rules, and project changelog.
+Primary Purpose: Current architecture reference, implementation summary, and feature-placement rules.
 
 ## How To Use This Document
 
@@ -13,29 +13,32 @@ Use it to:
 - find canonical file locations for new work
 - understand what major features already exist
 - follow the required rules for adding/changing features without breaking the app structure
-- review recent changes in the built-in changelog
+- review recent changes in `docs/codebase-changelog.md`
 
 What this document is not:
 - It is not a substitute for the code.
 - It is not a migration file-by-file history (the detailed phase logs remain in the plan docs).
 
 Related historical/planning docs (still useful for deep history):
+- `docs/codebase-changelog.md` (chronological engineering changelog + validation record)
 - `docs/app-structure-refactor-agent-playbook.md` (refactor execution history and wrapper decisions)
 - `docs/inventoryintakeplan.md` (inventory/barcode/receipt/enrichment rollout history)
 - `docs/combined-plan-coordination.md` (cross-plan sequencing and handoff history)
+- `docs/income-integrations-onboarding-plan.md` (business-type onboarding + income provider OAuth/sync rollout plan)
+- `docs/receipt-post-ocr-correction-plan.md` (post-TabScanner numeric/structural correction and reconciliation accuracy plan)
 
 ## Maintenance Rules (Required)
 
-After every meaningful code or docs change, update this file.
+After every meaningful code or docs change, update this overview and/or `docs/codebase-changelog.md` as required.
 
 Minimum required updates:
-1. Append a new entry at the top of `## Changelog`.
+1. Append a new entry at the top of `docs/codebase-changelog.md`.
 2. If file placement/canonical paths changed, update `## Architecture Map` and `## Feature Placement Rules`.
 3. If behavior changed, update the relevant feature section(s) under `## Product Capabilities` or `## Core Workflows`.
 4. If a new exception/deviation was introduced, add it to `## Accepted Exceptions and Known Validation Gaps`.
-5. Record validation commands actually run (and failures/exceptions) in the changelog entry.
+5. Record validation commands actually run (and failures/exceptions) in the changelog entry in `docs/codebase-changelog.md`.
 
-Changelog policy:
+Changelog policy (`docs/codebase-changelog.md`):
 - Append new entries at the top (newest first).
 - Keep entries concise but concrete: what changed, which files, validation, caveats.
 - Do not delete historical entries; add corrections as new entries.
@@ -398,10 +401,11 @@ High-level flow:
 High-level flow:
 1. OCR/manual receipt text ingestion
 2. Parse into line items
-3. Resolve lines using alias + matching pipeline
-4. User reviews/edits unresolved/suggested lines
-5. Commit receipt transactions atomically
-6. Learn aliases from user confirmations
+3. Run post-OCR numeric correction/reconciliation (feature-flagged; shadow/enforce modes)
+4. Resolve lines using alias + matching pipeline
+5. User reviews/edits unresolved/suggested lines
+6. Commit receipt transactions atomically
+7. Learn aliases from user confirmations
 
 Behavior invariants:
 - Commit remains idempotent
@@ -562,236 +566,3 @@ Prisma client regeneration in dev:
 Process-local observability/retries:
 - Some queue/metrics/cooldown/retry state is in-memory and resets on server restart.
 - This is expected for current Phase E behavior unless/until persistent jobs/metrics are added.
-
-## Changelog (Append New Entries At Top)
-
-### 2026-02-26 - Home dashboard layer feature extracted into `src/features/home/*` (playbook compliance)
-- Scope:
-  - Home dashboard interactive income/expense layer feature follow-up refactor for feature-module compliance
-- What changed:
-  - Created canonical home feature module paths: `src/features/home/server/*`, `src/features/home/ui/*`, and `src/features/home/shared/*`
-  - Moved dashboard summary period/window query and aggregation workflow out of `app/actions/core/financial.ts` into `src/features/home/server/*` (repository + service)
-  - Converted `app/actions/core/financial.ts#getDashboardSummary` into a thin wrapper that enforces tenant auth and delegates to the home feature service
-  - Moved `HomeIncomeLayer` and `HomeTransactionsLayer` plus their UI helpers/contracts out of `app/page.tsx` into `src/features/home/ui/*`
-  - Kept `app/page.tsx` as route composition/state wiring while preserving the interactive collapse/expand behavior
-  - Updated architecture map + product capabilities sections in this document to include the new home feature module and canonical paths
-- Files changed:
-  - `src/features/home/server/dashboard-summary.repository.ts`
-  - `src/features/home/server/dashboard-summary.service.ts`
-  - `src/features/home/server/index.ts`
-  - `src/features/home/shared/dashboard-summary.contracts.ts`
-  - `src/features/home/ui/home-financial-layer.shared.tsx`
-  - `src/features/home/ui/HomeIncomeLayer.tsx`
-  - `src/features/home/ui/HomeTransactionsLayer.tsx`
-  - `src/features/home/ui/index.ts`
-  - `app/actions/core/financial.ts`
-  - `app/page.tsx`
-  - `docs/codebase-overview.md`
-- Validation run:
-  - `npx tsc --noEmit --incremental false` -> PASS
-  - `npx eslint app/page.tsx app/actions/core/financial.ts src/features/home/server/*.ts src/features/home/shared/*.ts src/features/home/ui/*.tsx src/features/home/ui/*.ts --quiet` -> baseline/pre-existing `react-hooks/set-state-in-effect` error remains in `app/page.tsx` (`setLoading(true)` inside `useEffect`)
-- Notes:
-  - This refactor addresses the playbook compliance gap recorded in the prior home-dashboard changelog entry.
-
-### 2026-02-26 - Home dashboard interactive income/expense layers + income source breakdown
-- Scope:
-  - Home dashboard financial layers (income/expense split interaction) and dashboard summary data aggregation
-- What changed:
-  - Split home financial sheet into separate `HomeIncomeLayer` and `HomeTransactionsLayer` components (currently local component functions in `app/page.tsx`)
-  - Added interactive layer behavior so tapping the income layer collapses the transactions layer and expands an income-source breakdown view
-  - Limited the transactions layer to expense records only while the income layer surfaces income by source
-  - Added business-type-aware income source ordering (e.g., restaurant prioritizes GoDaddy POS, Uber Eats, DoorDash)
-  - Extended `getDashboardSummary()` to return aggregated `incomeBreakdown` grouped by transaction source for the selected period
-- Files changed:
-  - `app/page.tsx`
-  - `app/actions/core/financial.ts`
-  - `docs/codebase-overview.md`
-- Validation run:
-  - `npx eslint app/page.tsx app/actions/core/financial.ts --quiet` -> baseline/pre-existing `react-hooks/set-state-in-effect` error remains in `app/page.tsx`; no new errors in `app/actions/core/financial.ts`
-  - `npm run lint` -> known repo baseline noise/failures (including generated `playwright-report` assets), unchanged by this feature
-- Notes:
-  - Playbook compliance is partial: UI/server logic were implemented in route/action files (`app/page.tsx`, `app/actions/core/financial.ts`) instead of feature modules under `src/features/*`; follow-up extraction is recommended for strict compliance.
-
-Entry format (recommended):
-- Date
-- Scope
-- What changed
-- Files changed
-- Validation run
-- Notes / caveats
-
-### 2026-02-26 - Global design language refresh (finance-style shell with green primary)
-- Scope:
-  - Cross-app visual language update (dark/light theme-aware) + homepage redesign
-- What changed:
-  - Updated global theme tokens in `app/globals.css` for cleaner matte surfaces, softer shadows, and green-first hero accents
-  - Added reusable UI surface classes (`app-control`, `app-hero-card`, `app-hero-inset`, `app-sheet`, `app-sheet-row`)
-  - Updated shared `Card` and `BottomNav` components so many pages inherit the new rounded finance-app style automatically
-  - Redesigned `app/page.tsx` to a green hero + rounded sheet layout while preserving existing features (period toggle, balance summary, contacts shortcut, transaction feed)
-- Files changed:
-  - `app/globals.css`
-  - `components/ui/card.tsx`
-  - `components/nav/bottom-nav.tsx`
-  - `app/page.tsx`
-  - `docs/codebase-overview.md`
-- Validation run:
-  - `npx tsc --noEmit --incremental false` -> PASS
-- Notes:
-  - This pass focuses on shared surfaces + homepage; some feature pages still use local styling and may need follow-up polish to fully align with the new language.
-
-### 2026-02-26 - Homepage UI cleanup (reduced glow and card density)
-- Scope:
-  - Dashboard/home page visual simplification for cleaner presentation
-- What changed:
-  - Removed heavy glow/gradient treatment from the top header/summary area
-  - Flattened top nav controls (profile/search/reports) to a simpler surface style
-  - Replaced boxed summary "stat pills" with a lighter inline summary row
-  - Simplified quick action + transaction card treatments (less border/shadow intensity)
-- Files changed:
-  - `app/page.tsx`
-  - `docs/codebase-overview.md`
-- Validation run:
-  - `npx tsc --noEmit --incremental false` -> PASS
-- Notes:
-  - No behavior/data-loading changes; this is a presentation-only cleanup.
-
-### 2026-02-26 - Codebase overview promoted to architecture handbook + engineering guide + changelog
-- Scope:
-  - Replaced the old MVP-style overview with a current-state architecture reference covering refactor outcomes, inventory intelligence features, feature placement rules, accepted exceptions, and changelog process.
-- What changed:
-  - Added canonical architecture map (`app`, `src/features`, `src/domain`, `src/server`, `src/shared`)
-  - Added feature implementation summaries (barcode resolver, receipt aliasing, shopping reconciliation, inventory enrichment queue)
-  - Added explicit rules for future engineers on where new code must go
-  - Added accepted exceptions/validation gaps and operational notes
-  - Added changelog process and backfilled historical milestone summaries below
-- Files changed:
-  - `docs/codebase-overview.md`
-- Validation run:
-  - Documentation update only (no new code validation commands run)
-- Notes:
-  - This file is now expected to be updated after every meaningful change.
-
-### 2026-02-26 - Fixed Inventory page client-bundle server import leak (`pg`/`dns` in browser build)
-- Scope:
-  - Inventory enrichment queue client hook/import boundaries
-- What changed:
-  - Moved shared inventory enrichment queue types/constants into a client-safe feature file:
-    - `src/features/inventory/shared/enrichment-queue.contracts.ts`
-  - Updated client UI/hook imports to use the new shared path instead of importing from `@/features/inventory/server`
-  - Kept server API compatibility by re-exporting the shared contracts from `src/features/inventory/server/inventory.service.ts`
-- Files changed:
-  - `src/features/inventory/shared/enrichment-queue.contracts.ts`
-  - `src/features/inventory/server/inventory.service.ts`
-  - `src/features/inventory/ui/use-enrichment-dismissals.ts`
-  - `src/features/inventory/ui/InventoryListPageClient.tsx`
-  - `docs/codebase-overview.md`
-- Validation run:
-  - `npx tsc --noEmit --incremental false` -> PASS
-  - `npx eslint src/features/inventory/shared/enrichment-queue.contracts.ts src/features/inventory/server/inventory.service.ts src/features/inventory/ui/use-enrichment-dismissals.ts src/features/inventory/ui/InventoryListPageClient.tsx` -> PASS
-  - `rg -n '@/features/inventory/server' src/features/inventory/ui` -> no matches
-- Notes:
-  - Root cause: `use-enrichment-dismissals.ts` imported `ENRICHMENT_SNOOZE_HOURS` from the inventory server barrel, which pulled Prisma/`pg` into the client bundle and caused the `dns` module resolution error in Next.js/Turbopack.
-
-### 2026-02-26 - Refactor plan complete through Phase 8 (manual integrated smoke deferred)
-- Scope:
-  - App structure refactor final closeout
-- What changed (summary from refactor playbook):
-  - Route-thin + feature-first structure established across shopping/receiving/inventory/contacts/staff
-  - Shared/domain/server wrapper slices and feature import cleanup completed
-  - Phase 8 wrapper keep/defer matrix documented
-  - Accepted exceptions finalized (shopping route large, zero wrapper removals this phase, known lint/test exceptions)
-- Files changed (representative/canonical areas):
-  - `src/features/*`
-  - `src/domain/*`
-  - `src/server/*`
-  - `src/shared/*`
-  - `app/actions/*` wrappers
-  - `app/(dashboard)/*` route wrappers
-- Validation run (recorded in refactor playbook):
-  - `npx tsc --noEmit --incremental false` PASS
-  - targeted tests PASS except documented Node ESM issue for `barcode-resolver-core.test.mjs`
-  - `npm run lint` FAIL with known baseline exceptions/noise
-  - localhost HEAD route smoke PASS
-- Notes:
-  - Manual integrated smoke deferred to user/final QA pass.
-
-### 2026-02-26 - Inventory Plan Phase D complete (enrichment queue)
-- Scope:
-  - Optional non-blocking "Fix Later" enrichment workflow
-- What changed (summary from inventory plan):
-  - Added derived enrichment queue in Inventory UI
-  - Added client-side persistent task actions (complete/defer/snooze via localStorage)
-  - Expanded sources (barcode metadata, receipt matching, shopping pairing leftovers, normalization gaps)
-  - Added queue observability summaries in UI
-- Canonical files:
-  - `src/features/inventory/server/inventory.repository.ts`
-  - `src/features/inventory/server/inventory.service.ts`
-  - `src/features/inventory/server/index.ts`
-  - `src/features/inventory/ui/InventoryListPageClient.tsx`
-  - `src/features/inventory/ui/use-enrichment-dismissals.ts`
-  - `app/actions/core/inventory.ts` (wrapper wiring)
-- Validation run (recorded in inventory plan):
-  - `npx tsc --noEmit --incremental false` PASS
-  - targeted eslint on inventory files PASS
-- Notes:
-  - Server-side persistent enrichment task table intentionally deferred.
-
-### 2026-02-26 - Inventory Plan Phase E complete (observability and hardening)
-- Scope:
-  - Resolver/web fallback hardening, metrics, retries, derived rates
-- What changed (summary from inventory plan):
-  - Web fallback hardening (timeouts/retries/cooldowns/observability)
-  - Barcode provider aggregate metrics + resolver metrics
-  - Barcode lookup abuse controls and cooldowns
-  - Background retry scheduling for unresolved barcodes
-  - Derived-rate summaries for resolver and receipt matching
-- Key files (representative):
-  - `lib/modules/shopping/web-fallback.ts`
-  - `app/actions/core/barcode-resolver.ts`
-  - `src/features/receiving/receipt/server/receipt-workflow.service.ts`
-- Notes:
-  - Many metrics/retry mechanisms are process-local and reset on restart.
-
-### 2026-02-26 - Inventory Plan Phases B/C complete; receipt aliasing and external barcode provider layering in production code
-- Scope:
-  - Barcode provider integrations and place-scoped receipt aliasing
-- What changed (summary from inventory plan):
-  - Implemented OFF/OBF/UPCDatabase/UPCitemdb provider layering with caching/provenance
-  - Added place-scoped receipt alias mapping and matching/learning integration
-  - Preserved receipt commit idempotency and tenant isolation
-- Key schema/entities:
-  - `GlobalBarcodeCatalog`
-  - `BarcodeResolutionEvent`
-  - `ReceiptItemAlias`
-
-### 2026-02-25 to 2026-02-26 - Major architecture transition completed (historical backfill summary)
-- Scope:
-  - Full route-thin, feature-first refactor and inventory intelligence rollout from plan docs
-- What changed:
-  - Phases 0-8 refactor plan executed and documented
-  - Phases 0/A/B/C/D/E inventory plan executed and documented
-  - Combined coordination plan used to sequence high-churn work safely
-- Notes:
-  - Detailed step-by-step logs remain in:
-    - `docs/app-structure-refactor-agent-playbook.md`
-    - `docs/inventoryintakeplan.md`
-    - `docs/combined-plan-coordination.md`
-
-## Changelog Entry Template (Copy / Append At Top)
-
-```md
-### YYYY-MM-DD - <short change title>
-- Scope:
-  - <what area changed>
-- What changed:
-  - <summary>
-  - <summary>
-- Files changed:
-  - `<path>`
-  - `<path>`
-- Validation run:
-  - `<command>` -> <PASS/FAIL + notes>
-  - `<command>` -> <PASS/FAIL + notes>
-- Notes:
-  - <caveats / follow-up / accepted exceptions>
-```

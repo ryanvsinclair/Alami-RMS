@@ -1,0 +1,44 @@
+{
+  "id": "grocery-tabscanner-total-mismatch-outlier-001",
+  "source": "tabscanner",
+  "store": {
+    "name": "Neighbourhood Grocery",
+    "google_place_id": "test_grocery_place"
+  },
+  "tabscanner_result": {
+    "establishment": "NEIGHBOURHOOD GROCERY",
+    "currency": "CAD",
+    "subTotal": 18.47,
+    "tax": 0.92,
+    "total": 19.39,
+    "lineItems": [
+      {
+        "desc": "APPLES",
+        "descClean": "APPLES",
+        "qty": 1,
+        "price": 4.99,
+        "lineTotal": 4.99
+      },
+      {
+        "desc": "YOGURT",
+        "descClean": "YOGURT",
+        "qty": 1,
+        "price": 1250,
+        "lineTotal": 1250
+      },
+      {
+        "desc": "CEREAL",
+        "descClean": "CEREAL",
+        "qty": 1,
+        "price": 9.48,
+        "lineTotal": 9.48
+      }
+    ]
+  },
+  "expected": {
+    "notes": [
+      "YOGURT line likely missing decimal (12.50).",
+      "Totals mismatch should point to YOGURT as numeric outlier."
+    ]
+  }
+}

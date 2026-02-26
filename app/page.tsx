@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getDashboardSummary, type DashboardPeriod } from "@/app/actions/core/financial";
 import { getCurrentBusinessConfigAction } from "@/app/actions/core/modules";
@@ -31,11 +31,6 @@ const HOME_SNAPSHOT_PERIOD: DashboardPeriod = "month";
 // Page
 
 export default function HomePage() {
-  const [navMenuOpen, setNavMenuOpen] = useState(false);
-  const navMenuRef = useRef<HTMLDivElement | null>(null);
-  const edgeSwipeStartXRef = useRef<number | null>(null);
-  const edgeSwipeStartYRef = useRef<number | null>(null);
-  const edgeSwipeTriggeredRef = useRef(false);
   const [transactionsCollapsed, setTransactionsCollapsed] = useState(false);
   const [data, setData] = useState<DashboardData | null>(null);
   const [industryType, setIndustryType] = useState<IndustryType>("general");
@@ -57,26 +52,6 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    function handleDocumentClick(event: MouseEvent) {
-      if (!navMenuRef.current) return;
-      if (!navMenuRef.current.contains(event.target as Node)) {
-        setNavMenuOpen(false);
-      }
-    }
-
-    function handleEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") setNavMenuOpen(false);
-    }
-
-    document.addEventListener("mousedown", handleDocumentClick);
-    document.addEventListener("keydown", handleEscape);
-    return () => {
-      document.removeEventListener("mousedown", handleDocumentClick);
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, []);
-
-  useEffect(() => {
     setLoading(true);
     setError("");
     getDashboardSummary(HOME_SNAPSHOT_PERIOD)
@@ -92,36 +67,6 @@ export default function HomePage() {
   const incomeBreakdown = data?.incomeBreakdown ?? [];
   const terminology = getTerminology(industryType);
 
-  function resetEdgeSwipe() {
-    edgeSwipeStartXRef.current = null;
-    edgeSwipeStartYRef.current = null;
-    edgeSwipeTriggeredRef.current = false;
-  }
-
-  function handleEdgeSwipeStart(event: React.TouchEvent<HTMLDivElement>) {
-    if (navMenuOpen) return;
-    const touch = event.touches[0];
-    edgeSwipeStartXRef.current = touch.clientX;
-    edgeSwipeStartYRef.current = touch.clientY;
-    edgeSwipeTriggeredRef.current = false;
-  }
-
-  function handleEdgeSwipeMove(event: React.TouchEvent<HTMLDivElement>) {
-    if (navMenuOpen || edgeSwipeTriggeredRef.current) return;
-    const startX = edgeSwipeStartXRef.current;
-    const startY = edgeSwipeStartYRef.current;
-    if (startX == null || startY == null) return;
-    const touch = event.touches[0];
-    const dx = touch.clientX - startX;
-    const dy = touch.clientY - startY;
-
-    if (Math.abs(dy) > 48) return;
-    if (dx <= -36) {
-      edgeSwipeTriggeredRef.current = true;
-      setNavMenuOpen(true);
-    }
-  }
-
   return (
     <BusinessConfigProvider
       config={{
@@ -135,101 +80,49 @@ export default function HomePage() {
 
       {/* â•â•â• Layer 1 â€“ Balance (on the blue bg) â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       <div className="layer-balance relative px-5 pt-5 pb-10">
-        {/* Top bar: hamburger */}
-        <div ref={navMenuRef} className="relative mb-8 flex items-center justify-end">
-          <button
-            type="button"
-            aria-label={navMenuOpen ? "Close secondary navigation" : "Open secondary navigation"}
-            aria-expanded={navMenuOpen}
-            onClick={() => setNavMenuOpen((open) => !open)}
-            className={`relative z-[60] grid h-10 w-10 place-items-center rounded-full border border-white/15 bg-white/8 transition-colors ${
-              navMenuOpen ? "text-white" : "text-white/80"
-            }`}
-          >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-              {navMenuOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5" />
-              )}
-            </svg>
-          </button>
+        {/* Top bar: overlay quick actions */}
+        <div className="relative mb-8 h-10">
+          <div className="absolute right-0 top-0 z-[60] flex flex-col items-end gap-2">
+            <Link
+              href="/contacts"
+              aria-label="Contacts"
+              className="grid h-10 w-10 place-items-center rounded-full border border-white/15 bg-white/8 text-white/80 transition-colors hover:bg-white/12 hover:text-white"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.75 1.03 8.966 8.966 0 0 1-4.5 1.252c-1.33 0-2.59-.291-3.72-.811M12 6.75a3.75 3.75 0 1 1 0 7.5 3.75 3.75 0 0 1 0-7.5Zm-9.75 12a9.02 9.02 0 0 1 6.22-8.568m7.06 8.568A9.02 9.02 0 0 0 9.31 10.182" />
+              </svg>
+            </Link>
 
-          {/* Swipe edge to open drawer */}
-          <div
-            className={`fixed inset-y-0 right-0 z-40 w-6 ${navMenuOpen ? "pointer-events-none" : "pointer-events-auto"}`}
-            onTouchStart={handleEdgeSwipeStart}
-            onTouchMove={handleEdgeSwipeMove}
-            onTouchEnd={resetEdgeSwipe}
-            onTouchCancel={resetEdgeSwipe}
-            aria-hidden="true"
-          />
+            <Link
+              href="/reports"
+              aria-label="Reports"
+              className="grid h-10 w-10 place-items-center rounded-full border border-white/15 bg-white/8 text-white/80 transition-colors hover:bg-white/12 hover:text-white"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 18.75V14.5m5.25 4.25V9.5m5.25 9.25V5.25" />
+              </svg>
+            </Link>
 
-          {/* Right-side drawer */}
-          <div
-            className={`fixed inset-0 z-50 transition-opacity duration-200 ${
-              navMenuOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
-            }`}
-            aria-hidden={!navMenuOpen}
-          >
             <button
               type="button"
-              aria-label="Close secondary navigation"
-              onClick={() => setNavMenuOpen(false)}
-              className="absolute inset-0 bg-black/35"
-            />
-
-            <div
-              className={`absolute right-0 top-0 flex h-dvh w-24 flex-col transition-transform duration-200 ${
-                navMenuOpen ? "translate-x-0" : "translate-x-full"
-              }`}
+              disabled
+              aria-label="Search (coming soon)"
+              className="grid h-10 w-10 place-items-center rounded-full border border-white/15 bg-white/8 text-white/45"
             >
-              <div className="mt-auto flex flex-col items-end gap-2 px-3 pb-[10dvh]">
-                <button
-                  type="button"
-                  disabled
-                  aria-label="Search (coming soon)"
-                  className="grid h-12 w-12 place-items-center rounded-2xl border border-white/8 bg-card/60 text-white/35 backdrop-blur-md"
-                >
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-4.35-4.35m1.85-5.15a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z" />
-                  </svg>
-                </button>
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-4.35-4.35m1.85-5.15a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z" />
+              </svg>
+            </button>
 
-                <Link
-                  href="/profile"
-                  aria-label="Profile"
-                  onClick={() => setNavMenuOpen(false)}
-                  className="grid h-12 w-12 place-items-center rounded-2xl border border-white/8 bg-card/60 text-white/85 backdrop-blur-md transition-colors hover:bg-card/75 hover:text-white"
-                >
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-                  </svg>
-                </Link>
-
-                <Link
-                  href="/reports"
-                  aria-label="Reports"
-                  onClick={() => setNavMenuOpen(false)}
-                  className="grid h-12 w-12 place-items-center rounded-2xl border border-white/8 bg-card/60 text-white/85 backdrop-blur-md transition-colors hover:bg-card/75 hover:text-white"
-                >
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 18.75V14.5m5.25 4.25V9.5m5.25 9.25V5.25" />
-                  </svg>
-                </Link>
-
-                <Link
-                  href="/contacts"
-                  aria-label="Contacts"
-                  onClick={() => setNavMenuOpen(false)}
-                  className="grid h-12 w-12 place-items-center rounded-2xl border border-white/8 bg-card/60 text-white/85 backdrop-blur-md transition-colors hover:bg-card/75 hover:text-white"
-                >
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.75 1.03 8.966 8.966 0 0 1-4.5 1.252c-1.33 0-2.59-.291-3.72-.811M12 6.75a3.75 3.75 0 1 1 0 7.5 3.75 3.75 0 0 1 0-7.5Zm-9.75 12a9.02 9.02 0 0 1 6.22-8.568m7.06 8.568A9.02 9.02 0 0 0 9.31 10.182" />
-                  </svg>
-                </Link>
-              </div>
-            </div>
+            <Link
+              href="/profile"
+              aria-label="Profile"
+              className="grid h-10 w-10 place-items-center rounded-full border border-white/15 bg-white/8 text-white/80 transition-colors hover:bg-white/12 hover:text-white"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 1 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+              </svg>
+            </Link>
           </div>
         </div>
 

@@ -1,0 +1,38 @@
+{
+  "id": "costco-tabscanner-extra-digit-001",
+  "source": "tabscanner",
+  "store": {
+    "name": "Costco",
+    "google_place_id": "test_costco_place"
+  },
+  "tabscanner_result": {
+    "establishment": "COSTCO WHOLESALE",
+    "currency": "CAD",
+    "subTotal": 6.98,
+    "tax": 0,
+    "total": 6.98,
+    "lineItems": [
+      {
+        "desc": "5523795 TERRA DATES",
+        "descClean": "5523795 TERRA DATES",
+        "qty": 1,
+        "price": 14900,
+        "lineTotal": 14900,
+        "productCode": "5523795"
+      },
+      {
+        "desc": "SPARKLING WATER",
+        "descClean": "SPARKLING WATER",
+        "qty": 1,
+        "price": 5.49,
+        "lineTotal": 5.49
+      }
+    ]
+  },
+  "expected": {
+    "notes": [
+      "14900 may be extra-digit OCR drift.",
+      "Candidate interpretations should include 149.00, 14.90, and 1.49."
+    ]
+  }
+}

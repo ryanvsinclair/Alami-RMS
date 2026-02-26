@@ -8,6 +8,12 @@ export type {
   ResolvedLineItem,
   ParsedDataSummary,
 } from "./contracts";
+export type {
+  ReceiptPostOcrCorrectionInput,
+  ReceiptPostOcrCorrectionMode,
+  ReceiptPostOcrCorrectionResult,
+  ReceiptPostOcrCorrectionSummary,
+} from "./receipt-correction.contracts";
 
 // Repository
 export {
@@ -30,6 +36,10 @@ export {
   processReceiptText,
   processReceiptImage,
 } from "./receipt-workflow.service";
+export {
+  getReceiptPostOcrCorrectionMode,
+  runReceiptPostOcrCorrection,
+} from "./receipt-correction.service";
 
 // Line item services
 export { updateLineItemMatch } from "./line-item.service";

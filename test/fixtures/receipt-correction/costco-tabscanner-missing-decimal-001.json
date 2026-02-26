@@ -1,0 +1,38 @@
+{
+  "id": "costco-tabscanner-missing-decimal-001",
+  "source": "tabscanner",
+  "store": {
+    "name": "Costco",
+    "google_place_id": "test_costco_place"
+  },
+  "tabscanner_result": {
+    "establishment": "COSTCO WHOLESALE",
+    "currency": "CAD",
+    "subTotal": 24.46,
+    "tax": 1.22,
+    "total": 25.68,
+    "lineItems": [
+      {
+        "desc": "5523795 TERRA DATES",
+        "descClean": "5523795 TERRA DATES",
+        "qty": 1,
+        "price": 949,
+        "lineTotal": 949,
+        "productCode": "5523795"
+      },
+      {
+        "desc": "BANANAS",
+        "descClean": "BANANAS",
+        "qty": 1,
+        "price": 14.97,
+        "lineTotal": 14.97
+      }
+    ]
+  },
+  "expected": {
+    "notes": [
+      "First line price likely missing decimal (9.49 instead of 949.00).",
+      "Totals consistency should identify first line as outlier candidate."
+    ]
+  }
+}
