@@ -60,11 +60,11 @@ Disclaimer:
 This section is the source of truth for progress and ownership during the refactor.
 
 ### Current Status Snapshot
-- Current phase: `Phase 5 complete - Ready for Phase 6`
-- Latest completed checkpoint: `Phase 5 receive UI split complete (manual receive smoke validation passed)`
+- Current phase: `Phase 6 in progress (inventory extraction complete; contacts/staff remaining)`
+- Latest completed checkpoint: `Phase 6 inventory UI + inventory server extraction complete (targeted compile/lint pass)`
 - Active work lock: `UNLOCKED`
 - Known blocker: `None`
-- Last validation status: `npx tsc --noEmit --incremental false PASS (2026-02-26); manual receive smoke PASS (barcode/photo/manual/receipt + receipt detail tabs, user-reported, 2026-02-26); prior baseline lint 4 pre-existing errors/15 warnings, barcode-cache 5/5 PASS, receipt-line-core 10/10 PASS`
+- Last validation status: `npx tsc --noEmit --incremental false PASS (2026-02-26); npx eslint app/actions/core/inventory.ts src/features/inventory/server/*.ts PASS (2026-02-26); manual receive smoke PASS (barcode/photo/manual/receipt + receipt detail tabs, user-reported, 2026-02-26); prior baseline lint 4 pre-existing errors/15 warnings, barcode-cache 5/5 PASS, receipt-line-core 10/10 PASS`
 
 ### Active Work Lock (Edit First)
 Use this to prevent duplicate work. Clear it when the session ends.
@@ -72,11 +72,11 @@ Use this to prevent duplicate work. Clear it when the session ends.
 - Status: `UNLOCKED`
 - Agent: `-`
 - Date (UTC/local): `2026-02-26`
-- Scope claimed: `-`
+- Scope claimed: `None`
 - Files expected to touch:
-  - `-`
+  - `None (claim next scope before editing)`
 - Notes:
-  - `Phase 5 complete. Ready for Phase 6.`
+  - `Next recommended claim: Phase 6 contacts UI extraction -> src/features/contacts/ui/*`
 
 ### Phase Completion Ledger
 Mark only when exit criteria are met.
@@ -92,6 +92,40 @@ Mark only when exit criteria are met.
 - [ ] Phase 8 complete: Legacy wrappers deprecated/removed, docs and final verification
 
 ### Handoff Log (Append New Entries at Top)
+
+#### 2026-02-26 - Phase 6 (partial): Inventory UI + inventory server extraction completed
+- Agent: `Codex`
+- Scope: `Complete Phase 6 inventory sub-phase (UI route wrappers + inventory action server extraction)`
+- Completed:
+  - Confirmed inventory route pages are thin wrappers pointing to feature UI clients:
+    - `app/(dashboard)/inventory/page.tsx`
+    - `app/(dashboard)/inventory/[id]/page.tsx`
+    - `src/features/inventory/ui/InventoryListPageClient.tsx`
+    - `src/features/inventory/ui/InventoryDetailPageClient.tsx`
+  - Extracted inventory server logic from `app/actions/core/inventory.ts` into feature server files:
+    - `src/features/inventory/server/inventory.repository.ts`
+    - `src/features/inventory/server/inventory.service.ts`
+    - `src/features/inventory/server/index.ts`
+  - Converted `app/actions/core/inventory.ts` into a transitional wrapper that preserves action exports/signatures and keeps tenant auth at the action entrypoint.
+  - Marked Phase 6 inventory UI + inventory server checklist items complete.
+- Changed files:
+  - `app/actions/core/inventory.ts`
+  - `app/(dashboard)/inventory/page.tsx`
+  - `app/(dashboard)/inventory/[id]/page.tsx`
+  - `src/features/inventory/ui/InventoryListPageClient.tsx`
+  - `src/features/inventory/ui/InventoryDetailPageClient.tsx`
+  - `src/features/inventory/server/inventory.repository.ts`
+  - `src/features/inventory/server/inventory.service.ts`
+  - `src/features/inventory/server/index.ts`
+  - `docs/app-structure-refactor-agent-playbook.md`
+- Validation run:
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `npx eslint app/actions/core/inventory.ts src/features/inventory/server/*.ts` -> PASS
+  - `curl http://localhost:3000/inventory` -> `307` (auth redirect, route present)
+- Blockers:
+  - `None (user-provided /inventory 404 screenshot not reproduced; local route currently returns 307 auth redirect)`
+- Next recommended step:
+  - `Phase 6 contacts UI extraction -> src/features/contacts/ui/*`
 
 #### 2026-02-26 - Phase 5 complete: Receive UI split validated and closed out
 - Agent: `Codex`
@@ -625,8 +659,8 @@ Exit criteria:
 Goal: Bring remaining medium-size UI + server action modules into the same pattern.
 
 Checklist:
-- [ ] Inventory UI pages -> `src/features/inventory/ui/*`
-- [ ] Inventory services/repositories -> `src/features/inventory/server/*`
+- [x] Inventory UI pages -> `src/features/inventory/ui/*`
+- [x] Inventory services/repositories -> `src/features/inventory/server/*`
 - [ ] Contacts UI -> `src/features/contacts/ui/*`
 - [ ] Contacts server -> `src/features/contacts/server/*`
 - [ ] Staff UI -> `src/features/staff/ui/*`

@@ -36,6 +36,33 @@ Disclaimer:
 - Agents may use this account for local verification and smoke tests when a login is required.
 ## Latest Update
 
+- **Phase E observability closeout slice: derived-rate summaries (resolver cache/unresolved/retry rates + receipt auto-resolution metrics)** (February 26, 2026):
+  - Added derived-rate summaries to barcode resolver aggregate metrics in `app/actions/core/barcode-resolver.ts`:
+    - global barcode cache read hit rate (`cache_reads.hit_rate`)
+    - resolver unresolved ratio / resolved-external ratio / exception ratio
+    - background retry success rate (surfaced in derived rates and background retry summary)
+  - Added global barcode cache read counters/status breakdowns (`resolved` / `unresolved` / `needs_review`) to resolver metrics summaries.
+  - Added lightweight process-local receipt matching aggregate metrics in `src/features/receiving/receipt/server/receipt-workflow.service.ts` with periodic structured summary logs for:
+    - receipt counts by source (`parsed_text`, `tabscanner`)
+    - cumulative matched / suggested / unresolved line totals
+    - derived receipt auto-resolution rate (receipts fully auto-matched)
+    - derived line auto-resolution rate + unresolved ratio
+  - Receipt metrics hook is wired to both receipt matching paths after successful write/update of line items:
+    - text parse flow (`parseAndMatchReceipt`)
+    - TabScanner image flow (`processReceiptImage`)
+  - Validation:
+    - `npx tsc --noEmit --incremental false` -- 0 errors
+    - `npx eslint app\actions\core\barcode-resolver.ts src\features\receiving\receipt\server\receipt-workflow.service.ts` -- 0 errors
+  - Notes:
+    - Metrics are process-local structured console summaries (no DB/dashboard persistence yet).
+    - This closes the remaining Phase E observability gap called out in `Pick Up Here` step 8.
+  - Docs refresh:
+    - Phase E `Pick Up Here` step 8 marked complete
+    - Phase E status updated to complete
+    - `Pick Up Here` advanced to Phase D (enrichment queue)
+  - Next:
+    - Phase D kickoff: implement optional enrichment tracking + "fix later" workflow without blocking intake
+
 - **Phase E platform slice: background retry scheduling for unresolved barcodes (process-local queue + retry observability/success tracking)** (February 26, 2026):
   - Added a process-local background retry scheduler in `app/actions/core/barcode-resolver.ts` for unresolved barcodes using cached `retry_after_at` backoff timing.
   - Scheduler behavior:
@@ -507,11 +534,11 @@ Previous updates (retained for history):
 - [x] Phase B (external provider integrations) complete. All four providers (OFF, OBF, UPCDatabase, UPCitemdb) implemented with real API calls, fallback chain enabled, 4s timeouts, confidence scoring, `resolved_external` result type, UI support in barcode page, and 7 total resolver tests passing.
 - [x] Phase C (place-scoped receipt aliasing) complete. Place-scoped alias schema/migration, matching + learning paths, and receipt/shopping wiring are implemented; migration/schema/type verification reconfirmed on February 26, 2026.
 - [ ] Phase D (enrichment queue) not started.
-- [~] Phase E (observability/hardening) partially implemented. Audit trails plus shopping web fallback hardening/metrics, layered barcode-provider aggregate counters (provider outcomes, depth, latency, error-code summaries), stricter barcode lookup abuse controls/cooldowns, and process-local background retries for unresolved barcodes are now in place. Broader aggregate dashboards/derived rates still remain.
+- [x] Phase E (observability/hardening) complete. Shopping web fallback audit trails/hardening/metrics, layered barcode-provider aggregate counters (provider outcomes/depth/latency/error-code summaries), stricter barcode lookup abuse controls/cooldowns, process-local background retries for unresolved barcodes, and derived-rate summaries (cache hit/unresolved/retry success + receipt auto-resolution) are in place.
 
 ## Pick Up Here (Next Continuation)
 
-Primary continuation task: **Phase E -- add broader derived-rate/dashboard metrics (cache hit rate, unresolved ratio, retry success rate, receipt auto-resolution rate) to close observability gaps**.
+Primary continuation task: **Phase D -- kick off the optional enrichment queue ("fix later" tracking) without blocking intake workflows**.
 
 Phases A, B, and C are complete. The barcode resolver supports internal inventory lookups and 4 external providers (OFF, OBF, UPCDatabase, UPCitemdb) with fallback chain, timeouts, confidence scoring, and global barcode catalog caching.
 
@@ -530,11 +557,12 @@ Do this next:
 5. `[x]` Revisit Phase E section wording/status after the above metrics are added across both web fallback and barcode provider paths
 6. `[x]` Add strict rate limiting / abuse prevention for repeated barcode lookup churn (especially repeated unresolved/external misses that hammer external providers)
 7. `[x]` Add background retry scheduling for unresolved barcodes (with retry observability/success tracking)
-8. `[ ]` Add broader derived-rate/dashboard summaries across resolver and receipt matching paths:
+8. `[x]` Add broader derived-rate/dashboard summaries across resolver and receipt matching paths:
    - cache hit rate
    - unresolved ratio
    - background retry success rate
    - receipt auto-resolution rate
+9. `[ ]` Phase D kickoff: propose/implement minimal optional enrichment tracking + non-blocking "fix later" flow
 
 Notes:
 
@@ -995,7 +1023,7 @@ Planned work:
 
 ### Phase E - Observability & Hardening
 
-Status (as of February 26, 2026): Partially implemented (shopping web fallback audit trails/hardening/metrics, layered barcode-provider aggregate counters for provider outcomes/depth/timeout/error-code summaries/latency, stricter barcode abuse controls, and background retries for unresolved barcodes are in place; broader derived-rate/dashboard metrics remain).
+Status (as of February 26, 2026): Completed (shopping web fallback audit trails/hardening/metrics, layered barcode-provider aggregate counters, strict barcode abuse controls, background retries for unresolved barcodes, and derived-rate summaries including cache hit/unresolved/retry success + receipt auto-resolution metrics are in place).
 
 Planned work:
 

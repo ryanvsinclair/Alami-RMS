@@ -18,6 +18,7 @@ import {
   getErrorCode,
   isCacheLayerUnavailableError,
   type GlobalBarcodeCatalogRow,
+  type BarcodeResolutionStatusValue,
   type MatchConfidenceValue,
   type BarcodeResolutionEventOutcomeValue,
 } from "./barcode-resolver-cache";
@@ -72,6 +73,14 @@ type LatencyAccumulator = {
   max_ms: number;
 };
 
+type BarcodeCacheReadMetricsState = {
+  read_count: number;
+  hit_count: number;
+  miss_count: number;
+  error_count: number;
+  hit_status_counts: Record<BarcodeResolutionStatusValue, number>;
+};
+
 type BarcodeProviderMetricsState = {
   started_at_ms: number;
   last_emitted_at_ms: number;
@@ -97,6 +106,7 @@ type BarcodeProviderMetricsState = {
   abuse_guard_skip_resolver_calls: number;
   abuse_guard_cached_external_served_count: number;
   abuse_guard_reason_counts: Record<BarcodeAbuseGuardReason, number>;
+  cache_reads: BarcodeCacheReadMetricsState;
   background_retry: BarcodeBackgroundRetryMetricsState;
   latency_total: LatencyAccumulator;
   latency_provider_total: LatencyAccumulator;
@@ -221,6 +231,24 @@ function createProviderLatencyRecord(): Record<BarcodeProviderId, LatencyAccumul
   };
 }
 
+function createBarcodeResolutionStatusCounterRecord(): Record<BarcodeResolutionStatusValue, number> {
+  return {
+    resolved: 0,
+    unresolved: 0,
+    needs_review: 0,
+  };
+}
+
+function createBarcodeCacheReadMetricsState(): BarcodeCacheReadMetricsState {
+  return {
+    read_count: 0,
+    hit_count: 0,
+    miss_count: 0,
+    error_count: 0,
+    hit_status_counts: createBarcodeResolutionStatusCounterRecord(),
+  };
+}
+
 function createBackgroundRetryResultCounterRecord(): Record<BackgroundRetryResultCountKey, number> {
   return {
     resolved: 0,
@@ -279,6 +307,7 @@ function createBarcodeProviderMetricsState(): BarcodeProviderMetricsState {
     abuse_guard_skip_resolver_calls: 0,
     abuse_guard_cached_external_served_count: 0,
     abuse_guard_reason_counts: createAbuseGuardReasonCounterRecord(),
+    cache_reads: createBarcodeCacheReadMetricsState(),
     background_retry: createBackgroundRetryMetricsState(),
     latency_total: createLatencyAccumulator(),
     latency_provider_total: createLatencyAccumulator(),
@@ -402,6 +431,71 @@ function recordResolverCallMetrics(data: {
   maybeEmitBarcodeProviderMetricsSummary();
 }
 
+function recordCacheReadMetrics(data: {
+  outcome: "hit" | "miss" | "error";
+  row?: GlobalBarcodeCatalogRow | null;
+}): void {
+  const metrics = barcodeProviderMetrics.cache_reads;
+  metrics.read_count += 1;
+
+  if (data.outcome === "hit" && data.row) {
+    metrics.hit_count += 1;
+    metrics.hit_status_counts[data.row.resolution_status] += 1;
+    return;
+  }
+
+  if (data.outcome === "miss") {
+    metrics.miss_count += 1;
+    return;
+  }
+
+  metrics.error_count += 1;
+}
+
+function summarizeCacheReadMetrics(): {
+  read_count: number;
+  hit_count: number;
+  miss_count: number;
+  error_count: number;
+  hit_status_counts: Record<BarcodeResolutionStatusValue, number>;
+  hit_rate: number | null;
+} {
+  const metrics = barcodeProviderMetrics.cache_reads;
+  return {
+    read_count: metrics.read_count,
+    hit_count: metrics.hit_count,
+    miss_count: metrics.miss_count,
+    error_count: metrics.error_count,
+    hit_status_counts: metrics.hit_status_counts,
+    hit_rate:
+      metrics.read_count > 0
+        ? Number((metrics.hit_count / metrics.read_count).toFixed(4))
+        : null,
+  };
+}
+
+function summarizeResolverDerivedRates(): {
+  unresolved_ratio: number | null;
+  resolved_external_ratio: number | null;
+  exception_ratio: number | null;
+  cache_hit_rate: number | null;
+  background_retry_success_rate: number | null;
+} {
+  const total = Math.max(0, barcodeProviderMetrics.total_resolver_calls);
+  const resultCounts = barcodeProviderMetrics.resolver_result_counts;
+  const backgroundRetry = summarizeBackgroundRetryMetrics();
+  const cacheReads = summarizeCacheReadMetrics();
+
+  return {
+    unresolved_ratio: total > 0 ? Number((resultCounts.unresolved / total).toFixed(4)) : null,
+    resolved_external_ratio:
+      total > 0 ? Number((resultCounts.resolved_external / total).toFixed(4)) : null,
+    exception_ratio: total > 0 ? Number((resultCounts.exception / total).toFixed(4)) : null,
+    cache_hit_rate: cacheReads.hit_rate,
+    background_retry_success_rate: backgroundRetry.success_rate,
+  };
+}
+
 function maybeEmitBarcodeProviderMetricsSummary(): void {
   if (process.env.NODE_ENV === "test") return;
 
@@ -422,6 +516,8 @@ function maybeEmitBarcodeProviderMetricsSummary(): void {
     upcdatabase: summarizeProviderCounts("upcdatabase"),
     upcitemdb: summarizeProviderCounts("upcitemdb"),
   };
+  const backgroundRetrySummary = summarizeBackgroundRetryMetrics();
+  const cacheReadSummary = summarizeCacheReadMetrics();
 
   console.info("[barcode-resolver-metrics] summary", {
     uptime_ms: Math.max(0, now - barcodeProviderMetrics.started_at_ms),
@@ -431,13 +527,15 @@ function maybeEmitBarcodeProviderMetricsSummary(): void {
     resolver_source_counts: barcodeProviderMetrics.resolver_source_counts,
     total_provider_depth_histogram: barcodeProviderMetrics.total_provider_depth_histogram,
     external_provider_depth_histogram: barcodeProviderMetrics.external_provider_depth_histogram,
+    cache_reads: cacheReadSummary,
+    derived_rates: summarizeResolverDerivedRates(),
     abuse_guard: {
       skipped_resolver_calls: barcodeProviderMetrics.abuse_guard_skip_resolver_calls,
       cached_external_served_count:
         barcodeProviderMetrics.abuse_guard_cached_external_served_count,
       reason_counts: barcodeProviderMetrics.abuse_guard_reason_counts,
     },
-    background_retry: summarizeBackgroundRetryMetrics(),
+    background_retry: backgroundRetrySummary,
     latency_total: summarizeLatency(barcodeProviderMetrics.latency_total),
     latency_provider_total: summarizeLatency(barcodeProviderMetrics.latency_provider_total),
     provider_summary: providerSummary,
@@ -1177,11 +1275,17 @@ async function readGlobalBarcodeCatalog(
   if (!delegates) return null;
 
   try {
-    return await delegates.globalBarcodeCatalog.findUnique({
+    const row = await delegates.globalBarcodeCatalog.findUnique({
       where: { barcode_normalized: barcode },
     });
+    recordCacheReadMetrics({
+      outcome: row ? "hit" : "miss",
+      row,
+    });
+    return row;
   } catch (error) {
     logBarcodeCacheLayerError("globalBarcodeCatalog.findUnique", error);
+    recordCacheReadMetrics({ outcome: "error" });
     if (!isCacheLayerUnavailableError(error)) {
       return null;
     }
