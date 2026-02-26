@@ -2,7 +2,7 @@
 
 Status: Active
 Created: 2026-02-25
-Last Updated: 2026-02-25
+Last Updated: 2026-02-26
 Primary Goal: Reorganize the codebase into a feature-first, route-thin structure without breaking runtime behavior, routes, auth, or data integrity.
 
 ## Index
@@ -60,11 +60,11 @@ Disclaimer:
 This section is the source of truth for progress and ownership during the refactor.
 
 ### Current Status Snapshot
-- Current phase: `Phase 6 in progress (inventory extraction complete; contacts/staff remaining)`
-- Latest completed checkpoint: `Phase 6 inventory UI + inventory server extraction complete (targeted compile/lint pass)`
+- Current phase: `Phase 7 ready (Phase 6 complete; shared/domain/server moves next)`
+- Latest completed checkpoint: `Phase 6 inventory + contacts + staff UI/server extraction complete (targeted compile/lint pass)`
 - Active work lock: `UNLOCKED`
 - Known blocker: `None`
-- Last validation status: `npx tsc --noEmit --incremental false PASS (2026-02-26); npx eslint app/actions/core/inventory.ts src/features/inventory/server/*.ts PASS (2026-02-26); manual receive smoke PASS (barcode/photo/manual/receipt + receipt detail tabs, user-reported, 2026-02-26); prior baseline lint 4 pre-existing errors/15 warnings, barcode-cache 5/5 PASS, receipt-line-core 10/10 PASS`
+- Last validation status: `npx tsc --noEmit --incremental false PASS (2026-02-26, contacts+staff extraction); npx eslint app/actions/core/contacts.ts app/(dashboard)/contacts/page.tsx src/features/contacts/server/*.ts src/features/contacts/ui/ContactsPageClient.tsx app/actions/core/staff.ts app/(dashboard)/staff/page.tsx src/features/staff/server/*.ts src/features/staff/ui/StaffPageClient.tsx PASS (2026-02-26); prior: inventory extraction targeted compile/lint PASS (2026-02-26); manual receive smoke PASS (barcode/photo/manual/receipt + receipt detail tabs, user-reported, 2026-02-26); baseline lint still has 4 pre-existing errors/15 warnings, barcode-cache 5/5 PASS, receipt-line-core 10/10 PASS`
 
 ### Active Work Lock (Edit First)
 Use this to prevent duplicate work. Clear it when the session ends.
@@ -76,7 +76,7 @@ Use this to prevent duplicate work. Clear it when the session ends.
 - Files expected to touch:
   - `None (claim next scope before editing)`
 - Notes:
-  - `Next recommended claim: Phase 6 contacts UI extraction -> src/features/contacts/ui/*`
+  - `Next recommended claim: Phase 7 kickoff - choose one vertical slice (domain matching/parsers move or server infra wrappers/import cleanup)`
 
 ### Phase Completion Ledger
 Mark only when exit criteria are met.
@@ -87,11 +87,67 @@ Mark only when exit criteria are met.
 - [x] Phase 3 complete: Shopping UI split (route shell thin, behavior preserved)
 - [x] Phase 4 complete: Receipt/receiving server split (behavior preserved)
 - [x] Phase 5 complete: Receive UI pages split + shared receive contracts/constants
-- [ ] Phase 6 complete: Inventory, contacts, staff feature extraction
+- [x] Phase 6 complete: Inventory, contacts, staff feature extraction
 - [ ] Phase 7 complete: Shared/domain/server infrastructure moves + import cleanup
 - [ ] Phase 8 complete: Legacy wrappers deprecated/removed, docs and final verification
 
 ### Handoff Log (Append New Entries at Top)
+
+#### 2026-02-26 - Phase 6 complete: Staff UI + staff server extraction completed
+- Agent: `Codex`
+- Scope: `Complete Phase 6 staff sub-phase (UI route wrapper + staff invite/member action server extraction) and close Phase 6`
+- Completed:
+  - Extracted staff route UI into `src/features/staff/ui/StaffPageClient.tsx`.
+  - Converted `app/(dashboard)/staff/page.tsx` into a thin route wrapper.
+  - Extracted staff member/invite server logic into feature server files:
+    - `src/features/staff/server/staff.repository.ts`
+    - `src/features/staff/server/staff.service.ts`
+    - `src/features/staff/server/index.ts`
+  - Converted `app/actions/core/staff.ts` into a transitional wrapper that preserves action exports/signatures and keeps business auth checks at the action entrypoint for admin flows.
+  - Marked Phase 6 staff UI + staff invites server checklist items complete and closed Phase 6 in the phase ledger.
+- Changed files:
+  - `app/(dashboard)/staff/page.tsx`
+  - `app/actions/core/staff.ts`
+  - `src/features/staff/ui/StaffPageClient.tsx`
+  - `src/features/staff/server/staff.repository.ts`
+  - `src/features/staff/server/staff.service.ts`
+  - `src/features/staff/server/index.ts`
+  - `docs/app-structure-refactor-agent-playbook.md`
+- Validation run:
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `npx eslint app/actions/core/contacts.ts app/(dashboard)/contacts/page.tsx src/features/contacts/server/*.ts src/features/contacts/ui/ContactsPageClient.tsx app/actions/core/staff.ts app/(dashboard)/staff/page.tsx src/features/staff/server/*.ts src/features/staff/ui/StaffPageClient.tsx` -> PASS
+- Blockers:
+  - `None`
+- Next recommended step:
+  - `Phase 7 kickoff: pick a low-risk infrastructure/domain slice (e.g., domain matching/parsers wrappers + import cleanup) and preserve compatibility wrappers`
+
+#### 2026-02-26 - Phase 6 (partial): Contacts UI + contacts server extraction completed
+- Agent: `Codex`
+- Scope: `Complete Phase 6 contacts sub-phase (UI route wrapper + contacts action server extraction)`
+- Completed:
+  - Extracted contacts route UI into `src/features/contacts/ui/ContactsPageClient.tsx`.
+  - Converted `app/(dashboard)/contacts/page.tsx` into a thin route wrapper.
+  - Extracted contacts server logic into feature server files:
+    - `src/features/contacts/server/contacts.repository.ts`
+    - `src/features/contacts/server/contacts.service.ts`
+    - `src/features/contacts/server/index.ts`
+  - Converted `app/actions/core/contacts.ts` into a transitional wrapper that preserves action exports/signatures and keeps tenant auth at the action entrypoint.
+  - Marked Phase 6 contacts UI + contacts server checklist items complete.
+- Changed files:
+  - `app/(dashboard)/contacts/page.tsx`
+  - `app/actions/core/contacts.ts`
+  - `src/features/contacts/ui/ContactsPageClient.tsx`
+  - `src/features/contacts/server/contacts.repository.ts`
+  - `src/features/contacts/server/contacts.service.ts`
+  - `src/features/contacts/server/index.ts`
+  - `docs/app-structure-refactor-agent-playbook.md`
+- Validation run:
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `npx eslint app/actions/core/contacts.ts app/(dashboard)/contacts/page.tsx src/features/contacts/server/*.ts src/features/contacts/ui/ContactsPageClient.tsx` -> PASS
+- Blockers:
+  - `None`
+- Next recommended step:
+  - `Phase 6 staff UI extraction -> src/features/staff/ui/*`
 
 #### 2026-02-26 - Phase 6 (partial): Inventory UI + inventory server extraction completed
 - Agent: `Codex`
@@ -661,11 +717,11 @@ Goal: Bring remaining medium-size UI + server action modules into the same patte
 Checklist:
 - [x] Inventory UI pages -> `src/features/inventory/ui/*`
 - [x] Inventory services/repositories -> `src/features/inventory/server/*`
-- [ ] Contacts UI -> `src/features/contacts/ui/*`
-- [ ] Contacts server -> `src/features/contacts/server/*`
-- [ ] Staff UI -> `src/features/staff/ui/*`
-- [ ] Staff invites server -> `src/features/staff/server/*`
-- [ ] Keep route pages and action exports stable during transition.
+- [x] Contacts UI -> `src/features/contacts/ui/*`
+- [x] Contacts server -> `src/features/contacts/server/*`
+- [x] Staff UI -> `src/features/staff/ui/*`
+- [x] Staff invites server -> `src/features/staff/server/*`
+- [x] Keep route pages and action exports stable during transition.
 
 Exit criteria:
 - All high-traffic dashboard features follow the same route-thin, feature-first pattern.

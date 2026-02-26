@@ -1,82 +1,39 @@
+// Transitional wrapper during app-structure refactor.
+// Canonical implementation lives in: src/features/contacts/server/*
+
 "use server";
 
-import { prisma } from "@/core/prisma";
-import { serialize } from "@/core/utils/serialize";
 import { requireBusinessId } from "@/core/auth/tenant";
+import type { CreateContactInput, UpdateContactInput } from "@/features/contacts/server";
+import {
+  createContact as _createContact,
+  deleteContact as _deleteContact,
+  getContact as _getContact,
+  getContacts as _getContacts,
+  updateContact as _updateContact,
+} from "@/features/contacts/server";
 
 export async function getContacts() {
   const businessId = await requireBusinessId();
-  const rows = await prisma.contact.findMany({
-    where: { business_id: businessId },
-    orderBy: { name: "asc" },
-  });
-  return serialize(rows);
+  return _getContacts(businessId);
 }
 
 export async function getContact(id: string) {
   const businessId = await requireBusinessId();
-  const contact = await prisma.contact.findFirst({
-    where: { id, business_id: businessId },
-  });
-  return contact ? serialize(contact) : null;
+  return _getContact(businessId, id);
 }
 
-export async function createContact(data: {
-  name: string;
-  company?: string;
-  role?: string;
-  phone?: string;
-  email?: string;
-  website?: string;
-  notes?: string;
-}) {
+export async function createContact(data: CreateContactInput) {
   const businessId = await requireBusinessId();
-  const contact = await prisma.contact.create({
-    data: {
-      business_id: businessId,
-      name: data.name.trim(),
-      company: data.company?.trim() || null,
-      role: data.role?.trim() || null,
-      phone: data.phone?.trim() || null,
-      email: data.email?.trim() || null,
-      website: data.website?.trim() || null,
-      notes: data.notes?.trim() || null,
-    },
-  });
-  return serialize(contact);
+  return _createContact(businessId, data);
 }
 
-export async function updateContact(
-  id: string,
-  data: {
-    name?: string;
-    company?: string | null;
-    role?: string | null;
-    phone?: string | null;
-    email?: string | null;
-    website?: string | null;
-    notes?: string | null;
-  }
-) {
+export async function updateContact(id: string, data: UpdateContactInput) {
   const businessId = await requireBusinessId();
-  const contact = await prisma.contact.updateMany({
-    where: { id, business_id: businessId },
-    data: {
-      name: data.name?.trim(),
-      company: data.company === undefined ? undefined : data.company?.trim() || null,
-      role: data.role === undefined ? undefined : data.role?.trim() || null,
-      phone: data.phone === undefined ? undefined : data.phone?.trim() || null,
-      email: data.email === undefined ? undefined : data.email?.trim() || null,
-      website: data.website === undefined ? undefined : data.website?.trim() || null,
-      notes: data.notes === undefined ? undefined : data.notes?.trim() || null,
-    },
-  });
-  return contact;
+  return _updateContact(businessId, id, data);
 }
 
 export async function deleteContact(id: string) {
   const businessId = await requireBusinessId();
-  await prisma.contact.deleteMany({
-    where: { id, business_id: businessId },
-  });
+  await _deleteContact(businessId, id);
 }
