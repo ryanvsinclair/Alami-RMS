@@ -1,6 +1,6 @@
 # Combined Plan Coordination (App Structure Refactor + Inventory Intake Plan)
 
-Status: Active
+Status: Complete (manual smoke deferred to user)
 Created: 2026-02-26
 Last Updated: 2026-02-26
 Purpose: Coordinate execution across `docs/app-structure-refactor-agent-playbook.md` and `docs/inventoryintakeplan.md` so work happens in the safest order with minimal overlap/duplication.
@@ -58,12 +58,12 @@ When a task here is completed:
 
 ## Current Combined Snapshot
 
-Snapshot taken from both plans on 2026-02-26.
+Snapshot re-synced from both plans on 2026-02-26 (final closeout).
 
 ### App Structure Refactor Playbook status
 Source: `docs/app-structure-refactor-agent-playbook.md`
 
-- Current phase: `Phase 5 complete - Ready for Phase 6`
+- Current phase: `Phase 8 complete (all phases 0-8 done; manual smoke deferred to user)`
 - Completed phases:
   - Phase 0
   - Phase 1
@@ -71,26 +71,23 @@ Source: `docs/app-structure-refactor-agent-playbook.md`
   - Phase 3 (shopping UI split)
   - Phase 4 (receipt/receiving server split)
   - Phase 5 (receive UI split + shared receive contracts/constants)
-- Next planned phase:
   - Phase 6 (inventory/contacts/staff extraction)
+  - Phase 7 (shared/domain/server infrastructure moves + import cleanup)
+  - Phase 8 (wrapper retirement decisions documented, accepted exceptions finalized, definition of done marked)
 
 ### Inventory Intake Plan status
 Source: `docs/inventoryintakeplan.md`
 
-- Completed:
-  - Phase 0
-  - Phase A
-  - Phase B
-  - Phase C
-- Partial:
-  - Phase E (observability/hardening) -- web fallback hardening/counters, layered barcode-provider aggregate counters, and stricter barcode lookup abuse controls are done; background retries for unresolved barcodes and broader derived metrics remain
-- Not started:
-  - Phase D (enrichment queue)
+- All phases complete:
+  - Phase 0 (mandatory audit)
+  - Phase A (safe internal layer)
+  - Phase B (external provider integrations)
+  - Phase C (place-scoped receipt aliasing)
+  - Phase D (enrichment queue -- derived queue, persistent task state, expanded candidate sources, queue observability)
+  - Phase E (observability/hardening)
 
 ### Immediate tension / coordination risk
-- Inventory Plan Phase E currently targets shopping web fallback + barcode provider hardening/metrics.
-- Refactor Phase 7 later targets shared/domain/server module moves and import cleanup.
-- If Phase 7 starts before Phase E finishes, churn and duplicate edits are likely.
+- None. Both plans are complete. The only remaining item is user manual smoke testing across all core flows.
 
 ## What Has Already Been Done (Cross-Plan View)
 
@@ -98,22 +95,26 @@ This section exists so future agents do not re-do completed work from either pla
 
 ### Completed structure refactor work (relevant to inventory plan)
 - Shopping server logic has been split into `src/features/shopping/server/*` and `app/actions/modules/shopping.ts` is now a thin wrapper.
-- Shopping UI has started to split (hook/contracts extracted); route page is partially reduced but not fully decomposed yet.
+- Shopping UI split is complete (feature UI/hooks extracted and route shell thinned).
 - Receipt/receiving server logic has been split into:
   - `src/features/receiving/receipt/server/*`
   - `src/features/receiving/photo/server/*`
 - `app/actions/modules/receipts.ts` and `app/actions/modules/ocr.ts` are now thin wrappers.
 - Receive UI route pages have been split into `src/features/receiving/*/ui/*` and `src/features/receiving/shared/*`, with thin wrappers under `app/(dashboard)/receive/*`; manual receive smoke validation passed and Phase 5 is complete.
+- Inventory, contacts, and staff route/server extraction is complete (Phase 6).
+- Shared/domain/server wrapper slices and `src/features/*` legacy import cleanup are complete (Phase 7); Phase 8 remains for wrapper retirement/final verification.
 
 ### Completed inventory-intake work (relevant to refactor plan)
 - Barcode resolver layered provider system is implemented (Phase B complete).
 - Global barcode cache/provenance logic is implemented and validated.
-- Shopping web fallback hardening/metrics plus barcode-provider metrics and barcode lookup abuse-rate controls are partially implemented (Phase E partial).
+- Shopping web fallback hardening/metrics, layered barcode-provider metrics, strict barcode lookup abuse controls, background retries for unresolved barcodes, and derived-rate summaries are implemented (Phase E complete).
 - Receipt aliasing work is complete (Phase C complete).
 
 ## Conflict / Overlap Matrix
 
 Use this table before choosing work.
+
+Note: The original high-churn conflict it highlighted (Inventory Phase E vs Refactor Phase 7) has been resolved. For current work, prioritize Phase 8 wrapper-retirement/final-verification decisions and Inventory Phase D kickoff sequencing.
 
 | Work Item | Likely Files | Overlap with Refactor Phase 5 | Overlap with Refactor Phase 6 | Overlap with Refactor Phase 7 | Recommendation |
 |---|---|---:|---:|---:|---|
@@ -135,7 +136,7 @@ Use these locations to avoid editing thin wrappers unnecessarily.
 - Thin wrappers (do not add logic here unless necessary):
   - `app/actions/modules/receipts.ts`
   - `app/actions/modules/ocr.ts`
-- Shared matching logic (still canonical in legacy path until Phase 7):
+- Shared matching logic / DB adapter (still canonical in legacy path after Phase 7 wrapper pass):
   - `lib/core/matching/receipt-line.ts`
   - `lib/core/matching/receipt-line-core.ts`
 - Schema / migrations:
@@ -167,27 +168,24 @@ Use these locations to avoid editing thin wrappers unnecessarily.
 This is the current best logical order that respects both plans and minimizes conflict.
 
 ### Sequence Summary (recommended)
-1. Close Inventory Plan Phase C verification (small, correctness-oriented).
-2. Finish Inventory Plan Phase E immediate hardening items (especially web fallback + barcode provider metrics/hardening).
-3. Continue App Refactor Phase 5 (receive UI split + shared receive constants/contracts).
-4. Continue App Refactor Phase 6 (inventory/contacts/staff extraction) after Phase E barcode-provider work is stable.
-5. Re-assess Inventory Plan Phase D (enrichment queue) design in the refactored structure.
-6. Start App Refactor Phase 7 only after Inventory Phase E hotspot work is stabilized/landed.
-7. Complete remaining refactor cleanup (Phases 7/8) and then continue larger inventory D/E extensions.
+1. Keep this coordination file synchronized whenever either source plan advances (so the next agent does not follow stale tasks).
+2. Kick off App Refactor Phase 8 (wrapper audit/retirement decisions + final verification pass), as recommended by the refactor playbook.
+3. Start Inventory Plan Phase D kickoff (minimal optional enrichment tracking + non-blocking "fix later" flow) once Phase 8 scope/risks are clarified.
+4. If Phase D begins before Phase 8 completes, implement in canonical `src/*`/current canonical files only and avoid adding new wrapper dependencies.
+5. Reassess overlap after the first Phase D slice and continue whichever plan remains active.
 
 ### Why this order
-- Phase C closure is small and reduces lingering uncertainty in receipt aliasing.
-- Phase E currently touches hotspot files that are likely to move later in Refactor Phase 7.
-- Refactor Phase 5 focuses on receive UI files and is low-overlap with inventory hardening.
-- Refactor Phase 7 is the main churn risk for Inventory Phase E/D.
+- Both source plans have advanced beyond the original conflict point, so the main risk is now stale coordination guidance.
+- Refactor Phase 8 is the last refactor cleanup gate before wrapper retirement and final verification.
+- Inventory Phase D is the next functional feature slice and can proceed safely if it targets canonical paths.
 
 ### Parallel work rule (if multiple agents)
 Safe parallel pairing:
-- Agent A: Inventory Phase E web fallback/barcode metrics hardening
-- Agent B: Refactor Phase 5 receive UI split
+- Agent A: Refactor Phase 8 wrapper audit/final verification docs + validation
+- Agent B: Inventory Phase D design/kickoff in canonical feature/server paths (if file scopes do not overlap)
 
 Unsafe parallel pairing (avoid):
-- Inventory Phase E barcode-provider hardening + Refactor Phase 7 infra/domain moves
+- Refactor Phase 8 wrapper removal + Inventory Phase D implementation touching the same wrapper/canonical modules
 
 ## Combined Task Board (Track Here First)
 
@@ -293,34 +291,64 @@ Status legend:
     - `docs/app-structure-refactor-agent-playbook.md` `Update Here`
     - phase ledger + handoff log
 
-- [ ] CMB-07 App Refactor Phase 6: inventory/contacts/staff extraction
+- [x] CMB-07 App Refactor Phase 6: inventory/contacts/staff extraction
   - Prerequisite:
     - complete or stabilize CMB-05 (barcode provider hardening/metrics)
   - Source plan linkage:
     - `docs/app-structure-refactor-agent-playbook.md` Phase 6
+  - Result:
+    - inventory, contacts, and staff routes/actions were extracted into `src/features/*` UI/server modules
+    - thin route/action wrappers preserved
+    - refactor playbook Phase 6 marked complete
   - Must update after completion:
     - `docs/app-structure-refactor-agent-playbook.md` `Update Here`
     - phase ledger + handoff log
 
 ### Medium-Term Decision Gate
-- [ ] CMB-08 Decide when to implement Inventory Plan Phase D (enrichment queue) relative to Refactor Phase 7
+- [x] CMB-08 Decide when to implement Inventory Plan Phase D (enrichment queue) relative to Refactor Phase 7
   - Decision options:
     - implement D after Refactor Phase 7 (preferred if D needs new infra structure)
     - implement a minimal D slice before Phase 7 but directly in target `src/*` locations
   - Record decision in:
     - this file (`Coordination Handoff Log`)
     - `docs/inventoryintakeplan.md` `Pick Up Here`
+  - Result:
+    - Phase D was deferred while Inventory Phase E and Refactor Phase 7 were completed
+    - Refactor Phase 7 is now complete, so the original decision gate is resolved
+    - Current next decision is sequencing Phase D kickoff vs Phase 8 final cleanup
 
 ### High-Churn Refactor (Delay Until Hotspots Stable)
-- [ ] CMB-09 App Refactor Phase 7: shared/domain/server infrastructure moves + import cleanup
+- [x] CMB-09 App Refactor Phase 7: shared/domain/server infrastructure moves + import cleanup
   - Prerequisite:
     - inventory Phase E hotspot changes (CMB-04/CMB-05) landed and stable
   - Source plan linkage:
     - `docs/app-structure-refactor-agent-playbook.md` Phase 7
+  - Result:
+    - shared/domain/server wrapper slices were added and `src/features/*` legacy imports were cleaned up
+    - refactor playbook Phase 7 marked complete; current phase is Phase 8 ready
 
-- [ ] CMB-10 App Refactor Phase 8: wrapper retirement + final cleanup
+- [x] CMB-10 App Refactor Phase 8: wrapper retirement + final cleanup
   - Source plan linkage:
     - `docs/app-structure-refactor-agent-playbook.md` Phase 8
+  - Final result (2026-02-26):
+    - kickoff audit completed; file-level wrapper keep/defer/remove matrix drafted (all 41 wrappers categorized)
+    - final static verification executed (`tsc`, targeted tests) and localhost route HEAD smoke passed
+    - zero wrapper removals this phase (all wrappers classified keep/keep-for-now/defer-retirement)
+    - Phase 8 accepted exceptions finalized and documented (shopping route deviation, baseline lint failures, ESM test path issue, zero removals, manual smoke deferral)
+    - Phase 8 marked complete in phase ledger; definition of done items marked
+    - manual core-flow smoke deferred to user for integrated QA pass
+
+- [x] CMB-11 Inventory Plan Phase D: optional enrichment tracking + non-blocking "fix later" flow
+  - Source plan linkage:
+    - `docs/inventoryintakeplan.md` Phase D
+  - Final result (2026-02-26):
+    - slice 1 (kickoff): schema-light derived "Fix Later Queue" in Inventory using existing metadata
+    - slice 2 (task state): persistent enrichment task actions (complete/defer/snooze) via client-side localStorage hook
+    - slice 3 (expanded sources): receipt matching (suggested/unresolved lines), shopping pairing (unresolved barcodes, missing-on-receipt, extra-on-receipt), normalization gaps (missing category, short names)
+    - slice 4 (observability): queue observability summaries (candidate source breakdown, queue health stats, multi-source items, oldest candidate age)
+    - UI: per-item expandable action panel, per-task + bulk actions, undo toast, receipt/shopping badges, collapsible queue stats panel
+    - no schema changes; server-side persistent enrichment task table deferred
+    - Phase D marked complete in inventory plan
 
 ## Session Workflow (Required)
 
@@ -364,29 +392,190 @@ Use this checklist at the end of every completed task.
 
 Prevent cross-plan collisions here before editing code.
 
-- Status: `OPEN`
-- Agent: `Unclaimed`
+- Status: `CLOSED -- all plan work complete`
+- Agent: `N/A`
 - Date: `2026-02-26`
-- Combined task ID(s): `Next: CMB-07`
+- Combined task ID(s): `All CMB tasks complete (CMB-00 through CMB-11)`
 - Scope:
-  - `Unclaimed`
+  - `No active work. Both plans are complete. Only user manual smoke testing remains.`
 - Expected files:
-  - `app/(dashboard)/inventory*`
-  - `app/(dashboard)/contacts/page.tsx`
-  - `app/(dashboard)/staff/page.tsx`
-  - `app/actions/core/inventory.ts`
-  - `app/actions/core/contacts.ts`
-  - `app/actions/core/staff.ts`
-  - `src/features/inventory/*`
-  - `src/features/contacts/*`
-  - `src/features/staff/*`
+  - `None (documentation-only updates going forward if needed)`
 - Source plan(s) to update on completion:
-  - `docs/app-structure-refactor-agent-playbook.md`
-  - `docs/combined-plan-coordination.md`
+  - `N/A`
 
 ## Coordination Handoff Log
 
 Append new entries at the top.
+
+### 2026-02-26 - Final closeout: both plans complete, all CMB tasks closed
+- Agent: `Claude Opus`
+- Scope:
+  - complete CMB-11 (Inventory Phase D items 12+13: expanded enrichment candidate sources + queue observability summaries)
+  - close CMB-10 (App Refactor Phase 8: accepted exceptions documented, phase ledger closed, definition of done marked)
+  - close all three planning documents
+- Code changes:
+  - `src/features/inventory/server/inventory.repository.ts` (3 new repository queries)
+  - `src/features/inventory/server/inventory.service.ts` (expanded queue with 4-source parallel fetch, dedup, new task types, `EnrichmentQueueObservability` type)
+  - `src/features/inventory/server/index.ts` (barrel export updated)
+  - `src/features/inventory/ui/InventoryListPageClient.tsx` (receipt/shopping badges, collapsible queue stats, `showStats` state)
+  - `src/features/inventory/ui/use-enrichment-dismissals.ts` (observability pass-through)
+- Documentation changes:
+  - `docs/inventoryintakeplan.md`: Phase D marked complete, Latest Update added, Current Status refreshed, Pick Up Here shows all phases done
+  - `docs/app-structure-refactor-agent-playbook.md`: Phase 8 marked complete in ledger, accepted exceptions finalized, definition of done items marked, handoff entries added
+  - `docs/combined-plan-coordination.md`: CMB-10 + CMB-11 marked complete, snapshot updated, lock closed
+- Validation:
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - targeted eslint on inventory files -> PASS
+  - `node --test app/actions/core/barcode-resolver-cache.test.mjs` -> PASS (5/5)
+  - `node --test --experimental-transform-types lib/core/matching/receipt-line-core.test.mjs` -> PASS (10/10)
+- Remaining (user task only):
+  - Manual smoke test across all core flows (login, dashboard, receive barcode/photo/receipt, inventory enrichment queue, shopping, staff, contacts)
+
+### 2026-02-26 - CMB-11 continuation (persistent enrichment task state/actions added to Fix Later queue)
+- Agent: `Claude Opus`
+- Scope:
+  - continue CMB-11 by adding persistent task state/actions (complete/defer/snooze) for the non-blocking enrichment queue
+  - implement client-side localStorage dismissal hook and UI action controls
+- Changed files:
+  - `src/features/inventory/server/inventory.service.ts` (added types: `EnrichmentTaskAction`, `EnrichmentTaskDismissal`, `EnrichmentDismissalMap`, `ENRICHMENT_SNOOZE_HOURS`)
+  - `src/features/inventory/server/index.ts` (barrel export updated)
+  - `src/features/inventory/ui/use-enrichment-dismissals.ts` (new -- localStorage dismissal hook)
+  - `src/features/inventory/ui/InventoryListPageClient.tsx` (expanded with action panel + undo toast + filtered queue)
+- Validation run:
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `npx eslint src/features/inventory/server/index.ts src/features/inventory/server/inventory.service.ts src/features/inventory/ui/InventoryListPageClient.tsx src/features/inventory/ui/use-enrichment-dismissals.ts` -> PASS
+- Source plan updates:
+  - `docs/inventoryintakeplan.md`:
+    - `Latest Update` entry added for Phase D continuation
+    - `Current Status` Phase D wording refreshed
+    - `Pick Up Here` items 10+11 marked complete, primary task advanced to candidate source expansion
+  - `docs/combined-plan-coordination.md`:
+    - `CMB-11` result updated with slice 2 details
+    - `Current Combined Snapshot` Phase D status refreshed
+    - handoff log entry appended
+- Next recommended:
+  - continue `CMB-11` with broader enrichment candidate sources (low-confidence receipt outcomes, unresolved shopping pairing leftovers)
+  - add queue observability summaries (task-type counts, backlog size, resolution throughput)
+  - return to `CMB-10` for integrated manual smoke + final Phase 8 closeout docs when ready
+
+### 2026-02-26 - CMB-11 partial (Phase D kickoff implemented as schema-light derived "Fix Later Queue" in Inventory)
+- Agent: `Codex`
+- Scope:
+  - start Inventory Plan Phase D with a minimal non-blocking enrichment queue kickoff slice
+  - prefer schema-light implementation first (derived queue from existing persisted metadata) to reduce risk/churn while Refactor Phase 8 remains open
+- Validation run:
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `npx eslint app\\actions\\core\\inventory.ts src\\features\\inventory\\server\\index.ts src\\features\\inventory\\server\\inventory.repository.ts src\\features\\inventory\\server\\inventory.service.ts src\\features\\inventory\\ui\\InventoryListPageClient.tsx` -> PASS
+- Source plan updates:
+  - `docs/inventoryintakeplan.md`:
+    - `Latest Update` entry added for Phase D kickoff slice
+    - `Current Status` updated (`Phase D` -> partial)
+    - `Pick Up Here` item 9 marked complete and advanced to Phase D continuation tasks
+- Result summary:
+  - derived inventory enrichment queue computes optional "Fix Later" suggestions from existing `InventoryItem` + `ItemBarcode` + `GlobalBarcodeCatalog` metadata
+  - queue surfaced in Inventory list UI with summary counts + top candidates
+  - no schema changes/migration yet; persistent task state and queue actions remain next
+- Next recommended:
+  - continue `CMB-11` with persistent task state/actions (complete/defer/snooze) and explicit queue resolution workflow
+  - later return to `CMB-10` for integrated manual smoke + final Phase 8 closeout docs
+
+### 2026-02-26 - CMB-10 deferral decision: manual core-flow smoke postponed to final integrated QA; switch next focus to CMB-11
+- Agent: `Codex`
+- Scope:
+  - record user-approved deferral of Phase 8 manual smoke
+  - update combined-plan sequencing so Inventory Phase D kickoff becomes the next active task
+- Validation run:
+  - `Documentation update only` -> no new commands run
+- Source plan updates:
+  - `docs/app-structure-refactor-agent-playbook.md`:
+    - Phase 8 status/notes updated to reflect manual smoke deferral
+    - handoff log entry added for the deferral decision
+- Next recommended:
+  - start `CMB-11` (Inventory Phase D kickoff: optional enrichment tracking + non-blocking "fix later" flow)
+  - return to `CMB-10` later for one integrated manual smoke pass and Phase 8 final closeout documentation
+
+### 2026-02-26 - CMB-10 partial (static verification + localhost route HEAD smoke completed; manual core-flow smoke/final closeout pending)
+- Agent: `Codex`
+- Scope:
+  - continue Refactor Phase 8 by running the final static verification commands and checking route availability on localhost
+  - sync the coordination file with the updated CMB-10 checkpoint
+- Validation run:
+  - `npm run lint` -> FAIL (known baseline errors/noise incl. generated `playwright-report` assets; also warnings)
+  - `node --test app/actions/core/barcode-resolver-core.test.mjs` -> FAIL (`ERR_MODULE_NOT_FOUND` for extensionless ESM import path)
+  - `node --test app/actions/core/barcode-resolver-cache.test.mjs` -> PASS (`5/5`)
+  - `node --test --experimental-transform-types lib\\core\\matching\\receipt-line-core.test.mjs` -> PASS (`10/10`)
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `localhost HEAD smoke (/ /shopping /receive /inventory /contacts /staff)` -> PASS (`200` for all)
+- Source plan updates:
+  - `docs/app-structure-refactor-agent-playbook.md`:
+    - `Latest completed checkpoint` updated to Phase 8 validation partial
+    - `Last validation status` refreshed with exact command results
+    - Phase 8 checklist item `Run final lint and targeted tests` marked complete
+    - new Phase 8 handoff entry appended
+- Next recommended:
+  - continue `CMB-10` with final accepted exceptions/path-map docs and explicit decision on zero-wrapper-removal closeout vs additional migrations
+  - run manual core-flow smoke checklist while localhost is available (if doing full Phase 8 closeout now)
+
+### 2026-02-26 - CMB-10 partial (file-level wrapper matrix drafted; final verification and exceptions closeout pending)
+- Agent: `Codex`
+- Scope:
+  - continue Refactor Phase 8 after kickoff audit by producing a file-level wrapper keep/defer/remove matrix
+  - sync the coordination file to reflect the new CMB-10 partial checkpoint
+- Validation run:
+  - `Wrapper inventory outputs from the CMB-10 kickoff audit were reused (no new runtime/static validation commands run in this sub-step)`
+- Source plan updates:
+  - `docs/app-structure-refactor-agent-playbook.md`:
+    - `Latest completed checkpoint` updated to file-level matrix draft
+    - new Phase 8 handoff entry appended
+    - Phase 8 section now includes a file-level matrix covering all `41` wrappers
+- Next recommended:
+  - continue `CMB-10` with final verification (`npm run lint`, targeted node tests, `npx tsc --noEmit --incremental false`)
+  - document final accepted exceptions (including shopping route-shell deviation), then assess whether any wrapper removals are actually safe this phase
+
+### 2026-02-26 - CMB-10 partial (Phase 8 kickoff audit completed; wrapper decisions documented, final verification pending)
+- Agent: `Codex`
+- Scope:
+  - begin Refactor Phase 8 by auditing remaining transitional wrappers and repo-wide legacy import usage
+  - sync the refactor playbook and this coordination file to reflect Phase 8 in-progress status
+- Validation run:
+  - `rg -n "Transitional wrapper during app-structure refactor" app src lib components` -> `41` wrappers found
+  - repo-wide legacy import usage counts (excluding `lib/generated/**`):
+    - `@/core/*` -> `26` files
+    - `@/components/*` -> `9` files
+    - `@/modules/*` -> `4` files
+    - `@/lib/config/*` -> `9` files
+    - `@/lib/supabase/*` -> `1` file
+    - `@/lib/google/*` -> `0` files
+  - `Get-Content app\\(dashboard)\\shopping\\page.tsx` review -> route remains large (state extracted, JSX mostly still in route file)
+- Source plan updates:
+  - `docs/app-structure-refactor-agent-playbook.md`:
+    - `Current Status Snapshot` -> Phase 8 in progress
+    - Phase 8 checklist item 1 marked complete
+    - Phase 8 kickoff audit snapshot added
+    - new handoff log entry appended
+- Next recommended:
+  - continue `CMB-10` with a file-level wrapper keep/defer/remove matrix + intentional exceptions list
+  - run final validation pass (lint/tests/tsc) and manual smoke when localhost is running
+
+### 2026-02-26 - Coordination resync: source plans advanced to Inventory Phase E complete + Refactor Phase 7 complete (Phase 8 ready)
+- Agent: `Codex`
+- Scope:
+  - review `docs/inventoryintakeplan.md` and `docs/app-structure-refactor-agent-playbook.md` current status/next-step sections
+  - refresh this combined coordination file so task ordering matches current source-plan reality
+- Validation run:
+  - `Documentation state review only` -> complete (no code/runtime validation executed)
+- Source plan updates:
+  - `None (source plans already contained the current authoritative statuses; this was a coordination-file sync)`
+- Coordination updates in this file:
+  - `Current Combined Snapshot` refreshed (Refactor `Phase 8 ready`; Inventory Phase E complete, Phase D next)
+  - `CMB-07` marked complete (Refactor Phase 6)
+  - `CMB-08` marked complete (decision gate resolved by sequencing outcome: Phase D deferred until after Refactor Phase 7)
+  - `CMB-09` marked complete (Refactor Phase 7)
+  - added `CMB-11` for actual Inventory Phase D kickoff work
+  - `Active Work Lock` next-task recommendation updated to `CMB-10` / `CMB-11`
+- Next recommended:
+  - `CMB-10` Phase 8 kickoff audit/final-verification planning in `docs/app-structure-refactor-agent-playbook.md`
+  - then `CMB-11` Inventory Phase D minimal enrichment/"fix later" kickoff in canonical files
 
 ### 2026-02-26 - Inventory Plan Phase E step 6 completed (barcode lookup churn abuse prevention)
 - Agent: `Codex`

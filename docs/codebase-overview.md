@@ -1,65 +1,732 @@
-# Codebase Overview
+# Codebase Overview and Engineering Guide
+
+Status: Active (living document)
+Last Updated: 2026-02-26
+Primary Purpose: Current architecture reference, implementation summary, feature-placement rules, and project changelog.
+
+## How To Use This Document
+
+This document is now the main day-to-day architecture and implementation guide for the current codebase.
+
+Use it to:
+- understand how the app is structured today
+- find canonical file locations for new work
+- understand what major features already exist
+- follow the required rules for adding/changing features without breaking the app structure
+- review recent changes in the built-in changelog
+
+What this document is not:
+- It is not a substitute for the code.
+- It is not a migration file-by-file history (the detailed phase logs remain in the plan docs).
+
+Related historical/planning docs (still useful for deep history):
+- `docs/app-structure-refactor-agent-playbook.md` (refactor execution history and wrapper decisions)
+- `docs/inventoryintakeplan.md` (inventory/barcode/receipt/enrichment rollout history)
+- `docs/combined-plan-coordination.md` (cross-plan sequencing and handoff history)
+
+## Maintenance Rules (Required)
+
+After every meaningful code or docs change, update this file.
+
+Minimum required updates:
+1. Append a new entry at the top of `## Changelog`.
+2. If file placement/canonical paths changed, update `## Architecture Map` and `## Feature Placement Rules`.
+3. If behavior changed, update the relevant feature section(s) under `## Product Capabilities` or `## Core Workflows`.
+4. If a new exception/deviation was introduced, add it to `## Accepted Exceptions and Known Validation Gaps`.
+5. Record validation commands actually run (and failures/exceptions) in the changelog entry.
+
+Changelog policy:
+- Append new entries at the top (newest first).
+- Keep entries concise but concrete: what changed, which files, validation, caveats.
+- Do not delete historical entries; add corrections as new entries.
+
+## Current Status (As Of 2026-02-26)
+
+High-level completion:
+- App structure refactor plan: complete through Phase 8 (manual core-flow smoke deferred to user/integrated QA).
+- Inventory intake plan: complete through Phases 0, A, B, C, D, E.
+- Combined coordination plan: complete (manual integrated smoke remains a user QA task).
+
+What remains outside plan completion:
+- Manual integrated smoke testing across core flows (user-run / final QA pass).
 
 ## Stack
-- Next.js App Router app with React and TypeScript.
-- Prisma ORM with PostgreSQL via `@prisma/adapter-pg`.
-- Tailwind-based UI components.
 
-## Product shape
-This project is an inventory management/receiving app designed for restaurant operations. It supports four ingestion methods:
-1. Barcode
-2. Receipt parsing
-3. Product photo parsing
-4. Manual entry
+- Next.js App Router (`next` 16.x)
+- React 19 + TypeScript
+- Prisma ORM + PostgreSQL (`@prisma/adapter-pg`)
+- Supabase client/storage integration
+- Tailwind CSS
+- Playwright (E2E tooling)
 
-The home route redirects into the receive flow, and dashboard pages are optimized for mobile with a bottom nav between Receive and Inventory.
+Key scripts (`package.json`):
+- `npm run dev`
+- `npm run build` (runs `prisma generate` first)
+- `npm run lint`
+- `npm run test:e2e`
 
-## Feature implementation confirmation (current code)
-Yes — the outlined MVP features are implemented in code today. This is not just schema/planning; there are concrete server actions and UI routes wired for each path:
+## Path Aliases (Important)
 
-| Feature | Current implementation evidence |
-|---|---|
-| Multi-modal ingestion hub | `app/(dashboard)/receive/page.tsx` renders and routes all 4 methods. |
-| Barcode ingestion | `ingestByBarcode` looks up barcode and writes a transaction. |
-| Photo ingestion + match assist | `ingestByPhoto` matches OCR text, supports suggestions, writes transaction, and learns alias. |
-| Manual entry flow | `ingestManual` supports existing item or creation of new item, then writes transaction. |
-| Receipt parse/review/commit | `processReceiptText` + `parseAndMatchReceipt` + `updateLineItemMatch` + `commitReceiptTransactions` implement full lifecycle and atomic commit. |
-| OCR integration | `ocrImage` delegates to Google Vision REST client (`extractTextFromImage`). |
-| Matching + confidence | `matchText` combines exact alias/fuzzy/word overlap and maps scores to confidence tiers. |
-| Learning from corrections | `learnAlias` is called from receipt and photo flows to persist alias improvements. |
-| Inventory visibility | Inventory list/detail pages load current quantities and transaction history. |
+Configured in `tsconfig.json`:
+- `@/features/*` -> `src/features/*`
+- `@/domain/*` -> `src/domain/*`
+- `@/server/*` -> `src/server/*`
+- `@/shared/*` -> `src/shared/*`
+- `@/core/*` -> `lib/core/*` (legacy compatibility path)
+- `@/modules/*` -> `lib/modules/*` (legacy compatibility path)
+- `@/*` -> broad alias resolving to `./lib/*` and `./*`
 
-## Data model
-The schema centers around:
-- `inventory_items` (master records)
-- `item_barcodes` and `item_aliases` (matching keys)
-- `receipts` and `receipt_line_items` (receipt pipeline)
-- `inventory_transactions` (append-only ledger)
+Rules for new code:
+- Prefer explicit aliases: `@/features`, `@/domain`, `@/server`, `@/shared`.
+- Treat `@/core/*` and `@/modules/*` as legacy/compatibility paths unless extending an existing legacy module intentionally.
+- Avoid relying on broad `@/*` when a more explicit alias exists.
 
-The migration additionally defines views for current inventory levels and cost history.
+## Architecture Map (Current Structure)
 
-## Core server actions
-- `app/actions/inventory.ts`: CRUD for inventory records, barcodes, and aliases.
-- `app/actions/transactions.ts`: single transactions and atomic receipt commits.
-- `app/actions/receipts.ts`: receipt lifecycle (create, parse/match, review updates).
-- `app/actions/ingestion.ts`: orchestrates barcode/photo/manual/receipt ingestion workflows.
-- `app/actions/ocr.ts`: OCR server action wrapper.
+### 1. App entrypoints (`app/`)
 
-## Matching and parsing pipeline
-- `lib/parsers/receipt.ts` parses raw OCR text into structured line candidates (quantity, unit, prices).
-- `lib/matching/engine.ts` resolves line text to inventory using:
-  - exact alias match,
-  - fuzzy trigram similarity,
-  - word-overlap heuristics,
-  - confidence thresholds (`high`/`medium`/`low`/`none`).
-- Confirmed user corrections are learned back into `item_aliases`.
+Purpose:
+- Next.js routes and layouts
+- Server action entrypoints
+- Thin wrappers around canonical feature/server logic
 
-## UI flow summary
-- **Receive hub**: choose barcode, receipt, photo, or manual.
-- **Receipt page**: OCR (or manual text), parse/match, review line-by-line, then commit all.
-- **Inventory list/detail**: current computed quantity, metadata, aliases, and recent transactions.
+Patterns:
+- Route pages should be thin wrappers that render feature UI components.
+- Server actions should be thin wrappers that enforce auth/module guards and delegate to feature services.
 
-## Notable implementation details
-- Prisma client is lazy-initialized to avoid build-time DB failures.
-- Receipt commit is transactional: creates ledger rows, marks line items confirmed, and marks receipt committed in one DB transaction.
-- OCR integrates with Google Vision REST API and gracefully returns structured errors if key/config/network fails.
+Examples:
+- `app/(dashboard)/inventory/page.tsx` -> thin wrapper to `src/features/inventory/ui/InventoryListPageClient.tsx`
+- `app/actions/core/inventory.ts` -> wrapper around `src/features/inventory/server/*`
+- `app/actions/modules/receipts.ts` -> wrapper around `src/features/receiving/receipt/server/*`
+
+Accepted exception:
+- `app/(dashboard)/shopping/page.tsx` is still a large route entrypoint (state/hooks/contracts extracted; most JSX remains local).
+
+### 2. Feature modules (`src/features/`)
+
+Purpose:
+- Canonical location for feature-specific UI, services, repositories, integrations, and contracts
+
+Current feature folders:
+- `src/features/auth`
+- `src/features/contacts`
+- `src/features/finance`
+- `src/features/integrations`
+- `src/features/inventory`
+- `src/features/modules`
+- `src/features/receiving`
+- `src/features/shopping`
+- `src/features/staff`
+
+Typical internal split:
+- `ui/` client components and feature UI helpers
+- `server/` service/repository/query logic
+- `shared/` client-safe feature contracts/helpers used by both `ui/` and `server/` (optional, add when needed)
+- `integrations/` feature-local external integration wrappers/adapters (when feature-specific)
+
+### 3. Domain logic (`src/domain/`)
+
+Purpose:
+- Pure logic and reusable domain utilities with no framework/runtime coupling
+
+Current areas:
+- `src/domain/barcode`
+- `src/domain/matching`
+- `src/domain/parsers`
+- `src/domain/shared`
+
+Examples:
+- barcode normalization
+- matching confidence/fuzzy logic
+- receipt/product/shelf-label parsing
+- shared serialization helpers (facade path)
+
+### 4. Server infrastructure (`src/server/`)
+
+Purpose:
+- Server-only infrastructure facades and integration access points
+
+Current areas:
+- `src/server/auth`
+- `src/server/db`
+- `src/server/integrations`
+- `src/server/matching`
+- `src/server/modules`
+- `src/server/storage`
+
+Examples:
+- Prisma facade
+- auth/tenant guards
+- Supabase storage helpers
+- receipt OCR integration facades
+- module guard facade
+
+### 5. Shared UI/config/types (`src/shared/`)
+
+Purpose:
+- Shared components, UI primitives, config, types, and utilities consumed across features
+
+Current areas:
+- `src/shared/ui`
+- `src/shared/components/*` (nav, pwa, theme, receipts, flows)
+- `src/shared/config`
+- `src/shared/types`
+- `src/shared/utils`
+
+## Legacy Compatibility Layers (Still Present by Design)
+
+Not all wrappers were removed in the refactor. Phase 8 documented a keep/defer matrix and intentionally left wrappers in place.
+
+Wrapper categories:
+- Keep (by design):
+  - route entrypoints in `app/(dashboard)/**/page.tsx`
+  - server action entrypoints in `app/actions/**`
+- Keep for now (canonical facades):
+  - many `src/*` wrapper paths that currently re-export legacy implementations but define the canonical import surface
+- Defer retirement:
+  - legacy compatibility wrappers in `lib/core/*` (especially parser/matching/barcode wrappers) still used by active callers/tests
+
+Important Phase 8 outcome:
+- Zero wrapper removals were performed.
+- Future wrapper removals require repo-wide import migration proof plus validation.
+
+## Product Capabilities (Current)
+
+This is a multi-flow inventory/receiving/shopping system with barcode-first intelligence and receipt learning.
+
+### Receiving (4 ingestion paths)
+
+Implemented paths:
+1. Barcode receive
+2. Photo receive (OCR + parsing + match assist)
+3. Manual receive
+4. Receipt parse/review/commit
+
+Current structure (canonical):
+- `src/features/receiving/barcode/*`
+- `src/features/receiving/photo/*`
+- `src/features/receiving/manual/*`
+- `src/features/receiving/receipt/*`
+- `src/features/receiving/shared/*`
+
+Route wrappers:
+- `app/(dashboard)/receive/*`
+
+### Barcode resolution intelligence (Phases A/B/E complete)
+
+Implemented capabilities:
+- Layer 0 internal lookup/cache logic with global barcode catalog + resolution event recording
+- Layered external provider fallback chain:
+  - Open Food Facts
+  - Open Beauty Facts
+  - UPCDatabase
+  - UPCitemdb
+- Confidence + provenance returned in resolver results
+- Global unresolved caching/backoff behavior
+- Stricter rate limiting / abuse controls for repeated lookup churn
+- Background retry scheduling for unresolved barcodes (process-local timers)
+- Aggregate metrics and derived-rate summaries (process-local structured logs)
+
+Primary files:
+- `app/actions/core/barcode-resolver.ts`
+- `app/actions/core/barcode-resolver-core.ts`
+- `app/actions/core/barcode-resolver-cache.ts`
+- `app/actions/core/barcode-providers.ts`
+- `app/actions/core/barcode-provider-adapters/*`
+
+Data model support:
+- `GlobalBarcodeCatalog`
+- `BarcodeResolutionEvent`
+
+Operational note:
+- Some hardening/metrics/retry state is process-local and resets on server restart.
+
+### Receipt intelligence and store-context aliasing (Phase C complete)
+
+Implemented capabilities:
+- Place-scoped receipt aliasing (`google_place_id`)
+- Receipt line matching and alias learning
+- Receipt parse/review/commit lifecycle
+- Idempotent receipt commit behavior in inventory ledger path
+- Receipt auto-resolution observability (process-local summaries)
+
+Key model:
+- `ReceiptItemAlias` (store-context alias mapping)
+
+Canonical server paths:
+- `src/features/receiving/receipt/server/*`
+
+### Shopping mode with Google Places context
+
+Implemented capabilities:
+- Shopping sessions tied to store/place context (`google_place_id`)
+- Quick-shop barcode loop
+- Receipt reconciliation / pairing
+- Manual pairing fallback for unresolved barcode items
+- Optional photo-assisted and web/AI suggestion flow (post-receipt authoritative phase)
+- Audit metadata persistence for fallback evidence and pairing decisions
+- Web fallback hardening and observability
+
+Canonical paths:
+- `src/features/shopping/server/*`
+- `src/features/shopping/ui/*`
+- `src/features/shopping/integrations/*` (feature-facing facades)
+
+Important hotspot:
+- `lib/modules/shopping/web-fallback.ts` remains a major legacy implementation hotspot behind refactor facades.
+
+### Inventory management and enrichment queue (Phase D complete)
+
+Implemented capabilities:
+- Inventory CRUD (items, barcodes, aliases)
+- Inventory list/detail pages
+- Derived non-blocking "Fix Later Queue" surfaced in Inventory UI
+- Persistent task actions via client-side localStorage:
+  - complete
+  - defer
+  - snooze
+  - undo/reset
+- Expanded candidate sources:
+  - barcode/global metadata quality gaps
+  - receipt matching suggested/unresolved outcomes
+  - shopping pairing leftovers (unresolved barcode, missing-on-receipt, extra-on-receipt)
+  - normalization gaps (e.g., missing category)
+- Queue observability stats in UI (candidate source breakdown, queue health)
+
+Canonical files (examples):
+- `src/features/inventory/server/inventory.repository.ts`
+- `src/features/inventory/server/inventory.service.ts`
+- `src/features/inventory/ui/InventoryListPageClient.tsx`
+- `src/features/inventory/ui/use-enrichment-dismissals.ts`
+
+Deferred by design:
+- Server-side persistent enrichment task table (future enhancement if localStorage dismissals become insufficient)
+
+### Contacts and staff
+
+Refactor-complete feature extraction:
+- `src/features/contacts/*`
+- `src/features/staff/*`
+
+Route/action wrappers remain in `app/(dashboard)` and `app/actions/core`.
+
+## Data Model (Key Entities and Relationships)
+
+Core operational entities:
+- `Business`
+- `InventoryItem`
+- `ItemBarcode`
+- `ItemAlias`
+- `InventoryTransaction`
+- `ItemPriceHistory`
+- `Supplier` (includes `google_place_id`)
+
+Receipt entities:
+- `Receipt`
+- `ReceiptLineItem`
+- `ReceiptItemAlias` (store-context alias mapping)
+
+Shopping entities:
+- `ShoppingSession`
+- `ShoppingSessionItem` (includes `resolution_audit`)
+
+Barcode intelligence entities:
+- `GlobalBarcodeCatalog`
+- `BarcodeResolutionEvent`
+
+Design principles currently enforced:
+- Tenant isolation remains primary (`business_id`-scoped operations)
+- Receipt/store aliases are place-scoped (not global product IDs)
+- Barcode knowledge is globally cached for metadata/provenance, not cross-tenant inventory ownership
+- Receipt commit and ledger writes preserve idempotency/all-or-nothing semantics
+
+## Core Workflows (Current Behavior)
+
+### 1. Barcode receive flow
+
+High-level flow:
+1. User scans barcode in receive UI
+2. Resolver normalizes barcode
+3. Internal lookup (tenant/global cache paths)
+4. External provider fallback chain (if needed)
+5. Result returned with confidence + source
+6. Inventory transaction / item linkage path proceeds
+7. Metrics + cache/event persistence recorded
+
+Notes:
+- Unresolved lookups use backoff/cooldowns
+- Background retries may re-attempt external providers later (process-local)
+
+### 2. Photo receive flow
+
+High-level flow:
+1. Upload/capture image
+2. OCR extraction
+3. Product text parsing / matching
+4. User confirms/suggests
+5. Transaction write
+6. Alias learning (where applicable)
+
+### 3. Manual receive flow
+
+High-level flow:
+1. User selects existing item or creates new item
+2. Quantity/cost metadata entered
+3. Transaction written
+4. Optional aliases/barcodes can be added
+
+### 4. Receipt parse/review/commit flow
+
+High-level flow:
+1. OCR/manual receipt text ingestion
+2. Parse into line items
+3. Resolve lines using alias + matching pipeline
+4. User reviews/edits unresolved/suggested lines
+5. Commit receipt transactions atomically
+6. Learn aliases from user confirmations
+
+Behavior invariants:
+- Commit remains idempotent
+- Commit is all-or-nothing
+
+### 5. Shopping + post-receipt reconciliation flow
+
+High-level flow:
+1. Start shopping session with Google Places store context
+2. Scan item barcodes during shopping
+3. Resolve via barcode resolver (defer expensive web fallback during live scan loop)
+4. Scan/ingest receipt (authoritative phase)
+5. Reconcile staged items to receipt lines
+6. Manual/photo/web fallback only when needed
+7. Persist pairing audit metadata
+8. Commit/reconcile shopping state
+
+### 6. Inventory enrichment "Fix Later" queue
+
+High-level flow:
+1. Inventory server derives candidate tasks from multiple existing data sources
+2. UI displays prioritized queue (non-blocking)
+3. User applies local actions (complete/defer/snooze) via localStorage dismissals
+4. Queue updates immediately without impacting intake workflows
+5. Observability stats help identify backlog patterns
+
+## Feature Placement Rules (Most Important Section)
+
+Future engineers must follow these rules to preserve the refactor structure.
+
+### Rule 1: Put code in the canonical layer first
+
+Choose placement by responsibility:
+- Route composition and page entrypoint only -> `app/(dashboard)/**/page.tsx`
+- Server action entrypoint / auth guard wrapper -> `app/actions/**`
+- Feature business logic / workflows -> `src/features/<feature>/server/*`
+- Feature UI and local state -> `src/features/<feature>/ui/*`
+- Pure parsing/scoring/normalization -> `src/domain/*`
+- Shared UI components/config/types -> `src/shared/*`
+- Server-only infra clients and adapters -> `src/server/*`
+
+Do not add new business logic to:
+- `app/(dashboard)/**/page.tsx` (except accepted legacy exception work, if you are intentionally touching it)
+- `app/actions/**` wrappers (unless action contract/auth/guard wiring must change)
+
+### Rule 2: Respect client/server boundaries
+
+- Client components must not import `@/server/*`.
+- Client components can call server actions through `app/actions/*` entrypoints.
+- Server-only code (Prisma, auth guards, storage) belongs in `src/server/*` and feature server modules.
+
+### Rule 3: Prefer explicit aliases
+
+Use:
+- `@/features/*`
+- `@/domain/*`
+- `@/server/*`
+- `@/shared/*`
+
+Avoid for new code:
+- `@/core/*` (legacy compatibility path)
+- `@/modules/*` (legacy compatibility path)
+- ambiguous `@/*` imports when an explicit alias exists
+
+### Rule 4: Do not remove wrappers casually
+
+Wrappers exist for one of three reasons:
+- required entrypoints (route/action wrappers)
+- canonical facades (`src/*` wrapper paths)
+- compatibility for legacy imports/tests (`lib/core/*` wrappers)
+
+Before removing any wrapper:
+1. Prove repo-wide imports no longer depend on it.
+2. Run validation.
+3. Update this document changelog + accepted exceptions if behavior/structure changes.
+
+### Rule 5: Keep refactor exceptions explicit
+
+If you cannot keep a route thin (for example `app/(dashboard)/shopping/page.tsx`), document it here under:
+- `Accepted Exceptions and Known Validation Gaps`
+- Changelog entry for that change
+
+Do not leave undocumented structural deviations.
+
+### Rule 6: Extend feature modules, do not create parallel implementations
+
+Before adding a new file:
+- search for existing repository/service/helper in the feature module
+- extend canonical files instead of duplicating logic in route pages/actions
+
+Examples:
+- Inventory enrichment work belongs in `src/features/inventory/server/*` and `src/features/inventory/ui/*`, not in `app/actions/core/inventory.ts` beyond wrapper wiring.
+- Receipt matching changes belong in `src/features/receiving/receipt/server/*` and `src/domain/matching/*` (if pure logic).
+- If both inventory UI and inventory server need the same queue types/constants, put them in a client-safe feature file such as `src/features/inventory/shared/*` (do not import `src/features/inventory/server` from client code).
+
+## New Feature Implementation Playbook (Follow This)
+
+Use this checklist when adding a new feature or major extension.
+
+### A. Decide the scope type
+
+- Cross-cutting pure logic -> `src/domain/*`
+- Feature-specific workflow -> `src/features/<feature>/server/*`
+- Feature UI -> `src/features/<feature>/ui/*`
+- Shared primitive/component/config -> `src/shared/*`
+- External server integration -> `src/server/integrations/*` or `src/features/<feature>/integrations/*` (if feature-local)
+
+### B. Wire entrypoints last
+
+Order of implementation:
+1. Repository/query functions (if DB access needed)
+2. Service/workflow logic
+3. Feature UI
+4. Action wrapper / route wrapper wiring
+5. Validation
+6. Docs/changelog update in this file
+
+### C. Validation expectations
+
+Run targeted validation for touched files, plus broader checks when appropriate.
+
+Common commands:
+- `npx tsc --noEmit --incremental false`
+- `npm run lint` (document baseline failures if unchanged)
+- `node --test app/actions/core/barcode-resolver-cache.test.mjs`
+- `node --test --experimental-transform-types lib/core/matching/receipt-line-core.test.mjs`
+
+### D. Documentation expectations (required)
+
+For every meaningful change:
+- Append a changelog entry in this file
+- Update relevant architecture/workflow sections here
+- If reactivating plan-style work, also update the relevant plan doc(s)
+
+## Accepted Exceptions and Known Validation Gaps
+
+Structural exceptions:
+- `app/(dashboard)/shopping/page.tsx` remains a large route entrypoint (state/hooks/contracts extracted, JSX mostly local). This is an accepted deviation.
+- Zero wrapper removals were performed during refactor Phase 8. Wrapper keep/defer matrix is documented; removals are deferred until repo-wide migrations justify them.
+
+Validation exceptions (documented baseline/current):
+- `npm run lint` has known failures not caused by the refactor closeout:
+  - `app/page.tsx`
+  - `components/theme/theme-toggle.tsx`
+  - `lib/modules/shopping/web-fallback.ts`
+  - generated `playwright-report` asset lint noise
+- `node --test app/actions/core/barcode-resolver-core.test.mjs` fails under direct Node execution because of a Node ESM extensionless import resolution issue (`barcode-resolver-core.ts` imports `app/actions/core/barcode-resolver-cache` without an extension specifier in this command context)
+
+Deferred QA:
+- Manual integrated smoke test across core flows is intentionally deferred to user/final QA pass.
+
+## Operational Notes and Gotchas
+
+Prisma client regeneration in dev:
+- After schema changes and `prisma generate`, restart the Next.js dev server.
+- Reason: the in-memory Prisma client instance in the running server may be stale and not expose newly generated delegates/models.
+
+Process-local observability/retries:
+- Some queue/metrics/cooldown/retry state is in-memory and resets on server restart.
+- This is expected for current Phase E behavior unless/until persistent jobs/metrics are added.
+
+## Changelog (Append New Entries At Top)
+
+Entry format (recommended):
+- Date
+- Scope
+- What changed
+- Files changed
+- Validation run
+- Notes / caveats
+
+### 2026-02-26 - Global design language refresh (finance-style shell with green primary)
+- Scope:
+  - Cross-app visual language update (dark/light theme-aware) + homepage redesign
+- What changed:
+  - Updated global theme tokens in `app/globals.css` for cleaner matte surfaces, softer shadows, and green-first hero accents
+  - Added reusable UI surface classes (`app-control`, `app-hero-card`, `app-hero-inset`, `app-sheet`, `app-sheet-row`)
+  - Updated shared `Card` and `BottomNav` components so many pages inherit the new rounded finance-app style automatically
+  - Redesigned `app/page.tsx` to a green hero + rounded sheet layout while preserving existing features (period toggle, balance summary, contacts shortcut, transaction feed)
+- Files changed:
+  - `app/globals.css`
+  - `components/ui/card.tsx`
+  - `components/nav/bottom-nav.tsx`
+  - `app/page.tsx`
+  - `docs/codebase-overview.md`
+- Validation run:
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Notes:
+  - This pass focuses on shared surfaces + homepage; some feature pages still use local styling and may need follow-up polish to fully align with the new language.
+
+### 2026-02-26 - Homepage UI cleanup (reduced glow and card density)
+- Scope:
+  - Dashboard/home page visual simplification for cleaner presentation
+- What changed:
+  - Removed heavy glow/gradient treatment from the top header/summary area
+  - Flattened top nav controls (profile/search/reports) to a simpler surface style
+  - Replaced boxed summary "stat pills" with a lighter inline summary row
+  - Simplified quick action + transaction card treatments (less border/shadow intensity)
+- Files changed:
+  - `app/page.tsx`
+  - `docs/codebase-overview.md`
+- Validation run:
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Notes:
+  - No behavior/data-loading changes; this is a presentation-only cleanup.
+
+### 2026-02-26 - Codebase overview promoted to architecture handbook + engineering guide + changelog
+- Scope:
+  - Replaced the old MVP-style overview with a current-state architecture reference covering refactor outcomes, inventory intelligence features, feature placement rules, accepted exceptions, and changelog process.
+- What changed:
+  - Added canonical architecture map (`app`, `src/features`, `src/domain`, `src/server`, `src/shared`)
+  - Added feature implementation summaries (barcode resolver, receipt aliasing, shopping reconciliation, inventory enrichment queue)
+  - Added explicit rules for future engineers on where new code must go
+  - Added accepted exceptions/validation gaps and operational notes
+  - Added changelog process and backfilled historical milestone summaries below
+- Files changed:
+  - `docs/codebase-overview.md`
+- Validation run:
+  - Documentation update only (no new code validation commands run)
+- Notes:
+  - This file is now expected to be updated after every meaningful change.
+
+### 2026-02-26 - Fixed Inventory page client-bundle server import leak (`pg`/`dns` in browser build)
+- Scope:
+  - Inventory enrichment queue client hook/import boundaries
+- What changed:
+  - Moved shared inventory enrichment queue types/constants into a client-safe feature file:
+    - `src/features/inventory/shared/enrichment-queue.contracts.ts`
+  - Updated client UI/hook imports to use the new shared path instead of importing from `@/features/inventory/server`
+  - Kept server API compatibility by re-exporting the shared contracts from `src/features/inventory/server/inventory.service.ts`
+- Files changed:
+  - `src/features/inventory/shared/enrichment-queue.contracts.ts`
+  - `src/features/inventory/server/inventory.service.ts`
+  - `src/features/inventory/ui/use-enrichment-dismissals.ts`
+  - `src/features/inventory/ui/InventoryListPageClient.tsx`
+  - `docs/codebase-overview.md`
+- Validation run:
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `npx eslint src/features/inventory/shared/enrichment-queue.contracts.ts src/features/inventory/server/inventory.service.ts src/features/inventory/ui/use-enrichment-dismissals.ts src/features/inventory/ui/InventoryListPageClient.tsx` -> PASS
+  - `rg -n '@/features/inventory/server' src/features/inventory/ui` -> no matches
+- Notes:
+  - Root cause: `use-enrichment-dismissals.ts` imported `ENRICHMENT_SNOOZE_HOURS` from the inventory server barrel, which pulled Prisma/`pg` into the client bundle and caused the `dns` module resolution error in Next.js/Turbopack.
+
+### 2026-02-26 - Refactor plan complete through Phase 8 (manual integrated smoke deferred)
+- Scope:
+  - App structure refactor final closeout
+- What changed (summary from refactor playbook):
+  - Route-thin + feature-first structure established across shopping/receiving/inventory/contacts/staff
+  - Shared/domain/server wrapper slices and feature import cleanup completed
+  - Phase 8 wrapper keep/defer matrix documented
+  - Accepted exceptions finalized (shopping route large, zero wrapper removals this phase, known lint/test exceptions)
+- Files changed (representative/canonical areas):
+  - `src/features/*`
+  - `src/domain/*`
+  - `src/server/*`
+  - `src/shared/*`
+  - `app/actions/*` wrappers
+  - `app/(dashboard)/*` route wrappers
+- Validation run (recorded in refactor playbook):
+  - `npx tsc --noEmit --incremental false` PASS
+  - targeted tests PASS except documented Node ESM issue for `barcode-resolver-core.test.mjs`
+  - `npm run lint` FAIL with known baseline exceptions/noise
+  - localhost HEAD route smoke PASS
+- Notes:
+  - Manual integrated smoke deferred to user/final QA pass.
+
+### 2026-02-26 - Inventory Plan Phase D complete (enrichment queue)
+- Scope:
+  - Optional non-blocking "Fix Later" enrichment workflow
+- What changed (summary from inventory plan):
+  - Added derived enrichment queue in Inventory UI
+  - Added client-side persistent task actions (complete/defer/snooze via localStorage)
+  - Expanded sources (barcode metadata, receipt matching, shopping pairing leftovers, normalization gaps)
+  - Added queue observability summaries in UI
+- Canonical files:
+  - `src/features/inventory/server/inventory.repository.ts`
+  - `src/features/inventory/server/inventory.service.ts`
+  - `src/features/inventory/server/index.ts`
+  - `src/features/inventory/ui/InventoryListPageClient.tsx`
+  - `src/features/inventory/ui/use-enrichment-dismissals.ts`
+  - `app/actions/core/inventory.ts` (wrapper wiring)
+- Validation run (recorded in inventory plan):
+  - `npx tsc --noEmit --incremental false` PASS
+  - targeted eslint on inventory files PASS
+- Notes:
+  - Server-side persistent enrichment task table intentionally deferred.
+
+### 2026-02-26 - Inventory Plan Phase E complete (observability and hardening)
+- Scope:
+  - Resolver/web fallback hardening, metrics, retries, derived rates
+- What changed (summary from inventory plan):
+  - Web fallback hardening (timeouts/retries/cooldowns/observability)
+  - Barcode provider aggregate metrics + resolver metrics
+  - Barcode lookup abuse controls and cooldowns
+  - Background retry scheduling for unresolved barcodes
+  - Derived-rate summaries for resolver and receipt matching
+- Key files (representative):
+  - `lib/modules/shopping/web-fallback.ts`
+  - `app/actions/core/barcode-resolver.ts`
+  - `src/features/receiving/receipt/server/receipt-workflow.service.ts`
+- Notes:
+  - Many metrics/retry mechanisms are process-local and reset on restart.
+
+### 2026-02-26 - Inventory Plan Phases B/C complete; receipt aliasing and external barcode provider layering in production code
+- Scope:
+  - Barcode provider integrations and place-scoped receipt aliasing
+- What changed (summary from inventory plan):
+  - Implemented OFF/OBF/UPCDatabase/UPCitemdb provider layering with caching/provenance
+  - Added place-scoped receipt alias mapping and matching/learning integration
+  - Preserved receipt commit idempotency and tenant isolation
+- Key schema/entities:
+  - `GlobalBarcodeCatalog`
+  - `BarcodeResolutionEvent`
+  - `ReceiptItemAlias`
+
+### 2026-02-25 to 2026-02-26 - Major architecture transition completed (historical backfill summary)
+- Scope:
+  - Full route-thin, feature-first refactor and inventory intelligence rollout from plan docs
+- What changed:
+  - Phases 0-8 refactor plan executed and documented
+  - Phases 0/A/B/C/D/E inventory plan executed and documented
+  - Combined coordination plan used to sequence high-churn work safely
+- Notes:
+  - Detailed step-by-step logs remain in:
+    - `docs/app-structure-refactor-agent-playbook.md`
+    - `docs/inventoryintakeplan.md`
+    - `docs/combined-plan-coordination.md`
+
+## Changelog Entry Template (Copy / Append At Top)
+
+```md
+### YYYY-MM-DD - <short change title>
+- Scope:
+  - <what area changed>
+- What changed:
+  - <summary>
+  - <summary>
+- Files changed:
+  - `<path>`
+  - `<path>`
+- Validation run:
+  - `<command>` -> <PASS/FAIL + notes>
+  - `<command>` -> <PASS/FAIL + notes>
+- Notes:
+  - <caveats / follow-up / accepted exceptions>
+```

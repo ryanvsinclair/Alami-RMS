@@ -237,7 +237,7 @@ export default function ShoppingPage() {
             <div
               className={`mt-3 rounded-xl border p-3 ${
                 s.quickScanFeedback.status === "resolved_inventory"
-                  ? "border-emerald-400/25 bg-emerald-500/10"
+                  ? "border-success/25 bg-success/10"
                   : s.quickScanFeedback.status === "resolved_barcode_metadata"
                     ? "border-sky-400/25 bg-sky-500/10"
                   : "border-amber-400/25 bg-amber-500/10"

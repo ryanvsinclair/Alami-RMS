@@ -5,13 +5,23 @@
 
 export type {
   CreateInventoryItemInput,
+  EnrichmentDismissalMap,
+  EnrichmentQueueObservability,
+  EnrichmentTaskAction,
+  EnrichmentTaskDismissal,
   GetInventoryItemsOptions,
   InventoryAliasSource,
+  InventoryEnrichmentQueueItem,
+  InventoryEnrichmentQueueResult,
+  InventoryEnrichmentTaskType,
   UpdateInventoryItemInput,
 } from "./inventory.service";
 
+export { ENRICHMENT_SNOOZE_HOURS } from "./inventory.service";
+
 export {
   getInventoryItems,
+  getInventoryEnrichmentQueue,
   getInventoryItem,
   createInventoryItem,
   updateInventoryItem,
@@ -29,4 +39,3 @@ export {
   findInventoryItemIdOnly,
   findInventoryItemByBarcode,
 } from "./inventory.repository";
-

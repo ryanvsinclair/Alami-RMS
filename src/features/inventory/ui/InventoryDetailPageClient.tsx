@@ -164,7 +164,7 @@ export default function InventoryDetailPageClient({
                 <div className="text-right">
                   <p
                     className={`font-semibold ${
-                      Number(tx.quantity) >= 0 ? "text-green-600" : "text-red-600"
+                      Number(tx.quantity) >= 0 ? "text-success" : "text-danger"
                     }`}
                   >
                     {Number(tx.quantity) >= 0 ? "+" : ""}

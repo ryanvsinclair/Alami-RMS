@@ -8,12 +8,14 @@ import type {
   CreateInventoryItemInput,
   GetInventoryItemsOptions,
   InventoryAliasSource,
+  InventoryEnrichmentQueueResult,
   UpdateInventoryItemInput,
 } from "@/features/inventory/server";
 import {
   addAlias as _addAlias,
   addBarcode as _addBarcode,
   createInventoryItem as _createInventoryItem,
+  getInventoryEnrichmentQueue as _getInventoryEnrichmentQueue,
   getInventoryItem as _getInventoryItem,
   getInventoryItems as _getInventoryItems,
   lookupBarcode as _lookupBarcode,
@@ -29,6 +31,16 @@ import {
 export async function getInventoryItems(opts?: GetInventoryItemsOptions) {
   const businessId = await requireBusinessId();
   return _getInventoryItems(businessId, opts);
+}
+
+export async function getInventoryEnrichmentQueue(
+  opts?: {
+    inventoryScanLimit?: number;
+    resultLimit?: number;
+  },
+): Promise<InventoryEnrichmentQueueResult> {
+  const businessId = await requireBusinessId();
+  return _getInventoryEnrichmentQueue(businessId, opts) as Promise<InventoryEnrichmentQueueResult>;
 }
 
 export async function getInventoryItem(id: string) {

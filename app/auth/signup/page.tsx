@@ -17,7 +17,7 @@ export default async function SignupPage({
         <h1 className="mt-1 text-3xl font-bold text-foreground">Create your account</h1>
       </div>
 
-      <form action={signUpAction} className="space-y-3 rounded-3xl border border-[rgba(128,164,202,0.24)] bg-[linear-gradient(150deg,rgba(20,42,67,0.72)_0%,rgba(14,30,50,0.7)_60%,rgba(10,22,39,0.8)_100%)] p-5">
+      <form action={signUpAction} className="app-sheet space-y-3 rounded-3xl p-5 ring-1 ring-primary/10">
         <input type="hidden" name="next" value={next} />
         <div className="space-y-1.5">
           <label htmlFor="business_name" className="text-xs font-semibold uppercase tracking-wide text-muted">
@@ -27,7 +27,7 @@ export default async function SignupPage({
             id="business_name"
             name="business_name"
             required
-            className="h-12 w-full rounded-2xl border border-border bg-white/7 px-4 text-foreground outline-none focus:ring-2 focus:ring-primary/30"
+            className="h-12 w-full rounded-2xl border border-border bg-foreground/[0.04] px-4 text-foreground placeholder:text-muted/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] outline-none focus:ring-2 focus:ring-primary/30"
           />
         </div>
         <div className="space-y-1.5">
@@ -39,7 +39,7 @@ export default async function SignupPage({
             name="email"
             type="email"
             required
-            className="h-12 w-full rounded-2xl border border-border bg-white/7 px-4 text-foreground outline-none focus:ring-2 focus:ring-primary/30"
+            className="h-12 w-full rounded-2xl border border-border bg-foreground/[0.04] px-4 text-foreground placeholder:text-muted/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] outline-none focus:ring-2 focus:ring-primary/30"
           />
         </div>
         <div className="space-y-1.5">
@@ -50,10 +50,10 @@ export default async function SignupPage({
             id="industry_type"
             name="industry_type"
             defaultValue="general"
-            className="h-12 w-full rounded-2xl border border-border bg-white/7 px-4 text-foreground outline-none focus:ring-2 focus:ring-primary/30"
+            className="h-12 w-full rounded-2xl border border-border bg-foreground/[0.04] px-4 text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] outline-none focus:ring-2 focus:ring-primary/30"
           >
             {INDUSTRY_TYPES.map((industry) => (
-              <option key={industry} value={industry} className="bg-[#0b1522] text-foreground">
+              <option key={industry} value={industry} className="bg-card text-foreground">
                 {INDUSTRY_LABELS[industry]}
               </option>
             ))}
@@ -70,17 +70,17 @@ export default async function SignupPage({
             type="password"
             minLength={8}
             required
-            className="h-12 w-full rounded-2xl border border-border bg-white/7 px-4 text-foreground outline-none focus:ring-2 focus:ring-primary/30"
+            className="h-12 w-full rounded-2xl border border-border bg-foreground/[0.04] px-4 text-foreground placeholder:text-muted/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] outline-none focus:ring-2 focus:ring-primary/30"
           />
         </div>
         {params?.error && (
-          <p className="rounded-xl border border-red-400/20 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+          <p className="rounded-xl border border-danger/20 bg-danger/10 px-3 py-2 text-sm text-danger">
             {decodeURIComponent(params.error)}
           </p>
         )}
         <button
           type="submit"
-          className="h-12 w-full rounded-2xl bg-primary font-semibold text-white shadow-[0_8px_20px_rgba(6,193,103,0.35)]"
+          className="h-12 w-full rounded-2xl bg-primary font-semibold text-white shadow-[0_8px_20px_rgba(0,127,255,0.32)] transition-colors hover:bg-primary-hover"
         >
           Create account
         </button>

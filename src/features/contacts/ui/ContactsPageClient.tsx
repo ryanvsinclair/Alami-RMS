@@ -74,7 +74,7 @@ function ContactForm({
           value={form.notes}
           onChange={setField("notes")}
           rows={3}
-          className="w-full resize-none rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+          className="w-full resize-none rounded-2xl border border-border bg-foreground/[0.04] px-4 py-3 text-sm text-foreground placeholder:text-muted/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] outline-none focus:ring-2 focus:ring-primary/30"
         />
       </div>
       <div className="grid grid-cols-2 gap-2 pt-1">
@@ -184,7 +184,7 @@ export default function ContactsPageClient() {
       )}
 
       {error && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-danger">
+        <div className="rounded-2xl border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">
           {error}
         </div>
       )}
@@ -206,10 +206,10 @@ export default function ContactsPageClient() {
           {[0, 1, 2].map((index) => (
             <div key={index} className="animate-pulse rounded-3xl border border-border bg-card p-4">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-2xl bg-black/[0.06]" />
+                <div className="h-10 w-10 rounded-2xl bg-foreground/[0.06]" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-3.5 w-28 rounded-lg bg-black/[0.06]" />
-                  <div className="h-3 w-20 rounded-lg bg-black/[0.04]" />
+                  <div className="h-3.5 w-28 rounded-lg bg-foreground/[0.06]" />
+                  <div className="h-3 w-20 rounded-lg bg-foreground/[0.04]" />
                 </div>
               </div>
             </div>
@@ -219,7 +219,7 @@ export default function ContactsPageClient() {
 
       {!loading && contacts.length === 0 && !showAdd && (
         <div className="py-16 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-black/[0.04]">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-foreground/[0.04]">
             <svg className="h-8 w-8 text-muted" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
             </svg>
@@ -271,7 +271,7 @@ export default function ContactsPageClient() {
                       setEditId(contact.id);
                       setShowAdd(false);
                     }}
-                    className="flex h-8 w-8 items-center justify-center rounded-xl bg-black/[0.04] text-muted transition-colors hover:text-foreground"
+                    className="flex h-8 w-8 items-center justify-center rounded-xl bg-foreground/[0.04] text-muted transition-colors hover:bg-foreground/[0.07] hover:text-foreground"
                   >
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
@@ -280,7 +280,7 @@ export default function ContactsPageClient() {
                   <button
                     onClick={() => handleDelete(contact.id)}
                     disabled={deletingId === contact.id}
-                    className="flex h-8 w-8 items-center justify-center rounded-xl bg-black/[0.04] text-muted transition-colors hover:text-danger"
+                    className="flex h-8 w-8 items-center justify-center rounded-xl bg-foreground/[0.04] text-muted transition-colors hover:bg-danger/10 hover:text-danger"
                   >
                     {deletingId === contact.id ? (
                       <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">

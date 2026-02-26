@@ -87,7 +87,7 @@ export function ReceiptLineItemRow({
               {lineItem.matched_item && (
                 <button
                   onClick={() => onConfirm(lineItem.matched_item!.id)}
-                  className="px-3 py-1 text-xs font-medium rounded-md bg-green-100 text-green-700 hover:bg-green-200"
+                  className="px-3 py-1 text-xs font-medium rounded-md bg-success/12 text-success hover:bg-success/18"
                 >
                   Confirm
                 </button>

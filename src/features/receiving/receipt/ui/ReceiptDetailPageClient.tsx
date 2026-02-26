@@ -166,7 +166,7 @@ export default function ReceiptDetailPageClient() {
             <span
               className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide ${
                 receipt.status === "committed"
-                  ? "bg-green-500/15 text-green-400"
+                  ? "bg-success/15 text-success"
                   : receipt.status === "review"
                     ? "bg-amber-500/15 text-amber-400"
                     : receipt.status === "failed"

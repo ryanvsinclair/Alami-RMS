@@ -81,7 +81,7 @@ export function BottomNav({ enabledModules }: { enabledModules?: string[] }) {
   return (
     <nav className="fixed inset-x-0 bottom-4 z-50 px-3 pointer-events-none safe-bottom">
       <div
-        className="pointer-events-auto mx-auto flex h-[72px] max-w-lg items-center justify-between gap-1 rounded-full px-2 py-1.5 text-foreground backdrop-blur-xl"
+        className="pointer-events-auto mx-auto flex h-[72px] max-w-lg items-center justify-between gap-1 rounded-[28px] px-2 py-1.5 text-foreground backdrop-blur-xl"
         style={{
           border: "1px solid var(--surface-nav-border)",
           background: "var(--surface-nav-bg)",
@@ -96,13 +96,21 @@ export function BottomNav({ enabledModules }: { enabledModules?: string[] }) {
             <Link
               key={item.href}
               href={item.href}
+              style={
+                isActive
+                  ? {
+                      background: "var(--surface-nav-active-bg)",
+                      boxShadow: "var(--surface-nav-active-ring)",
+                    }
+                  : undefined
+              }
               className={`
-                flex h-full min-h-[58px] w-full flex-col items-center justify-center gap-1 rounded-full px-2
+                flex h-full min-h-[58px] w-full flex-col items-center justify-center gap-1 rounded-[22px] px-2
                 text-[10px] font-semibold tracking-wide transition-all duration-200 capitalize
                 ${
                   isActive
-                    ? "bg-foreground/10 text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_8px_18px_rgba(0,0,0,0.14)]"
-                    : "text-foreground/70 hover:bg-foreground/6 hover:text-foreground"
+                    ? "text-foreground"
+                    : "text-foreground/70 hover:bg-foreground/5 hover:text-foreground"
                 }
               `}
             >

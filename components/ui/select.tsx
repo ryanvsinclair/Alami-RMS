@@ -21,8 +21,8 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           ref={ref}
           id={selectId}
           className={`
-            w-full h-12 rounded-2xl border bg-white/7 px-4
-            text-foreground font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] focus:outline-none focus:ring-2 focus:ring-primary/30
+            w-full h-12 rounded-2xl border bg-foreground/[0.04] px-4
+            text-foreground font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] focus:outline-none focus:ring-2 focus:ring-primary/25
             ${error ? "border-danger" : "border-border"}
             ${className}
           `}

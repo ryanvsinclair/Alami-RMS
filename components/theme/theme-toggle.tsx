@@ -35,7 +35,7 @@ export function ThemeToggle() {
 
   return (
     <div
-      className="inline-flex rounded-2xl border border-border bg-card/70 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
+      className="inline-flex rounded-2xl border border-border bg-card/70 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
       role="tablist"
       aria-label="Color mode"
     >
@@ -53,7 +53,7 @@ export function ThemeToggle() {
             onClick={() => setMode(option.id)}
             className={`min-w-[78px] rounded-xl px-3 py-2 text-xs font-semibold transition-all ${
               active
-                ? "bg-primary text-white shadow-[0_6px_14px_rgba(6,193,103,0.22)]"
+                ? "bg-primary text-white shadow-[0_4px_12px_rgba(0,127,255,0.22)]"
                 : "text-muted hover:bg-foreground/5 hover:text-foreground"
             }`}
           >

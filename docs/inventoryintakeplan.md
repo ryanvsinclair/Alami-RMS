@@ -1,6 +1,6 @@
 # Inventory Intake Plan
 
-Last updated: February 25, 2026
+Last updated: February 26, 2026 (all phases complete)
 
 ## How To Use This Plan
 
@@ -35,6 +35,100 @@ Disclaimer:
 - If this account stops working, rotate/update the credentials here before the next testing session.
 - Agents may use this account for local verification and smoke tests when a login is required.
 ## Latest Update
+
+- **Phase D complete: expanded enrichment sources + queue observability + final closeout** (February 26, 2026):
+  - Expanded enrichment candidate sources beyond barcode/global metadata:
+    - Receipt matching: queries recent `ReceiptLineItem` rows with `suggested`/`unresolved` status and attributes them to inventory items for `review_receipt_match` tasks.
+    - Shopping pairing: queries `ShoppingSessionItem` rows from committed sessions with unresolved barcodes, `missing_on_receipt`, or `extra_on_receipt` reconciliation status for `resolve_shopping_pairing` tasks.
+    - Normalization gaps: queries active `InventoryItem` rows missing a category assignment for `confirm_category` tasks (plus `confirm_brand_title_cleanup` for very short names).
+  - Added queue observability summaries (`EnrichmentQueueObservability` type):
+    - `candidate_sources` breakdown: barcode_metadata, receipt_matching, shopping_pairing, normalization_gaps counts.
+    - `queue_health` stats: total_unique_items, multi_source_items (items appearing in multiple candidate sources), oldest_candidate_days.
+  - UI updates:
+    - Added receipt and shopping task type badges to the queue summary.
+    - Added collapsible "Queue stats" panel showing observability breakdown.
+    - Updated enrichment task label map for `review_receipt_match` and `resolve_shopping_pairing`.
+  - Repository additions in `inventory.repository.ts`:
+    - `findRecentUnresolvedReceiptLines(businessId, opts)` -- receipt lines with suggested/unresolved status from recent receipts.
+    - `findUnresolvedShoppingItems(businessId, opts)` -- shopping session items with unresolved pairing from committed sessions.
+    - `findInventoryItemsMissingCategory(businessId, limit)` -- active items without a category.
+  - Service layer (`inventory.service.ts`):
+    - All four data sources fetched in parallel via `Promise.all`.
+    - Candidate deduplication via `Map` keyed by inventory_item_id across all sources.
+    - Priority assignment accounts for new task types (shopping pairing = high, receipt match = medium).
+  - Validation:
+    - `npx tsc --noEmit --incremental false` -- 0 errors
+    - `npx eslint` on all changed inventory files -- 0 errors
+    - `node --test app/actions/core/barcode-resolver-cache.test.mjs` -- 5/5 pass
+    - `node --test --experimental-transform-types lib/core/matching/receipt-line-core.test.mjs` -- 10/10 pass
+  - Notes:
+    - Phase D is now complete. All enrichment queue items (12 + 13) are done.
+    - Server-side persistent enrichment task table remains deferred to a future phase if/when localStorage-based dismissals prove insufficient.
+  - Next:
+    - Manual smoke test of enrichment queue UI (user task).
+    - Final integrated QA pass across all plans.
+
+- **Phase D continuation: persistent enrichment task state/actions (complete/defer/snooze) via client-side localStorage** (February 26, 2026):
+  - Added enrichment task action types and dismissal state contracts in `src/features/inventory/server/inventory.service.ts`:
+    - `EnrichmentTaskAction` type (`complete` / `defer` / `snooze`)
+    - `EnrichmentTaskDismissal` interface (item+task+action+timestamp+snooze_until)
+    - `EnrichmentDismissalMap` type (serializable localStorage map)
+    - `ENRICHMENT_SNOOZE_HOURS` preset constants (24h / 72h / 1 week)
+  - Created `src/features/inventory/ui/use-enrichment-dismissals.ts`:
+    - client-side persistent dismissal hook using localStorage
+    - `dismissTask()` for per-task complete/defer/snooze actions
+    - `dismissAllTasks()` for bulk dismiss on all tasks of an item
+    - `undoDismissal()` for immediate undo
+    - `resetAll()` to clear all dismissals (show dismissed items again)
+    - automatic snooze expiration (snoozed tasks reappear after duration)
+    - client-side queue filtering: server derives full queue, client filters out dismissed items
+  - Updated `src/features/inventory/ui/InventoryListPageClient.tsx`:
+    - integrated `useEnrichmentDismissals` hook for filtered queue display
+    - added per-item expandable "Actions" panel with per-task and bulk action buttons (Done / Snooze / Skip)
+    - added "Show N dismissed" button to reset dismissals and restore hidden items
+    - added undo toast (5s auto-dismiss) for immediate single-task undo
+    - increased queue result limit from 6 to 10 items
+  - Updated barrel export in `src/features/inventory/server/index.ts` to include new types and constants
+  - Schema-light approach: no DB migration required. Dismissals persist in localStorage (client-side) and survive page reloads. Server queue derivation remains unchanged.
+  - Validation:
+    - `npx tsc --noEmit --incremental false` -- 0 errors
+    - `npx eslint src/features/inventory/server/index.ts src/features/inventory/server/inventory.service.ts src/features/inventory/ui/InventoryListPageClient.tsx src/features/inventory/ui/use-enrichment-dismissals.ts` -- 0 errors
+  - Notes:
+    - Intake remains non-blocking; queue actions are optional metadata cleanup workflows.
+    - When a future DB-backed enrichment task table is added, the client-side dismissal state can be migrated to server-side persistence.
+  - Next:
+    - expand candidate generation beyond barcode/global metadata (low-confidence receipt outcomes, unresolved shopping pairing leftovers)
+    - add queue observability summaries (task-type counts, backlog size, resolution throughput)
+    - consider server-side persistent enrichment task table when schema migration is warranted
+
+- **Phase D kickoff slice: derived non-blocking inventory enrichment "Fix Later" queue (barcode metadata-driven, no schema changes yet)** (February 26, 2026):
+  - Added a minimal Phase D kickoff implementation for optional enrichment tracking as a **derived queue** (computed from existing persisted data) without blocking intake workflows.
+  - Added inventory enrichment queue derivation in `src/features/inventory/server/inventory.service.ts` using:
+    - active `InventoryItem` records + linked `ItemBarcode` values
+    - `GlobalBarcodeCatalog` metadata (`resolution_status`, `confidence`, `image_url`, `size_text`, `category_hint`, `brand`, `canonical_title`)
+  - Added supporting repository queries in `src/features/inventory/server/inventory.repository.ts` and wired a wrapper action in `app/actions/core/inventory.ts` (`getInventoryEnrichmentQueue(...)`).
+  - Added a "Fix Later Queue" card to `src/features/inventory/ui/InventoryListPageClient.tsx`:
+    - summary counts (pending/high priority + task-type badges)
+    - top candidate items with enrichment task labels and quick navigation to inventory detail
+  - Current Phase D kickoff queue task types (derived heuristics):
+    - review barcode resolution (unresolved/low-confidence metadata)
+    - add product photo
+    - confirm size
+    - confirm category
+    - confirm brand/title cleanup
+  - Validation:
+    - `npx tsc --noEmit --incremental false` -- 0 errors
+    - `npx eslint app\actions\core\inventory.ts src\features\inventory\server\index.ts src\features\inventory\server\inventory.repository.ts src\features\inventory\server\inventory.service.ts src\features\inventory\ui\InventoryListPageClient.tsx` -- 0 errors
+  - Notes:
+    - This is a schema-light kickoff slice: queue items are **derived/computed** from existing data, not persisted as separate enrichment-task rows yet.
+    - Intake remains non-blocking; users can review cleanup suggestions later from Inventory.
+  - Docs refresh:
+    - Phase D `Current Status` updated to partial
+    - Phase E `Pick Up Here` item 9 (Phase D kickoff) marked complete
+    - `Pick Up Here` advanced to Phase D continuation tasks
+  - Next:
+    - add persistent task state (complete/defer/snooze) and lightweight queue actions
+    - expand enrichment candidate generation beyond barcode/global metadata heuristics
 
 - **Phase E observability closeout slice: derived-rate summaries (resolver cache/unresolved/retry rates + receipt auto-resolution metrics)** (February 26, 2026):
   - Added derived-rate summaries to barcode resolver aggregate metrics in `app/actions/core/barcode-resolver.ts`:
@@ -533,44 +627,41 @@ Previous updates (retained for history):
 - [x] Phase A (safe internal layer) complete. Resolver seam, cache/event integration, confidence + provenance in return payload, targeted test coverage, DB migration applied, and runtime verified.
 - [x] Phase B (external provider integrations) complete. All four providers (OFF, OBF, UPCDatabase, UPCitemdb) implemented with real API calls, fallback chain enabled, 4s timeouts, confidence scoring, `resolved_external` result type, UI support in barcode page, and 7 total resolver tests passing.
 - [x] Phase C (place-scoped receipt aliasing) complete. Place-scoped alias schema/migration, matching + learning paths, and receipt/shopping wiring are implemented; migration/schema/type verification reconfirmed on February 26, 2026.
-- [ ] Phase D (enrichment queue) not started.
+- [x] Phase D (enrichment queue) complete. A schema-light derived "Fix Later" queue is surfaced in Inventory using existing `InventoryItem` + `ItemBarcode` + `GlobalBarcodeCatalog` metadata, plus expanded candidate sources from receipt matching (suggested/unresolved lines), shopping pairing (unresolved barcodes, missing-on-receipt, extra-on-receipt), and normalization gaps (missing category). Client-side persistent task state/actions (complete/defer/snooze via localStorage) are in place with per-task and bulk actions, undo, and snooze expiration. Queue observability summaries (candidate source breakdown, queue health stats) are surfaced in the UI. Server-side persistent enrichment task table is deferred.
 - [x] Phase E (observability/hardening) complete. Shopping web fallback audit trails/hardening/metrics, layered barcode-provider aggregate counters (provider outcomes/depth/latency/error-code summaries), stricter barcode lookup abuse controls/cooldowns, process-local background retries for unresolved barcodes, and derived-rate summaries (cache hit/unresolved/retry success + receipt auto-resolution) are in place.
 
 ## Pick Up Here (Next Continuation)
 
-Primary continuation task: **Phase D -- kick off the optional enrichment queue ("fix later" tracking) without blocking intake workflows**.
+**All implementation phases (A through E) are complete.** The only remaining item is a manual smoke test of the enrichment queue UI and a final integrated QA pass across all plans (user task).
 
-Phases A, B, and C are complete. The barcode resolver supports internal inventory lookups and 4 external providers (OFF, OBF, UPCDatabase, UPCitemdb) with fallback chain, timeouts, confidence scoring, and global barcode catalog caching.
-
-Do this next:
+Completed task summary:
 
 1. `[x]` Add aggregate fallback counters + provider depth/latency summary logging in `lib/modules/shopping/web-fallback.ts` (process-local, structured console metrics).
 2. `[x]` Validate the current web fallback hardening slice (`npx tsc --noEmit --incremental false`; optional manual run of `Try Web/AI Suggestion` flow to inspect summary logs).
-3. `[x]` Tighten retry/rate-limit policy for repeated transient web fallback failures:
-   - review timeout cooldown thresholds and repeated-error escalation behavior
-   - add clearer summary logs when cooldown is entered due to repeated transient failures (not only `429`)
-4. `[x]` Add lightweight aggregate counters for the layered barcode provider stack (OFF / OBF / UPCDatabase / UPCitemdb):
-   - provider hit/miss/error/throttle counts
-   - fallback depth distribution
-   - timeout/error-code counts
-   - latency summaries (count/avg/max)
-5. `[x]` Revisit Phase E section wording/status after the above metrics are added across both web fallback and barcode provider paths
-6. `[x]` Add strict rate limiting / abuse prevention for repeated barcode lookup churn (especially repeated unresolved/external misses that hammer external providers)
-7. `[x]` Add background retry scheduling for unresolved barcodes (with retry observability/success tracking)
-8. `[x]` Add broader derived-rate/dashboard summaries across resolver and receipt matching paths:
-   - cache hit rate
-   - unresolved ratio
-   - background retry success rate
-   - receipt auto-resolution rate
-9. `[ ]` Phase D kickoff: propose/implement minimal optional enrichment tracking + non-blocking "fix later" flow
+3. `[x]` Tighten retry/rate-limit policy for repeated transient web fallback failures.
+4. `[x]` Add lightweight aggregate counters for the layered barcode provider stack (OFF / OBF / UPCDatabase / UPCitemdb).
+5. `[x]` Revisit Phase E section wording/status after the above metrics are added across both web fallback and barcode provider paths.
+6. `[x]` Add strict rate limiting / abuse prevention for repeated barcode lookup churn.
+7. `[x]` Add background retry scheduling for unresolved barcodes (with retry observability/success tracking).
+8. `[x]` Add broader derived-rate/dashboard summaries across resolver and receipt matching paths.
+9. `[x]` Phase D kickoff: schema-light derived "Fix Later Queue" in Inventory.
+10. `[x]` Add persistent enrichment task state and lightweight actions (complete/defer/snooze) via localStorage.
+11. `[x]` Add "fix later" controls in UI with per-task and bulk action buttons, undo toast, and snooze expiration.
+12. `[x]` Expand candidate generation beyond barcode/global metadata: receipt matching (suggested/unresolved lines), shopping pairing (unresolved barcodes, missing-on-receipt, extra-on-receipt), and normalization gaps (missing category, short names).
+13. `[x]` Add queue observability summaries (candidate source breakdown, queue health stats, multi-source item count, oldest candidate age) without blocking intake paths.
+
+Remaining (user tasks only):
+
+- `[ ]` Manual smoke test: verify enrichment queue UI renders correctly, dismissals persist across page reloads, snooze expiration works, queue stats panel shows data.
+- `[ ]` Final integrated QA pass across all plans (inventory + refactor + coordination).
 
 Notes:
 
 - The `Supplier` model already has `google_place_id` and `ShoppingSession` has `google_place_id`. These are the store context identifiers.
 - `ItemAlias` is the existing general-purpose alias table (not store-scoped). `ReceiptItemAlias` is the new store-scoped table for receipt-specific mappings.
 - Chain-level alias fallback is a future enhancement -- start with strict `place_id` scoping.
-- The receipt matching pipeline currently only uses the fuzzy engine. The alias layer adds a fast exact-match first step.
 - Phase B external providers now work: `resolved_external` result type, UI support in barcode page, and confidence scoring are all in place.
+- Phase D enrichment queue is derived from existing persisted metadata (no dedicated enrichment-task table). Server-side persistent task state deferred to a future phase if localStorage proves insufficient.
 
 ## Index
 
@@ -1013,13 +1104,15 @@ Planned work (historical phase intent; completed):
 
 ### Phase D - Enrichment Queue
 
-Status (as of February 25, 2026): Not started.
+Status (as of February 26, 2026): Complete.
 
-Planned work:
+Implemented:
 
-- Implement optional enrichment tracking and "fix later" UI.
-- Ensure missing images do not block workflows.
-- Add lightweight admin controls for resolving low-confidence items.
+- Schema-light derived "Fix Later" queue computed from existing `InventoryItem` + `ItemBarcode` + `GlobalBarcodeCatalog` metadata plus expanded candidate sources (receipt matching, shopping pairing, normalization gaps).
+- Client-side persistent task state/actions (complete/defer/snooze) via localStorage hook with per-task and bulk actions, undo, and snooze expiration.
+- Queue observability summaries (candidate source breakdown, queue health stats) surfaced in the UI.
+- Missing images do not block workflows; enrichment tasks are non-blocking suggestions.
+- Server-side persistent enrichment task table is deferred to a future phase.
 
 ### Phase E - Observability & Hardening
 

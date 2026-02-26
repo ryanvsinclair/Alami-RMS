@@ -1,11 +1,11 @@
 type Variant = "default" | "success" | "warning" | "danger" | "info";
 
 const variantStyles: Record<Variant, string> = {
-  default: "bg-white/10 text-foreground border border-white/10",
-  success: "bg-emerald-500/16 text-emerald-300 border border-emerald-400/25",
-  warning: "bg-amber-500/18 text-amber-300 border border-amber-400/25",
-  danger: "bg-red-500/18 text-red-300 border border-red-400/25",
-  info: "bg-cyan-500/16 text-cyan-300 border border-cyan-400/25",
+  default: "bg-foreground/8 text-foreground/80 border border-foreground/10",
+  success: "bg-emerald-500/12 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20",
+  warning: "bg-amber-500/12 text-amber-600 dark:text-amber-400 border border-amber-500/20",
+  danger: "bg-red-500/12 text-red-600 dark:text-red-400 border border-red-500/20",
+  info: "bg-[rgba(0,127,255,0.1)] text-[#007fff] border border-[rgba(0,127,255,0.2)]",
 };
 
 export function Badge({

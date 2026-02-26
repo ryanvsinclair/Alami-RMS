@@ -1,73 +1,97 @@
 @import "tailwindcss";
 
 :root {
-  --background: #080d14;
-  --foreground: #f2f6fb;
-  --primary: #06c167;
-  --primary-hover: #04a85a;
-  --success: #059669;
-  --warning: #d97706;
-  --danger: #dc2626;
-  --muted: #b1c0d3;
-  --border: #213448;
-  --card: #102239;
-  --body-bg-image:
-    radial-gradient(circle at 86% 10%, rgba(6, 193, 103, 0.14) 0, rgba(6, 193, 103, 0) 38%),
-    radial-gradient(circle at 20% 0%, rgba(27, 100, 180, 0.16) 0, rgba(27, 100, 180, 0) 42%),
-    linear-gradient(180deg, #09111c 0%, #070c14 100%);
-  --surface-card-border: rgba(128, 164, 202, 0.24);
+  --background: #0b1120;
+  --foreground: #eef3f8;
+  --primary: #007fff;
+  --primary-hover: #0070e6;
+  --primary-light: rgba(0, 127, 255, 0.12);
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --muted: #8899b0;
+  --border: #1e2d42;
+  --card: #111c2e;
+  --surface-card-border: rgba(255, 255, 255, 0.06);
   --surface-card-bg: linear-gradient(
-    150deg,
-    rgba(20, 42, 67, 0.72) 0%,
-    rgba(14, 30, 50, 0.7) 60%,
-    rgba(10, 22, 39, 0.8) 100%
+    180deg,
+    rgba(18, 30, 48, 0.92) 0%,
+    rgba(14, 24, 40, 0.9) 100%
   );
-  --surface-card-shadow: 0 14px 34px rgba(2, 8, 18, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  --surface-card-border-hover: rgba(128, 164, 202, 0.34);
-  --surface-card-shadow-hover: 0 20px 36px rgba(2, 8, 18, 0.44), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  --surface-nav-border: rgba(128, 164, 202, 0.28);
+  --surface-card-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
+  --surface-card-border-hover: rgba(255, 255, 255, 0.1);
+  --surface-card-shadow-hover: 0 12px 28px rgba(0, 0, 0, 0.24);
+  --surface-nav-border: rgba(255, 255, 255, 0.07);
   --surface-nav-bg: linear-gradient(
-    160deg,
-    rgba(8, 24, 43, 0.86) 0%,
-    rgba(5, 17, 32, 0.8) 55%,
-    rgba(7, 18, 34, 0.88) 100%
+    180deg,
+    rgba(14, 22, 36, 0.92) 0%,
+    rgba(12, 18, 30, 0.92) 100%
   );
-  --surface-nav-shadow: 0 18px 42px rgba(3, 8, 18, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --surface-nav-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+  --surface-nav-active-bg: rgba(0, 127, 255, 0.14);
+  --surface-nav-active-ring: inset 0 0 0 1px rgba(0, 127, 255, 0.24);
+  --surface-control-bg: rgba(255, 255, 255, 0.04);
+  --surface-control-bg-hover: rgba(255, 255, 255, 0.08);
+  --surface-control-border: rgba(255, 255, 255, 0.08);
+  --hero-bg: linear-gradient(160deg, #007fff 0%, #0066d6 52%, #004fa8 100%);
+  --hero-shadow: 0 16px 30px rgba(0, 60, 160, 0.28);
+  --hero-inset-bg: rgba(255, 255, 255, 0.1);
+  --hero-inset-border: rgba(255, 255, 255, 0.12);
+  --hero-toggle-bg: rgba(0, 0, 0, 0.18);
+  --hero-toggle-active: rgba(255, 255, 255, 0.16);
+  --sheet-bg: rgba(14, 24, 40, 0.94);
+  --sheet-border: rgba(255, 255, 255, 0.07);
+  --sheet-shadow: 0 16px 28px rgba(0, 0, 0, 0.16);
+  --sheet-row-bg: rgba(255, 255, 255, 0.02);
+  --sheet-row-border: rgba(255, 255, 255, 0.06);
+  --sheet-subtle: rgba(238, 243, 248, 0.56);
 }
 
 [data-theme="light"] {
-  --background: #edf3f9;
+  --background: #f0f4f8;
   --foreground: #0f1b2d;
-  --primary: #06b865;
-  --primary-hover: #069b57;
-  --success: #0f8d5d;
-  --warning: #c26b0a;
-  --danger: #c93b3b;
-  --muted: #60738a;
-  --border: #cfdae7;
+  --primary: #007fff;
+  --primary-hover: #006ee0;
+  --primary-light: rgba(0, 127, 255, 0.1);
+  --success: #059669;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --muted: #5c6e82;
+  --border: #d4dce8;
   --card: #ffffff;
-  --body-bg-image:
-    radial-gradient(circle at 88% 10%, rgba(6, 193, 103, 0.08) 0, rgba(6, 193, 103, 0) 38%),
-    radial-gradient(circle at 16% 0%, rgba(27, 100, 180, 0.08) 0, rgba(27, 100, 180, 0) 44%),
-    linear-gradient(180deg, #f8fbff 0%, #edf3f9 100%);
-  --surface-card-border: rgba(33, 63, 96, 0.14);
+  --surface-card-border: rgba(15, 27, 45, 0.08);
   --surface-card-bg: linear-gradient(
-    150deg,
-    rgba(255, 255, 255, 0.92) 0%,
-    rgba(249, 252, 255, 0.94) 60%,
-    rgba(245, 249, 255, 0.96) 100%
+    180deg,
+    rgba(255, 255, 255, 0.97) 0%,
+    rgba(252, 254, 255, 0.98) 100%
   );
-  --surface-card-shadow: 0 14px 30px rgba(17, 31, 48, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  --surface-card-border-hover: rgba(33, 63, 96, 0.2);
-  --surface-card-shadow-hover: 0 18px 34px rgba(17, 31, 48, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.94);
-  --surface-nav-border: rgba(33, 63, 96, 0.16);
+  --surface-card-shadow: 0 8px 20px rgba(15, 27, 45, 0.06);
+  --surface-card-border-hover: rgba(15, 27, 45, 0.13);
+  --surface-card-shadow-hover: 0 10px 24px rgba(15, 27, 45, 0.09);
+  --surface-nav-border: rgba(15, 27, 45, 0.08);
   --surface-nav-bg: linear-gradient(
-    160deg,
-    rgba(255, 255, 255, 0.9) 0%,
-    rgba(247, 250, 255, 0.92) 55%,
-    rgba(242, 247, 255, 0.96) 100%
+    180deg,
+    rgba(255, 255, 255, 0.94) 0%,
+    rgba(248, 251, 255, 0.96) 100%
   );
-  --surface-nav-shadow: 0 14px 28px rgba(17, 31, 48, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --surface-nav-shadow: 0 12px 24px rgba(15, 27, 45, 0.07);
+  --surface-nav-active-bg: rgba(0, 127, 255, 0.1);
+  --surface-nav-active-ring: inset 0 0 0 1px rgba(0, 127, 255, 0.18);
+  --surface-control-bg: rgba(255, 255, 255, 0.8);
+  --surface-control-bg-hover: rgba(255, 255, 255, 1);
+  --surface-control-border: rgba(15, 27, 45, 0.1);
+  --hero-bg: linear-gradient(160deg, #0080ff 0%, #0066d6 52%, #004fa8 100%);
+  --hero-shadow: 0 16px 26px rgba(0, 80, 180, 0.2);
+  --hero-inset-bg: rgba(255, 255, 255, 0.14);
+  --hero-inset-border: rgba(255, 255, 255, 0.18);
+  --hero-toggle-bg: rgba(0, 0, 0, 0.1);
+  --hero-toggle-active: rgba(255, 255, 255, 0.2);
+  --sheet-bg: rgba(255, 255, 255, 0.96);
+  --sheet-border: rgba(15, 27, 45, 0.07);
+  --sheet-shadow: 0 14px 22px rgba(15, 27, 45, 0.06);
+  --sheet-row-bg: rgba(15, 27, 45, 0.02);
+  --sheet-row-border: rgba(15, 27, 45, 0.06);
+  --sheet-subtle: rgba(15, 27, 45, 0.55);
 }
 
 @theme inline {
@@ -75,6 +99,7 @@
   --color-foreground: var(--foreground);
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
+  --color-primary-light: var(--primary-light);
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-danger: var(--danger);
@@ -88,9 +113,121 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  background-image: var(--body-bg-image);
   font-family: var(--font-heading-sans), "Segoe UI", sans-serif;
   -webkit-tap-highlight-color: transparent;
+}
+
+.app-control {
+  border: 1px solid var(--surface-control-border);
+  background: var(--surface-control-bg);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.app-control:hover {
+  background: var(--surface-control-bg-hover);
+}
+
+.app-hero-card {
+  border-radius: 24px;
+  background: var(--hero-bg);
+  box-shadow: var(--hero-shadow);
+  color: #f8fbff;
+}
+
+.app-hero-inset {
+  border: 1px solid var(--hero-inset-border);
+  background: var(--hero-inset-bg);
+}
+
+.app-sheet {
+  border: 1px solid var(--sheet-border);
+  background: var(--sheet-bg);
+  box-shadow: var(--sheet-shadow);
+}
+
+.app-sheet-row {
+  border: 1px solid var(--sheet-row-border);
+  background: var(--sheet-row-bg);
+}
+
+.app-sheet-subtle {
+  color: var(--sheet-subtle);
+}
+
+/* ── Stacked-layer home design ─────────────────────────────── */
+
+/*
+ * The trick: the page background is the hero blue gradient.
+ * Layer 2 (income/spent) is a lighter blue rounded card that overlaps.
+ * Layer 3 (transactions) is the main card-bg color that overlaps layer 2.
+ * Each layer extends to the bottom with min-height to fill the viewport.
+ */
+
+.layer-stack {
+  background: var(--hero-bg);
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden; /* important */
+}
+
+/* Decorative glow on the blue background */
+.layer-stack::before {
+  content: "";
+  position: absolute;
+  top: -30%;
+  right: -20%;
+  width: 80%;
+  aspect-ratio: 1;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(255,255,255,0.06) 0, transparent 70%);
+  pointer-events: none;
+}
+
+/* Layer 2 – income / spent (lighter blue, clearly distinct) */
+.layer-summary-fill {
+  position: relative;
+  overflow: hidden;
+}
+
+.layer-summary {
+  background: #1a3a6a;
+  border-radius: 28px 28px 0 0;
+  box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.20);
+  position: relative;
+  z-index: 10;
+}
+
+[data-theme="light"] .layer-summary {
+  background: #4a90e2;
+  box-shadow: 0 -6px 24px rgba(0, 40, 120, 0.12);
+}
+
+.layer-summary::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 200dvh;
+  background: inherit;
+  pointer-events: none;
+}
+
+/* Layer 3 – transactions (card background, most visible) */
+.layer-transactions {
+  background: var(--card);
+  border-radius: 32px 32px 0 0;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.22);
+  position: relative;
+  margin-top: -14px;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+[data-theme="light"] .layer-transactions {
+  box-shadow: 0 -8px 32px rgba(15, 27, 45, 0.08);
 }
 
 /* Mobile-first: prevent zoom on input focus */
@@ -100,7 +237,7 @@ input, select, textarea {
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #aab2a3 transparent;
+  scrollbar-color: #3a4a5e transparent;
 }
 
 @keyframes splashLogoIn {
@@ -152,8 +289,14 @@ input, select, textarea {
   display: grid;
   place-items: center;
   background:
-    radial-gradient(circle at 50% 40%, rgba(6, 193, 103, 0.18) 0, rgba(6, 193, 103, 0) 34%),
-    linear-gradient(180deg, #09111c 0%, #070c14 100%);
+    radial-gradient(circle at 50% 40%, rgba(0, 127, 255, 0.16) 0, rgba(0, 127, 255, 0) 34%),
+    linear-gradient(180deg, #0a1628 0%, #080e1a 100%);
+}
+
+[data-theme="light"] .welcome-splash {
+  background:
+    radial-gradient(circle at 50% 40%, rgba(0, 127, 255, 0.12) 0, rgba(0, 127, 255, 0) 36%),
+    linear-gradient(180deg, #eef4fb 0%, #dfeaf8 100%);
 }
 
 .welcome-splash-out {
@@ -165,7 +308,7 @@ input, select, textarea {
   width: min(64vw, 330px);
   aspect-ratio: 1 / 1;
   border-radius: 9999px;
-  background: radial-gradient(circle, rgba(26, 111, 201, 0.28) 0, rgba(26, 111, 201, 0) 70%);
+  background: radial-gradient(circle, rgba(0, 127, 255, 0.28) 0, rgba(0, 127, 255, 0) 70%);
   filter: blur(6px);
   animation: splashGlowPulse 1800ms ease-in-out infinite;
 }
@@ -191,4 +334,9 @@ input, select, textarea {
   line-height: 1;
   text-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
   animation: splashTextIn 580ms 120ms ease both;
+}
+
+[data-theme="light"] .welcome-splash-text {
+  color: #102238;
+  text-shadow: 0 8px 18px rgba(255, 255, 255, 0.55);
 }
