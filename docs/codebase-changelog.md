@@ -19,6 +19,27 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-26 - Added unit tests for receipt correction core Phase 1 numeric/totals scenarios
+- Scope:
+  - Test coverage for the new Phase 1 post-OCR receipt correction core behavior
+- What changed:
+  - Added `node:test` coverage for `runReceiptCorrectionCore(...)` in `src/domain/parsers/receipt-correction-core.test.mjs`
+  - Covered three high-value scenarios:
+    - missing decimal inference from integer-like OCR values
+    - split numeric token recovery from raw text (for example `9 49`)
+    - totals-driven outlier re-check candidate swap (`14900` -> `1.49` when totals support it)
+  - Updated the receipt correction plan progress notes to reflect the new targeted unit coverage
+- Files changed:
+  - `src/domain/parsers/receipt-correction-core.test.mjs`
+  - `docs/receipt-post-ocr-correction-plan.md`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-core.test.mjs` -> PASS (3/3; Node emitted expected experimental/module-type warnings)
+  - `npx eslint src/domain/parsers/receipt-correction-core.test.mjs --quiet` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Notes:
+  - Tests are focused on pure correction-core behavior and avoid workflow/DB dependencies to keep iteration fast during threshold tuning.
+
 ### 2026-02-26 - Receipt correction observability expanded (confidence bands + flag/action breakdowns)
 - Scope:
   - Phase 1 tuning instrumentation for post-OCR receipt correction (`shadow`/`enforce` summary visibility)

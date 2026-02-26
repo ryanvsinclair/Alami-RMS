@@ -697,6 +697,7 @@ Progress notes (2026-02-26):
 - Added totals-consistency outlier re-check loop (guarded, candidate-scored single-line swap)
 - Wired raw-text receipt totals extraction into `parseAndMatchReceipt(...)` so the shared correction core can run totals checks on parsed-text receipts when labels are present
 - Expanded correction summary/metrics observability with parse-confidence band counts and parse-flag/correction-action type breakdowns (useful for `shadow` tuning)
+- Added targeted `node:test` coverage for `runReceiptCorrectionCore(...)` (missing decimal, split-token recovery, totals outlier re-check scenarios)
 - Remaining:
   - tune thresholds/heuristics against expanded fixture corpus
   - add/store historical plausibility signals in feature-layer orchestration
