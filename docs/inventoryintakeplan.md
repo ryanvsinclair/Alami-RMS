@@ -23,6 +23,58 @@ Recommended progress note format (short and repeatable):
 
 ## Latest Update
 
+- **Phase E hardening slice: layered barcode-provider aggregate counters + depth/latency summaries** (February 26, 2026):
+  - Added lightweight process-local aggregate metrics in `app/actions/core/barcode-resolver.ts` for the layered barcode provider stack (internal lookup + OFF / OBF / UPCDatabase / UPCitemdb).
+  - Metrics now track and periodically log structured summaries for:
+    - per-provider call counts and hit/miss/error/throttle counts
+    - per-provider timeout counts and error-code counts
+    - total/external provider fallback depth histograms (per resolver call)
+    - resolver result/source counts and latency summaries (count/avg/max)
+    - per-provider lookup latency summaries (count/avg/max)
+  - Instrumentation is implemented by wrapping provider `lookup()` calls inside `resolveBarcode()`; resolver behavior/return contracts are unchanged.
+  - Validation:
+    - `npx tsc --noEmit --incremental false` -- 0 errors
+  - Docs refresh:
+    - Phase E `Pick Up Here` step 4 marked complete
+    - Phase E wording/status refreshed to reflect barcode-provider aggregate counters now in place
+  - Next:
+    - Phase E next hardening slice: stricter rate limiting / abuse prevention for repeated barcode lookup churn
+    - Phase E next platform slice: background retry scheduling for unresolved barcodes
+
+- **Phase E hardening slice: repeated transient web fallback failure cooldown escalation** (February 26, 2026):
+  - Tightened `lib/modules/shopping/web-fallback.ts` Serper retry/rate-limit behavior for repeated transient failures (timeouts, network errors, and retriable `5xx` responses).
+  - Added a lightweight process-local transient failure streak tracker (time-windowed) so repeated transient provider failures trigger a temporary self-cooldown instead of repeatedly hammering the provider.
+  - Preserved the existing `429` cooldown path, while enriching logs with transient failure streak/cooldown escalation context.
+  - Added clearer structured logs when cooldown is entered because of repeated transient failures (not only explicit provider `429` rate limits).
+  - Successful Serper responses now reset the transient failure streak tracker.
+  - Validation:
+    - `npx tsc --noEmit --incremental false` -- 0 errors
+  - Notes:
+    - This change is process-local hardening only (no schema changes).
+    - Existing successful fallback parsing behavior is unchanged.
+  - Next:
+    - Phase E step 4: add aggregate counters for layered barcode providers
+    - Phase E step 5: revisit Phase E wording/status after barcode-provider metrics are added
+
+- **Phase C closure verification completed + Phase E validation checkpoint advanced** (February 26, 2026):
+  - Re-verified place-scoped receipt aliasing Phase C closure status using current environment checks (no code changes required).
+  - Confirmed current DB migration state and schema validity:
+    - `npx prisma migrate status` -- database schema is up to date
+    - `npx prisma validate --schema prisma/schema.prisma` -- success
+  - Confirmed generated Prisma client still includes `receiptItemAlias` delegate/types (via local generated client inspection).
+  - Validation:
+    - `npx tsc --noEmit --incremental false` -- 0 errors
+    - `node --test --experimental-transform-types lib\\core\\matching\\receipt-line-core.test.mjs` -- 10/10 pass
+  - Docs cleanup:
+    - Phase C status updated from partial to complete in `Current Status`
+    - Phase E `Pick Up Here` step 2 (static validation checkpoint) marked complete
+  - Notes:
+    - No runtime/manual UI receipt flow verification was re-run in this session.
+    - No schema or application code changes were made; this was verification + documentation alignment.
+  - Next:
+    - Phase E step 3: tighten retry/rate-limit policy for repeated transient web fallback failures
+    - Phase E step 4: add aggregate counters for layered barcode providers
+
 - **Phase E hardening slice: aggregate web fallback outcome counters + provider depth/latency summaries** (February 25, 2026):
   - Added lightweight process-local aggregate metrics in `lib/modules/shopping/web-fallback.ts` for the post-receipt constrained web/AI fallback.
   - Metrics now track and periodically log cumulative counters for:
@@ -391,29 +443,31 @@ Previous updates (retained for history):
 - [x] Phase 0 (mandatory audit) completed and documented in `docs/inventoryintakeplan.phase0-audit.md`.
 - [x] Phase A (safe internal layer) complete. Resolver seam, cache/event integration, confidence + provenance in return payload, targeted test coverage, DB migration applied, and runtime verified.
 - [x] Phase B (external provider integrations) complete. All four providers (OFF, OBF, UPCDatabase, UPCitemdb) implemented with real API calls, fallback chain enabled, 4s timeouts, confidence scoring, `resolved_external` result type, UI support in barcode page, and 7 total resolver tests passing.
-- [~] Phase C (place-scoped receipt aliasing) partially implemented in code; migration apply/generate + verification still pending.
+- [x] Phase C (place-scoped receipt aliasing) complete. Place-scoped alias schema/migration, matching + learning paths, and receipt/shopping wiring are implemented; migration/schema/type verification reconfirmed on February 26, 2026.
 - [ ] Phase D (enrichment queue) not started.
-- [~] Phase E (observability/hardening) partially implemented. Audit trails plus shopping web fallback timeout/retry/rate-limit cooldown, provider observability metadata, and aggregate process-local counters are now in place. Broader provider-stack metrics/aggregate dashboards, background retries, and stricter abuse controls remain.
+- [~] Phase E (observability/hardening) partially implemented. Audit trails plus shopping web fallback hardening/metrics and layered barcode-provider aggregate counters (provider outcomes, depth, latency, error-code summaries) are now in place. Background retries, stricter abuse controls, and broader aggregate dashboards/derived rates still remain.
 
 ## Pick Up Here (Next Continuation)
 
-Primary continuation task: **Phase E -- tighten retry/rate-limit policy after aggregate fallback metrics (then extend comparable counters to layered barcode providers)**.
+Primary continuation task: **Phase E -- implement stricter rate limiting / abuse prevention for repeated barcode lookup churn (then background retry scheduling for unresolved barcodes)**.
 
-Phases A and B are complete. The barcode resolver supports internal inventory lookups and 4 external providers (OFF, OBF, UPCDatabase, UPCitemdb) with fallback chain, timeouts, confidence scoring, and global barcode catalog caching.
+Phases A, B, and C are complete. The barcode resolver supports internal inventory lookups and 4 external providers (OFF, OBF, UPCDatabase, UPCitemdb) with fallback chain, timeouts, confidence scoring, and global barcode catalog caching.
 
 Do this next:
 
 1. `[x]` Add aggregate fallback counters + provider depth/latency summary logging in `lib/modules/shopping/web-fallback.ts` (process-local, structured console metrics).
-2. `[ ]` Validate the current web fallback hardening slice (`npx tsc --noEmit --incremental false`; optional manual run of `Try Web/AI Suggestion` flow to inspect summary logs).
-3. `[ ]` Tighten retry/rate-limit policy for repeated transient web fallback failures:
+2. `[x]` Validate the current web fallback hardening slice (`npx tsc --noEmit --incremental false`; optional manual run of `Try Web/AI Suggestion` flow to inspect summary logs).
+3. `[x]` Tighten retry/rate-limit policy for repeated transient web fallback failures:
    - review timeout cooldown thresholds and repeated-error escalation behavior
    - add clearer summary logs when cooldown is entered due to repeated transient failures (not only `429`)
-4. `[ ]` Add lightweight aggregate counters for the layered barcode provider stack (OFF / OBF / UPCDatabase / UPCitemdb):
+4. `[x]` Add lightweight aggregate counters for the layered barcode provider stack (OFF / OBF / UPCDatabase / UPCitemdb):
    - provider hit/miss/error/throttle counts
    - fallback depth distribution
    - timeout/error-code counts
    - latency summaries (count/avg/max)
-5. `[ ]` Revisit Phase E section wording/status after the above metrics are added across both web fallback and barcode provider paths
+5. `[x]` Revisit Phase E section wording/status after the above metrics are added across both web fallback and barcode provider paths
+6. `[ ]` Add strict rate limiting / abuse prevention for repeated barcode lookup churn (especially repeated unresolved/external misses that hammer external providers)
+7. `[ ]` Add background retry scheduling for unresolved barcodes (with retry observability/success tracking)
 
 Notes:
 
@@ -852,9 +906,9 @@ Remaining work:
 
 ### Phase C - Receipt Alias Mapping (Google Places Context)
 
-Status (as of February 25, 2026): Partially implemented (place-scoped alias schema + matching/learning paths added; migration apply + verification pending).
+Status (as of February 26, 2026): Completed (place-scoped alias schema/migration, matching + learning paths, and receipt/shopping wiring are in place; migration/schema/type verification reconfirmed).
 
-Planned work:
+Planned work (historical phase intent; completed):
 
 - Introduce store-context alias resolution using `place_id`.
 - Implement receipt line resolution pipeline (alias -> heuristic -> barcode prompt).
@@ -874,7 +928,7 @@ Planned work:
 
 ### Phase E - Observability & Hardening
 
-Status (as of February 25, 2026): Partially implemented (shopping web fallback audit trails, timeout/retry/cooldown hardening, provider metadata, and aggregate process-local counters are in place; broader provider-stack metrics, background retries, and abuse controls remain).
+Status (as of February 26, 2026): Partially implemented (shopping web fallback audit trails/hardening/metrics plus layered barcode-provider aggregate counters for provider outcomes, depth, timeout/error-code summaries, and latency are in place; background retries, stricter abuse controls, and broader derived-rate/dashboard metrics remain).
 
 Planned work:
 

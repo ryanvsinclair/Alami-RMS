@@ -7,6 +7,10 @@ const SERPER_MAX_ATTEMPTS = 2;
 const SERPER_RETRY_BASE_DELAY_MS = 900;
 const SERPER_MIN_COOLDOWN_MS = 15000;
 const SERPER_TIMEOUT_COOLDOWN_MS = 10000;
+const SERPER_TRANSIENT_FAILURE_WINDOW_MS = 60 * 1000;
+const SERPER_TRANSIENT_FAILURE_COOLDOWN_THRESHOLD = 3;
+const SERPER_TRANSIENT_FAILURE_COOLDOWN_STEP_MS = 5000;
+const SERPER_TRANSIENT_FAILURE_COOLDOWN_MAX_MS = 60000;
 
 type ShoppingWebFallbackProviderMeta = {
   serper: {
@@ -43,7 +47,15 @@ type SerperSearchOutcome =
       meta: ShoppingWebFallbackProviderMeta["serper"];
     };
 
+type SerperTransientFailureUpdate = {
+  streak: number;
+  cooldown_ms_remaining: number | null;
+  repeated_cooldown_applied: boolean;
+};
+
 let serperCooldownUntilMs = 0;
+let serperTransientFailureStreak = 0;
+let serperTransientFailureLastAtMs = 0;
 
 export type ShoppingWebSearchCandidate = {
   title: string;
@@ -344,6 +356,42 @@ function setSerperCooldown(ms: number): number {
   return getSerperCooldownRemainingMs();
 }
 
+function resetSerperTransientFailureStreak(): void {
+  serperTransientFailureStreak = 0;
+  serperTransientFailureLastAtMs = 0;
+}
+
+function recordSerperTransientFailure(baseCooldownMs = 0): SerperTransientFailureUpdate {
+  const currentMs = nowMs();
+  const withinWindow =
+    serperTransientFailureLastAtMs > 0 &&
+    currentMs - serperTransientFailureLastAtMs <= SERPER_TRANSIENT_FAILURE_WINDOW_MS;
+
+  serperTransientFailureStreak = withinWindow ? serperTransientFailureStreak + 1 : 1;
+  serperTransientFailureLastAtMs = currentMs;
+
+  let requestedCooldownMs = Math.max(0, Math.round(baseCooldownMs));
+  let repeatedCooldownApplied = false;
+
+  if (serperTransientFailureStreak >= SERPER_TRANSIENT_FAILURE_COOLDOWN_THRESHOLD) {
+    repeatedCooldownApplied = true;
+    const streakOverThreshold =
+      serperTransientFailureStreak - SERPER_TRANSIENT_FAILURE_COOLDOWN_THRESHOLD;
+    const repeatedCooldownMs = Math.min(
+      SERPER_TRANSIENT_FAILURE_COOLDOWN_MAX_MS,
+      SERPER_TIMEOUT_COOLDOWN_MS + streakOverThreshold * SERPER_TRANSIENT_FAILURE_COOLDOWN_STEP_MS
+    );
+    requestedCooldownMs = Math.max(requestedCooldownMs, repeatedCooldownMs);
+  }
+
+  return {
+    streak: serperTransientFailureStreak,
+    cooldown_ms_remaining:
+      requestedCooldownMs > 0 ? setSerperCooldown(requestedCooldownMs) : null,
+    repeated_cooldown_applied: repeatedCooldownApplied,
+  };
+}
+
 function parseRetryAfterMs(retryAfterHeader: string | null, fallbackMs: number): number {
   if (!retryAfterHeader) return fallbackMs;
 
@@ -370,6 +418,10 @@ function classifyFetchErrorCode(error: unknown): string {
     return "network_error";
   }
   return "unknown_error";
+}
+
+function isSerperRetriableHttpStatus(status: number): boolean {
+  return status >= 500 && status <= 599;
 }
 
 async function fetchWithTimeout(
@@ -527,9 +579,11 @@ async function searchWithSerper(
       lastHttpStatus = response.status;
 
       if (response.status === 429) {
-        const cooldownMs = setSerperCooldown(
+        const transientFailure = recordSerperTransientFailure(
           parseRetryAfterMs(response.headers.get("Retry-After"), SERPER_MIN_COOLDOWN_MS)
         );
+        const cooldownMs =
+          transientFailure.cooldown_ms_remaining ?? setSerperCooldown(SERPER_MIN_COOLDOWN_MS);
         const meta: ShoppingWebFallbackProviderMeta["serper"] = {
           attempts,
           duration_ms: elapsedMs(startedAt),
@@ -543,6 +597,8 @@ async function searchWithSerper(
         console.warn("[shopping-web-fallback] serper rate limited", {
           attempts,
           cooldown_ms: cooldownMs,
+          transient_failure_streak: transientFailure.streak,
+          repeated_cooldown_applied: transientFailure.repeated_cooldown_applied,
           query_preview: query.slice(0, 80),
         });
         return {
@@ -555,11 +611,48 @@ async function searchWithSerper(
 
       if (!response.ok) {
         lastErrorCode = `http_${response.status}`;
-        const retriable = response.status >= 500 && response.status <= 599;
+        const retriable = isSerperRetriableHttpStatus(response.status);
         if (retriable && attempt < SERPER_MAX_ATTEMPTS) {
           const delayMs = SERPER_RETRY_BASE_DELAY_MS * attempt;
           await sleep(delayMs);
           continue;
+        }
+
+        let transientFailure: SerperTransientFailureUpdate | null = null;
+        if (retriable) {
+          transientFailure = recordSerperTransientFailure();
+        } else {
+          resetSerperTransientFailureStreak();
+        }
+
+        if (transientFailure?.repeated_cooldown_applied) {
+          const meta: ShoppingWebFallbackProviderMeta["serper"] = {
+            attempts,
+            duration_ms: elapsedMs(startedAt),
+            retried: attempts > 1,
+            throttled: true,
+            cooldown_ms_remaining: transientFailure.cooldown_ms_remaining,
+            timed_out: timedOut,
+            http_status: response.status,
+            error_code: lastErrorCode,
+          };
+          console.warn(
+            "[shopping-web-fallback] serper cooling down after repeated transient provider failures",
+            {
+              error_code: lastErrorCode,
+              status: response.status,
+              attempts,
+              transient_failure_streak: transientFailure.streak,
+              cooldown_ms: transientFailure.cooldown_ms_remaining,
+              query_preview: query.slice(0, 80),
+            }
+          );
+          return {
+            kind: "throttled",
+            rationale:
+              "Structured web search is temporarily cooling down after repeated transient provider failures.",
+            meta,
+          };
         }
 
         const meta: ShoppingWebFallbackProviderMeta["serper"] = {
@@ -598,6 +691,7 @@ async function searchWithSerper(
         })
         .filter((row: ShoppingWebSearchCandidate) => row.title && row.link);
 
+      resetSerperTransientFailureStreak();
       const meta: ShoppingWebFallbackProviderMeta["serper"] = {
         attempts,
         duration_ms: elapsedMs(startedAt),
@@ -630,8 +724,45 @@ async function searchWithSerper(
         continue;
       }
 
-      if (lastErrorCode === "timeout") {
-        setSerperCooldown(SERPER_TIMEOUT_COOLDOWN_MS);
+      let transientFailure: SerperTransientFailureUpdate | null = null;
+      if (retriable) {
+        transientFailure = recordSerperTransientFailure(
+          lastErrorCode === "timeout" ? SERPER_TIMEOUT_COOLDOWN_MS : 0
+        );
+      } else {
+        resetSerperTransientFailureStreak();
+      }
+
+      if (transientFailure?.repeated_cooldown_applied) {
+        const meta: ShoppingWebFallbackProviderMeta["serper"] = {
+          attempts,
+          duration_ms: elapsedMs(startedAt),
+          retried: attempts > 1,
+          throttled: true,
+          cooldown_ms_remaining: transientFailure.cooldown_ms_remaining,
+          timed_out: timedOut,
+          http_status: lastHttpStatus,
+          error_code: lastErrorCode,
+        };
+
+        console.warn(
+          "[shopping-web-fallback] serper cooling down after repeated transient fetch failures",
+          {
+            error_code: lastErrorCode,
+            attempts,
+            transient_failure_streak: transientFailure.streak,
+            cooldown_ms: transientFailure.cooldown_ms_remaining,
+            duration_ms: meta.duration_ms,
+            query_preview: query.slice(0, 80),
+          }
+        );
+
+        return {
+          kind: "throttled",
+          rationale:
+            "Structured web search is temporarily cooling down after repeated transient fetch failures.",
+          meta,
+        };
       }
 
       const meta: ShoppingWebFallbackProviderMeta["serper"] = {
@@ -640,7 +771,7 @@ async function searchWithSerper(
         retried: attempts > 1,
         throttled: false,
         cooldown_ms_remaining:
-          lastErrorCode === "timeout" ? getSerperCooldownRemainingMs() : null,
+          transientFailure?.cooldown_ms_remaining ?? null,
         timed_out: timedOut,
         http_status: lastHttpStatus,
         error_code: lastErrorCode,

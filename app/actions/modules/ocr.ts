@@ -1,12 +1,14 @@
+// Transitional wrapper during app-structure refactor.
+// Canonical implementation lives in: src/features/receiving/photo/server/*
+
 "use server";
 
 import { requireModule } from "@/core/modules/guard";
-import { extractTextFromImage } from "@/modules/receipts/ocr/google-vision";
-import { extractProductInfo, type ProductInfo } from "@/core/parsers/product-name";
 import {
-  scanReceipt,
-  type TabScannerResult,
-} from "@/modules/receipts/ocr/tabscanner";
+  ocrImage as _ocrImage,
+  scanReceiptImage as _scanReceiptImage,
+} from "@/features/receiving/photo/server/ocr.service";
+import type { TabScannerResult } from "@/modules/receipts/ocr/tabscanner";
 
 /**
  * Server action: OCR a base64-encoded image using Google Vision.
@@ -15,24 +17,7 @@ import {
  */
 export async function ocrImage(base64Image: string) {
   await requireModule("receipts");
-  const result = await extractTextFromImage(base64Image);
-
-  if (!result.success) {
-    return {
-      success: false as const,
-      error: result.error ?? "OCR failed",
-      raw_text: "",
-      product_info: null as ProductInfo | null,
-    };
-  }
-
-  const productInfo = await extractProductInfo(result.raw_text, result.labels, result.logos);
-
-  return {
-    success: true as const,
-    raw_text: result.raw_text,
-    product_info: productInfo,
-  };
+  return _ocrImage(base64Image);
 }
 
 /**
@@ -41,12 +26,12 @@ export async function ocrImage(base64Image: string) {
  * This replaces Google Vision for receipt-specific OCR.
  */
 export async function scanReceiptImage(
-  base64Image: string
+  base64Image: string,
 ): Promise<{
   success: boolean;
   result: TabScannerResult | null;
   error?: string;
 }> {
   await requireModule("receipts");
-  return scanReceipt(base64Image);
+  return _scanReceiptImage(base64Image);
 }

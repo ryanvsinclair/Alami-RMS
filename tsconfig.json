@@ -21,7 +21,11 @@
     "paths": {
       "@/*": ["./lib/*", "./*"],
       "@/core/*": ["./lib/core/*"],
-      "@/modules/*": ["./lib/modules/*"]
+      "@/modules/*": ["./lib/modules/*"],
+      "@/features/*": ["./src/features/*"],
+      "@/domain/*": ["./src/domain/*"],
+      "@/server/*": ["./src/server/*"],
+      "@/shared/*": ["./src/shared/*"]
     }
   },
   "include": [

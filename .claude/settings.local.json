@@ -8,7 +8,10 @@
       "Bash(npx prisma generate:*)",
       "Bash(npx prisma migrate deploy:*)",
       "Bash(npx tsc:*)",
-      "Bash(mkdir \"c:\\Users\\XFlor\\OneDrive\\Desktop\\alamirms\\prisma\\migrations\\20260224200000_identity_refactor_business\")"
+      "Bash(mkdir \"c:\\Users\\XFlor\\OneDrive\\Desktop\\alamirms\\prisma\\migrations\\20260224200000_identity_refactor_business\")",
+      "Bash(npm run lint)",
+      "Bash(node --test app/actions/core/barcode-resolver-cache.test.mjs)",
+      "Bash(node --test lib/core/matching/receipt-line-core.test.mjs)"
     ]
   }
 }
