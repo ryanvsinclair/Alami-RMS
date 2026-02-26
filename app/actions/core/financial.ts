@@ -1,80 +1,18 @@
+// Transitional wrapper during app-structure refactor.
+// Canonical dashboard summary implementation lives in: src/features/home/server/*
+
 "use server";
 
 import { prisma } from "@/core/prisma";
-import { serialize } from "@/core/utils/serialize";
-import type { NormalizedTransaction, SyncResult } from "@/modules/integrations/types";
 import { requireBusinessId } from "@/core/auth/tenant";
-
-export type DashboardPeriod = "today" | "week" | "month";
-
-function periodDates(period: DashboardPeriod): { start: Date; end: Date } {
-  const now = new Date();
-  const end = new Date(now);
-  end.setHours(23, 59, 59, 999);
-  const start = new Date(now);
-
-  if (period === "today") {
-    start.setHours(0, 0, 0, 0);
-  } else if (period === "week") {
-    start.setDate(start.getDate() - 6);
-    start.setHours(0, 0, 0, 0);
-  } else {
-    // month = calendar month to date
-    start.setDate(1);
-    start.setHours(0, 0, 0, 0);
-  }
-
-  return { start, end };
-}
+import { getHomeDashboardSummary } from "@/features/home/server";
+import type { DashboardPeriod as HomeDashboardPeriod } from "@/features/home/server";
+import type { NormalizedTransaction, SyncResult } from "@/modules/integrations/types";
+export type DashboardPeriod = HomeDashboardPeriod;
 
 export async function getDashboardSummary(period: DashboardPeriod = "month") {
   const businessId = await requireBusinessId();
-  const { start, end } = periodDates(period);
-
-  const [business, incomeAgg, expenseAgg, transactions] = await Promise.all([
-    prisma.business.findUnique({
-      where: { id: businessId },
-      select: { name: true },
-    }),
-    prisma.financialTransaction.aggregate({
-      where: {
-        business_id: businessId,
-        type: "income",
-        occurred_at: { gte: start, lte: end },
-      },
-      _sum: { amount: true },
-    }),
-    prisma.financialTransaction.aggregate({
-      where: {
-        business_id: businessId,
-        type: "expense",
-        occurred_at: { gte: start, lte: end },
-      },
-      _sum: { amount: true },
-    }),
-    prisma.financialTransaction.findMany({
-      where: { business_id: businessId, occurred_at: { gte: start, lte: end } },
-      orderBy: { occurred_at: "desc" },
-      take: 25,
-      include: {
-        shopping_session: {
-          select: { store_name: true, store_address: true, receipt_id: true },
-        },
-      },
-    }),
-  ]);
-
-  const income = incomeAgg._sum.amount?.toNumber() ?? 0;
-  const expenses = expenseAgg._sum.amount?.toNumber() ?? 0;
-
-  return {
-    period,
-    businessName: business?.name ?? "My Business",
-    income,
-    expenses,
-    net: income - expenses,
-    transactions: serialize(transactions),
-  };
+  return getHomeDashboardSummary(businessId, period);
 }
 
 /**

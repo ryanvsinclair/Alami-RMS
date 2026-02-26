@@ -111,6 +111,7 @@ Current feature folders:
 - `src/features/auth`
 - `src/features/contacts`
 - `src/features/finance`
+- `src/features/home`
 - `src/features/integrations`
 - `src/features/inventory`
 - `src/features/modules`
@@ -193,6 +194,23 @@ Important Phase 8 outcome:
 ## Product Capabilities (Current)
 
 This is a multi-flow inventory/receiving/shopping system with barcode-first intelligence and receipt learning.
+
+### Home dashboard financial layers (interactive)
+
+Implemented capabilities:
+- Layered home financial surfaces with separate income and expense/transactions sheets
+- Income-layer tap interaction collapses the transactions sheet to reveal income-source breakdown
+- Expense-focused transactions sheet (recent expense activity only)
+- Business-type-aware income source ordering (for example restaurant POS + delivery channels first)
+
+Canonical paths:
+- `src/features/home/ui/*`
+- `src/features/home/server/*`
+- `src/features/home/shared/*`
+
+Wrappers:
+- `app/page.tsx` (route composition/state wiring)
+- `app/actions/core/financial.ts` (`getDashboardSummary` wrapper delegates to feature server)
 
 ### Receiving (4 ingestion paths)
 
@@ -546,6 +564,53 @@ Process-local observability/retries:
 - This is expected for current Phase E behavior unless/until persistent jobs/metrics are added.
 
 ## Changelog (Append New Entries At Top)
+
+### 2026-02-26 - Home dashboard layer feature extracted into `src/features/home/*` (playbook compliance)
+- Scope:
+  - Home dashboard interactive income/expense layer feature follow-up refactor for feature-module compliance
+- What changed:
+  - Created canonical home feature module paths: `src/features/home/server/*`, `src/features/home/ui/*`, and `src/features/home/shared/*`
+  - Moved dashboard summary period/window query and aggregation workflow out of `app/actions/core/financial.ts` into `src/features/home/server/*` (repository + service)
+  - Converted `app/actions/core/financial.ts#getDashboardSummary` into a thin wrapper that enforces tenant auth and delegates to the home feature service
+  - Moved `HomeIncomeLayer` and `HomeTransactionsLayer` plus their UI helpers/contracts out of `app/page.tsx` into `src/features/home/ui/*`
+  - Kept `app/page.tsx` as route composition/state wiring while preserving the interactive collapse/expand behavior
+  - Updated architecture map + product capabilities sections in this document to include the new home feature module and canonical paths
+- Files changed:
+  - `src/features/home/server/dashboard-summary.repository.ts`
+  - `src/features/home/server/dashboard-summary.service.ts`
+  - `src/features/home/server/index.ts`
+  - `src/features/home/shared/dashboard-summary.contracts.ts`
+  - `src/features/home/ui/home-financial-layer.shared.tsx`
+  - `src/features/home/ui/HomeIncomeLayer.tsx`
+  - `src/features/home/ui/HomeTransactionsLayer.tsx`
+  - `src/features/home/ui/index.ts`
+  - `app/actions/core/financial.ts`
+  - `app/page.tsx`
+  - `docs/codebase-overview.md`
+- Validation run:
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `npx eslint app/page.tsx app/actions/core/financial.ts src/features/home/server/*.ts src/features/home/shared/*.ts src/features/home/ui/*.tsx src/features/home/ui/*.ts --quiet` -> baseline/pre-existing `react-hooks/set-state-in-effect` error remains in `app/page.tsx` (`setLoading(true)` inside `useEffect`)
+- Notes:
+  - This refactor addresses the playbook compliance gap recorded in the prior home-dashboard changelog entry.
+
+### 2026-02-26 - Home dashboard interactive income/expense layers + income source breakdown
+- Scope:
+  - Home dashboard financial layers (income/expense split interaction) and dashboard summary data aggregation
+- What changed:
+  - Split home financial sheet into separate `HomeIncomeLayer` and `HomeTransactionsLayer` components (currently local component functions in `app/page.tsx`)
+  - Added interactive layer behavior so tapping the income layer collapses the transactions layer and expands an income-source breakdown view
+  - Limited the transactions layer to expense records only while the income layer surfaces income by source
+  - Added business-type-aware income source ordering (e.g., restaurant prioritizes GoDaddy POS, Uber Eats, DoorDash)
+  - Extended `getDashboardSummary()` to return aggregated `incomeBreakdown` grouped by transaction source for the selected period
+- Files changed:
+  - `app/page.tsx`
+  - `app/actions/core/financial.ts`
+  - `docs/codebase-overview.md`
+- Validation run:
+  - `npx eslint app/page.tsx app/actions/core/financial.ts --quiet` -> baseline/pre-existing `react-hooks/set-state-in-effect` error remains in `app/page.tsx`; no new errors in `app/actions/core/financial.ts`
+  - `npm run lint` -> known repo baseline noise/failures (including generated `playwright-report` assets), unchanged by this feature
+- Notes:
+  - Playbook compliance is partial: UI/server logic were implemented in route/action files (`app/page.tsx`, `app/actions/core/financial.ts`) instead of feature modules under `src/features/*`; follow-up extraction is recommended for strict compliance.
 
 Entry format (recommended):
 - Date
