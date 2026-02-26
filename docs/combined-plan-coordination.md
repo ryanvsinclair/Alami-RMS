@@ -63,15 +63,16 @@ Snapshot taken from both plans on 2026-02-26.
 ### App Structure Refactor Playbook status
 Source: `docs/app-structure-refactor-agent-playbook.md`
 
-- Current phase: `Phase 5 in progress - receive UI pages extracted; manual validation pending`
+- Current phase: `Phase 5 complete - Ready for Phase 6`
 - Completed phases:
   - Phase 0
   - Phase 1
   - Phase 2 (shopping server split)
   - Phase 3 (shopping UI split)
   - Phase 4 (receipt/receiving server split)
+  - Phase 5 (receive UI split + shared receive contracts/constants)
 - Next planned phase:
-  - Phase 5 (receive UI page split + shared receive contracts/constants)
+  - Phase 6 (inventory/contacts/staff extraction)
 
 ### Inventory Intake Plan status
 Source: `docs/inventoryintakeplan.md`
@@ -82,7 +83,7 @@ Source: `docs/inventoryintakeplan.md`
   - Phase B
   - Phase C
 - Partial:
-  - Phase E (observability/hardening) -- web fallback hardening/counters plus layered barcode-provider aggregate counters are done; abuse controls/background retries and broader derived metrics remain
+  - Phase E (observability/hardening) -- web fallback hardening/counters, layered barcode-provider aggregate counters, and stricter barcode lookup abuse controls are done; background retries for unresolved barcodes and broader derived metrics remain
 - Not started:
   - Phase D (enrichment queue)
 
@@ -102,13 +103,13 @@ This section exists so future agents do not re-do completed work from either pla
   - `src/features/receiving/receipt/server/*`
   - `src/features/receiving/photo/server/*`
 - `app/actions/modules/receipts.ts` and `app/actions/modules/ocr.ts` are now thin wrappers.
-- Receive UI route pages have been split into `src/features/receiving/*/ui/*` and `src/features/receiving/shared/*`, with thin wrappers under `app/(dashboard)/receive/*` (manual flow validation still pending before Phase 5 closeout).
+- Receive UI route pages have been split into `src/features/receiving/*/ui/*` and `src/features/receiving/shared/*`, with thin wrappers under `app/(dashboard)/receive/*`; manual receive smoke validation passed and Phase 5 is complete.
 
 ### Completed inventory-intake work (relevant to refactor plan)
 - Barcode resolver layered provider system is implemented (Phase B complete).
 - Global barcode cache/provenance logic is implemented and validated.
-- Shopping web fallback hardening + process-local aggregate counters are partially implemented (Phase E partial).
-- Receipt aliasing work is partially implemented (Phase C partial) but needs migration/apply/verification completion.
+- Shopping web fallback hardening/metrics plus barcode-provider metrics and barcode lookup abuse-rate controls are partially implemented (Phase E partial).
+- Receipt aliasing work is complete (Phase C complete).
 
 ## Conflict / Overlap Matrix
 
@@ -274,20 +275,20 @@ Status legend:
     - `npx tsc --noEmit --incremental false` -> PASS
 
 ### Refactor Continuation (Low-Overlap, Next)
-- [~] CMB-06 App Refactor Phase 5: split receive UI pages + shared receive contracts/constants
+- [x] CMB-06 App Refactor Phase 5: split receive UI pages + shared receive contracts/constants
   - Source plan linkage:
     - `docs/app-structure-refactor-agent-playbook.md` Phase 5
   - Expected work areas:
     - `src/features/receiving/shared/*`
     - `src/features/receiving/*/ui/*`
     - thin route shells under `app/(dashboard)/receive/*`
-  - Partial result (2026-02-26):
+  - Result (2026-02-26):
     - shared receive UI contracts + unit options added
     - all receive route pages extracted to `src/features/receiving/*/ui/*` (plus `shared/ui`)
     - receive route files converted to thin wrappers
     - `ItemNotFound` now uses shared receive unit options + shared item result type
     - `npx tsc --noEmit --incremental false` -> PASS
-    - remaining closeout work: manual barcode/photo/manual/receipt receive flow validation before marking complete
+    - manual smoke validation passed for `/receive` hub + barcode/manual/photo/receipt flows and receipt detail view (user-reported)
   - Must update after completion:
     - `docs/app-structure-refactor-agent-playbook.md` `Update Here`
     - phase ledger + handoff log
@@ -366,13 +367,19 @@ Prevent cross-plan collisions here before editing code.
 - Status: `OPEN`
 - Agent: `Unclaimed`
 - Date: `2026-02-26`
-- Combined task ID(s): `CMB-06 (Phase 5 closeout pending manual validation)`
+- Combined task ID(s): `Next: CMB-07`
 - Scope:
-  - `Manual smoke validation + closeout docs for receive UI split`
+  - `Unclaimed`
 - Expected files:
-  - `docs/app-structure-refactor-agent-playbook.md`
-  - `docs/combined-plan-coordination.md`
-  - optional: `app/(dashboard)/receive/*` or `src/features/receiving/*/ui/*` only if validation exposes a bug
+  - `app/(dashboard)/inventory*`
+  - `app/(dashboard)/contacts/page.tsx`
+  - `app/(dashboard)/staff/page.tsx`
+  - `app/actions/core/inventory.ts`
+  - `app/actions/core/contacts.ts`
+  - `app/actions/core/staff.ts`
+  - `src/features/inventory/*`
+  - `src/features/contacts/*`
+  - `src/features/staff/*`
 - Source plan(s) to update on completion:
   - `docs/app-structure-refactor-agent-playbook.md`
   - `docs/combined-plan-coordination.md`
@@ -380,6 +387,40 @@ Prevent cross-plan collisions here before editing code.
 ## Coordination Handoff Log
 
 Append new entries at the top.
+
+### 2026-02-26 - Inventory Plan Phase E step 6 completed (barcode lookup churn abuse prevention)
+- Agent: `Codex`
+- Scope:
+  - harden `app/actions/core/barcode-resolver.ts` against repeated barcode lookup churn that repeatedly hits external providers
+  - enforce unresolved cache `retry_after_at` backoff and add process-local barcode/global burst cooldowns
+  - preserve external-hit UX during cooldown by serving cached external metadata when available
+- Validation run:
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Source plan updates:
+  - `docs/inventoryintakeplan.md` `Latest Update` entry added for Phase E step 6
+  - `docs/inventoryintakeplan.md` `Pick Up Here` step 6 marked complete
+  - `docs/inventoryintakeplan.md` `Pick Up Here` primary continuation task advanced to Phase E step 7 (background retry scheduling)
+  - `docs/inventoryintakeplan.md` `Current Status` Phase E wording refreshed
+- Next recommended:
+  - inventory plan Phase E step 7 (background retry scheduling for unresolved barcodes)
+  - or resume combined refactor sequence at `CMB-07` (Phase 6 inventory/contacts/staff extraction)
+
+### 2026-02-26 - CMB-06 completed (Phase 5 receive UI split + shared contracts/constants)
+- Agent: `Codex`
+- Scope:
+  - close out Phase 5 after receive UI extraction by recording manual smoke validation results
+  - synchronize refactor playbook + combined coordination docs
+- Validation run:
+  - `Manual receive smoke validation` -> PASS (user-reported for `/receive`, barcode, manual, photo, receipt, and receipt detail page/tab switching)
+  - `npx tsc --noEmit --incremental false` -> PASS (from extraction pass)
+- Source plan updates:
+  - `docs/app-structure-refactor-agent-playbook.md` `Update Here` set to `Phase 5 complete - Ready for Phase 6`
+  - Phase 5 checklist manual validation item marked complete
+  - Phase Completion Ledger marked Phase 5 complete
+  - Phase 5 completion handoff entry appended
+- Next recommended:
+  - `CMB-07` (App Refactor Phase 6: inventory/contacts/staff extraction)
+  - alternatively continue inventory plan Phase E step 6/7 if prioritizing barcode abuse controls and unresolved-barcode retries before refactor Phase 6
 
 ### 2026-02-26 - CMB-06 partial (Phase 5 receive UI split extracted; manual validation pending)
 - Agent: `Codex`

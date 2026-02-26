@@ -42,16 +42,29 @@ Rules for working sessions:
 - Append a handoff entry before ending the session.
 - Do not silently create new canonical files without updating this document.
 
+### Local Test Account (Agent Testing - Local Only)
+
+When any agent needs to perform local testing that requires authentication, they may use this **test account** for sign-in and flow verification in this workspace.
+
+- Base URL: `http://localhost:3000`
+- Email: `mehdi.eg2004@gmail.com`
+- Password: `testtest`
+
+Disclaimer:
+
+- Local testing use only. Do not publish these credentials or commit them to a public remote.
+- Agents may use this account for local verification and smoke tests when login is required.
+- Rotate/update these credentials here if access stops working.
 ## Update Here (Agent Handoff Ledger)
 
 This section is the source of truth for progress and ownership during the refactor.
 
 ### Current Status Snapshot
-- Current phase: `Phase 5 in progress - receive UI pages extracted; manual validation pending`
-- Latest completed checkpoint: `Phase 5 receive UI routes split + shared receive contracts/unit options extracted`
+- Current phase: `Phase 5 complete - Ready for Phase 6`
+- Latest completed checkpoint: `Phase 5 receive UI split complete (manual receive smoke validation passed)`
 - Active work lock: `UNLOCKED`
 - Known blocker: `None`
-- Last validation status: `npx tsc --noEmit --incremental false PASS (2026-02-26); prior baseline lint 4 pre-existing errors/15 warnings, barcode-cache 5/5 PASS, receipt-line-core 10/10 PASS`
+- Last validation status: `npx tsc --noEmit --incremental false PASS (2026-02-26); manual receive smoke PASS (barcode/photo/manual/receipt + receipt detail tabs, user-reported, 2026-02-26); prior baseline lint 4 pre-existing errors/15 warnings, barcode-cache 5/5 PASS, receipt-line-core 10/10 PASS`
 
 ### Active Work Lock (Edit First)
 Use this to prevent duplicate work. Clear it when the session ends.
@@ -63,7 +76,7 @@ Use this to prevent duplicate work. Clear it when the session ends.
 - Files expected to touch:
   - `-`
 - Notes:
-  - `Phase 5 extraction pass completed; manual receive-flow validation still pending before phase closeout.`
+  - `Phase 5 complete. Ready for Phase 6.`
 
 ### Phase Completion Ledger
 Mark only when exit criteria are met.
@@ -73,12 +86,35 @@ Mark only when exit criteria are met.
 - [x] Phase 2 complete: Shopping server action split (behavior preserved)
 - [x] Phase 3 complete: Shopping UI split (route shell thin, behavior preserved)
 - [x] Phase 4 complete: Receipt/receiving server split (behavior preserved)
-- [ ] Phase 5 complete: Receive UI pages split + shared receive contracts/constants
+- [x] Phase 5 complete: Receive UI pages split + shared receive contracts/constants
 - [ ] Phase 6 complete: Inventory, contacts, staff feature extraction
 - [ ] Phase 7 complete: Shared/domain/server infrastructure moves + import cleanup
 - [ ] Phase 8 complete: Legacy wrappers deprecated/removed, docs and final verification
 
 ### Handoff Log (Append New Entries at Top)
+
+#### 2026-02-26 - Phase 5 complete: Receive UI split validated and closed out
+- Agent: `Codex`
+- Scope: `Close Phase 5 after manual receive-flow smoke validation`
+- Completed:
+  - Recorded manual smoke validation pass for receive routes:
+    - `/receive` navigation hub
+    - `/receive/manual`
+    - `/receive/barcode` (known linked barcode path)
+    - `/receive/photo` (photo/typed fallback path)
+    - `/receive/receipt` parse/review/commit + receipt detail view
+    - `/receive/receipt/[id]` digital/photo tabs
+  - Marked Phase 5 checklist complete and Phase Completion Ledger Phase 5 complete.
+  - Updated `Update Here` snapshot/status to `Phase 5 complete - Ready for Phase 6`.
+- Changed files:
+  - `docs/app-structure-refactor-agent-playbook.md`
+- Validation run:
+  - `Manual receive-flow smoke validation` -> PASS (user-reported)
+  - `npx tsc --noEmit --incremental false` -> PASS (already recorded for extraction pass)
+- Blockers:
+  - `None`
+- Next recommended step:
+  - `Phase 6: Inventory, contacts, staff feature extraction`
 
 #### 2026-02-26 - Phase 5 (partial): Receive UI pages split + shared receive contracts/constants extracted
 - Agent: `Codex`
@@ -579,7 +615,7 @@ Checklist:
 - [x] Extract each receive page into feature UI client component(s).
 - [x] Keep route pages thin wrappers.
 - [x] Reuse `ItemNotFound` through a shared feature-facing interface.
-- [ ] Validate barcode/photo/manual/receipt receive flows manually.
+- [x] Validate barcode/photo/manual/receipt receive flows manually.
 
 Exit criteria:
 - Receive routes are consistent and easier to navigate.

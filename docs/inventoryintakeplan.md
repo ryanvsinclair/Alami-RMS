@@ -21,7 +21,69 @@ Recommended progress note format (short and repeatable):
 - `Issues:` blockers, lint/test failures, migration status, behavior risks
 - `Next:` exact next step
 
+## Local Test Account (Agent Testing - Local Only)
+
+When any agent needs to run local manual/automation testing, they may use this **test account** to sign in and verify flows in this workspace.
+
+- Base URL: `http://localhost:3000`
+- Email: `mehdi.eg2004@gmail.com`
+- Password: `testtest`
+
+Disclaimer:
+
+- Local testing use only. Do not publish these credentials or commit them to a public remote.
+- If this account stops working, rotate/update the credentials here before the next testing session.
+- Agents may use this account for local verification and smoke tests when a login is required.
 ## Latest Update
+
+- **Phase E platform slice: background retry scheduling for unresolved barcodes (process-local queue + retry observability/success tracking)** (February 26, 2026):
+  - Added a process-local background retry scheduler in `app/actions/core/barcode-resolver.ts` for unresolved barcodes using cached `retry_after_at` backoff timing.
+  - Scheduler behavior:
+    - deduplicates pending jobs per barcode and reschedules earlier when a sooner retry window is observed
+    - bounds queue size to avoid unbounded memory growth during churn bursts
+    - defers retries when backoff is not yet due or when abuse guards/cooldowns are active
+    - cancels pending retry jobs when a barcode later resolves successfully (`resolved` / `resolved_external`)
+  - Added background retry observability to existing barcode resolver summary metrics/logs:
+    - scheduling / dedupe / queue-drop / deferral counts
+    - started retry count + result counts (`resolved_external`, `unresolved`, `error`)
+    - queue depth and in-flight high-water marks
+    - derived retry success rate summary
+  - Implemented an internal resolver path for background retries that runs **external providers only** (no tenant auth context required), while preserving the existing exported `resolveBarcode(...)` behavior for user-triggered flows.
+  - Validation:
+    - `npx tsc --noEmit --incremental false` -- 0 errors
+    - `npx eslint app\actions\core\barcode-resolver.ts` -- 0 errors
+  - Notes:
+    - Background retry scheduling is process-local only (in-memory timers) and resets on server restart.
+    - Background retries intentionally skip tenant-scoped internal lookup because timer callbacks do not run with a request auth context.
+    - Full queue/job persistence is still out of scope for this hardening slice.
+  - Docs refresh:
+    - Phase E `Pick Up Here` step 7 marked complete
+    - Phase E status wording refreshed to reflect background retries now in place
+  - Next:
+    - Phase E follow-up: add broader derived-rate/dashboard summaries (cache hit rate, unresolved ratio, retry success rate, receipt auto-resolution rate) to close observability gaps
+
+- **Phase E hardening slice: strict barcode lookup churn abuse prevention (cache-backed + process-local cooldowns)** (February 26, 2026):
+  - Hardened `app/actions/core/barcode-resolver.ts` to reduce repeated external barcode-provider hammering for the same unresolved/external-only barcodes.
+  - Added strict external-provider gating that now:
+    - honors cached unresolved `retry_after_at` backoff windows (skip external providers while still allowing internal tenant lookup)
+    - applies a process-local per-barcode churn cooldown when repeated unresolved / `resolved_external` lookups occur in a short window
+    - applies a process-local global external-attempt burst cooldown for high-rate barcode churn across many calls
+  - Preserved barcode UX during cooldown by serving cached external metadata (`resolved_external`) when available after the internal lookup misses, instead of forcing a hard downgrade to plain `unresolved`.
+  - Added abuse-guard observability to existing barcode resolver summary metrics/logs:
+    - skipped resolver-call counts
+    - guard reason counts (`cache_retry_after`, per-barcode cooldown, global burst cooldown)
+    - cached-external-served counts
+    - per-provider guard-skipped counters
+  - Validation:
+    - `npx tsc --noEmit --incremental false` -- 0 errors
+  - Notes:
+    - Cache `retry_after_at` enforcement is persistent (DB-backed); churn/global burst cooldowns are process-local and reset on server restart.
+    - Background retry scheduling for unresolved barcodes is still pending (next Phase E step).
+  - Docs refresh:
+    - Phase E `Pick Up Here` step 6 marked complete
+    - Phase E wording/status refreshed to reflect stricter barcode abuse controls now in place
+  - Next:
+    - Phase E step 7: add background retry scheduling for unresolved barcodes (with retry observability/success tracking)
 
 - **Phase E hardening slice: layered barcode-provider aggregate counters + depth/latency summaries** (February 26, 2026):
   - Added lightweight process-local aggregate metrics in `app/actions/core/barcode-resolver.ts` for the layered barcode provider stack (internal lookup + OFF / OBF / UPCDatabase / UPCitemdb).
@@ -445,11 +507,11 @@ Previous updates (retained for history):
 - [x] Phase B (external provider integrations) complete. All four providers (OFF, OBF, UPCDatabase, UPCitemdb) implemented with real API calls, fallback chain enabled, 4s timeouts, confidence scoring, `resolved_external` result type, UI support in barcode page, and 7 total resolver tests passing.
 - [x] Phase C (place-scoped receipt aliasing) complete. Place-scoped alias schema/migration, matching + learning paths, and receipt/shopping wiring are implemented; migration/schema/type verification reconfirmed on February 26, 2026.
 - [ ] Phase D (enrichment queue) not started.
-- [~] Phase E (observability/hardening) partially implemented. Audit trails plus shopping web fallback hardening/metrics and layered barcode-provider aggregate counters (provider outcomes, depth, latency, error-code summaries) are now in place. Background retries, stricter abuse controls, and broader aggregate dashboards/derived rates still remain.
+- [~] Phase E (observability/hardening) partially implemented. Audit trails plus shopping web fallback hardening/metrics, layered barcode-provider aggregate counters (provider outcomes, depth, latency, error-code summaries), stricter barcode lookup abuse controls/cooldowns, and process-local background retries for unresolved barcodes are now in place. Broader aggregate dashboards/derived rates still remain.
 
 ## Pick Up Here (Next Continuation)
 
-Primary continuation task: **Phase E -- implement stricter rate limiting / abuse prevention for repeated barcode lookup churn (then background retry scheduling for unresolved barcodes)**.
+Primary continuation task: **Phase E -- add broader derived-rate/dashboard metrics (cache hit rate, unresolved ratio, retry success rate, receipt auto-resolution rate) to close observability gaps**.
 
 Phases A, B, and C are complete. The barcode resolver supports internal inventory lookups and 4 external providers (OFF, OBF, UPCDatabase, UPCitemdb) with fallback chain, timeouts, confidence scoring, and global barcode catalog caching.
 
@@ -466,8 +528,13 @@ Do this next:
    - timeout/error-code counts
    - latency summaries (count/avg/max)
 5. `[x]` Revisit Phase E section wording/status after the above metrics are added across both web fallback and barcode provider paths
-6. `[ ]` Add strict rate limiting / abuse prevention for repeated barcode lookup churn (especially repeated unresolved/external misses that hammer external providers)
-7. `[ ]` Add background retry scheduling for unresolved barcodes (with retry observability/success tracking)
+6. `[x]` Add strict rate limiting / abuse prevention for repeated barcode lookup churn (especially repeated unresolved/external misses that hammer external providers)
+7. `[x]` Add background retry scheduling for unresolved barcodes (with retry observability/success tracking)
+8. `[ ]` Add broader derived-rate/dashboard summaries across resolver and receipt matching paths:
+   - cache hit rate
+   - unresolved ratio
+   - background retry success rate
+   - receipt auto-resolution rate
 
 Notes:
 
@@ -928,7 +995,7 @@ Planned work:
 
 ### Phase E - Observability & Hardening
 
-Status (as of February 26, 2026): Partially implemented (shopping web fallback audit trails/hardening/metrics plus layered barcode-provider aggregate counters for provider outcomes, depth, timeout/error-code summaries, and latency are in place; background retries, stricter abuse controls, and broader derived-rate/dashboard metrics remain).
+Status (as of February 26, 2026): Partially implemented (shopping web fallback audit trails/hardening/metrics, layered barcode-provider aggregate counters for provider outcomes/depth/timeout/error-code summaries/latency, stricter barcode abuse controls, and background retries for unresolved barcodes are in place; broader derived-rate/dashboard metrics remain).
 
 Planned work:
 
