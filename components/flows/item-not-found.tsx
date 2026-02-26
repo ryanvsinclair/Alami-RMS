@@ -7,29 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { createInventoryItem, addBarcode, getInventoryItems } from "@/app/actions/core/inventory";
-
-const UNIT_OPTIONS = [
-  { value: "each", label: "Each" },
-  { value: "kg", label: "Kilograms (kg)" },
-  { value: "g", label: "Grams (g)" },
-  { value: "lb", label: "Pounds (lb)" },
-  { value: "oz", label: "Ounces (oz)" },
-  { value: "l", label: "Litres (L)" },
-  { value: "ml", label: "Millilitres (ml)" },
-  { value: "gal", label: "Gallons" },
-  { value: "case_unit", label: "Case" },
-  { value: "pack", label: "Pack" },
-  { value: "box", label: "Box" },
-  { value: "bag", label: "Bag" },
-  { value: "dozen", label: "Dozen" },
-];
-
-interface ItemResult {
-  id: string;
-  name: string;
-  unit: string;
-  category?: { name: string } | null;
-}
+import type { ReceiveInventoryItemOption } from "@/features/receiving/shared/contracts";
+import { RECEIVE_UNIT_OPTIONS } from "@/features/receiving/shared/unit-options";
 
 type Mode = "prompt" | "create" | "search";
 
@@ -42,7 +21,7 @@ export function ItemNotFound({
 }: {
   detectedText: string;
   barcode?: string;
-  onItemSelected: (item: ItemResult) => void;
+  onItemSelected: (item: ReceiveInventoryItemOption) => void;
   onCancel: () => void;
   suggestedName?: string;
 }) {
@@ -50,7 +29,7 @@ export function ItemNotFound({
   const [newName, setNewName] = useState(suggestedName ?? detectedText);
   const [newUnit, setNewUnit] = useState("each");
   const [search, setSearch] = useState(suggestedName ?? detectedText);
-  const [searchResults, setSearchResults] = useState<ItemResult[]>([]);
+  const [searchResults, setSearchResults] = useState<ReceiveInventoryItemOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -89,13 +68,13 @@ export function ItemNotFound({
 
     try {
       const results = await getInventoryItems({ search: query, activeOnly: true });
-      setSearchResults(results as unknown as ItemResult[]);
+      setSearchResults(results as unknown as ReceiveInventoryItemOption[]);
     } catch {
       // silently fail search
     }
   }
 
-  async function handleSelectExisting(item: ItemResult) {
+  async function handleSelectExisting(item: ReceiveInventoryItemOption) {
     // If there's a barcode, link it to this item
     if (barcode) {
       try {
@@ -159,7 +138,7 @@ export function ItemNotFound({
               />
               <Select
                 label="Unit"
-                options={UNIT_OPTIONS}
+                options={RECEIVE_UNIT_OPTIONS}
                 value={newUnit}
                 onChange={(e) => setNewUnit(e.target.value)}
               />

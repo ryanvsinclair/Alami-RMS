@@ -47,23 +47,23 @@ Rules for working sessions:
 This section is the source of truth for progress and ownership during the refactor.
 
 ### Current Status Snapshot
-- Current phase: `Phase 4 complete - Ready for Phase 5`
-- Latest completed checkpoint: `Phase 4 receipt/receiving server split complete`
+- Current phase: `Phase 5 in progress - receive UI pages extracted; manual validation pending`
+- Latest completed checkpoint: `Phase 5 receive UI routes split + shared receive contracts/unit options extracted`
 - Active work lock: `UNLOCKED`
 - Known blocker: `None`
-- Last validation status: `tsc --noEmit PASS, lint 4 pre-existing errors/15 warnings, barcode-cache 5/5 PASS, receipt-line-core 10/10 PASS`
+- Last validation status: `npx tsc --noEmit --incremental false PASS (2026-02-26); prior baseline lint 4 pre-existing errors/15 warnings, barcode-cache 5/5 PASS, receipt-line-core 10/10 PASS`
 
 ### Active Work Lock (Edit First)
 Use this to prevent duplicate work. Clear it when the session ends.
 
 - Status: `UNLOCKED`
 - Agent: `-`
-- Date (UTC/local): `2026-02-25`
+- Date (UTC/local): `2026-02-26`
 - Scope claimed: `-`
 - Files expected to touch:
   - `-`
 - Notes:
-  - `Phase 4 complete. Ready for Phase 5.`
+  - `Phase 5 extraction pass completed; manual receive-flow validation still pending before phase closeout.`
 
 ### Phase Completion Ledger
 Mark only when exit criteria are met.
@@ -79,6 +79,48 @@ Mark only when exit criteria are met.
 - [ ] Phase 8 complete: Legacy wrappers deprecated/removed, docs and final verification
 
 ### Handoff Log (Append New Entries at Top)
+
+#### 2026-02-26 - Phase 5 (partial): Receive UI pages split + shared receive contracts/constants extracted
+- Agent: `Codex`
+- Scope: `Extract receive route UI into src/features/receiving/*/ui and add shared receive UI contracts/unit options`
+- Completed:
+  - Created `src/features/receiving/shared/contracts.ts` for shared receive item and receipt UI DTOs.
+  - Created `src/features/receiving/shared/unit-options.ts` and removed duplicated receive `UNIT_OPTIONS` definitions.
+  - Updated `components/flows/item-not-found.tsx` to use shared receive unit options + shared item result type.
+  - Extracted route UI into feature client components:
+    - `src/features/receiving/shared/ui/ReceivePageClient.tsx`
+    - `src/features/receiving/barcode/ui/BarcodeReceivePageClient.tsx`
+    - `src/features/receiving/manual/ui/ManualReceivePageClient.tsx`
+    - `src/features/receiving/photo/ui/PhotoReceivePageClient.tsx`
+    - `src/features/receiving/receipt/ui/ReceiptReceivePageClient.tsx`
+    - `src/features/receiving/receipt/ui/ReceiptDetailPageClient.tsx`
+    - `src/features/receiving/receipt/ui/ReceiptLineItemRow.tsx`
+  - Converted receive route pages under `app/(dashboard)/receive/*` to thin wrappers.
+  - Converted `app/(dashboard)/receive/receipt/line-item-row.tsx` to a thin re-export wrapper.
+- Changed files:
+  - `components/flows/item-not-found.tsx`
+  - `app/(dashboard)/receive/page.tsx`
+  - `app/(dashboard)/receive/barcode/page.tsx`
+  - `app/(dashboard)/receive/manual/page.tsx`
+  - `app/(dashboard)/receive/photo/page.tsx`
+  - `app/(dashboard)/receive/receipt/page.tsx`
+  - `app/(dashboard)/receive/receipt/[id]/page.tsx`
+  - `app/(dashboard)/receive/receipt/line-item-row.tsx`
+  - `src/features/receiving/shared/contracts.ts` (new)
+  - `src/features/receiving/shared/unit-options.ts` (new)
+  - `src/features/receiving/shared/ui/ReceivePageClient.tsx` (new)
+  - `src/features/receiving/barcode/ui/BarcodeReceivePageClient.tsx` (new)
+  - `src/features/receiving/manual/ui/ManualReceivePageClient.tsx` (new)
+  - `src/features/receiving/photo/ui/PhotoReceivePageClient.tsx` (new)
+  - `src/features/receiving/receipt/ui/ReceiptReceivePageClient.tsx` (new)
+  - `src/features/receiving/receipt/ui/ReceiptDetailPageClient.tsx` (new)
+  - `src/features/receiving/receipt/ui/ReceiptLineItemRow.tsx` (new)
+- Validation run:
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Blockers:
+  - `Manual receive-flow smoke validation not run yet (barcode/photo/manual/receipt)`
+- Next recommended step:
+  - `Phase 5 closeout: run manual receive flow smoke checks, then mark Phase 5 complete if behavior is preserved`
 
 #### 2026-02-25 - Phase 4: Receipt/receiving server split
 - Agent: `Claude Opus`
@@ -319,6 +361,7 @@ This section is the canonical mapping. If you introduce a new target file, add i
 | `app/(dashboard)/shopping/page.tsx` | Keep as route shell | `src/features/shopping/ui/ShoppingPageClient.tsx` |
 | `app/(dashboard)/shopping/orders/page.tsx` | Keep as route shell | `src/features/shopping/ui/OrdersHistoryPageClient.tsx` |
 | `app/(dashboard)/shopping/orders/[id]/page.tsx` | Keep as route shell | `src/features/shopping/ui/OrderDetailPageClient.tsx` |
+| `app/(dashboard)/receive/page.tsx` | Keep as route shell | `src/features/receiving/shared/ui/ReceivePageClient.tsx` |
 | `app/(dashboard)/receive/barcode/page.tsx` | Keep as route shell | `src/features/receiving/barcode/ui/BarcodeReceivePageClient.tsx` |
 | `app/(dashboard)/receive/photo/page.tsx` | Keep as route shell | `src/features/receiving/photo/ui/PhotoReceivePageClient.tsx` |
 | `app/(dashboard)/receive/manual/page.tsx` | Keep as route shell | `src/features/receiving/manual/ui/ManualReceivePageClient.tsx` |
@@ -531,11 +574,11 @@ Exit criteria:
 Goal: Reduce repeated page-local logic across barcode/photo/manual/receipt pages.
 
 Checklist:
-- [ ] Create `src/features/receiving/shared/contracts.ts` for shared item/match DTOs.
-- [ ] Create `src/features/receiving/shared/unit-options.ts` to remove duplicate `UNIT_OPTIONS` constants.
-- [ ] Extract each receive page into feature UI client component(s).
-- [ ] Keep route pages thin wrappers.
-- [ ] Reuse `ItemNotFound` through a shared feature-facing interface.
+- [x] Create `src/features/receiving/shared/contracts.ts` for shared item/match DTOs.
+- [x] Create `src/features/receiving/shared/unit-options.ts` to remove duplicate `UNIT_OPTIONS` constants.
+- [x] Extract each receive page into feature UI client component(s).
+- [x] Keep route pages thin wrappers.
+- [x] Reuse `ItemNotFound` through a shared feature-facing interface.
 - [ ] Validate barcode/photo/manual/receipt receive flows manually.
 
 Exit criteria:

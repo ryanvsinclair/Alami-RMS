@@ -63,7 +63,7 @@ Snapshot taken from both plans on 2026-02-26.
 ### App Structure Refactor Playbook status
 Source: `docs/app-structure-refactor-agent-playbook.md`
 
-- Current phase: `Phase 4 complete - Ready for Phase 5`
+- Current phase: `Phase 5 in progress - receive UI pages extracted; manual validation pending`
 - Completed phases:
   - Phase 0
   - Phase 1
@@ -102,6 +102,7 @@ This section exists so future agents do not re-do completed work from either pla
   - `src/features/receiving/receipt/server/*`
   - `src/features/receiving/photo/server/*`
 - `app/actions/modules/receipts.ts` and `app/actions/modules/ocr.ts` are now thin wrappers.
+- Receive UI route pages have been split into `src/features/receiving/*/ui/*` and `src/features/receiving/shared/*`, with thin wrappers under `app/(dashboard)/receive/*` (manual flow validation still pending before Phase 5 closeout).
 
 ### Completed inventory-intake work (relevant to refactor plan)
 - Barcode resolver layered provider system is implemented (Phase B complete).
@@ -273,13 +274,20 @@ Status legend:
     - `npx tsc --noEmit --incremental false` -> PASS
 
 ### Refactor Continuation (Low-Overlap, Next)
-- [ ] CMB-06 App Refactor Phase 5: split receive UI pages + shared receive contracts/constants
+- [~] CMB-06 App Refactor Phase 5: split receive UI pages + shared receive contracts/constants
   - Source plan linkage:
     - `docs/app-structure-refactor-agent-playbook.md` Phase 5
   - Expected work areas:
     - `src/features/receiving/shared/*`
     - `src/features/receiving/*/ui/*`
     - thin route shells under `app/(dashboard)/receive/*`
+  - Partial result (2026-02-26):
+    - shared receive UI contracts + unit options added
+    - all receive route pages extracted to `src/features/receiving/*/ui/*` (plus `shared/ui`)
+    - receive route files converted to thin wrappers
+    - `ItemNotFound` now uses shared receive unit options + shared item result type
+    - `npx tsc --noEmit --incremental false` -> PASS
+    - remaining closeout work: manual barcode/photo/manual/receipt receive flow validation before marking complete
   - Must update after completion:
     - `docs/app-structure-refactor-agent-playbook.md` `Update Here`
     - phase ledger + handoff log
@@ -358,13 +366,13 @@ Prevent cross-plan collisions here before editing code.
 - Status: `OPEN`
 - Agent: `Unclaimed`
 - Date: `2026-02-26`
-- Combined task ID(s): `Next: CMB-06`
+- Combined task ID(s): `CMB-06 (Phase 5 closeout pending manual validation)`
 - Scope:
-  - `Unclaimed`
+  - `Manual smoke validation + closeout docs for receive UI split`
 - Expected files:
-  - `app/(dashboard)/receive/*`
-  - `src/features/receiving/*/ui/*`
-  - `src/features/receiving/shared/*`
+  - `docs/app-structure-refactor-agent-playbook.md`
+  - `docs/combined-plan-coordination.md`
+  - optional: `app/(dashboard)/receive/*` or `src/features/receiving/*/ui/*` only if validation exposes a bug
 - Source plan(s) to update on completion:
   - `docs/app-structure-refactor-agent-playbook.md`
   - `docs/combined-plan-coordination.md`
@@ -372,6 +380,22 @@ Prevent cross-plan collisions here before editing code.
 ## Coordination Handoff Log
 
 Append new entries at the top.
+
+### 2026-02-26 - CMB-06 partial (Phase 5 receive UI split extracted; manual validation pending)
+- Agent: `Codex`
+- Scope:
+  - extract receive route UI into `src/features/receiving/*/ui/*` plus `src/features/receiving/shared/*`
+  - convert `app/(dashboard)/receive/*` routes to thin wrappers
+  - centralize duplicate receive unit options and shared item/receipt UI DTOs
+- Validation run:
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Source plan updates:
+  - `docs/app-structure-refactor-agent-playbook.md` `Update Here` refreshed for Phase 5 in-progress state
+  - Phase 5 checklist updated (manual receive-flow validation still unchecked)
+  - Phase 5 handoff log entry appended with changed files + next step
+- Next recommended:
+  - finish CMB-06 by running manual smoke validation for receive barcode/photo/manual/receipt flows
+  - if behavior is unchanged, mark Phase 5 complete in `docs/app-structure-refactor-agent-playbook.md` and `CMB-06` complete here
 
 ### 2026-02-26 - CMB-05 completed (Phase E layered barcode-provider aggregate counters)
 - Agent: `Codex`
