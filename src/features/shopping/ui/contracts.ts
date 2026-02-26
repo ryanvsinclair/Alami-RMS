@@ -3,7 +3,7 @@
  * Shared between shopping UI components and hooks.
  */
 
-import type { ProductInfo } from "@/core/parsers/product-name";
+import type { ProductInfo } from "@/domain/parsers/product-name";
 
 export type SessionStatus = "draft" | "reconciling" | "ready" | "committed" | "cancelled";
 

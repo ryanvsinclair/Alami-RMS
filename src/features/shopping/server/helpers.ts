@@ -3,7 +3,7 @@
  * No side effects, no Prisma, no external calls.
  */
 
-import { normalizeText, similarity } from "@/core/matching/fuzzy";
+import { normalizeText, similarity } from "@/domain/matching/fuzzy";
 import type { Prisma } from "@/lib/generated/prisma/client";
 import {
   RECEIPT_TOTAL_TOLERANCE,
@@ -19,7 +19,6 @@ export function toNumber(value: Prisma.Decimal | number | null | undefined): num
   if (typeof value === "number") return value;
   return value.toNumber();
 }
-
 export function round(value: number, precision = 2): number {
   const factor = 10 ** precision;
   return Math.round(value * factor) / factor;

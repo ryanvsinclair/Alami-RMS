@@ -66,5 +66,5 @@ export type {
 };
 
 // Import and re-export ProductInfo type
-import type { ProductInfo } from "@/core/parsers/product-name";
+import type { ProductInfo } from "@/domain/parsers/product-name";
 export type { ProductInfo };

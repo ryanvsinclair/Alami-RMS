@@ -3,7 +3,7 @@
  * Links scanned barcodes to inventory items when confidence is high.
  */
 
-import { normalizeBarcode } from "@/core/utils/barcode";
+import { normalizeBarcode } from "@/domain/barcode/normalize";
 import type { Prisma } from "@/lib/generated/prisma/client";
 
 export async function linkScannedBarcodeToInventoryItemIfHighConfidence(

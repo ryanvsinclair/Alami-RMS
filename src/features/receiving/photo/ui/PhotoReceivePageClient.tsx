@@ -10,7 +10,7 @@ import { ItemNotFound } from "@/components/flows/item-not-found";
 import { ingestByPhoto } from "@/app/actions/core/ingestion";
 import { ocrImage } from "@/app/actions/modules/ocr";
 import { compressImage } from "@/core/utils/compress-image";
-import type { ProductInfo } from "@/core/parsers/product-name";
+import type { ProductInfo } from "@/domain/parsers/product-name";
 import type { MatchResult } from "@/core/matching/engine";
 import type { UnitType } from "@/lib/generated/prisma/client";
 import type { ReceiveInventoryItemOption } from "@/features/receiving/shared/contracts";
@@ -322,7 +322,7 @@ export default function PhotoReceivePageClient() {
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
-            <div className="relative flex justify-center"><span className="bg-[#080d14] px-2 text-xs text-muted">not what you're looking for?</span></div>
+            <div className="relative flex justify-center"><span className="bg-[#080d14] px-2 text-xs text-muted">not what you&apos;re looking for?</span></div>
           </div>
 
           <Button variant="secondary" onClick={() => setStep("not_found")} className="w-full">

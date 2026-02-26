@@ -3,7 +3,7 @@
  * Preserves action behavior while isolating persistence concerns in a repository.
  */
 
-import { normalizeBarcode } from "@/core/utils/barcode";
+import { normalizeBarcode } from "@/domain/barcode/normalize";
 import { serialize } from "@/core/utils/serialize";
 import type { UnitType } from "@/lib/generated/prisma/client";
 import {
@@ -159,4 +159,3 @@ export async function removeAlias(businessId: string, aliasId: string) {
   const result = await deleteItemAliasForBusiness(aliasId, businessId);
   return serialize(result);
 }
-

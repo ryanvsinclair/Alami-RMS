@@ -4,7 +4,7 @@
  */
 
 import { prisma } from "@/core/prisma";
-import { parseReceiptText } from "@/core/parsers/receipt";
+import { parseReceiptText } from "@/domain/parsers/receipt";
 import { resolveReceiptLineMatch } from "@/core/matching/receipt-line";
 import { scanReceipt } from "@/modules/receipts/ocr/tabscanner";
 import { uploadReceiptImage } from "@/lib/supabase/storage";

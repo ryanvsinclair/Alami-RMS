@@ -5,7 +5,7 @@
 
 import { prisma } from "@/core/prisma";
 import { extractTextFromImage } from "@/modules/receipts/ocr/google-vision";
-import { extractProductInfo } from "@/core/parsers/product-name";
+import { extractProductInfo } from "@/domain/parsers/product-name";
 import type { ShoppingFallbackPhotoAnalysis } from "./contracts";
 import { normalizeSpace, mergeResolutionAudit } from "./helpers";
 

@@ -7,7 +7,7 @@
 import { prisma } from "@/core/prisma";
 import { serialize } from "@/core/utils/serialize";
 import { matchText } from "@/core/matching/engine";
-import { extractProductName } from "@/core/parsers/product-name";
+import { extractProductName } from "@/domain/parsers/product-name";
 import { toNumber, round, normalizeName, getReceiptBalanceCheck } from "./helpers";
 import { recomputeSessionState } from "./session-state.service";
 

@@ -60,11 +60,11 @@ Disclaimer:
 This section is the source of truth for progress and ownership during the refactor.
 
 ### Current Status Snapshot
-- Current phase: `Phase 7 ready (Phase 6 complete; shared/domain/server moves next)`
-- Latest completed checkpoint: `Phase 6 inventory + contacts + staff UI/server extraction complete (targeted compile/lint pass)`
+- Current phase: `Phase 7 in progress (domain parser/matching/barcode slice complete; server/shared moves remain)`
+- Latest completed checkpoint: `Phase 7 partial: domain parser/matching/barcode canonical files + compatibility wrappers + initial src/features import cleanup`
 - Active work lock: `UNLOCKED`
 - Known blocker: `None`
-- Last validation status: `npx tsc --noEmit --incremental false PASS (2026-02-26, contacts+staff extraction); npx eslint app/actions/core/contacts.ts app/(dashboard)/contacts/page.tsx src/features/contacts/server/*.ts src/features/contacts/ui/ContactsPageClient.tsx app/actions/core/staff.ts app/(dashboard)/staff/page.tsx src/features/staff/server/*.ts src/features/staff/ui/StaffPageClient.tsx PASS (2026-02-26); prior: inventory extraction targeted compile/lint PASS (2026-02-26); manual receive smoke PASS (barcode/photo/manual/receipt + receipt detail tabs, user-reported, 2026-02-26); baseline lint still has 4 pre-existing errors/15 warnings, barcode-cache 5/5 PASS, receipt-line-core 10/10 PASS`
+- Last validation status: `Phase 7 partial PASS (2026-02-26): npx tsc --noEmit --incremental false; node --test --experimental-transform-types lib\\core\\matching\\receipt-line-core.test.mjs (10/10); npx eslint lib/core/matching/{fuzzy,confidence}.ts lib/core/parsers/* lib/core/utils/barcode.ts src/domain/{matching,parsers,barcode}/* + affected src/features imports PASS (after escaping one JSX apostrophe in PhotoReceivePageClient). Prior: contacts+staff extraction targeted compile/lint PASS (2026-02-26); manual receive smoke PASS (user-reported); baseline full lint still has unrelated errors/warnings.`
 
 ### Active Work Lock (Edit First)
 Use this to prevent duplicate work. Clear it when the session ends.
@@ -76,7 +76,7 @@ Use this to prevent duplicate work. Clear it when the session ends.
 - Files expected to touch:
   - `None (claim next scope before editing)`
 - Notes:
-  - `Next recommended claim: Phase 7 kickoff - choose one vertical slice (domain matching/parsers move or server infra wrappers/import cleanup)`
+  - `Next recommended claim: Phase 7 server infra slice -> move prisma/auth/storage wrappers into src/server/* and migrate src/features imports incrementally`
 
 ### Phase Completion Ledger
 Mark only when exit criteria are met.
@@ -92,6 +92,64 @@ Mark only when exit criteria are met.
 - [ ] Phase 8 complete: Legacy wrappers deprecated/removed, docs and final verification
 
 ### Handoff Log (Append New Entries at Top)
+
+#### 2026-02-26 - Phase 7 (partial): Domain parser/matching/barcode slice extracted with compatibility wrappers
+- Agent: `Codex`
+- Scope: `Kick off Phase 7 by moving pure parser/matching/barcode modules into src/domain/* and start import cleanup`
+- Completed:
+  - Added canonical domain modules:
+    - `src/domain/matching/fuzzy.ts`
+    - `src/domain/matching/confidence.ts`
+    - `src/domain/matching/receipt-line-core.ts`
+    - `src/domain/parsers/receipt.ts`
+    - `src/domain/parsers/product-name.ts`
+    - `src/domain/parsers/shelf-label.ts`
+    - `src/domain/barcode/normalize.ts`
+  - Converted legacy pure module paths to compatibility wrappers (preserved old imports):
+    - `lib/core/matching/fuzzy.ts`
+    - `lib/core/matching/confidence.ts`
+    - `lib/core/parsers/receipt.ts`
+    - `lib/core/parsers/product-name.ts`
+    - `lib/core/parsers/shelf-label.ts`
+    - `lib/core/utils/barcode.ts`
+  - Updated initial `src/features/*` callers to import from `@/domain/*` (shopping, receiving, inventory paths touching parsers/fuzzy/barcode normalization).
+  - Kept `lib/core/matching/receipt-line-core.ts` in place for now (not wrappered yet) to avoid risking the plain-Node test import path during this slice; canonical copy exists in `src/domain/matching/receipt-line-core.ts`.
+  - Fixed one existing JSX lint issue uncovered in `src/features/receiving/photo/ui/PhotoReceivePageClient.tsx` (`you&apos;re` text escape) so targeted ESLint passes cleanly.
+- Changed files:
+  - `src/domain/matching/fuzzy.ts`
+  - `src/domain/matching/confidence.ts`
+  - `src/domain/matching/receipt-line-core.ts`
+  - `src/domain/parsers/receipt.ts`
+  - `src/domain/parsers/product-name.ts`
+  - `src/domain/parsers/shelf-label.ts`
+  - `src/domain/barcode/normalize.ts`
+  - `lib/core/matching/fuzzy.ts`
+  - `lib/core/matching/confidence.ts`
+  - `lib/core/parsers/receipt.ts`
+  - `lib/core/parsers/product-name.ts`
+  - `lib/core/parsers/shelf-label.ts`
+  - `lib/core/utils/barcode.ts`
+  - `src/features/inventory/server/inventory.service.ts`
+  - `src/features/shopping/server/helpers.ts`
+  - `src/features/shopping/server/receipt-reconcile.service.ts`
+  - `src/features/shopping/server/barcode-link.service.ts`
+  - `src/features/shopping/server/commit.service.ts`
+  - `src/features/shopping/server/fallback-photo.service.ts`
+  - `src/features/shopping/server/contracts.ts`
+  - `src/features/shopping/ui/contracts.ts`
+  - `src/features/shopping/ui/use-shopping-session.ts`
+  - `src/features/receiving/receipt/server/receipt-workflow.service.ts`
+  - `src/features/receiving/photo/server/ocr.service.ts`
+  - `src/features/receiving/photo/ui/PhotoReceivePageClient.tsx`
+  - `docs/app-structure-refactor-agent-playbook.md`
+- Validation run:
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `node --test --experimental-transform-types lib\\core\\matching\\receipt-line-core.test.mjs` -> PASS (10/10)
+  - `npx eslint lib/core/matching/fuzzy.ts lib/core/matching/confidence.ts lib/core/parsers/*.ts lib/core/utils/barcode.ts src/domain/matching/*.ts src/domain/parsers/*.ts src/domain/barcode/normalize.ts [affected src/features files]` -> PASS
+- Blockers:
+  - `None (receipt-line-core legacy wrapper conversion intentionally deferred for Node test path safety in this slice)`
+- Next recommended step:
+  - `Phase 7 server infra slice: create src/server/{db,auth,storage} compatibility wrappers and migrate src/features imports off @/core/* and lib/supabase/* incrementally`
 
 #### 2026-02-26 - Phase 6 complete: Staff UI + staff server extraction completed
 - Agent: `Codex`
@@ -730,7 +788,7 @@ Exit criteria:
 Goal: Standardize shared and infrastructure code locations.
 
 Checklist:
-- [ ] Move parser/matching/barcode pure logic into `src/domain/*`.
+- [x] Move parser/matching/barcode pure logic into `src/domain/*`.
 - [ ] Move Prisma/auth/storage/integrations into `src/server/*`.
 - [ ] Move shared UI/config into `src/shared/*`.
 - [ ] Update imports incrementally; keep compatibility wrappers only as needed.

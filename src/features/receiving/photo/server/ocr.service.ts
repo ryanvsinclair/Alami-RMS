@@ -4,7 +4,7 @@
  */
 
 import { extractTextFromImage } from "@/modules/receipts/ocr/google-vision";
-import { extractProductInfo, type ProductInfo } from "@/core/parsers/product-name";
+import { extractProductInfo, type ProductInfo } from "@/domain/parsers/product-name";
 
 /**
  * OCR a base64-encoded image using Google Vision.

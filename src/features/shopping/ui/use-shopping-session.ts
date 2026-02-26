@@ -32,7 +32,7 @@ import {
   type PlaceDetails,
   type PlacePrediction,
 } from "@/lib/google/places";
-import type { ShelfLabelResult } from "@/core/parsers/shelf-label";
+import type { ShelfLabelResult } from "@/domain/parsers/shelf-label";
 import type { MatchResult } from "@/core/matching/engine";
 import {
   asNumber,
