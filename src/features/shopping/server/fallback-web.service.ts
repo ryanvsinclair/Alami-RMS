@@ -4,7 +4,7 @@
  */
 
 import { prisma } from "@/server/db/prisma";
-import { runConstrainedShoppingProductWebFallback } from "@/modules/shopping/web-fallback";
+import { runConstrainedShoppingProductWebFallback } from "@/features/shopping/integrations/web-fallback";
 import type { ShoppingFallbackPhotoAnalysis } from "./contracts";
 import {
   toNumber,

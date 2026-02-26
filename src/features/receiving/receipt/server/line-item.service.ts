@@ -4,9 +4,9 @@
  */
 
 import { prisma } from "@/server/db/prisma";
-import { learnAlias } from "@/core/matching/engine";
-import { learnReceiptItemAlias } from "@/core/matching/receipt-line";
-import { serialize } from "@/core/utils/serialize";
+import { learnAlias } from "@/domain/matching/engine";
+import { learnReceiptItemAlias } from "@/server/matching/receipt-line";
+import { serialize } from "@/domain/shared/serialize";
 import {
   findLineItemWithReceipt,
   updateLineItem,

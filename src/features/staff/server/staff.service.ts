@@ -6,7 +6,7 @@
 import { randomUUID } from "crypto";
 import { redirect } from "next/navigation";
 import { requireSupabaseUser } from "@/server/auth/server";
-import { serialize } from "@/core/utils/serialize";
+import { serialize } from "@/domain/shared/serialize";
 import type { BusinessRole } from "@/lib/generated/prisma/client";
 import {
   acceptInviteMembership,

@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { getReceiptDetail } from "@/app/actions/modules/receipts";
 import {
   DigitalReceipt,
   extractReceiptTotals,
-} from "@/components/receipts/digital-receipt";
+} from "@/shared/components/receipts/digital-receipt";
 import type { ReceiveReceiptDetail } from "@/features/receiving/shared/contracts";
 
 type Tab = "digital" | "photo";
@@ -25,8 +25,10 @@ export default function ReceiptDetailPageClient() {
 
   useEffect(() => {
     if (!params.id) return;
-    setLoading(true);
-    setError("");
+    startTransition(() => {
+      setLoading(true);
+      setError("");
+    });
     getReceiptDetail(params.id)
       .then((data) => {
         if (!data) {

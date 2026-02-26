@@ -4,7 +4,7 @@
  */
 
 import { prisma } from "@/server/db/prisma";
-import { extractTextFromImage } from "@/modules/receipts/ocr/google-vision";
+import { extractTextFromImage } from "@/server/integrations/receipts/google-vision";
 import { extractProductInfo } from "@/domain/parsers/product-name";
 import type { ShoppingFallbackPhotoAnalysis } from "./contracts";
 import { normalizeSpace, mergeResolutionAudit } from "./helpers";

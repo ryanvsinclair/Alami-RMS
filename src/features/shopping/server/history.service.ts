@@ -3,7 +3,7 @@
  */
 
 import { prisma } from "@/server/db/prisma";
-import { serialize } from "@/core/utils/serialize";
+import { serialize } from "@/domain/shared/serialize";
 import { toNumber, round } from "./helpers";
 import { recomputeSessionState } from "./session-state.service";
 import { findSessionById } from "./session.repository";

@@ -4,7 +4,7 @@
  */
 
 import { prisma } from "@/server/db/prisma";
-import { serialize } from "@/core/utils/serialize";
+import { serialize } from "@/domain/shared/serialize";
 import type { Prisma, MatchConfidence, LineItemStatus } from "@/lib/generated/prisma/client";
 import {
   RECEIPT_WITH_LINE_ITEMS_INCLUDE,

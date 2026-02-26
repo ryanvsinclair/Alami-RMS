@@ -4,10 +4,10 @@
  */
 
 import { prisma } from "@/server/db/prisma";
-import { serialize } from "@/core/utils/serialize";
+import { serialize } from "@/domain/shared/serialize";
 import { parseReceiptText } from "@/domain/parsers/receipt";
-import { resolveReceiptLineMatch } from "@/core/matching/receipt-line";
-import { scanReceipt, type TabScannerResult } from "@/modules/receipts/ocr/tabscanner";
+import { resolveReceiptLineMatch } from "@/server/matching/receipt-line";
+import { scanReceipt, type TabScannerResult } from "@/server/integrations/receipts/tabscanner";
 import type { Prisma, ShoppingReconciliationStatus, UnitType } from "@/lib/generated/prisma/client";
 import {
   toNumber,

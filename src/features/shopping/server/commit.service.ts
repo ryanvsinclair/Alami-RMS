@@ -5,8 +5,8 @@
  */
 
 import { prisma } from "@/server/db/prisma";
-import { serialize } from "@/core/utils/serialize";
-import { matchText } from "@/core/matching/engine";
+import { serialize } from "@/domain/shared/serialize";
+import { matchText } from "@/domain/matching/engine";
 import { extractProductName } from "@/domain/parsers/product-name";
 import { toNumber, round, normalizeName, getReceiptBalanceCheck } from "./helpers";
 import { recomputeSessionState } from "./session-state.service";

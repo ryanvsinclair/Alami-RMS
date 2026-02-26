@@ -3,7 +3,7 @@
  * Preserves current action behavior while isolating repository access.
  */
 
-import { serialize } from "@/core/utils/serialize";
+import { serialize } from "@/domain/shared/serialize";
 import {
   createContactRecord,
   deleteContactForBusiness,

@@ -4,7 +4,7 @@
  */
 
 import { prisma } from "@/server/db/prisma";
-import { serialize } from "@/core/utils/serialize";
+import { serialize } from "@/domain/shared/serialize";
 import { OPEN_STATUSES } from "./contracts";
 import type { Prisma } from "@/lib/generated/prisma/client";
 

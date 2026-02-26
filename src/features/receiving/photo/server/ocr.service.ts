@@ -3,7 +3,7 @@
  * Uses Google Vision for text extraction and Gemini for product info parsing.
  */
 
-import { extractTextFromImage } from "@/modules/receipts/ocr/google-vision";
+import { extractTextFromImage } from "@/server/integrations/receipts/google-vision";
 import { extractProductInfo, type ProductInfo } from "@/domain/parsers/product-name";
 
 /**
@@ -40,7 +40,7 @@ export async function ocrImage(base64Image: string) {
  * Returns structured receipt data including line items, totals, and merchant info.
  */
 export async function scanReceiptImage(base64Image: string) {
-  const { scanReceipt } = await import("@/modules/receipts/ocr/tabscanner");
+  const { scanReceipt } = await import("@/server/integrations/receipts/tabscanner");
   return scanReceipt(base64Image);
 }
 

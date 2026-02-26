@@ -6,7 +6,7 @@ import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
 import { processReceiptText, processReceiptImage, updateLineItemMatch } from "@/app/actions/modules/receipts";
 import { commitReceiptTransactions } from "@/app/actions/core/transactions";
-import { compressImage } from "@/core/utils/compress-image";
+import { compressImage } from "@/shared/utils/compress-image";
 import { ReceiptLineItemRow } from "@/features/receiving/receipt/ui/ReceiptLineItemRow";
 import type {
   ReceiveReceiptReviewData,

@@ -4,7 +4,7 @@
  */
 
 import { normalizeBarcode } from "@/domain/barcode/normalize";
-import { serialize } from "@/core/utils/serialize";
+import { serialize } from "@/domain/shared/serialize";
 import type { UnitType } from "@/lib/generated/prisma/client";
 import {
   buildInventoryItemWhere,

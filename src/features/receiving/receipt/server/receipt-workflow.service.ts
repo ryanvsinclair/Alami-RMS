@@ -5,8 +5,8 @@
 
 import { prisma } from "@/server/db/prisma";
 import { parseReceiptText } from "@/domain/parsers/receipt";
-import { resolveReceiptLineMatch } from "@/core/matching/receipt-line";
-import { scanReceipt } from "@/modules/receipts/ocr/tabscanner";
+import { resolveReceiptLineMatch } from "@/server/matching/receipt-line";
+import { scanReceipt } from "@/server/integrations/receipts/tabscanner";
 import { uploadReceiptImage } from "@/server/storage/supabase/receipt-images";
 import type { ParsedDataSummary, ResolvedLineItem } from "./contracts";
 import {

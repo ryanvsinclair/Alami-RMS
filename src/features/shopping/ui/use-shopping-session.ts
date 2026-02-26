@@ -24,16 +24,16 @@ import {
   updateShoppingSessionItem,
 } from "@/app/actions/modules/shopping";
 import { uploadReceiptImageAction } from "@/app/actions/core/upload";
-import { compressImage } from "@/core/utils/compress-image";
+import { compressImage } from "@/shared/utils/compress-image";
 import {
   autocompletePlaces,
   getPlaceDetails,
   loadGooglePlaces,
   type PlaceDetails,
   type PlacePrediction,
-} from "@/lib/google/places";
+} from "@/features/shopping/integrations/google-places.client";
 import type { ShelfLabelResult } from "@/domain/parsers/shelf-label";
-import type { MatchResult } from "@/core/matching/engine";
+import type { MatchResult } from "@/domain/matching/engine";
 import {
   asNumber,
   roundMoney,
