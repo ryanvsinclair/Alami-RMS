@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, use } from "react";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card } from "@/shared/ui/card";
+import { Badge } from "@/shared/ui/badge";
 import { getInventoryItem } from "@/app/actions/core/inventory";
 import { getTransactionsForItem, getInventoryLevel } from "@/app/actions/core/transactions";
 

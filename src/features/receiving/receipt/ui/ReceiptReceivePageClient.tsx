@@ -2,8 +2,8 @@
 
 import { useState, useRef } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/shared/ui/button";
+import { Badge } from "@/shared/ui/badge";
 import { processReceiptText, processReceiptImage, updateLineItemMatch } from "@/app/actions/modules/receipts";
 import { commitReceiptTransactions } from "@/app/actions/core/transactions";
 import { compressImage } from "@/core/utils/compress-image";

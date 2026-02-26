@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "@/shared/ui/input";
+import { Select } from "@/shared/ui/select";
+import { Button } from "@/shared/ui/button";
+import { Card } from "@/shared/ui/card";
+import { Badge } from "@/shared/ui/badge";
 import { ingestManual } from "@/app/actions/core/ingestion";
 import { getInventoryItems } from "@/app/actions/core/inventory";
 import type { UnitType } from "@/lib/generated/prisma/client";

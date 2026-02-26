@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ItemNotFound } from "@/components/flows/item-not-found";
+import { Input } from "@/shared/ui/input";
+import { Button } from "@/shared/ui/button";
+import { Card } from "@/shared/ui/card";
+import { Badge } from "@/shared/ui/badge";
+import { ItemNotFound } from "@/shared/components/flows/item-not-found";
 import { ingestByBarcode } from "@/app/actions/core/ingestion";
 import { resolveBarcode } from "@/app/actions/core/barcode-resolver";
 import { createTransaction } from "@/app/actions/core/transactions";

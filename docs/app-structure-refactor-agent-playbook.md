@@ -60,11 +60,11 @@ Disclaimer:
 This section is the source of truth for progress and ownership during the refactor.
 
 ### Current Status Snapshot
-- Current phase: `Phase 7 in progress (domain + server wrapper slices complete; shared moves remain)`
-- Latest completed checkpoint: `Phase 7 partial: server db/auth/storage wrappers + src/features infra import migration`
+- Current phase: `Phase 7 in progress (domain + server + shared wrapper slices complete; broader shared cleanup remains)`
+- Latest completed checkpoint: `Phase 7 partial: shared ui/config/flow wrappers + src/features UI import migration`
 - Active work lock: `UNLOCKED`
 - Known blocker: `None`
-- Last validation status: `Phase 7 partial PASS (2026-02-26, server infra wrappers): npx tsc --noEmit --incremental false; npx eslint src/server/**/*.ts + affected src/features/*/server files PASS. Prior same day: domain parser/matching/barcode slice PASS (tsc + receipt-line-core 10/10 + targeted eslint); contacts+staff extraction PASS; manual receive smoke PASS (user-reported). Baseline full lint still has unrelated errors/warnings.`
+- Last validation status: `Phase 7 partial PASS (2026-02-26, shared wrappers): npx tsc --noEmit --incremental false PASS; npx eslint src/shared/* wrappers + affected src/features/*/ui files PASS with 2 warnings (existing receive UI warnings: one no-img-element, one unused local in ReceivePageClient). Prior same day: server infra wrappers PASS; domain parser/matching/barcode slice PASS; contacts+staff extraction PASS; manual receive smoke PASS (user-reported). Baseline full lint still has unrelated errors/warnings.`
 
 ### Active Work Lock (Edit First)
 Use this to prevent duplicate work. Clear it when the session ends.
@@ -76,7 +76,7 @@ Use this to prevent duplicate work. Clear it when the session ends.
 - Files expected to touch:
   - `None (claim next scope before editing)`
 - Notes:
-  - `Next recommended claim: Phase 7 shared wrapper slice -> add src/shared/ui and src/shared/config wrappers (start with ui/* + business context) and migrate src/features UI imports incrementally`
+  - `Next recommended claim: Phase 7 shared wrapper follow-up -> add wrappers for remaining shared components/config (e.g. receipts/digital-receipt, additional config modules) and continue src/features UI import cleanup`
 
 ### Phase Completion Ledger
 Mark only when exit criteria are met.
@@ -92,6 +92,48 @@ Mark only when exit criteria are met.
 - [ ] Phase 8 complete: Legacy wrappers deprecated/removed, docs and final verification
 
 ### Handoff Log (Append New Entries at Top)
+
+#### 2026-02-26 - Phase 7 (partial): Shared ui/config/flow wrappers added and src/features UI imports migrated
+- Agent: `Codex`
+- Scope: `Continue Phase 7 by adding src/shared wrappers for common UI/config/flow modules and migrating feature UI imports`
+- Completed:
+  - Added shared wrapper entry points for common UI primitives:
+    - `src/shared/ui/button.tsx`
+    - `src/shared/ui/card.tsx`
+    - `src/shared/ui/input.tsx`
+    - `src/shared/ui/badge.tsx`
+    - `src/shared/ui/select.tsx`
+  - Added shared wrappers for config and flow components used by feature UI:
+    - `src/shared/config/business-context.tsx`
+    - `src/shared/components/flows/item-not-found.tsx`
+  - Migrated `src/features/*/ui` imports from legacy paths to `@/shared/*` wrappers across contacts, staff, inventory, and receiving UI modules.
+  - Verified no remaining `@/components/ui/(button|card|input|badge|select)`, `@/components/flows/item-not-found`, or `@/lib/config/context` imports under `src/features/*`.
+- Changed files:
+  - `src/shared/ui/button.tsx`
+  - `src/shared/ui/card.tsx`
+  - `src/shared/ui/input.tsx`
+  - `src/shared/ui/badge.tsx`
+  - `src/shared/ui/select.tsx`
+  - `src/shared/config/business-context.tsx`
+  - `src/shared/components/flows/item-not-found.tsx`
+  - `src/features/contacts/ui/ContactsPageClient.tsx`
+  - `src/features/staff/ui/StaffPageClient.tsx`
+  - `src/features/inventory/ui/InventoryListPageClient.tsx`
+  - `src/features/inventory/ui/InventoryDetailPageClient.tsx`
+  - `src/features/receiving/shared/ui/ReceivePageClient.tsx`
+  - `src/features/receiving/barcode/ui/BarcodeReceivePageClient.tsx`
+  - `src/features/receiving/manual/ui/ManualReceivePageClient.tsx`
+  - `src/features/receiving/photo/ui/PhotoReceivePageClient.tsx`
+  - `src/features/receiving/receipt/ui/ReceiptReceivePageClient.tsx`
+  - `src/features/receiving/receipt/ui/ReceiptLineItemRow.tsx`
+  - `docs/app-structure-refactor-agent-playbook.md`
+- Validation run:
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `npx eslint src/shared/ui/*.tsx src/shared/config/business-context.tsx src/shared/components/flows/item-not-found.tsx [affected src/features ui files]` -> PASS with 2 warnings (existing receive UI warnings)
+- Blockers:
+  - `None`
+- Next recommended step:
+  - `Phase 7 shared follow-up: add wrappers for remaining shared imports used in src/features (e.g. components/receipts/digital-receipt, config/terminology/presets if needed), then continue import cleanup before Phase 8`
 
 #### 2026-02-26 - Phase 7 (partial): Server db/auth/storage wrappers added and src/features infra imports migrated
 - Agent: `Codex`

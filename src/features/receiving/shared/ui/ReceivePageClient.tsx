@@ -1,8 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Card } from "@/components/ui/card";
-import { useTerm } from "@/lib/config/context";
+import { Card } from "@/shared/ui/card";
+import { useTerm } from "@/shared/config/business-context";
 
 const ingestionMethods = [
   {

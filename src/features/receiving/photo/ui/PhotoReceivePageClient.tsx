@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ItemNotFound } from "@/components/flows/item-not-found";
+import { Input } from "@/shared/ui/input";
+import { Select } from "@/shared/ui/select";
+import { Button } from "@/shared/ui/button";
+import { Card } from "@/shared/ui/card";
+import { Badge } from "@/shared/ui/badge";
+import { ItemNotFound } from "@/shared/components/flows/item-not-found";
 import { ingestByPhoto } from "@/app/actions/core/ingestion";
 import { ocrImage } from "@/app/actions/modules/ocr";
 import { compressImage } from "@/core/utils/compress-image";

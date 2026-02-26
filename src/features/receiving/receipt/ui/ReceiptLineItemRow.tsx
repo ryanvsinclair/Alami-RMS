@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { ItemNotFound } from "@/components/flows/item-not-found";
+import { Badge } from "@/shared/ui/badge";
+import { ItemNotFound } from "@/shared/components/flows/item-not-found";
 import type {
   ReceiveInventoryItemOption,
   ReceiveReceiptReviewLineItem,
