@@ -5,7 +5,7 @@
 
 import { randomUUID } from "crypto";
 import { redirect } from "next/navigation";
-import { requireSupabaseUser } from "@/core/auth/server";
+import { requireSupabaseUser } from "@/server/auth/server";
 import { serialize } from "@/core/utils/serialize";
 import type { BusinessRole } from "@/lib/generated/prisma/client";
 import {

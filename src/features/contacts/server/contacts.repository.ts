@@ -3,7 +3,7 @@
  * Isolates Prisma access for contacts feature extraction.
  */
 
-import { prisma } from "@/core/prisma";
+import { prisma } from "@/server/db/prisma";
 
 export interface CreateContactRecordInput {
   businessId: string;

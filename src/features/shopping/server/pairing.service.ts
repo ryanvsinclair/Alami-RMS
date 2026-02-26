@@ -3,7 +3,7 @@
  * Handles manual/web-suggested pairing of staged barcode items to receipt items.
  */
 
-import { prisma } from "@/core/prisma";
+import { prisma } from "@/server/db/prisma";
 import type { ShoppingReconciliationStatus } from "@/lib/generated/prisma/client";
 import { toNumber, round, mergeResolutionAudit } from "./helpers";
 import { recomputeSessionState } from "./session-state.service";

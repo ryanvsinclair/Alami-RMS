@@ -3,11 +3,11 @@
  * Handles the core pipeline: create -> parse -> match -> write line items.
  */
 
-import { prisma } from "@/core/prisma";
+import { prisma } from "@/server/db/prisma";
 import { parseReceiptText } from "@/domain/parsers/receipt";
 import { resolveReceiptLineMatch } from "@/core/matching/receipt-line";
 import { scanReceipt } from "@/modules/receipts/ocr/tabscanner";
-import { uploadReceiptImage } from "@/lib/supabase/storage";
+import { uploadReceiptImage } from "@/server/storage/supabase/receipt-images";
 import type { ParsedDataSummary, ResolvedLineItem } from "./contracts";
 import {
   createReceiptRecord,

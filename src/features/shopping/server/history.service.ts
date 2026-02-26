@@ -2,7 +2,7 @@
  * Shopping order history and reorder services.
  */
 
-import { prisma } from "@/core/prisma";
+import { prisma } from "@/server/db/prisma";
 import { serialize } from "@/core/utils/serialize";
 import { toNumber, round } from "./helpers";
 import { recomputeSessionState } from "./session-state.service";

@@ -3,7 +3,7 @@
  * Handles both raw text and TabScanner structured receipt reconciliation.
  */
 
-import { prisma } from "@/core/prisma";
+import { prisma } from "@/server/db/prisma";
 import { serialize } from "@/core/utils/serialize";
 import { parseReceiptText } from "@/domain/parsers/receipt";
 import { resolveReceiptLineMatch } from "@/core/matching/receipt-line";

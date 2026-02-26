@@ -3,7 +3,7 @@
  * Isolates Prisma access for staff membership and invite workflows.
  */
 
-import { prisma } from "@/core/prisma";
+import { prisma } from "@/server/db/prisma";
 import type { BusinessRole } from "@/lib/generated/prisma/client";
 
 export async function findStaffMembersByBusiness(businessId: string) {

@@ -4,7 +4,7 @@
  * and financial ledger entries.
  */
 
-import { prisma } from "@/core/prisma";
+import { prisma } from "@/server/db/prisma";
 import { serialize } from "@/core/utils/serialize";
 import { matchText } from "@/core/matching/engine";
 import { extractProductName } from "@/domain/parsers/product-name";

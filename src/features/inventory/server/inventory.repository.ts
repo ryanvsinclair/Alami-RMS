@@ -3,7 +3,7 @@
  * Encapsulates inventory item, barcode, and alias persistence queries.
  */
 
-import { prisma } from "@/core/prisma";
+import { prisma } from "@/server/db/prisma";
 import type { Prisma, UnitType } from "@/lib/generated/prisma/client";
 
 const INVENTORY_ITEM_INCLUDE = {
@@ -165,4 +165,3 @@ export async function deleteItemAliasForBusiness(aliasId: string, businessId: st
     },
   });
 }
-

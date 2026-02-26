@@ -3,7 +3,7 @@
  * Handles user corrections to line item matches and learns aliases.
  */
 
-import { prisma } from "@/core/prisma";
+import { prisma } from "@/server/db/prisma";
 import { learnAlias } from "@/core/matching/engine";
 import { learnReceiptItemAlias } from "@/core/matching/receipt-line";
 import { serialize } from "@/core/utils/serialize";

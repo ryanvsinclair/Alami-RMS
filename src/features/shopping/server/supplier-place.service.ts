@@ -3,7 +3,7 @@
  * Handles matching by google_place_id or name, creating new suppliers as needed.
  */
 
-import { prisma } from "@/core/prisma";
+import { prisma } from "@/server/db/prisma";
 import type { SelectedGooglePlace } from "./contracts";
 
 export async function upsertSupplierFromGooglePlace(

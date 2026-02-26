@@ -3,7 +3,7 @@
  * Uses web search to identify barcode items and suggest receipt line pairings.
  */
 
-import { prisma } from "@/core/prisma";
+import { prisma } from "@/server/db/prisma";
 import { runConstrainedShoppingProductWebFallback } from "@/modules/shopping/web-fallback";
 import type { ShoppingFallbackPhotoAnalysis } from "./contracts";
 import {

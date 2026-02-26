@@ -3,7 +3,7 @@
  * Encapsulates all shopping session queries and standard includes.
  */
 
-import { prisma } from "@/core/prisma";
+import { prisma } from "@/server/db/prisma";
 import { serialize } from "@/core/utils/serialize";
 import { OPEN_STATUSES } from "./contracts";
 import type { Prisma } from "@/lib/generated/prisma/client";

@@ -3,7 +3,7 @@
  * Encapsulates all receipt queries and standard includes.
  */
 
-import { prisma } from "@/core/prisma";
+import { prisma } from "@/server/db/prisma";
 import { serialize } from "@/core/utils/serialize";
 import type { Prisma, MatchConfidence, LineItemStatus } from "@/lib/generated/prisma/client";
 import {

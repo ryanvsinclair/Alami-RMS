@@ -3,7 +3,7 @@
  * OCR-based product identification for barcode-scanned items.
  */
 
-import { prisma } from "@/core/prisma";
+import { prisma } from "@/server/db/prisma";
 import { extractTextFromImage } from "@/modules/receipts/ocr/google-vision";
 import { extractProductInfo } from "@/domain/parsers/product-name";
 import type { ShoppingFallbackPhotoAnalysis } from "./contracts";

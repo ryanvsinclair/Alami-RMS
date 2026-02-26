@@ -60,11 +60,11 @@ Disclaimer:
 This section is the source of truth for progress and ownership during the refactor.
 
 ### Current Status Snapshot
-- Current phase: `Phase 7 in progress (domain parser/matching/barcode slice complete; server/shared moves remain)`
-- Latest completed checkpoint: `Phase 7 partial: domain parser/matching/barcode canonical files + compatibility wrappers + initial src/features import cleanup`
+- Current phase: `Phase 7 in progress (domain + server wrapper slices complete; shared moves remain)`
+- Latest completed checkpoint: `Phase 7 partial: server db/auth/storage wrappers + src/features infra import migration`
 - Active work lock: `UNLOCKED`
 - Known blocker: `None`
-- Last validation status: `Phase 7 partial PASS (2026-02-26): npx tsc --noEmit --incremental false; node --test --experimental-transform-types lib\\core\\matching\\receipt-line-core.test.mjs (10/10); npx eslint lib/core/matching/{fuzzy,confidence}.ts lib/core/parsers/* lib/core/utils/barcode.ts src/domain/{matching,parsers,barcode}/* + affected src/features imports PASS (after escaping one JSX apostrophe in PhotoReceivePageClient). Prior: contacts+staff extraction targeted compile/lint PASS (2026-02-26); manual receive smoke PASS (user-reported); baseline full lint still has unrelated errors/warnings.`
+- Last validation status: `Phase 7 partial PASS (2026-02-26, server infra wrappers): npx tsc --noEmit --incremental false; npx eslint src/server/**/*.ts + affected src/features/*/server files PASS. Prior same day: domain parser/matching/barcode slice PASS (tsc + receipt-line-core 10/10 + targeted eslint); contacts+staff extraction PASS; manual receive smoke PASS (user-reported). Baseline full lint still has unrelated errors/warnings.`
 
 ### Active Work Lock (Edit First)
 Use this to prevent duplicate work. Clear it when the session ends.
@@ -76,7 +76,7 @@ Use this to prevent duplicate work. Clear it when the session ends.
 - Files expected to touch:
   - `None (claim next scope before editing)`
 - Notes:
-  - `Next recommended claim: Phase 7 server infra slice -> move prisma/auth/storage wrappers into src/server/* and migrate src/features imports incrementally`
+  - `Next recommended claim: Phase 7 shared wrapper slice -> add src/shared/ui and src/shared/config wrappers (start with ui/* + business context) and migrate src/features UI imports incrementally`
 
 ### Phase Completion Ledger
 Mark only when exit criteria are met.
@@ -92,6 +92,52 @@ Mark only when exit criteria are met.
 - [ ] Phase 8 complete: Legacy wrappers deprecated/removed, docs and final verification
 
 ### Handoff Log (Append New Entries at Top)
+
+#### 2026-02-26 - Phase 7 (partial): Server db/auth/storage wrappers added and src/features infra imports migrated
+- Agent: `Codex`
+- Scope: `Continue Phase 7 by adding src/server wrappers (db/auth/storage) and migrating feature imports off legacy infra paths`
+- Completed:
+  - Added canonical server wrapper entry points:
+    - `src/server/db/prisma.ts`
+    - `src/server/auth/server.ts`
+    - `src/server/auth/tenant.ts`
+    - `src/server/storage/supabase/client.ts`
+    - `src/server/storage/supabase/receipt-images.ts`
+  - Migrated `src/features/*` server modules from legacy infra imports to `@/server/*` wrappers:
+    - `@/core/prisma` -> `@/server/db/prisma`
+    - `@/core/auth/server` -> `@/server/auth/server`
+    - `@/lib/supabase/storage` -> `@/server/storage/supabase/receipt-images`
+  - Verified no remaining `@/core/prisma`, `@/core/auth/server`, or `@/lib/supabase/storage` imports under `src/features/*`.
+- Changed files:
+  - `src/server/db/prisma.ts`
+  - `src/server/auth/server.ts`
+  - `src/server/auth/tenant.ts`
+  - `src/server/storage/supabase/client.ts`
+  - `src/server/storage/supabase/receipt-images.ts`
+  - `src/features/contacts/server/contacts.repository.ts`
+  - `src/features/inventory/server/inventory.repository.ts`
+  - `src/features/staff/server/staff.repository.ts`
+  - `src/features/staff/server/staff.service.ts`
+  - `src/features/receiving/receipt/server/line-item.service.ts`
+  - `src/features/receiving/receipt/server/receipt-query.service.ts`
+  - `src/features/receiving/receipt/server/receipt-workflow.service.ts`
+  - `src/features/receiving/receipt/server/receipt.repository.ts`
+  - `src/features/shopping/server/commit.service.ts`
+  - `src/features/shopping/server/fallback-photo.service.ts`
+  - `src/features/shopping/server/fallback-web.service.ts`
+  - `src/features/shopping/server/history.service.ts`
+  - `src/features/shopping/server/pairing.service.ts`
+  - `src/features/shopping/server/receipt-reconcile.service.ts`
+  - `src/features/shopping/server/session.repository.ts`
+  - `src/features/shopping/server/supplier-place.service.ts`
+  - `docs/app-structure-refactor-agent-playbook.md`
+- Validation run:
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `npx eslint src/server/**/*.ts [affected src/features server files]` -> PASS
+- Blockers:
+  - `None`
+- Next recommended step:
+  - `Phase 7 shared wrapper slice: add src/shared/ui wrappers and src/shared/config/business-context.tsx wrapper, then migrate src/features UI imports from @/components/* and @/lib/config/context incrementally`
 
 #### 2026-02-26 - Phase 7 (partial): Domain parser/matching/barcode slice extracted with compatibility wrappers
 - Agent: `Codex`

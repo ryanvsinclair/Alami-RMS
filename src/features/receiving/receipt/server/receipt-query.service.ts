@@ -3,7 +3,7 @@
  * Handles reading/fetching receipts with optional signed image URLs.
  */
 
-import { getReceiptImageSignedUrl } from "@/lib/supabase/storage";
+import { getReceiptImageSignedUrl } from "@/server/storage/supabase/receipt-images";
 import {
   findReceiptById,
   findReceiptDetail,
