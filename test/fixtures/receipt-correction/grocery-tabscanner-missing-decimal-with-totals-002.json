@@ -1,0 +1,49 @@
+{
+  "id": "grocery-tabscanner-missing-decimal-with-totals-002",
+  "source": "tabscanner",
+  "store": {
+    "name": "Neighbourhood Grocery",
+    "google_place_id": "test_grocery_place"
+  },
+  "tabscanner_result": {
+    "establishment": "NEIGHBOURHOOD GROCERY",
+    "currency": "CAD",
+    "subTotal": 8.28,
+    "tax": 0,
+    "total": 8.28,
+    "lineItems": [
+      {
+        "desc": "YOGURT",
+        "descClean": "YOGURT",
+        "qty": 1,
+        "price": 499,
+        "lineTotal": 499
+      },
+      {
+        "desc": "BREAD",
+        "descClean": "BREAD",
+        "qty": 1,
+        "price": 3.29,
+        "lineTotal": 3.29
+      }
+    ]
+  },
+  "expected": {
+    "notes": [
+      "Totals should allow a guarded outlier swap from 499 to 4.99.",
+      "This validates a case that does not auto-correct locally without totals support."
+    ],
+    "assertions": {
+      "totals_status": "pass",
+      "totals_delta_to_total": 0,
+      "changed_line_numbers": [1],
+      "outlier_line_numbers": [1],
+      "expected_line_costs": [
+        { "line_number": 1, "line_cost": 4.99 }
+      ],
+      "required_parse_flags": [
+        { "line_number": 1, "flags": ["decimal_inferred", "totals_outlier_recheck_selected"] }
+      ]
+    }
+  }
+}

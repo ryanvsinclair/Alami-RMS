@@ -33,6 +33,18 @@
     "notes": [
       "14900 may be extra-digit OCR drift.",
       "Candidate interpretations should include 149.00, 14.90, and 1.49."
-    ]
+    ],
+    "assertions": {
+      "totals_status": "pass",
+      "totals_delta_to_total": 0,
+      "changed_line_numbers": [1],
+      "outlier_line_numbers": [1],
+      "expected_line_costs": [
+        { "line_number": 1, "line_cost": 1.49 }
+      ],
+      "required_parse_flags": [
+        { "line_number": 1, "flags": ["decimal_inferred", "totals_outlier_recheck_selected"] }
+      ]
+    }
   }
 }

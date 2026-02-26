@@ -1,0 +1,26 @@
+{
+  "id": "walmart-parsed-text-ocr-o-zero-001",
+  "source": "parsed_text",
+  "store": {
+    "name": "Walmart",
+    "google_place_id": "test_walmart_place"
+  },
+  "raw_text": "CHEESE 1O99\nEGGS 4.00\nTax 0.80\nTotal 15.79",
+  "expected": {
+    "notes": [
+      "OCR O/0 normalization should recover CHEESE 1O99 as 10.99.",
+      "Totals should pass after correction."
+    ],
+    "assertions": {
+      "totals_status": "pass",
+      "totals_delta_to_total": 0,
+      "changed_line_numbers": [1],
+      "expected_line_costs": [
+        { "line_number": 1, "line_cost": 10.99 }
+      ],
+      "required_parse_flags": [
+        { "line_number": 1, "flags": ["ocr_o_to_zero_normalized", "decimal_inferred"] }
+      ]
+    }
+  }
+}

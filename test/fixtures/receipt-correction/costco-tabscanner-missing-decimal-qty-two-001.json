@@ -1,0 +1,48 @@
+{
+  "id": "costco-tabscanner-missing-decimal-qty-two-001",
+  "source": "tabscanner",
+  "store": {
+    "name": "Costco",
+    "google_place_id": "test_costco_place"
+  },
+  "tabscanner_result": {
+    "establishment": "COSTCO WHOLESALE",
+    "currency": "CAD",
+    "subTotal": 18.47,
+    "tax": 0.92,
+    "total": 19.39,
+    "lineItems": [
+      {
+        "desc": "CHICKEN BREAST",
+        "descClean": "CHICKEN BREAST",
+        "qty": 2,
+        "price": 1298,
+        "lineTotal": 1298
+      },
+      {
+        "desc": "SALAD MIX",
+        "descClean": "SALAD MIX",
+        "qty": 1,
+        "price": 5.49,
+        "lineTotal": 5.49
+      }
+    ]
+  },
+  "expected": {
+    "notes": [
+      "Line total 1298 should be corrected to 12.98 using decimal inference.",
+      "Unit cost should become 6.49 for qty=2 after correction."
+    ],
+    "assertions": {
+      "totals_status": "pass",
+      "totals_delta_to_total": 0,
+      "changed_line_numbers": [1],
+      "expected_line_costs": [
+        { "line_number": 1, "line_cost": 12.98 }
+      ],
+      "required_parse_flags": [
+        { "line_number": 1, "flags": ["decimal_inferred"] }
+      ]
+    }
+  }
+}

@@ -33,6 +33,18 @@
     "notes": [
       "First line price likely missing decimal (9.49 instead of 949.00).",
       "Totals consistency should identify first line as outlier candidate."
-    ]
+    ],
+    "assertions": {
+      "totals_status": "pass",
+      "totals_delta_to_total": 0,
+      "changed_line_numbers": [1],
+      "outlier_line_numbers": [],
+      "expected_line_costs": [
+        { "line_number": 1, "line_cost": 9.49 }
+      ],
+      "required_parse_flags": [
+        { "line_number": 1, "flags": ["decimal_inferred"] }
+      ]
+    }
   }
 }

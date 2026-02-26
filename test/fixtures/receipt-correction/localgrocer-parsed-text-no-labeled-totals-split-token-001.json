@@ -1,0 +1,26 @@
+{
+  "id": "localgrocer-parsed-text-no-labeled-totals-split-token-001",
+  "source": "parsed_text",
+  "store": {
+    "name": "Corner Mart",
+    "google_place_id": "test_corner_place"
+  },
+  "raw_text": "YOGURT 3 49\nBREAD 2.99",
+  "expected": {
+    "notes": [
+      "Split numeric token recovery should work even when no printed totals are available.",
+      "Totals status should remain not_evaluated."
+    ],
+    "assertions": {
+      "totals_status": "not_evaluated",
+      "changed_line_numbers": [1],
+      "outlier_line_numbers": [],
+      "expected_line_costs": [
+        { "line_number": 1, "line_cost": 3.49 }
+      ],
+      "required_parse_flags": [
+        { "line_number": 1, "flags": ["split_numeric_token_detected"] }
+      ]
+    }
+  }
+}

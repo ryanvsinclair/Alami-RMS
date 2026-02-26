@@ -19,6 +19,65 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-26 - Added Ontario/Quebec tax interpretation design guidance to receipt correction plan
+- Scope:
+  - Planning/docs update for improving receipt tax scanning/parsing and tax validation in the post-OCR correction pipeline
+- What changed:
+  - Added a detailed Ontario/Quebec tax interpretation layer section to `docs/receipt-post-ocr-correction-plan.md` covering:
+    - province determination priority (`google_place_id` / tax labels / address fallback)
+    - Ontario HST rules (`13%`, single-tax expectations)
+    - Quebec GST+QST / TPS+TVQ rules (`5%` + `9.975%`, dual-tax expectations)
+    - province-aware tax math validation logic
+    - zero-rated grocery handling and auto-correction safety constraints
+    - final tax decision hierarchy
+  - Threaded tax interpretation requirements into scope, product outcomes, observability, fixture/test guidance, manual QA scenarios, and phased roadmap/open decisions
+  - Updated `test/fixtures/receipt-correction/README.md` to include tax-focused fixture guidance (Ontario HST, Quebec TPS/TVQ, zero-rated groceries, mixed baskets, mismatch cases)
+- Files changed:
+  - `docs/receipt-post-ocr-correction-plan.md`
+  - `test/fixtures/receipt-correction/README.md`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - Documentation update only (no code validation commands run)
+- Notes:
+  - This is a planning/design addition only; no tax parsing behavior was implemented in code in this slice.
+
+### 2026-02-26 - Expanded receipt correction fixture corpus to 10 scenarios and added fixture-driven regression tests
+- Scope:
+  - Phase 0/1 validation infrastructure for post-OCR receipt correction tuning
+- What changed:
+  - Expanded `test/fixtures/receipt-correction/*` from seed examples to 10 runnable JSON scenarios (TabScanner and parsed-text paths)
+  - Added machine-checkable fixture assertions (`totals_status`, changed/outlier lines, expected corrected line costs, required parse flags)
+  - Added a fixture-driven `node:test` harness in `src/domain/parsers/receipt-correction-fixtures.test.mjs` that:
+    - normalizes TabScanner fixtures into parser-like line items
+    - runs parsed-text fixtures through `parseReceiptText(...)`
+    - infers labeled printed totals from raw text when present
+    - executes `runReceiptCorrectionCore(...)` and validates fixture assertions
+  - Updated fixture documentation (`test/fixtures/receipt-correction/README.md`) with the machine-checkable assertion schema
+  - Corrected the existing `grocery-tabscanner-total-mismatch-outlier-001` fixture expectations to assert the intended behavior (`warn` + outlier identification) rather than an impossible totals pass
+  - Updated the receipt correction plan progress notes to reflect fixture corpus expansion and fixture-driven regression coverage
+- Files changed:
+  - `src/domain/parsers/receipt-correction-fixtures.test.mjs`
+  - `test/fixtures/receipt-correction/README.md`
+  - `test/fixtures/receipt-correction/costco-tabscanner-missing-decimal-001.json`
+  - `test/fixtures/receipt-correction/costco-tabscanner-extra-digit-001.json`
+  - `test/fixtures/receipt-correction/grocery-tabscanner-total-mismatch-outlier-001.json`
+  - `test/fixtures/receipt-correction/walmart-parsed-text-split-numeric-token-001.json`
+  - `test/fixtures/receipt-correction/costco-tabscanner-missing-decimal-qty-two-001.json`
+  - `test/fixtures/receipt-correction/warehouse-tabscanner-no-correction-needed-001.json`
+  - `test/fixtures/receipt-correction/grocery-tabscanner-missing-decimal-no-totals-001.json`
+  - `test/fixtures/receipt-correction/grocery-tabscanner-missing-decimal-with-totals-002.json`
+  - `test/fixtures/receipt-correction/walmart-parsed-text-ocr-o-zero-001.json`
+  - `test/fixtures/receipt-correction/localgrocer-parsed-text-no-labeled-totals-split-token-001.json`
+  - `docs/receipt-post-ocr-correction-plan.md`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-fixtures.test.mjs` -> PASS (11/11; Node emitted expected experimental/module-type warnings)
+  - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-core.test.mjs src/domain/parsers/receipt-correction-fixtures.test.mjs` -> PASS (14/14; Node emitted expected experimental/module-type warnings)
+  - `npx eslint src/domain/parsers/receipt-correction-core.test.mjs src/domain/parsers/receipt-correction-fixtures.test.mjs --quiet` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Notes:
+  - The fixture harness is pure/local and does not hit workflow/DB code, keeping threshold-tuning iterations fast.
+
 ### 2026-02-26 - Added unit tests for receipt correction core Phase 1 numeric/totals scenarios
 - Scope:
   - Test coverage for the new Phase 1 post-OCR receipt correction core behavior

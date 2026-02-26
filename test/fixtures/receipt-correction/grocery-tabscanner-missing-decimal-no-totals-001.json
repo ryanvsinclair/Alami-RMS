@@ -1,0 +1,38 @@
+{
+  "id": "grocery-tabscanner-missing-decimal-no-totals-001",
+  "source": "tabscanner",
+  "store": {
+    "name": "Neighbourhood Grocery",
+    "google_place_id": "test_grocery_place"
+  },
+  "tabscanner_result": {
+    "establishment": "NEIGHBOURHOOD GROCERY",
+    "currency": "CAD",
+    "lineItems": [
+      {
+        "desc": "YOGURT",
+        "descClean": "YOGURT",
+        "qty": 1,
+        "price": 499,
+        "lineTotal": 499
+      },
+      {
+        "desc": "BREAD",
+        "descClean": "BREAD",
+        "qty": 1,
+        "price": 3.29,
+        "lineTotal": 3.29
+      }
+    ]
+  },
+  "expected": {
+    "notes": [
+      "Without totals support, borderline integer-like values should remain unchanged in the guarded Phase 1 heuristics."
+    ],
+    "assertions": {
+      "totals_status": "not_evaluated",
+      "changed_line_numbers": [],
+      "outlier_line_numbers": []
+    }
+  }
+}

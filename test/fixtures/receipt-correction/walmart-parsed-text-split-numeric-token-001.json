@@ -10,6 +10,18 @@
     "notes": [
       "Line 'MILK 2% 9 49' should generate dual numeric interpretations.",
       "9.49 should be preferred over 949.00 based on total consistency."
-    ]
+    ],
+    "assertions": {
+      "totals_status": "pass",
+      "totals_delta_to_total": 0,
+      "changed_line_numbers": [2],
+      "outlier_line_numbers": [],
+      "expected_line_costs": [
+        { "line_number": 2, "line_cost": 9.49 }
+      ],
+      "required_parse_flags": [
+        { "line_number": 2, "flags": ["split_numeric_token_detected"] }
+      ]
+    }
   }
 }

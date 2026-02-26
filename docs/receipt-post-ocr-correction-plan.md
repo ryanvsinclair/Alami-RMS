@@ -70,6 +70,7 @@ This plan improves:
 - numeric sanity and auto-correction (decimal drift, extra digits, separators, `0` vs `O`)
 - line-level confidence scoring (not just receipt-level)
 - receipt total consistency validation (`sum(lines) + tax ~= total`)
+- province-aware tax interpretation/validation (Ontario HST vs Quebec GST/QST/TPS/TVQ)
 - store-specific parsing pattern memory
 - dual numeric interpretation and plausibility selection
 - structured parsing/correction (not regex-only heuristics)
@@ -179,6 +180,15 @@ Use line-level confidence to decide:
 - high confidence -> auto-save
 - medium confidence -> auto-correct + flag
 - low confidence -> require user confirmation
+
+### 6. Province-aware tax parsing and validation
+
+Examples improved:
+
+- Ontario receipts interpreted as single-tax HST structures (typically 13%)
+- Quebec receipts interpreted as dual-tax GST + QST / TPS + TVQ structures
+- tax-label parsing mistakes detected via tax math checks
+- zero-rated grocery receipts (`subtotal == total`, no tax line) not falsely flagged
 
 ## Recommended Architecture (Playbook-Compliant)
 
@@ -425,6 +435,142 @@ Pragmatic note:
 
 - this should be a hybrid parser (structure-first + regex helpers), not a big-bang replacement in one commit.
 
+## 7. Tax Interpretation Layer (Ontario & Quebec)
+
+Purpose:
+
+- correctly interpret receipt tax amounts/structure for Canadian businesses using province + tax labels + receipt math
+- improve tax-line parsing reliability without falsely flagging valid zero-tax grocery receipts
+
+### Province determination priority
+
+Determine receipt province in this order:
+
+1. Google Places / store context (`google_place_id` -> province)
+2. Parsed tax-label structure (`HST` vs `GST/QST` and `TPS/TVQ`)
+3. Visible receipt address text fallback (`ON`, `QC`, `Ontario`, `Quebec`)
+
+Conflict rule:
+
+- Google Places takes priority when available
+- if Google Places is unavailable, use parsed tax structure as the primary signal
+
+### Ontario tax rules (HST)
+
+Province: Ontario
+
+- tax system: HST (harmonized sales tax)
+- standard rate: `13%`
+
+Common receipt label patterns:
+
+- `HST`
+- `H.S.T.`
+- `Tax 13%`
+- `HST #`
+
+Typical structure:
+
+- `Subtotal`
+- `HST 13%`
+- `Total`
+
+Interpretation rules:
+
+- Ontario receipts typically should not show separate `GST` + `QST` lines
+- if province resolves to Ontario and tax label shows `HST`, treat tax as Ontario HST candidate (`13%`)
+- if province resolves to Ontario and only `GST` appears, treat as likely parsing/classification issue unless a special-case receipt pattern is confirmed
+- multiple tax lines in Ontario should trigger investigation/flags (uncommon)
+
+### Quebec tax rules (GST + QST)
+
+Province: Quebec
+
+- tax system: separate `GST` + `QST`
+- standard rates:
+  - `GST = 5%`
+  - `QST = 9.975%`
+
+Common receipt label patterns:
+
+- `GST` / `QST`
+- `TPS` (French GST)
+- `TVQ` (French QST)
+
+Typical structure:
+
+- `Subtotal`
+- `GST 5%` (or `TPS`)
+- `QST 9.975%` (or `TVQ`)
+- `Total`
+
+Interpretation rules:
+
+- Quebec receipts usually should have two tax lines
+- if province resolves to Quebec and only `HST` appears, treat as likely incorrect parsing
+- if province resolves to Quebec and only `GST`/`TPS` appears, treat as likely incomplete parsing
+- `GST + QST` (or `TPS + TVQ`) together is the expected structure
+
+### Tax validation logic (province-aware)
+
+After parsing and tax-line extraction:
+
+Ontario validation:
+
+- if province = Ontario, expected tax is approximately `subtotal * 0.13`
+- if parsed tax deviates materially:
+  - re-evaluate tax-line numeric parsing
+  - re-evaluate decimal placement on tax amounts and nearby summary values
+  - flag for correction/review if inconsistency remains
+
+Quebec validation:
+
+- if province = Quebec, validate tax components separately:
+  - expected `GST ~= subtotal * 0.05`
+  - expected `QST ~= subtotal * 0.09975`
+- if only one tax line is found or either component deviates materially:
+  - re-evaluate parsing of tax labels and numeric values
+  - flag structure mismatch / incomplete tax extraction
+
+### Zero-rated grocery handling (do not over-flag)
+
+In both Ontario and Quebec:
+
+- if items appear to be basic groceries
+- and no tax line exists
+- and `subtotal == total`
+
+then this can be valid (zero-rated sale), not a parsing error.
+
+### Edge cases and auto-correction safety
+
+Handle cautiously:
+
+- mixed taxable + zero-rated items
+- alcohol (taxable)
+- prepared food / snacks / beverages (often taxable)
+- deposits / bottle returns / environmental fees / adjustments
+
+Never auto-correct tax values unless:
+
+- there is a mathematical inconsistency
+- province is clearly determined
+- confidence exceeds threshold
+
+### Tax decision hierarchy (final)
+
+1. Province (`google_place_id` / Google Places)
+2. Tax label structure (`HST` vs `GST/QST` or `TPS/TVQ`)
+3. Tax amount mathematical validation
+4. Address-text fallback (only if stronger signals are unavailable)
+
+Objective:
+
+- Ontario receipts reflect `13% HST` structure when applicable
+- Quebec receipts reflect `5% GST + 9.975% QST` structure when applicable
+- tax parsing errors are detected via mathematical reconciliation
+- zero-rated groceries are not falsely flagged
+
 ## Data Model Plan (Prisma)
 
 ## A. Minimal viable schema changes (recommended)
@@ -591,7 +737,11 @@ Add parser/correction metrics (similar to existing receipt match metrics) in `re
 - lines corrected count
 - correction types count (`decimal_inferred`, `digit_trimmed`, `dual_numeric_selected`, etc.)
 - total-consistency pass rate before vs after correction
+- tax-structure validation outcomes by province (`ON_HST`, `QC_GST_QST`, `unknown`, mismatch/incomplete)
+- province signal source used (`google_places`, `tax_labels`, `address_fallback`)
+- detected tax labels count (`HST`, `GST`, `QST`, `TPS`, `TVQ`)
 - lines flagged low parse confidence
+- zero-tax grocery receipts accepted vs flagged
 - auto-correction acceptance rate (if user later confirms/edits)
 
 This is essential for tuning the last 5%.
@@ -605,6 +755,9 @@ Add fixture-driven tests for:
 - decimal enforcement variants
 - dual numeric interpretation
 - total reconciliation outlier detection
+- tax-label parsing (`HST`, `GST`, `QST`, `TPS`, `TVQ`)
+- province inference fallback order (Google Places -> labels -> address text)
+- Ontario/Quebec tax math validation (including mismatch detection)
 - price plausibility scoring
 - confidence scoring
 - section/header/footer classification
@@ -622,12 +775,17 @@ Create a curated fixture corpus of real/anonymized receipts:
 - local grocery
 - restaurant supply
 - small merchant edge cases
+- Ontario HST receipts (single-tax line)
+- Quebec GST+QST / TPS+TVQ receipts (dual-tax lines)
+- zero-rated grocery receipts (`subtotal == total`, no tax line)
+- mixed taxable + zero-rated baskets
 
 For each fixture store:
 
 - TabScanner raw structured result (JSON)
 - expected corrected line items
 - expected totals consistency outcome
+- expected tax interpretation outcome (province/tax structure/validation status)
 
 This is the fastest way to improve accuracy safely.
 
@@ -644,6 +802,9 @@ Test:
 - missing decimals
 - split numeric tokens
 - tax/total line misclassification
+- Ontario HST receipts (`HST`, `H.S.T.`, `Tax 13%`)
+- Quebec receipts with `GST+QST` and French labels (`TPS` + `TVQ`)
+- zero-rated grocery receipts with no tax line (`subtotal == total`)
 - multi-line names
 - repeated store receipts improving over time
 
@@ -669,9 +830,8 @@ Progress notes (2026-02-26):
 - Implemented a Phase 0 no-op correction core and feature service wrapper with env kill-switch/modes (`off` / `shadow` / `enforce`)
 - Inserted correction-stage calls into both receipt paths (`processReceiptImage`, `parseAndMatchReceipt`) with pass-through behavior only
 - Added correction observability metrics logging in `receipt-workflow.service.ts`
-- Added fixture corpus scaffold + seed fixtures (not yet the full 10-20 corpus)
+- Expanded fixture corpus to 10 runnable JSON scenarios and added a fixture-driven `node:test` harness for correction-core regression checks
 - Remaining for full Phase 0 completion:
-  - expand fixture corpus to at least 10-20 representative receipts
   - optional feature flag surfacing/config docs for local/dev/prod environments
 
 ## Phase 1 - Numeric sanity + dual interpretation + totals check (highest ROI)
@@ -685,6 +845,7 @@ Deliverables:
 - line-level price plausibility scoring (basic heuristics)
 - total consistency validation
 - outlier re-check pass
+- initial tax interpretation/validation scaffolding (Ontario HST and Quebec GST/QST/TPS/TVQ rules)
 
 Applies to:
 
@@ -698,9 +859,12 @@ Progress notes (2026-02-26):
 - Wired raw-text receipt totals extraction into `parseAndMatchReceipt(...)` so the shared correction core can run totals checks on parsed-text receipts when labels are present
 - Expanded correction summary/metrics observability with parse-confidence band counts and parse-flag/correction-action type breakdowns (useful for `shadow` tuning)
 - Added targeted `node:test` coverage for `runReceiptCorrectionCore(...)` (missing decimal, split-token recovery, totals outlier re-check scenarios)
+- Added fixture-driven regression tests that execute the receipt-correction fixture corpus end-to-end against the correction core
 - Remaining:
   - tune thresholds/heuristics against expanded fixture corpus
   - add/store historical plausibility signals in feature-layer orchestration
+  - implement province determination hierarchy (Google Places -> tax labels -> address fallback) for tax interpretation
+  - add Ontario/Quebec tax-structure validation + zero-rated grocery handling into correction/totals reconciliation flow
   - harden raw-text totals extraction for more label/format variants (discount-heavy and noisy OCR cases)
 
 ## Phase 2 - Line-level parse confidence and UI flags
@@ -742,6 +906,7 @@ Deliverables:
 - multi-line item handling
 - numeric cluster classification
 - SKU position inference using store profiles
+- stronger tax-line extraction/classification (`HST`/`GST`/`QST`/`TPS`/`TVQ`) and summary-section parsing
 
 Goal:
 
@@ -806,6 +971,8 @@ Enable by provider/store profile confidence:
 3. What tolerance should total-consistency checks use (`0.01`, `0.02`, `0.05`)?
 4. Do discounts/coupons become first-class line types in phase 1 or phase 4?
 5. Do we surface parse-confidence UI immediately, or keep it internal until thresholds stabilize?
+6. What tax-validation tolerances should we use for Ontario HST and Quebec GST/QST (including rounding behavior)?
+7. Should interpreted province/tax structure signals be persisted in `receipt.parsed_data` only, or also in `ReceiptParseProfile` for store-learning?
 
 ## Implementation Notes for Future Agent/Engineer
 
