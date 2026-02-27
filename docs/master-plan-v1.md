@@ -280,7 +280,7 @@ Status legend:
 - [x] RC-10 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then complete Phase 1 remaining items: threshold tuning, expanded fixture corpus, historical plausibility signal wiring.
 - [x] RC-11 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then complete Phase 1 tax hardening: province resolution hierarchy hardening + ON/QC tax fixture assertions + raw-text totals robustness.
 - [x] RC-12 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then complete Phase 1.5 service layer: implement `receipt-produce-lookup.service.ts` (PLU + fuzzy lookup with province/language preference + EN fallback).
-- [ ] RC-13 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then resolve persistence decision for parse/produce metadata and implement approved schema-light or schema-backed path.
+- [!] RC-13 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then resolve persistence decision for parse/produce metadata and implement approved schema-light or schema-backed path. Blocked: open decision requires explicit product/engineering approval on persistence path (schema-light vs schema-backed).
 - [ ] RC-14 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 2 parse confidence persistence + receipt review UI indicators.
 - [ ] RC-15 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 3 store-specific parse profile memory.
 - [ ] RC-16 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 4 hybrid structured parser upgrades.
@@ -330,7 +330,7 @@ Status legend:
 
 - Current task ID: `RC-13`
 - Current task: `Resolve persistence decision for parse/produce metadata and implement approved schema-light or schema-backed path`
-- Status: `READY (RC-12 complete; next canonical task not started yet)`
+- Status: `BLOCKED (explicit persistence-path approval required before implementation)`
 - Last updated: `2026-02-27`
 - Primary source plan section:
   - `docs/receipt-post-ocr-correction-plan.md` -> `Phase 1.5 - Produce resolution & organic normalization`
@@ -349,6 +349,25 @@ Status legend:
 - [ ] `docs/codebase-overview.md` updated if behavior/architecture/canonical path descriptions changed.
 
 ## Latest Job Summary (Append New Entries At Top)
+
+### 2026-02-27 - RC-13 blocked: parse/produce persistence path requires explicit approval
+- Completed:
+  - Ran RC-13 preflight scans across plan + codebase to check for an already approved persistence path and existing implementation.
+  - Re-reviewed DB contract inputs for potential schema impact:
+    - `prisma/schema.prisma`
+    - latest migration `prisma/migrations/20260225223000_shopping_session_item_resolution_audit/migration.sql`
+  - Confirmed current code stores produce enrichment in correction output only (`plu_code`, `produce_match`, `organic_flag`) with no persisted `ReceiptLineItem` fields yet.
+- Blocker:
+  - Source plan still lists this as an explicit open decision requiring product/engineering confirmation:
+    - `docs/receipt-post-ocr-correction-plan.md` -> `Open Decisions` item 1 (`ReceiptLineItem` columns now vs schema-light `receipt.parsed_data` only).
+  - Master-plan rule prohibits introducing schema-light shadow persistence without explicit approval.
+- Unblock requirement (exact):
+  - Provide explicit decision for RC-13:
+    - Option A: schema-light persistence in `receipt.parsed_data` only
+    - Option B: schema-backed persistence via new `ReceiptLineItem` columns/migration
+  - After decision, continue RC-13 implementation and validation on that approved path.
+- Next:
+  - `RC-13` remains blocked until persistence-path approval is provided.
 
 ### 2026-02-27 - RC-12 complete: produce lookup service wired (PLU/fuzzy + province language preference + EN fallback)
 - Completed:

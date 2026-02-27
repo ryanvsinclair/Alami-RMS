@@ -4,6 +4,17 @@ Last updated: February 27, 2026 (draft / implementation-ready plan)
 
 ## Latest Update
 
+- **RC-13 blocked: parse/produce metadata persistence path is unresolved** (February 27, 2026):
+  - RC-12 is complete and service-layer produce lookup is active, but RC-13 cannot proceed without explicit persistence-path approval.
+  - Blocking decision (from `Open Decisions` item 1):
+    - choose schema-light persistence in `receipt.parsed_data` only, or
+    - choose schema-backed persistence with new `ReceiptLineItem` columns/migration.
+  - Current stop condition rationale:
+    - this choice changes storage contract and carries migration/data-risk implications
+    - master-plan contract requires explicit approval before implementing schema-light shadow persistence or schema changes
+  - Unblock requirement:
+    - explicit product/engineering decision for RC-13 persistence path (schema-light vs schema-backed)
+
 - **Phase 1.5 RC-12 complete: produce lookup service (PLU + fuzzy + province/language fallback)** (February 27, 2026):
   - Implemented `src/features/receiving/receipt/server/receipt-produce-lookup.service.ts`:
     - PLU-first produce lookup against `produce_items` via Prisma composite key (`plu_code`, `language_code`)
@@ -154,11 +165,10 @@ Continue with **Phase 1.5 persistence decision (RC-13)**.
 
 Recommended next implementation order:
 
-1. Resolve parse/produce metadata persistence path (schema-light vs schema-backed)
-   - explicitly choose where `plu_code` / `organic_flag` / `produce_match` metadata should persist
-2. Implement approved persistence path with minimal migration risk
-   - if schema-backed, add migration + schema/docs sync
-   - if schema-light, persist deterministic correction metadata in existing JSON summary path
+1. Blocked: obtain explicit RC-13 persistence-path approval
+   - choose schema-light (`receipt.parsed_data`) or schema-backed (`ReceiptLineItem` columns + migration)
+2. Implement only the approved path
+   - include DB contract/migration validation if schema-backed is selected
 3. Add focused validation for persistence behavior
    - verify metadata availability after parse/reload cycles without affecting inventory-match confidence semantics
 4. Keep production behavior risk-controlled

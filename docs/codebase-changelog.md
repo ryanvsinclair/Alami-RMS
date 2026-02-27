@@ -20,6 +20,32 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-27 - RC-13 blocked: parse/produce persistence path requires explicit approval
+- Suggested Commit Title: `chore(rc-13): mark persistence decision blocker and halt autonomous advance`
+- Scope:
+  - RC-13 preflight/blocker documentation update only (no runtime code changes).
+- Preflight evidence:
+  - Reviewed RC-13 source-plan scope and open-decision section in `docs/receipt-post-ocr-correction-plan.md`.
+  - Ran targeted scans for existing persistence-path implementation and storage contracts:
+    - `rg -n "RC-13|persistence decision|schema-light|schema-backed|Open Decisions|ReceiptLineItem|plu_code|organic_flag|produce_match|parsed_data" docs/receipt-post-ocr-correction-plan.md docs/master-plan-v1.md`
+    - `rg -n "plu_code|organic_flag|produce_match|parse_confidence|parsed_data|raw_data" src/features/receiving/receipt/server src/domain/parsers prisma/schema.prisma`
+  - Re-verified DB contract references:
+    - `prisma/schema.prisma`
+    - latest migration `prisma/migrations/20260225223000_shopping_session_item_resolution_audit/migration.sql`
+- What changed:
+  - Marked `RC-13` as `[!]` blocked in `docs/master-plan-v1.md`.
+  - Updated `Last Left Off Here` status to blocked with explicit unblock requirement.
+  - Added blocker job-summary entry with exact decision needed (schema-light vs schema-backed).
+  - Updated receipt source plan `Latest Update` and `Pick Up Here` to reflect the stop condition and required approval.
+- Files changed:
+  - `docs/master-plan-v1.md`
+  - `docs/receipt-post-ocr-correction-plan.md`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - Documentation-only blocker update (no code validation commands run)
+- Notes:
+  - Autonomous execution halted per contract; no later checklist items were started.
+
 ### 2026-02-27 - RC-12 complete: produce lookup service wired (PLU/fuzzy + province language preference + EN fallback)
 - Suggested Commit Title: `feat(rc-12): add produce lookup service with province-aware language fallback`
 - Scope:
