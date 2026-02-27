@@ -177,10 +177,10 @@ Use the `Canonical Order Checklist` statuses as the source of truth.
 Current snapshot (2026-02-27):
 
 - Total checklist items: `38`
-- `[x]` complete: `8`
+- `[x]` complete: `9`
 - `[~]` in progress: `0`
-- Strict completion: `21.05%`
-- Weighted progress: `21.05%`
+- Strict completion: `23.68%`
+- Weighted progress: `23.68%`
 
 Update rule after each slice:
 
@@ -226,10 +226,10 @@ Latest Update section review:
 - Produce normalization layer was added (9-prefix PLU normalization, organic keyword stripping, produce candidate gating).
 - `CorrectedReceiptLine` now includes `plu_code`, `produce_match`, `organic_flag`.
 - Phase 0 foundation is implemented; RC-10 closeout completed threshold tuning + fixture expansion to 20 scenarios.
-- Phase 1.5 schema-backed persistence is implemented for minimal produce metadata (`plu_code`, `organic_flag` on `ReceiptLineItem`), and RC-16 hybrid parser upgrades are complete.
+- Phase 1.5 schema-backed persistence is implemented for minimal produce metadata (`plu_code`, `organic_flag` on `ReceiptLineItem`), and RC-16/RC-17 parser + historical-loop upgrades are complete.
 
 Remaining high-impact work:
-- Execute Phases 5-6 (historical feedback loop, rollout hardening).
+- Execute Phase 6 (rollout hardening and tuning).
 
 ### 2) `docs/income-integrations-onboarding-plan.md` (not started)
 
@@ -283,7 +283,7 @@ Status legend:
 - [x] RC-14 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 2 parse confidence persistence + receipt review UI indicators.
 - [x] RC-15 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 3 store-specific parse profile memory.
 - [x] RC-16 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 4 hybrid structured parser upgrades.
-- [ ] RC-17 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 5 historical feedback loop integration.
+- [x] RC-17 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 5 historical feedback loop integration.
 - [ ] RC-18 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 6 rollout hardening (threshold tuning, versioning, diagnostics, safe enforce promotion).
 - [ ] RC-19 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then close receipt plan with validation evidence and final status updates.
 
@@ -327,12 +327,12 @@ Status legend:
 
 ## Last Left Off Here (Update This Block First)
 
-- Current task ID: `RC-17`
-- Current task: `Phase 5 historical feedback loop integration`
+- Current task ID: `RC-18`
+- Current task: `Phase 6 rollout hardening`
 - Status: `READY`
 - Last updated: `2026-02-27`
 - Primary source plan section:
-  - `docs/receipt-post-ocr-correction-plan.md` -> `Phase 5 - Historical matching feedback loop`
+  - `docs/receipt-post-ocr-correction-plan.md` -> `Phase 6 - Hardening and rollout expansion`
 
 ## Documentation Sync Checklist (Run Every Session)
 
@@ -344,6 +344,32 @@ Status legend:
 - [ ] `docs/codebase-overview.md` updated if behavior/architecture/canonical path descriptions changed.
 
 ## Latest Job Summary (Append New Entries At Top)
+
+### 2026-02-27 - RC-17 complete: outcome-aware historical feedback loop (confirmed/matched priors + fuzzy fallback + price proximity gate)
+- Completed:
+  - Ran RC-17 preflight scans across source-plan + workflow/repository/parser integration paths:
+    - `rg -n "Phase 5 - Historical matching feedback loop|RC-17|store + SKU memory|price proximity|learning from user edits" docs/receipt-post-ocr-correction-plan.md docs/master-plan-v1.md`
+    - `rg -n "historical|historical_price_hints|feedback|confirmed|matched_item_id|price proximity|fuzzy" src/features/receiving/receipt src/domain/parsers`
+    - `rg --files src/features/receiving/receipt src/domain/parsers | rg "receipt"`
+  - Reused existing receipt historical hint pipeline and extended it with outcome-aware feedback logic instead of creating duplicate services:
+    - `findRecentReceiptLinePriceSamples(...)` now returns line status + matched item linkage
+    - historical hint builder now prioritizes confirmed/matched feedback pools, then falls back to fuzzy-name priors when exact keys are missing
+    - added price-proximity suppression for weak far-distance priors
+  - Kept correction-core purity by injecting upgraded priors through existing feature-layer hint orchestration.
+  - Optional learning from user edits is now active via existing review persistence (`ReceiptLineItem.status` + `matched_item_id`) feeding future priors.
+  - Added targeted workflow-level regression tests for historical prior behavior:
+    - `receipt-workflow.historical-hints.test.mjs` (feedback-prior preference, fuzzy fallback, proximity gate)
+  - Completed validation gates:
+    - `npx tsx --test src/features/receiving/receipt/server/receipt-workflow.historical-hints.test.mjs` -> PASS (3/3)
+    - `npx tsx --test src/features/receiving/receipt/server/receipt-parse-profile.service.test.mjs` -> PASS (5/5)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-core.test.mjs` -> PASS (14/14)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-fixtures.test.mjs` -> PASS (27/27)
+    - `npx tsc --noEmit --incremental false` -> PASS
+    - targeted `eslint` on touched workflow/repository/history-test files -> PASS
+- Remaining:
+  - Start `RC-18` (Phase 6 hardening and rollout expansion).
+- Next:
+  - `RC-18` in `docs/receipt-post-ocr-correction-plan.md`
 
 ### 2026-02-27 - RC-16 complete: hybrid raw-text parser upgrades + parser prior consumption from store profile
 - Completed:

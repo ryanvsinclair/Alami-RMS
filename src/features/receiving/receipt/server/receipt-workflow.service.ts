@@ -6,6 +6,7 @@
 import { prisma } from "@/server/db/prisma";
 import { parseReceiptText } from "@/domain/parsers/receipt";
 import type { ParsedLineItem } from "@/domain/parsers/receipt";
+import { similarity } from "@/domain/matching/fuzzy";
 import type {
   ReceiptCorrectionHistoricalPriceHint,
   ReceiptCorrectionProvinceCode,
@@ -41,7 +42,10 @@ const RECEIPT_MATCH_METRICS_LOG_INTERVAL_MS = 5 * 60 * 1000;
 const RECEIPT_CORRECTION_METRICS_LOG_EVERY_RECEIPTS = 10;
 const RECEIPT_CORRECTION_METRICS_LOG_INTERVAL_MS = 5 * 60 * 1000;
 const HISTORICAL_HINT_MIN_SAMPLE_SIZE = 4;
+const HISTORICAL_HINT_FEEDBACK_MIN_SAMPLE_SIZE = 2;
 const HISTORICAL_HINT_LOOKBACK_DAYS = 120;
+const HISTORICAL_HINT_FUZZY_SIMILARITY_MIN = 0.72;
+const HISTORICAL_HINT_MAX_PRICE_DISTANCE_RATIO = 0.85;
 const GOOGLE_PLACE_DETAILS_FIELDS = "address_component,formatted_address";
 const SUBTOTAL_LABEL_PATTERN = /^(?:(?:sub|sous)[\s-]*total)\b/i;
 const TOTAL_LABEL_PATTERN =
@@ -449,27 +453,88 @@ function medianCurrency(values: number[]): number | null {
   return roundCurrency((sorted[mid - 1] + sorted[mid]) / 2);
 }
 
-function buildHistoricalPriceHintsFromSamples(data: {
+type HistoricalSampleBucket = {
+  lineCosts: number[];
+  unitCosts: number[];
+  feedbackLineCosts: number[];
+  feedbackUnitCosts: number[];
+};
+
+function isFeedbackAlignedHistoricalSample(sample: ReceiptHistoricalLinePriceSample): boolean {
+  if (!sample.matched_item_id) return false;
+  return sample.status === "confirmed" || sample.status === "matched";
+}
+
+function chooseBestHistoricalBucket(input: {
+  normalizedParsedName: string;
+  sampleMap: Map<string, HistoricalSampleBucket>;
+}): HistoricalSampleBucket | null {
+  const exact = input.sampleMap.get(input.normalizedParsedName);
+  if (exact) {
+    if (
+      exact.feedbackLineCosts.length >= HISTORICAL_HINT_FEEDBACK_MIN_SAMPLE_SIZE ||
+      exact.lineCosts.length >= HISTORICAL_HINT_MIN_SAMPLE_SIZE
+    ) {
+      return exact;
+    }
+  }
+
+  let bestBucket: HistoricalSampleBucket | null = null;
+  let bestScore = 0;
+
+  for (const [candidateName, candidateBucket] of input.sampleMap.entries()) {
+    const sim = similarity(input.normalizedParsedName, candidateName);
+    if (sim < HISTORICAL_HINT_FUZZY_SIMILARITY_MIN) continue;
+
+    if (
+      candidateBucket.feedbackLineCosts.length < HISTORICAL_HINT_FEEDBACK_MIN_SAMPLE_SIZE &&
+      candidateBucket.lineCosts.length < HISTORICAL_HINT_MIN_SAMPLE_SIZE
+    ) {
+      continue;
+    }
+
+    const sampleBoost = Math.min(candidateBucket.lineCosts.length / 20, 0.1);
+    const feedbackBoost = Math.min(candidateBucket.feedbackLineCosts.length / 10, 0.2);
+    const score = sim + sampleBoost + feedbackBoost;
+
+    if (!bestBucket || score > bestScore) {
+      bestBucket = candidateBucket;
+      bestScore = score;
+    }
+  }
+
+  return bestBucket;
+}
+
+export function buildHistoricalPriceHintsFromSamples(data: {
   lines: ParsedLineItem[];
   samples: ReceiptHistoricalLinePriceSample[];
 }): ReceiptCorrectionHistoricalPriceHint[] {
-  const sampleMap = new Map<
-    string,
-    {
-      lineCosts: number[];
-      unitCosts: number[];
-    }
-  >();
+  const sampleMap = new Map<string, HistoricalSampleBucket>();
 
   for (const sample of data.samples) {
     const key = normalizePriceSignalKey(sample.parsed_name);
     if (!key) continue;
 
-    const bucket = sampleMap.get(key) ?? { lineCosts: [], unitCosts: [] };
+    const bucket =
+      sampleMap.get(key) ?? {
+        lineCosts: [],
+        unitCosts: [],
+        feedbackLineCosts: [],
+        feedbackUnitCosts: [],
+      };
     bucket.lineCosts.push(sample.line_cost);
     if (sample.unit_cost != null) {
       bucket.unitCosts.push(sample.unit_cost);
     }
+
+    if (isFeedbackAlignedHistoricalSample(sample)) {
+      bucket.feedbackLineCosts.push(sample.line_cost);
+      if (sample.unit_cost != null) {
+        bucket.feedbackUnitCosts.push(sample.unit_cost);
+      }
+    }
+
     sampleMap.set(key, bucket);
   }
 
@@ -479,21 +544,42 @@ function buildHistoricalPriceHintsFromSamples(data: {
     const key = normalizePriceSignalKey(line.parsed_name);
     if (!key) continue;
 
-    const bucket = sampleMap.get(key);
-    if (!bucket || bucket.lineCosts.length < HISTORICAL_HINT_MIN_SAMPLE_SIZE) continue;
+    const bucket = chooseBestHistoricalBucket({
+      normalizedParsedName: key,
+      sampleMap,
+    });
+    if (!bucket) continue;
 
-    const referenceLineCost = medianCurrency(bucket.lineCosts);
+    const hasFeedbackPrior = bucket.feedbackLineCosts.length >= HISTORICAL_HINT_FEEDBACK_MIN_SAMPLE_SIZE;
+    const selectedLineCosts = hasFeedbackPrior ? bucket.feedbackLineCosts : bucket.lineCosts;
+    const selectedUnitCosts = hasFeedbackPrior ? bucket.feedbackUnitCosts : bucket.unitCosts;
+    const requiredSampleSize = hasFeedbackPrior
+      ? HISTORICAL_HINT_FEEDBACK_MIN_SAMPLE_SIZE
+      : HISTORICAL_HINT_MIN_SAMPLE_SIZE;
+
+    if (selectedLineCosts.length < requiredSampleSize) continue;
+
+    const referenceLineCost = medianCurrency(selectedLineCosts);
     if (referenceLineCost == null || referenceLineCost <= 0) continue;
 
+    // Keep weak, far-apart hints from steering correction when price context disagrees heavily.
+    if (line.line_cost != null && line.line_cost > 0) {
+      const distanceRatio =
+        Math.abs(referenceLineCost - line.line_cost) / Math.max(referenceLineCost, line.line_cost);
+      if (distanceRatio > HISTORICAL_HINT_MAX_PRICE_DISTANCE_RATIO && selectedLineCosts.length < 8) {
+        continue;
+      }
+    }
+
     const referenceUnitCost =
-      bucket.unitCosts.length >= 2 ? medianCurrency(bucket.unitCosts) : null;
+      selectedUnitCosts.length >= 2 ? medianCurrency(selectedUnitCosts) : null;
 
     hints.push({
       line_number: line.line_number,
       reference_line_cost: referenceLineCost,
       reference_unit_cost: referenceUnitCost,
-      sample_size: bucket.lineCosts.length,
-      source: "receipt_line_history",
+      sample_size: selectedLineCosts.length,
+      source: hasFeedbackPrior ? "manual" : "receipt_line_history",
     });
   }
 

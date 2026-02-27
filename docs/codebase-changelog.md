@@ -20,6 +20,48 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-27 - RC-17 complete: historical feedback loop with outcome-aware priors and fuzzy fallback
+- Suggested Commit Title: `feat(rc-17): prioritize confirmed history priors with fuzzy fallback and price-proximity gating`
+- Scope:
+  - Receipt correction Phase 5 (`RC-17`) historical feedback-loop integration for correction-scoring priors.
+- Preflight evidence (reuse/refactor-first + DB/Prisma integrity):
+  - Reviewed source-plan RC-17 scope + pickup marker:
+    - `docs/receipt-post-ocr-correction-plan.md` (`Pick Up Here`, `Phase 5 - Historical matching feedback loop`)
+  - Ran scoped scans before implementation:
+    - `rg -n "Phase 5 - Historical matching feedback loop|RC-17|store + SKU memory|price proximity|learning from user edits" docs/receipt-post-ocr-correction-plan.md docs/master-plan-v1.md`
+    - `rg -n "historical|historical_price_hints|feedback|confirmed|matched_item_id|price proximity|fuzzy" src/features/receiving/receipt src/domain/parsers`
+    - `rg --files src/features/receiving/receipt src/domain/parsers | rg "receipt"`
+  - Reused existing historical-hint path in `receipt-workflow.service.ts` and repository query path in `receipt.repository.ts`; no new schema/migrations required.
+- What changed:
+  - Extended historical sample query payload:
+    - `findRecentReceiptLinePriceSamples(...)` now returns `status` and `matched_item_id` with price samples.
+  - Upgraded historical hint builder in workflow:
+    - confirmed/matched + linked-item samples are prioritized as high-confidence feedback priors
+    - unresolved/suggested-only history is deprioritized when feedback priors exist
+    - fuzzy-name fallback is used when exact normalized parsed-name keys are missing
+    - price-proximity gate suppresses weak far-distance priors from steering correction scoring
+  - Kept correction core pure:
+    - prior computation remains in feature layer and is injected via existing `historical_price_hints` contracts.
+  - Added targeted RC-17 regression tests:
+    - `receipt-workflow.historical-hints.test.mjs` validates feedback-prior preference, fuzzy fallback, and proximity safety gating.
+- Files changed:
+  - `src/features/receiving/receipt/server/receipt.repository.ts`
+  - `src/features/receiving/receipt/server/receipt-workflow.service.ts`
+  - `src/features/receiving/receipt/server/receipt-workflow.historical-hints.test.mjs`
+  - `docs/receipt-post-ocr-correction-plan.md`
+  - `docs/master-plan-v1.md`
+  - `docs/codebase-overview.md`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - `npx tsx --test src/features/receiving/receipt/server/receipt-workflow.historical-hints.test.mjs` -> PASS (3/3)
+  - `npx tsx --test src/features/receiving/receipt/server/receipt-parse-profile.service.test.mjs` -> PASS (5/5)
+  - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-core.test.mjs` -> PASS (14/14; expected Node experimental/module-type warnings)
+  - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-fixtures.test.mjs` -> PASS (27/27; expected Node experimental/module-type warnings)
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `npx eslint src/features/receiving/receipt/server/receipt-workflow.service.ts src/features/receiving/receipt/server/receipt.repository.ts src/features/receiving/receipt/server/receipt-workflow.historical-hints.test.mjs --quiet` -> PASS
+- Notes:
+  - RC-17 marked complete; canonical next task is `RC-18`.
+
 ### 2026-02-27 - RC-16 complete: hybrid raw-text parser upgrades + profile-prior parser hints
 - Suggested Commit Title: `feat(rc-16): ship hybrid receipt parser with section detection and profile-guided hints`
 - Scope:

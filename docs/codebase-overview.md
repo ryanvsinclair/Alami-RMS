@@ -293,6 +293,10 @@ Implemented capabilities:
   - multi-line wrapped item merge support
   - numeric cluster extraction (`qty x unit_price line_total`) and safer trailing amount parsing
   - province-hinted tax summary skipping and optional profile-guided SKU token position hints
+- Historical feedback-loop priors are now outcome-aware in receipt workflow orchestration:
+  - confirmed/matched review outcomes (`ReceiptLineItem.status` + `matched_item_id`) are prioritized over unresolved noise
+  - fuzzy parsed-name fallback can supply priors when exact keys are missing
+  - price-proximity gating suppresses weak far-distance priors before they influence correction scoring
 - Receipt-correction fixture corpus is expanded to 20 runnable scenarios, including discount-heavy parsed-text and historical-threshold boundary coverage
 - Idempotent receipt commit behavior in inventory ledger path
 - Receipt auto-resolution observability (process-local summaries)

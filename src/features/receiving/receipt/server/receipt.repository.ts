@@ -16,6 +16,8 @@ export interface ReceiptHistoricalLinePriceSample {
   parsed_name: string;
   line_cost: number;
   unit_cost: number | null;
+  status: LineItemStatus;
+  matched_item_id: string | null;
 }
 
 export interface UpsertReceiptParseProfileInput {
@@ -143,6 +145,8 @@ export async function findRecentReceiptLinePriceSamples(params: {
       parsed_name: true,
       line_cost: true,
       unit_cost: true,
+      status: true,
+      matched_item_id: true,
       created_at: true,
     },
     orderBy: { created_at: "desc" },
@@ -166,6 +170,8 @@ export async function findRecentReceiptLinePriceSamples(params: {
       parsed_name: row.parsed_name,
       line_cost: lineCost,
       unit_cost: unitCost,
+      status: row.status,
+      matched_item_id: row.matched_item_id ?? null,
     });
   }
 

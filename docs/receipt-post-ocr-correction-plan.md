@@ -4,6 +4,29 @@ Last updated: February 27, 2026 (draft / implementation-ready plan)
 
 ## Latest Update
 
+- **Phase 5 RC-17 complete: historical feedback loop integrated with outcome-weighted priors + fuzzy fallback + price-proximity gating** (February 27, 2026):
+  - Upgraded historical hint derivation in `receipt-workflow.service.ts` to prioritize feedback-aligned samples:
+    - `confirmed` / `matched` receipt-line outcomes with `matched_item_id` now form high-confidence prior pools
+    - unresolved/suggested noise no longer dominates history when reliable review outcomes exist
+  - Added fuzzy name fallback for historical priors:
+    - when exact normalized parsed-name key is missing, similar historical buckets can be used (trigram similarity thresholded)
+  - Added price-proximity safety gate:
+    - weak/small-sample priors that are far from observed line price are blocked from steering correction scoring
+  - Kept correction core pure and integrated priors at feature layer:
+    - `buildHistoricalPriceHintsFromSamples(...)` now emits outcome-aware hints consumed by existing correction-core scoring path
+  - Optional learning from user edits is now active through existing review workflow:
+    - confirmed review outcomes (`updateLineItemMatch` -> persisted `ReceiptLineItem.status`/`matched_item_id`) feed later historical priors automatically
+  - Added targeted RC-17 tests:
+    - `src/features/receiving/receipt/server/receipt-workflow.historical-hints.test.mjs`
+    - verifies feedback-prior preference, fuzzy fallback path, and price-proximity suppression
+  - Validation:
+    - `npx tsx --test src/features/receiving/receipt/server/receipt-workflow.historical-hints.test.mjs` -> PASS (3/3)
+    - `npx tsx --test src/features/receiving/receipt/server/receipt-parse-profile.service.test.mjs` -> PASS (5/5)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-core.test.mjs` -> PASS (14/14)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-fixtures.test.mjs` -> PASS (27/27)
+    - `npx tsc --noEmit --incremental false` -> PASS
+    - targeted `eslint` on touched workflow/repository/history-test files -> PASS
+
 - **Phase 4 RC-16 complete: hybrid raw-text parser upgrade shipped (section detection + multi-line merge + numeric clusters + profile-guided SKU hints)** (February 27, 2026):
   - Upgraded `src/domain/parsers/receipt.ts` from regex-only extraction to a hybrid parser pass with:
     - section classification (`item` vs `tax`/`subtotal`/`total`/`promo`/`payment`/`meta`)
@@ -265,18 +288,18 @@ Last updated: February 27, 2026 (draft / implementation-ready plan)
 
 ## Pick Up Here (Next Continuation)
 
-Continue with **Phase 5 (RC-17): historical matching feedback loop**.
+Continue with **Phase 6 (RC-18): hardening and rollout expansion**.
 
 Recommended next implementation order:
 
-1. Implement store + SKU historical priors for correction scoring
-   - capture repeat line-level outcomes keyed by store context and normalized item cues
-2. Add fuzzy-name + price-proximity prior retrieval in feature layer
-   - keep scoring logic in correction core pure; inject priors as input
-3. Wire optional learning from receipt review confirmations/edits
-   - ensure feedback updates remain non-fatal and tenant-safe
-4. Expand fixture/test coverage for history-guided selection stability
-   - include low-sample no-op, conflicting-history, and store-context isolation cases
+1. Add parser/correction versioning and diagnostics payloads in persisted summaries
+   - make per-receipt behavior auditable across tuning iterations
+2. Tune thresholds using production-observability fields
+   - harden historical/fuzzy gating and correction acceptance cutoffs
+3. Add rollout safety controls for enforce-mode promotion
+   - define explicit safe-enforce criteria and fallback toggles
+4. Evaluate optional targeted backfill/reparse tooling
+   - keep scope limited to selected receipts/stores and preserve idempotent writes
 
 Implementation guardrails (carry forward):
 
@@ -1438,7 +1461,7 @@ Progress notes (2026-02-27):
   - wired line-item persistence of `plu_code` and `organic_flag` in `receipt.repository.ts`
 - Remaining:
   - add broader multilingual produce fixtures and lookup validation cases
-  - continue with RC-17 historical matching feedback-loop integration
+  - continue with RC-18 hardening and rollout expansion
 
 ## Phase 2 - Line-level parse confidence and UI flags
 
@@ -1507,7 +1530,7 @@ Progress notes (2026-02-27):
 
 ## Phase 5 - Historical matching feedback loop
 
-Status: `[ ]`
+Status: `[x]`
 
 Deliverables:
 
@@ -1515,6 +1538,13 @@ Deliverables:
 - store + fuzzy name + price proximity priors
 - correction scoring integration with prior outcomes
 - optional learning from user edits in receipt review flow
+
+Progress notes (2026-02-27):
+
+- Historical prior derivation now prefers feedback-aligned line history (`confirmed`/`matched` + `matched_item_id`) before generic unresolved history.
+- Added fuzzy-name fallback for prior lookup when no exact parsed-name bucket exists.
+- Added price-proximity gating so weak far-distance priors cannot over-steer correction scoring.
+- Added targeted workflow-level tests for outcome-prior preference, fuzzy fallback, and proximity safety suppression.
 
 ## Phase 6 - Hardening and rollout expansion
 
