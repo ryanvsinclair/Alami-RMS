@@ -1,6 +1,36 @@
 # Income Integrations Onboarding Plan
 
-Last updated: February 26, 2026 (draft / implementation-ready plan)
+Last updated: February 27, 2026 (Phase 0 decisions/contracts finalized)
+
+## Latest Update
+
+- **IN-00 complete: Phase 0 design/schema contracts and security model decisions finalized** (February 27, 2026):
+  - Resolved Phase 0 decision set and removed IN-00 blockers:
+    - Open Decision 1 -> **1a selected**: GoDaddy POS first in MVP provider rollout sequence.
+    - Open Decision 2 -> **2b selected**: default historical sync window set to 90 days.
+    - Open Decision 3 -> selected deployment cron route (`app/api/internal/cron/income-sync/route.ts`) for initial scheduler strategy.
+    - Open Decision 4 -> selected `IncomeEvent` canonical model with MVP projection to `FinancialTransaction` for dashboard compatibility.
+    - Open Decision 5 -> selected `SkipTheDishes` deferred to post-MVP rollout.
+  - Added Phase 0 feature-contract scaffolding (types/constants only, no OAuth/provider runtime behavior):
+    - `src/features/integrations/shared/provider-catalog.contracts.ts`
+    - `src/features/integrations/shared/income-events.contracts.ts`
+    - `src/features/integrations/shared/oauth.contracts.ts`
+    - `src/features/integrations/shared/index.ts`
+  - DB/Prisma contract preflight completed for schema planning alignment:
+    - reviewed `prisma/schema.prisma`
+    - reviewed latest migration `prisma/migrations/20260227230000_receipt_parse_profile_memory/migration.sql`
+    - no schema migration executed in this IN-00 slice (contracts finalized first; schema implementation remains scoped to later phases).
+  - Validation:
+    - `npx tsc --noEmit --incremental false` -> PASS
+    - `npx eslint src/features/integrations/shared/provider-catalog.contracts.ts src/features/integrations/shared/income-events.contracts.ts src/features/integrations/shared/oauth.contracts.ts src/features/integrations/shared/index.ts --quiet` -> PASS
+
+## Pick Up Here (Next Continuation)
+
+- Next task ID: `IN-01`
+- Source section: `Phase 1 - Provider catalog + onboarding UI (no OAuth yet)`
+- Scope reminder:
+  - build provider registry and onboarding UI shell only
+  - do not implement OAuth token exchange until `IN-02`
 
 ## Goal
 
@@ -575,26 +605,31 @@ If schema-light MVP is preferred:
 
 ## Phase 0 - Design + schema contracts (MVP boundary)
 
-Status: `[ ]`
+Status: `[x]`
 
 Deliverables:
 
-- finalize provider rollout list for MVP (recommend 2-3 providers first)
-- decide canonical model strategy:
-  - `IncomeEvent + FinancialTransaction projection` (recommended)
-- define enums and Prisma models
-- define token encryption approach
+- [x] Finalized MVP provider rollout strategy:
+  - pilot-first sequence locked to `godaddy_pos`, then restaurant expansion with `uber_eats` and `doordash`
+  - post-MVP queue locked to `square`, `stripe`, `toast`, `skip_the_dishes`
+- [x] Locked canonical model strategy:
+  - `IncomeEvent` as canonical normalized store + projection into `FinancialTransaction` for MVP dashboard compatibility
+- [x] Defined Phase 0 shared contracts and constants in `src/features/integrations/shared/*`
+- [x] Defined token-security model contract and scheduler baseline:
+  - AES-256-GCM token encryption contract (`INCOME_TOKEN_ENCRYPTION_KEY`)
+  - OAuth state TTL set to 10 minutes
+  - initial scheduler strategy set to internal cron route
 
 Files (planned):
 
-- `prisma/schema.prisma`
+- `prisma/schema.prisma` (reviewed for alignment; no IN-00 schema mutation)
 - `src/features/integrations/shared/*.ts`
 - `docs/codebase-changelog.md`
 
 Validation:
 
 - `npx tsc --noEmit --incremental false`
-- `npm run lint` (document baseline failures if unchanged)
+- targeted `eslint` on touched integrations shared contract files
 
 ## Phase 1 - Provider catalog + onboarding UI (no OAuth yet)
 
@@ -638,7 +673,7 @@ Important:
 
 - keep provider-specific logic behind adapters (`providers/*.provider.ts`)
 
-## Phase 3 - First provider pilot end-to-end (recommended: GoDaddy POS or Stripe)
+## Phase 3 - First provider pilot end-to-end (recommended: GoDaddy POS)
 
 Status: `[ ]`
 
@@ -726,7 +761,7 @@ Deliverables:
 
 ## Security & Compliance Checklist
 
-Status: `[ ]`
+Status: `[~]`
 
 - [ ] Access/refresh tokens encrypted at rest
 - [ ] No token values in logs/errors
@@ -750,20 +785,18 @@ Recommended checks:
 - OAuth callback tests (state validation, token exchange failure cases)
 - Playwright onboarding happy path (optional later)
 
-## Open Decisions (Need Product/Engineering Confirmation)
+## Open Decisions (Resolved In IN-00)
 
 1. MVP provider order:
-   - Start with `GoDaddy POS` (already in enum and home UI) for fastest integration path?
-   - Or `Stripe`/`Square` for cleaner OAuth developer tooling?
+   - **Resolved**: `1a` -> start with `GoDaddy POS` for the first end-to-end pilot.
 2. Historical sync default:
-   - 30 days vs 90 days
+   - **Resolved**: `2b` -> default to a 90-day historical sync window.
 3. Scheduler platform:
-   - deployment cron route (simple) vs dedicated worker queue (durable)
+   - **Resolved**: use deployment cron route first (`app/api/internal/cron/income-sync/route.ts`), then evaluate queue migration in Phase 5/7 hardening.
 4. Canonical source of truth timeline:
-   - keep `FinancialTransaction` as dashboard source for MVP (recommended)
-   - migrate dashboard/reports directly to `IncomeEvent` later
+   - **Resolved**: keep `FinancialTransaction` as MVP dashboard source via projection from canonical `IncomeEvent`; direct dashboard migration can be evaluated post-MVP.
 5. Regional providers:
-   - include `SkipTheDishes` in MVP or later phase
+   - **Resolved**: defer `SkipTheDishes` to post-MVP rollout.
 
 ## Example Restaurant Onboarding (Target End State)
 

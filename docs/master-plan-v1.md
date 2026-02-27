@@ -177,10 +177,10 @@ Use the `Canonical Order Checklist` statuses as the source of truth.
 Current snapshot (2026-02-27):
 
 - Total checklist items: `38`
-- `[x]` complete: `11`
+- `[x]` complete: `12`
 - `[~]` in progress: `0`
-- Strict completion: `28.95%`
-- Weighted progress: `28.95%`
+- Strict completion: `31.58%`
+- Weighted progress: `31.58%`
 
 Update rule after each slice:
 
@@ -198,8 +198,8 @@ Update rule after each slice:
 | `docs/inventoryintakeplan.md` | Feature implementation plan | Complete (Phases 0/A/B/C/D/E complete) | Remaining items are user QA/manual smoke only. |
 | `docs/inventoryintakeplan.phase0-audit.md` | Historical prerequisite audit | Completed (deprecated) | Superseded by `inventoryintakeplan.md`. |
 | `docs/inventoryintakeplan.progress-handoff.md` | Historical handoff | Historical snapshot | Superseded by later work in `inventoryintakeplan.md`. |
-| `docs/receipt-post-ocr-correction-plan.md` | Active feature plan | In progress (`[~]` phases 0/1/1.5, later phases pending) | Current highest-priority in-flight implementation plan. |
-| `docs/income-integrations-onboarding-plan.md` | Active feature plan | Not started (`[ ]` phases 0-7) | Implementation-ready plan, no phases completed yet. |
+| `docs/receipt-post-ocr-correction-plan.md` | Active feature plan | Complete (`[x]` through RC-19) | Plan closed with non-blocking follow-ups tracked separately. |
+| `docs/income-integrations-onboarding-plan.md` | Active feature plan | In progress (`[x]` Phase 0, `[ ]` phases 1-7) | Phase 0 contracts/decisions finalized; implementation phases pending. |
 | `docs/unified-inventory-intake-refactor-plan.md` | Active refactor plan | Planning-only, not implemented | Depends on preserving behavior while regrouping IA/session model. |
 | `docs/operational-calendar-schedule-plan.md` | Active feature plan | Planning-only, sequencing-locked | Explicitly blocked until other active plans are complete. |
 | `docs/codebase-overview.md` | Architecture reference | Active (living document) | Must stay aligned with implementation reality. |
@@ -232,14 +232,19 @@ Latest Update section review:
 Remaining high-impact work:
 - None in-plan; broader multilingual fixture breadth and optional backfill/admin tooling are documented as non-blocking follow-ups.
 
-### 2) `docs/income-integrations-onboarding-plan.md` (not started)
+### 2) `docs/income-integrations-onboarding-plan.md` (in progress)
 
 Latest Update section review:
-- No `Latest Update` section present.
+- Phase 0 (`IN-00`) decisions/contracts are finalized:
+  - MVP provider sequence starts with GoDaddy POS, then Uber Eats and DoorDash.
+  - historical sync default is 90 days.
+  - scheduler baseline is internal cron route.
+  - canonical model strategy is `IncomeEvent` with MVP `FinancialTransaction` projection.
+  - `SkipTheDishes` is deferred to post-MVP rollout.
 
 Remaining work snapshot:
-- All implementation phases 0-7 are still `[ ]`.
-- Core dependencies/open decisions still need closure (MVP provider order, historical sync window, scheduler platform, canonical source timeline).
+- Phases 1-7 are still `[ ]` and pending implementation.
+- Next required implementation slice is `IN-01` (provider catalog + onboarding UI shell, no OAuth yet).
 
 ### 3) `docs/unified-inventory-intake-refactor-plan.md` (planning-only)
 
@@ -290,7 +295,7 @@ Status legend:
 
 ### C. Implement Income Integrations Onboarding Plan
 
-- [ ] IN-00 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then finalize Phase 0 design/schema contracts and security model decisions.
+- [x] IN-00 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then finalize Phase 0 design/schema contracts and security model decisions.
 - [ ] IN-01 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then ship Phase 1 provider catalog + onboarding UI (no OAuth yet).
 - [ ] IN-02 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 2 provider-agnostic OAuth core.
 - [ ] IN-03 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 3 first provider pilot end-to-end (connect -> token storage -> sync -> dashboard projection).
@@ -328,12 +333,12 @@ Status legend:
 
 ## Last Left Off Here (Update This Block First)
 
-- Current task ID: `IN-00`
-- Current task: `Income integrations Phase 0 design/schema contracts and security model decisions`
+- Current task ID: `IN-01`
+- Current task: `Income integrations Phase 1 provider catalog + onboarding UI shell (no OAuth yet)`
 - Status: `READY`
 - Last updated: `2026-02-27`
 - Primary source plan section:
-  - `docs/income-integrations-onboarding-plan.md` -> `Phase 0`
+  - `docs/income-integrations-onboarding-plan.md` -> `Phase 1`
 
 ## Documentation Sync Checklist (Run Every Session)
 
@@ -345,6 +350,37 @@ Status legend:
 - [ ] `docs/codebase-overview.md` updated if behavior/architecture/canonical path descriptions changed.
 
 ## Latest Job Summary (Append New Entries At Top)
+
+### 2026-02-27 - IN-00 complete: income integrations phase-0 contracts and decision lock finalized
+- Completed:
+  - Ran IN-00 preflight scans for existing scope and reusable integration paths:
+    - `rg -n "Phase 0|provider catalog|BusinessIncomeConnection|IncomeOAuthState|IncomeEvent|token encryption|security checklist|Open Decisions" src app test docs`
+    - `rg --files src app test | rg "integrations|onboarding|oauth|income"`
+    - reviewed current integration stubs and module wiring:
+      - `lib/modules/integrations/types.ts`
+      - `lib/modules/integrations/{godaddy-pos,uber-eats,doordash}.ts`
+      - `app/actions/core/financial.ts`
+      - `lib/config/presets.ts`
+  - Re-verified DB/Prisma contract inputs for schema-contract alignment:
+    - `prisma/schema.prisma`
+    - latest migration `prisma/migrations/20260227230000_receipt_parse_profile_memory/migration.sql`
+    - no schema change required in IN-00 (contract finalization slice only).
+  - Finalized Phase 0 decisions in source plan:
+    - Open Decision 1 resolved to `1a` (GoDaddy POS-first pilot path)
+    - Open Decision 2 resolved to `2b` (90-day default historical sync)
+    - scheduler strategy locked to internal cron route
+    - canonical source strategy locked to `IncomeEvent` + MVP `FinancialTransaction` projection
+    - `SkipTheDishes` deferred to post-MVP
+  - Added Phase 0 feature-contract scaffolding (types/constants only):
+    - `src/features/integrations/shared/provider-catalog.contracts.ts`
+    - `src/features/integrations/shared/income-events.contracts.ts`
+    - `src/features/integrations/shared/oauth.contracts.ts`
+    - `src/features/integrations/shared/index.ts`
+  - Updated master-plan checklist/left-off/completion percentages for `IN-00` completion and auto-advance to `IN-01`.
+- Remaining:
+  - Start `IN-01` (provider catalog + onboarding UI shell; no OAuth implementation in this slice).
+- Next:
+  - `IN-01` in `docs/income-integrations-onboarding-plan.md`
 
 ### 2026-02-27 - RC-19 complete: receipt plan closeout synchronized with final validation evidence
 - Completed:

@@ -20,6 +20,63 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-27 - IN-00 complete: income integrations phase-0 decision lock and contract scaffolding
+- Suggested Commit Title: `chore(in-00): finalize income integration phase-0 contracts and decision lock`
+- Scope:
+  - Income integrations onboarding Phase 0 (`IN-00`) design/schema/security contract finalization only.
+- Preflight evidence (reuse/refactor-first + DB/Prisma integrity):
+  - Reviewed source-plan Phase 0 and open-decision blocks:
+    - `docs/income-integrations-onboarding-plan.md`
+    - `docs/master-plan-v1.md`
+  - Ran scoped scans before introducing new files:
+    - `rg -n "Phase 0|provider catalog|BusinessIncomeConnection|IncomeOAuthState|IncomeEvent|token encryption|security checklist|Open Decisions" src app test docs`
+    - `rg --files src app test | rg "integrations|onboarding|oauth|income"`
+  - Reviewed existing integration implementations to avoid duplicate paths:
+    - `app/actions/core/financial.ts`
+    - `lib/modules/integrations/types.ts`
+    - `lib/modules/integrations/{godaddy-pos,uber-eats,doordash}.ts`
+    - `lib/config/presets.ts`
+  - Verified schema authority inputs before finalizing schema contracts:
+    - `prisma/schema.prisma`
+    - latest migration `prisma/migrations/20260227230000_receipt_parse_profile_memory/migration.sql`
+  - No schema mutation/migration was performed in this slice.
+- What changed:
+  - Finalized Phase 0 decisions in `docs/income-integrations-onboarding-plan.md`:
+    - Open Decision 1 resolved to `1a` (GoDaddy POS-first pilot)
+    - Open Decision 2 resolved to `2b` (90-day historical sync default)
+    - scheduler baseline resolved to internal cron route
+    - source-of-truth timeline resolved to canonical `IncomeEvent` with MVP `FinancialTransaction` projection
+    - `SkipTheDishes` moved to post-MVP queue
+  - Added source-plan continuity markers:
+    - new `Latest Update`
+    - new `Pick Up Here (Next Continuation)` pointing to `IN-01`
+    - Phase 0 status marked `[x]`
+  - Added client-safe integrations shared contracts (no runtime OAuth/sync behavior):
+    - `src/features/integrations/shared/provider-catalog.contracts.ts`
+    - `src/features/integrations/shared/income-events.contracts.ts`
+    - `src/features/integrations/shared/oauth.contracts.ts`
+    - `src/features/integrations/shared/index.ts`
+  - Updated master plan:
+    - marked `IN-00` complete in canonical checklist
+    - advanced `Last Left Off Here` to `IN-01`
+    - recalculated completion snapshot to 12/38 (`31.58%`)
+    - appended IN-00 latest job summary
+  - Updated overview status snapshot to reflect income plan Phase 0 completion.
+- Files changed:
+  - `src/features/integrations/shared/provider-catalog.contracts.ts`
+  - `src/features/integrations/shared/income-events.contracts.ts`
+  - `src/features/integrations/shared/oauth.contracts.ts`
+  - `src/features/integrations/shared/index.ts`
+  - `docs/income-integrations-onboarding-plan.md`
+  - `docs/master-plan-v1.md`
+  - `docs/codebase-overview.md`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `npx eslint src/features/integrations/shared/provider-catalog.contracts.ts src/features/integrations/shared/income-events.contracts.ts src/features/integrations/shared/oauth.contracts.ts src/features/integrations/shared/index.ts --quiet` -> PASS
+- Notes:
+  - IN-00 is complete; canonical next task is `IN-01` (provider catalog + onboarding UI shell, no OAuth yet).
+
 ### 2026-02-27 - RC-19 complete: receipt correction plan closeout and status synchronization
 - Suggested Commit Title: `chore(rc-19): close receipt correction plan with final validation evidence and doc sync`
 - Scope:
