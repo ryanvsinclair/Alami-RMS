@@ -81,6 +81,28 @@ function mapDatabaseStatusToCardStatus(status: DbIncomeConnectionStatus) {
   return "not_connected";
 }
 
+/**
+ * Providers that have a live manual sync route.
+ * Extend this set as new provider adapters are added.
+ */
+const SYNC_ENABLED_PROVIDERS = new Set<string>([
+  "godaddy_pos",
+  "uber_eats",
+  "doordash",
+]);
+
+const SYNC_ROUTE_BY_PROVIDER: Record<string, string> = {
+  godaddy_pos: "/api/integrations/sync/godaddy-pos/manual",
+  uber_eats: "/api/integrations/sync/uber-eats/manual",
+  doordash: "/api/integrations/sync/doordash/manual",
+};
+
+function buildSyncHref(providerId: string, returnToPath: string): string | null {
+  const route = SYNC_ROUTE_BY_PROVIDER[providerId];
+  if (!route) return null;
+  return `${route}?return_to=${encodeURIComponent(returnToPath)}`;
+}
+
 export async function listIncomeProviderConnectionCardsForBusiness(input: {
   businessId: string;
   industryType: IndustryType;
@@ -97,8 +119,8 @@ export async function listIncomeProviderConnectionCardsForBusiness(input: {
     const connection = byProvider.get(card.provider.id);
     if (!connection) return card;
 
-    const syncEnabled =
-      connection.provider_id === "godaddy_pos" && connection.status === "connected";
+    const isConnected = connection.status === "connected";
+    const syncEnabled = isConnected && SYNC_ENABLED_PROVIDERS.has(connection.provider_id);
 
     return {
       ...card,
@@ -108,7 +130,7 @@ export async function listIncomeProviderConnectionCardsForBusiness(input: {
       connectLabel: card.connectEnabled ? "Reconnect" : "Reconnect (Setup needed)",
       syncEnabled,
       syncHref: syncEnabled
-        ? `/api/integrations/sync/godaddy-pos/manual?return_to=${encodeURIComponent(returnToPath)}`
+        ? buildSyncHref(connection.provider_id, returnToPath)
         : null,
     };
   });

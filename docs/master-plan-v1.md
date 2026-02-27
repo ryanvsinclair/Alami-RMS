@@ -177,10 +177,10 @@ Use the `Canonical Order Checklist` statuses as the source of truth.
 Current snapshot (2026-02-27):
 
 - Total checklist items: `38`
-- `[x]` complete: `15`
+- `[x]` complete: `16`
 - `[~]` in progress: `0`
-- Strict completion: `39.47%`
-- Weighted progress: `39.47%`
+- Strict completion: `42.11%`
+- Weighted progress: `42.11%`
 
 Update rule after each slice:
 
@@ -300,7 +300,7 @@ Status legend:
 - [x] IN-01 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then ship Phase 1 provider catalog + onboarding UI (no OAuth yet).
 - [x] IN-02 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 2 provider-agnostic OAuth core.
 - [x] IN-03 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 3 first provider pilot end-to-end (connect -> token storage -> sync -> dashboard projection).
-- [ ] IN-04 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 4 restaurant-provider rollout (Uber Eats + DoorDash + POS set chosen by product/engineering).
+- [x] IN-04 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 4 restaurant-provider rollout (Uber Eats + DoorDash + POS set chosen by product/engineering).
 - [ ] IN-05 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 5 scheduled sync + webhook hardening.
 - [ ] IN-06 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 6 reporting/home income-layer improvements.
 - [ ] IN-07 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 7 production hardening + security/compliance checklist completion.
@@ -334,12 +334,12 @@ Status legend:
 
 ## Last Left Off Here (Update This Block First)
 
-- Current task ID: `IN-04`
-- Current task: `Income integrations Phase 4 restaurant rollout providers (Uber Eats + DoorDash + POS)`
+- Current task ID: `IN-05`
+- Current task: `Income integrations Phase 5 scheduled sync + webhook hardening`
 - Status: `READY`
 - Last updated: `2026-02-27`
 - Primary source plan section:
-  - `docs/income-integrations-onboarding-plan.md` -> `Phase 4`
+  - `docs/income-integrations-onboarding-plan.md` -> `Phase 5`
 
 ## Documentation Sync Checklist (Run Every Session)
 
@@ -351,6 +351,30 @@ Status legend:
 - [ ] `docs/codebase-overview.md` updated if behavior/architecture/canonical path descriptions changed.
 
 ## Latest Job Summary (Append New Entries At Top)
+
+### 2026-02-27 - IN-04 complete: restaurant rollout providers (Uber Eats + DoorDash) — adapters, generic sync runner, routes, catalog wiring
+- Completed:
+  - Ran IN-04 preflight scans:
+    - Confirmed `uber_eats` + `doordash` already in `FinancialSource` enum and home dashboard income breakdown
+    - Confirmed `lib/modules/integrations/uber-eats.ts` + `doordash.ts` are stubs with no normalization — built fresh in feature path
+  - IN-04 scoped additions (reuse-first):
+    - `src/features/integrations/providers/uber-eats.provider.ts`:
+      - field-priority normalization: id/order_id/workflow_uuid -> externalId, total_price/gross_earnings -> gross, service_fee/uber_fee/commission -> fees, payout_amount/net_earnings -> net, currency_code fallback, placed_at/ordered_at date chain
+    - `src/features/integrations/providers/doordash.provider.ts`:
+      - field-priority normalization: id/delivery_id/order_id/external_delivery_id -> externalId, subtotal/order_total -> gross, commission_amount/fee -> fees, payout_amount -> net, delivery_status -> payoutStatus, store_name description fallback
+    - Generalized `sync.service.ts` to `runProviderManualSync` (shared DRY runner for all providers)
+    - `runUberEatsManualSync` + `runDoorDashManualSync` public entry points using generic runner
+    - `app/api/integrations/sync/uber-eats/manual/route.ts`
+    - `app/api/integrations/sync/doordash/manual/route.ts`
+    - Provider catalog: `SYNC_ENABLED_PROVIDERS` set + `SYNC_ROUTE_BY_PROVIDER` + `buildSyncHref` — adding future providers requires one line each
+  - Provider adapter tests: 25 normalization unit tests (13 Uber Eats + 12 DoorDash)
+  - All 39 targeted tests pass (25 provider + 8 sync + 6 catalog/oauth)
+  - `npx tsc --noEmit` -> PASS; targeted eslint -> PASS
+  - Updated source/master plans, completion % (42.11%), overview, and changelog
+- Remaining:
+  - Start `IN-05` (scheduled sync + webhook hardening)
+- Next:
+  - `IN-05` in `docs/income-integrations-onboarding-plan.md`
 
 ### 2026-02-27 - IN-03 complete: GoDaddy POS pilot end-to-end sync validation + last_sync_at dashboard visibility
 - Completed:

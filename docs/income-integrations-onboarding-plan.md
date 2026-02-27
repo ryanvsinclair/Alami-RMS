@@ -1,8 +1,22 @@
 # Income Integrations Onboarding Plan
 
-Last updated: February 27, 2026 (Phase 3 GoDaddy POS pilot end-to-end complete)
+Last updated: February 27, 2026 (Phase 4 restaurant rollout providers complete)
 
 ## Latest Update
+
+- **IN-04 complete: restaurant rollout providers — Uber Eats + DoorDash adapters, generic sync runner, routes, catalog wiring** (February 27, 2026):
+  - Preflight scans confirmed `uber_eats` and `doordash` already in `FinancialSource` enum + home dashboard income breakdown.
+  - IN-04 scoped additions (reuse-first):
+    - `uber-eats.provider.ts`: field-priority normalization (id/order_id/workflow_uuid, total_price/gross_earnings, service_fee/uber_fee/commission, payout_amount/net_earnings, currency_code)
+    - `doordash.provider.ts`: field-priority normalization (id/delivery_id/order_id/external_delivery_id, subtotal/order_total, commission_amount/fee, payout_amount, delivery_status)
+    - Generalized `sync.service.ts` to `runProviderManualSync` shared runner; added `runUberEatsManualSync` + `runDoorDashManualSync`
+    - `app/api/integrations/sync/uber-eats/manual/route.ts` + `app/api/integrations/sync/doordash/manual/route.ts`
+    - Provider catalog: `SYNC_ENABLED_PROVIDERS` set + `buildSyncHref` lookup — one place to add future providers
+    - 25 provider normalization unit tests (12 DoorDash + 13 Uber Eats)
+  - Validation:
+    - All 39 targeted tests pass (25 provider + 8 sync service + 6 catalog/oauth)
+    - `npx tsc --noEmit` -> PASS
+    - targeted eslint -> PASS
 
 - **IN-03 complete: GoDaddy POS pilot end-to-end (sync service tests + last_sync_at dashboard projection visibility)** (February 27, 2026):
   - Preflight scans confirmed the full pilot path was architecturally present in prior slices:
@@ -111,13 +125,14 @@ Last updated: February 27, 2026 (Phase 3 GoDaddy POS pilot end-to-end complete)
 
 ## Pick Up Here (Next Continuation)
 
-- Next task ID: `IN-04`
-- Source section: `Phase 4 - Restaurant rollout providers (Uber Eats + DoorDash + POS)`
+- Next task ID: `IN-05`
+- Source section: `Phase 5 - Scheduled sync + webhook hardening`
 - Scope reminder:
-  - add provider adapters for target restaurant delivery/POS providers
-  - provider-specific payload mapping and fees handling
-  - webhook endpoints where provider supports them
-  - dashboard source ordering updates for new sources
+  - cron-triggered incremental sync route (internal cron strategy per `INCOME_SYNC_SCHEDULER_STRATEGY`)
+  - retry/backoff per connection
+  - sync lock/duplication prevention per connection
+  - webhook signature verification for Uber Eats + DoorDash
+  - periodic reconciliation sync
 
 ## Goal
 
@@ -786,7 +801,7 @@ Why pilot first:
 
 ## Phase 4 - Restaurant rollout providers (Uber Eats + DoorDash + POS)
 
-Status: `[ ]`
+Status: `[x]`
 
 Goal:
 
@@ -794,10 +809,18 @@ Goal:
 
 Deliverables:
 
-- provider adapters for target restaurant providers
-- provider-specific mapping/fees handling
-- webhook endpoints where supported
-- dashboard source ordering updates for new sources
+- [x] provider adapters for target restaurant providers:
+  - `uber-eats.provider.ts` (fetch + multi-field normalization with gross/fees/net resolution)
+  - `doordash.provider.ts` (fetch + multi-field normalization with delivery_id/order_id/subtotal/commission)
+- [x] provider-specific payload mapping/fees handling (field priority chains for each provider's API shape)
+- [x] sync service generalized to `runProviderManualSync` (shared across godaddy_pos, uber_eats, doordash)
+- [x] `runUberEatsManualSync` and `runDoorDashManualSync` public entry points
+- [x] manual sync API routes:
+  - `app/api/integrations/sync/uber-eats/manual/route.ts`
+  - `app/api/integrations/sync/doordash/manual/route.ts`
+- [x] provider catalog updated: `SYNC_ENABLED_PROVIDERS` set + `buildSyncHref` for all three providers
+- [x] dashboard source ordering: `uber_eats` and `doordash` already in `FinancialSource` enum and dashboard home income breakdown
+- [ ] webhook endpoints (deferred to Phase 5 - scheduled sync + webhook hardening)
 
 Resulting UX:
 

@@ -57,7 +57,7 @@ High-level completion:
 What remains outside plan completion:
 - Manual integrated smoke testing across core flows (user-run / final QA pass).
 - Receipt post-OCR correction plan is complete through Phase 6 closeout (`RC-19`), with non-blocking follow-ups tracked separately.
-- Income integrations onboarding plan Phase 3 is complete (GoDaddy POS pilot end-to-end: connect -> token storage -> sync -> FinancialTransaction dashboard projection); restaurant provider rollout (Phase 4) is next.
+- Income integrations onboarding plan Phase 4 is complete (Uber Eats + DoorDash provider adapters, generic sync runner, manual sync routes, catalog wiring for all 3 restaurant providers); scheduled sync + webhook hardening (Phase 5) is next.
 - Unified Intake regrouping refactor is planned but not yet implemented (see `docs/unified-inventory-intake-refactor-plan.md`).
 - Operational Calendar/Schedule refactor is planned and sequencing-locked behind completion of all current plans (see `docs/operational-calendar-schedule-plan.md`).
 
@@ -223,26 +223,26 @@ Wrappers:
 - `app/page.tsx` (route composition/state wiring)
 - `app/actions/core/financial.ts` (`getDashboardSummary` wrapper delegates to feature server)
 
-### Income integrations onboarding shell + OAuth core + GoDaddy POS pilot (Phase 3 complete)
+### Income integrations — Phase 4 complete (GoDaddy POS + Uber Eats + DoorDash live)
 
 Implemented capabilities:
 - Industry-aware provider catalog and recommendation ordering for onboarding/integrations views
 - Onboarding setup route (`/onboarding/income-sources`) with provider cards, status badges, and skip flow
-- Dashboard integrations route (`/integrations`) with connection status shell
-- Signup industry selection upgraded from `<select>` to card/radio UI while preserving submitted `industry_type`
-- Bottom navigation now exposes an `Integrations` tab when the `integrations` module is enabled
-- Provider-agnostic OAuth core is active via API routes:
+- Dashboard integrations route (`/integrations`) with connection status, last-sync timestamps, and sync buttons
+- Provider-agnostic OAuth core active via:
   - `/api/integrations/oauth/[provider]/start`
   - `/api/integrations/oauth/[provider]/callback`
-- OAuth state hashing + one-time state consumption + PKCE + token encryption are implemented in feature server services
-- Connect buttons can route to OAuth start for providers with configured `INCOME_OAUTH_<PROVIDER>_*` env vars
-- GoDaddy POS pilot sync is active end-to-end:
-  - `godaddy-pos.provider.ts` fetches + normalizes provider events
-  - `sync.service.ts#runGoDaddyPosManualSync` upserts `IncomeEvent` rows and projects to `FinancialTransaction` for dashboard compatibility
-  - Manual sync triggered via `GET /api/integrations/sync/godaddy-pos/manual`
-  - `ExternalSyncLog` records each sync run (running -> success/failed) with record counts
-  - `lastSyncAt` surfaced in connection card contract and UI for user visibility
-- Home dashboard income layer already consumes `FinancialTransaction.source = "godaddy_pos"` rows from sync projection
+- OAuth state hashing + one-time state consumption + PKCE + token encryption in feature server services
+- Three live provider sync adapters (all follow same normalization contract):
+  - `godaddy-pos.provider.ts` — POS events; `GET /api/integrations/sync/godaddy-pos/manual`
+  - `uber-eats.provider.ts` — order/payout events; `GET /api/integrations/sync/uber-eats/manual`
+  - `doordash.provider.ts` — delivery/order events; `GET /api/integrations/sync/doordash/manual`
+- Generic `runProviderManualSync` shared runner in `sync.service.ts` — all providers use same upsert/projection/log path
+- Provider catalog `SYNC_ENABLED_PROVIDERS` + `buildSyncHref` — one line to enable sync for a new provider
+- `IncomeEvent` upsert (idempotent on `connection_id + external_id`) + `FinancialTransaction` projection (idempotent on `business_id + source + external_id`)
+- `ExternalSyncLog` records every sync run (running → success/failed) with record counts
+- `lastSyncAt` surfaced in connection card contract and UI
+- Home dashboard income breakdown already consumes all three sources (`godaddy_pos`, `uber_eats`, `doordash`)
 
 Canonical paths:
 - `src/features/integrations/shared/*`
@@ -254,15 +254,19 @@ Canonical paths:
 - `src/features/integrations/server/sync.service.ts`
 - `src/features/integrations/providers/registry.ts`
 - `src/features/integrations/providers/godaddy-pos.provider.ts`
+- `src/features/integrations/providers/uber-eats.provider.ts`
+- `src/features/integrations/providers/doordash.provider.ts`
 - `src/features/integrations/ui/*`
 
 Route wrappers:
 - `app/onboarding/*`
 - `app/(dashboard)/integrations/*`
 - `app/api/integrations/sync/godaddy-pos/manual/route.ts`
+- `app/api/integrations/sync/uber-eats/manual/route.ts`
+- `app/api/integrations/sync/doordash/manual/route.ts`
 
 Current limitation:
-- Only GoDaddy POS has a live sync adapter; other providers (Uber Eats, DoorDash, etc.) are planned for Phase 4.
+- Manual sync only; scheduled/cron sync and webhook endpoints are Phase 5.
 
 ### Receiving (4 ingestion paths)
 

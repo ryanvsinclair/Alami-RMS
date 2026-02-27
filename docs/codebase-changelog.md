@@ -20,6 +20,55 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-27 - IN-04 complete: restaurant provider rollout (Uber Eats + DoorDash adapters + generic sync runner)
+- Suggested Commit Title: `feat(in-04): add Uber Eats + DoorDash provider adapters and generalize sync runner`
+- Scope:
+  - Income integrations Phase 4 (`IN-04`) restaurant rollout providers implementation.
+- Preflight evidence (reuse/refactor-first):
+  - Confirmed `uber_eats` + `doordash` already in `FinancialSource` enum, `IncomeProvider` enum, and home dashboard income breakdown
+  - Confirmed legacy `lib/modules/integrations/uber-eats.ts` + `doordash.ts` are empty stubs — built fresh in feature providers path
+  - Re-verified latest migration: `prisma/migrations/20260228013000_income_event_pilot/migration.sql` (no schema change needed)
+- What changed:
+  - Added `src/features/integrations/providers/uber-eats.provider.ts`:
+    - `UberEatsIncomeEvent` shape + `fetchUberEatsIncomeEvents`
+    - Field-priority normalization: id/order_id/workflow_uuid, total_price/gross_earnings, service_fee/uber_fee/commission, payout_amount/net_earnings, currency_code, placed_at/ordered_at date chain
+  - Added `src/features/integrations/providers/doordash.provider.ts`:
+    - `DoorDashIncomeEvent` shape + `fetchDoorDashIncomeEvents`
+    - Field-priority normalization: id/delivery_id/order_id/external_delivery_id, subtotal/order_total, commission_amount/fee/dasher_tip, payout_amount, delivery_status/order_status, store_name description fallback
+  - Refactored `sync.service.ts`:
+    - Extracted `runProviderManualSync` generic runner (DRY shared logic for all providers)
+    - Converted `runGoDaddyPosManualSync` to delegate to generic runner
+    - Added `runUberEatsManualSync` + `runDoorDashManualSync`
+    - `FinancialSource` type used for `financialSource` param (tsc compliance)
+    - `RunGoDaddyPosManualSyncInput/Result` changed from empty interface to type alias
+  - Added `app/api/integrations/sync/uber-eats/manual/route.ts`
+  - Added `app/api/integrations/sync/doordash/manual/route.ts`
+  - Updated `provider-catalog.ts`:
+    - `SYNC_ENABLED_PROVIDERS` set (godaddy_pos, uber_eats, doordash)
+    - `SYNC_ROUTE_BY_PROVIDER` map
+    - `buildSyncHref` helper — future providers need only a single entry
+  - Added provider normalization unit tests:
+    - `uber-eats.provider.test.mjs` (13 tests)
+    - `doordash.provider.test.mjs` (12 tests)
+- Validation gates:
+  - `node --test src/features/integrations/providers/uber-eats.provider.test.mjs src/features/integrations/providers/doordash.provider.test.mjs src/features/integrations/server/sync.service.test.mjs` -> PASS (33/33)
+  - `npx tsx --test src/features/integrations/server/provider-catalog.test.mjs src/features/integrations/server/oauth.service.test.mjs` -> PASS (6/6)
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - targeted eslint -> PASS
+- Files changed:
+  - `src/features/integrations/providers/uber-eats.provider.ts` (new)
+  - `src/features/integrations/providers/uber-eats.provider.test.mjs` (new)
+  - `src/features/integrations/providers/doordash.provider.ts` (new)
+  - `src/features/integrations/providers/doordash.provider.test.mjs` (new)
+  - `src/features/integrations/server/sync.service.ts`
+  - `src/features/integrations/server/provider-catalog.ts`
+  - `app/api/integrations/sync/uber-eats/manual/route.ts` (new)
+  - `app/api/integrations/sync/doordash/manual/route.ts` (new)
+  - `docs/income-integrations-onboarding-plan.md`
+  - `docs/master-plan-v1.md`
+  - `docs/codebase-overview.md`
+  - `docs/codebase-changelog.md`
+
 ### 2026-02-27 - IN-03 complete: GoDaddy POS pilot end-to-end sync validation + last_sync_at dashboard visibility
 - Suggested Commit Title: `feat(in-03): ship first provider pilot sync tests and last_sync_at card visibility`
 - Scope:
