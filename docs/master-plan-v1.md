@@ -177,12 +177,12 @@ Use the `Canonical Order Checklist` statuses as the source of truth.
 Current snapshot (2026-02-27):
 
 - Total checklist items: `38`
-- `[x]` complete: `21`
+- `[x]` complete: `22`
 - `[~]` in progress: `0`
-- Strict completion: `55.26%`
-- Weighted progress: `55.26%`
+- Strict completion: `57.89%`
+- Weighted progress: `57.89%`
 - **Income Integrations Plan (IN-00 through IN-08): COMPLETE**
-- **UI-00 complete: Unified Inventory Intake vocabulary/contracts shipped**
+- **UI-01 complete: Inventory Intake Hub shell live at /intake**
 
 Update rule after each slice:
 
@@ -311,7 +311,7 @@ Status legend:
 ### D. Execute Unified Inventory Intake Refactor (after receipt + income are stable)
 
 - [x] UI-00 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then finalize Phase 0 vocabulary/contracts in code/docs.
-- [ ] UI-01 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then add Phase 1 Inventory Intake Hub shell (intent-first entry).
+- [x] UI-01 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then add Phase 1 Inventory Intake Hub shell (intent-first entry).
 - [ ] UI-02 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then unify Phase 2 session orchestration to intake lifecycle.
 - [ ] UI-03 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 3 capability gating (industry-aware visibility/ordering).
 - [ ] UI-04 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 4 navigation consolidation with compatibility routes/wrappers retained.
@@ -336,13 +336,13 @@ Status legend:
 
 ## Last Left Off Here (Update This Block First)
 
-- Current task ID: `UI-01`
-- Current task: `Unified Inventory Intake Refactor — Phase 1 Intake Hub shell (intent-first entry cards)`
+- Current task ID: `UI-02`
+- Current task: `Unified Inventory Intake Refactor — Phase 2 session orchestration unification`
 - Status: `READY`
 - Last updated: `2026-02-27`
 - Primary source plan section:
-  - `docs/unified-inventory-intake-refactor-plan.md` -> `Phase 1`
-- Note: UI-00 (Phase 0 vocabulary/contracts) is **COMPLETE**. `src/features/intake/shared/` contracts are live and tsc/eslint clean.
+  - `docs/unified-inventory-intake-refactor-plan.md` -> `Phase 2`
+- Note: UI-01 (Phase 1 Hub shell) is **COMPLETE**. `/intake` route live with intent-first cards; tsc/eslint clean.
 
 ## Documentation Sync Checklist (Run Every Session)
 
@@ -354,6 +354,30 @@ Status legend:
 - [ ] `docs/codebase-overview.md` updated if behavior/architecture/canonical path descriptions changed.
 
 ## Latest Job Summary (Append New Entries At Top)
+
+### 2026-02-27 - UI-01 complete: Intake Hub shell live at /intake
+- Suggested Commit Title: `feat(ui-01): add Inventory Intake Hub shell with intent-first entry cards`
+- Completed:
+  - Ran UI-01 preflight scans:
+    - `find src/features/intake -type f` → only Phase 0 contracts; no UI yet — new ui/ path required
+    - `rg -n "IntakeHubClient|/intake" app src components` → no existing intake hub implementation
+    - Reviewed `src/features/receiving/shared/ui/ReceivePageClient.tsx` for card pattern to reuse styling
+    - Reviewed `components/nav/bottom-nav.tsx` for nav wiring approach
+  - UI-01 scoped additions (reuse-first, no duplicate services):
+    - `src/features/intake/ui/IntakeHubClient.tsx`:
+      - `INTAKE_INTENT_ORDER_BY_INDUSTRY[industryType]` drives card order
+      - `supplier_sync` card filtered by `integrations` module gate via `useBusinessConfig()`
+      - `INTENT_HREF` map: `live_purchase → /shopping`, `bulk_intake → /receive`, `supplier_sync → /integrations`
+      - Reuses existing `@/shared/config/business-context` and `@/features/intake/shared` contracts
+    - `app/(dashboard)/intake/page.tsx`: thin route wrapper only
+    - `components/nav/bottom-nav.tsx`: `/intake` nav entry added (replaced standalone `/receive`; Receive still reachable via Hub)
+  - No schema migration required
+  - All existing routes (/shopping, /receive, /receive/barcode, /receive/receipt, etc.) fully operational
+  - Validation gates all pass:
+    - `npx tsc --noEmit --incremental false` → PASS
+    - `npx eslint` targeted on touched files → PASS
+  - Completion: 22/38 = 57.89%
+- Next: `UI-02` (`docs/unified-inventory-intake-refactor-plan.md` Phase 2 — session orchestration unification)
 
 ### 2026-02-27 - UI-00 complete: Unified Inventory Intake Phase 0 vocabulary/contracts
 - Suggested Commit Title: `chore(ui-00): add intake vocabulary contracts — Phase 0 complete`

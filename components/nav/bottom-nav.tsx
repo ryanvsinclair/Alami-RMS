@@ -45,11 +45,12 @@ const navItems: NavItem[] = [
       </svg>
     ),
   },
+  // UI-01: Intake Hub nav entry — intent-first unified landing for Shopping + Receive.
+  // Existing /shopping and /receive nav entries preserved during migration (UI-04 consolidates).
   {
-    href: "/receive",
-    label: "Receive",
+    href: "/intake",
+    label: "Intake",
     exact: false,
-    moduleId: "receipts",
     icon: (
       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />

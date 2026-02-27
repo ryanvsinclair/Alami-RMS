@@ -1,9 +1,23 @@
 # Unified Inventory Intake Refactor Plan
 
 Last updated: February 27, 2026
-Status: Phase 0 complete; Phase 1 next
+Status: Phase 1 complete; Phase 2 next
 
 ## Latest Update
+
+### 2026-02-27 — UI-01 complete: Phase 1 Intake Hub shell
+
+- Created `src/features/intake/ui/IntakeHubClient.tsx`:
+  - Intent-first Hub component using `INTAKE_INTENT_ORDER_BY_INDUSTRY` for industry-aware card ordering
+  - `supplier_sync` card gated on `integrations` module via `useBusinessConfig()`
+  - Each card routes to the canonical existing flow: `live_purchase → /shopping`, `bulk_intake → /receive`, `supplier_sync → /integrations`
+  - No behavior changes to any existing route or flow
+- Created `app/(dashboard)/intake/page.tsx`: thin route wrapper
+- Updated `components/nav/bottom-nav.tsx`:
+  - Added `/intake` nav entry (replaced standalone `/receive` entry; Receive reachable via Hub)
+  - `/shopping` nav entry preserved during migration (UI-04 consolidates)
+- Validation: `npx tsc --noEmit --incremental false` → PASS; `npx eslint` → PASS
+- All existing routes (/shopping, /receive, /receive/barcode, etc.) remain fully operational
 
 ### 2026-02-27 — UI-00 complete: Phase 0 vocabulary and contracts
 
@@ -22,7 +36,7 @@ Status: Phase 0 complete; Phase 1 next
 
 ## Pick Up Here
 
-- Next task: **UI-01** — Phase 1 Intake Hub shell (intent-first entry cards, wiring existing flows)
+- Next task: **UI-02** — Phase 2 session orchestration unification
 
 ## Purpose
 

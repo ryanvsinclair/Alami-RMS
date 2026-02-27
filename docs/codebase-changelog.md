@@ -20,6 +20,34 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-27 - UI-01: Inventory Intake Hub shell — intent-first entry at /intake
+- Suggested Commit Title: `feat(ui-01): add Inventory Intake Hub shell with intent-first entry cards`
+- Scope: Phase 1 Intake Hub shell for the Unified Inventory Intake Refactor plan.
+- Preflight evidence (reuse/refactor-first):
+  - `src/features/intake/ui/` did not exist — new ui/ path required
+  - No existing `/intake` route or `IntakeHubClient` in codebase
+  - Reused existing card styling pattern from `ReceivePageClient.tsx`
+  - Reused `useBusinessConfig()` from `@/shared/config/business-context` for industry/module context
+  - Reused Phase 0 contracts (`INTAKE_INTENT_ORDER_BY_INDUSTRY`, `INTAKE_INTENT_LABELS`, `INTAKE_INTENT_DESCRIPTIONS`)
+  - No new schema or service logic — routing only
+- Changes:
+  - `src/features/intake/ui/IntakeHubClient.tsx` (NEW):
+    - Industry-aware intent card ordering from `INTAKE_INTENT_ORDER_BY_INDUSTRY[industryType]`
+    - Module gate for `supplier_sync` card (requires `integrations` module in `enabledModules`)
+    - `INTENT_HREF` compatibility map: `live_purchase→/shopping`, `bulk_intake→/receive`, `supplier_sync→/integrations`
+    - Per-intent icon + color identity (`INTENT_ICON`, `INTENT_COLOR`)
+  - `app/(dashboard)/intake/page.tsx` (NEW): thin route wrapper only
+  - `components/nav/bottom-nav.tsx`: `/intake` nav entry added; standalone `/receive` entry replaced
+    - `/shopping` nav entry preserved for migration compatibility (UI-04 consolidates)
+  - `docs/unified-inventory-intake-refactor-plan.md`: UI-01 entry in Latest Update; Pick Up Here → UI-02
+  - `docs/master-plan-v1.md`: UI-01 `[x]`, left-off → UI-02, completion 22/38 = 57.89%
+  - `docs/codebase-overview.md`: Intake Hub section added to Product Capabilities; current status updated
+- All existing routes (/shopping, /receive, /receive/barcode, /receive/receipt, etc.) fully preserved
+- No schema migration required; no behavior changes to existing flows
+- Validation:
+  - `npx tsc --noEmit --incremental false` → PASS
+  - `npx eslint` targeted on `src/features/intake/ui/`, `app/(dashboard)/intake/`, `components/nav/bottom-nav.tsx` → PASS
+
 ### 2026-02-27 - UI-00: Unified Inventory Intake Phase 0 vocabulary/contracts
 - Suggested Commit Title: `chore(ui-00): add intake vocabulary contracts — Phase 0 complete`
 - Scope: Phase 0 vocabulary and contracts for the Unified Inventory Intake Refactor plan.
