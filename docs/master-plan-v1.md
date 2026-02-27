@@ -177,11 +177,12 @@ Use the `Canonical Order Checklist` statuses as the source of truth.
 Current snapshot (2026-02-27):
 
 - Total checklist items: `38`
-- `[x]` complete: `20`
+- `[x]` complete: `21`
 - `[~]` in progress: `0`
-- Strict completion: `52.63%`
-- Weighted progress: `52.63%`
+- Strict completion: `55.26%`
+- Weighted progress: `55.26%`
 - **Income Integrations Plan (IN-00 through IN-08): COMPLETE**
+- **UI-00 complete: Unified Inventory Intake vocabulary/contracts shipped**
 
 Update rule after each slice:
 
@@ -309,7 +310,7 @@ Status legend:
 
 ### D. Execute Unified Inventory Intake Refactor (after receipt + income are stable)
 
-- [ ] UI-00 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then finalize Phase 0 vocabulary/contracts in code/docs.
+- [x] UI-00 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then finalize Phase 0 vocabulary/contracts in code/docs.
 - [ ] UI-01 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then add Phase 1 Inventory Intake Hub shell (intent-first entry).
 - [ ] UI-02 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then unify Phase 2 session orchestration to intake lifecycle.
 - [ ] UI-03 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 3 capability gating (industry-aware visibility/ordering).
@@ -335,13 +336,13 @@ Status legend:
 
 ## Last Left Off Here (Update This Block First)
 
-- Current task ID: `UI-00`
-- Current task: `Unified Inventory Intake Refactor — Phase 0 vocabulary/contracts finalization`
+- Current task ID: `UI-01`
+- Current task: `Unified Inventory Intake Refactor — Phase 1 Intake Hub shell (intent-first entry cards)`
 - Status: `READY`
 - Last updated: `2026-02-27`
 - Primary source plan section:
-  - `docs/unified-inventory-intake-refactor-plan.md` -> `Phase 0`
-- Note: Income Integrations plan (IN-00 through IN-08) is **COMPLETE**. Sequencing gate for UI-00 was: receipt + income plans both stable — both are now complete.
+  - `docs/unified-inventory-intake-refactor-plan.md` -> `Phase 1`
+- Note: UI-00 (Phase 0 vocabulary/contracts) is **COMPLETE**. `src/features/intake/shared/` contracts are live and tsc/eslint clean.
 
 ## Documentation Sync Checklist (Run Every Session)
 
@@ -353,6 +354,31 @@ Status legend:
 - [ ] `docs/codebase-overview.md` updated if behavior/architecture/canonical path descriptions changed.
 
 ## Latest Job Summary (Append New Entries At Top)
+
+### 2026-02-27 - UI-00 complete: Unified Inventory Intake Phase 0 vocabulary/contracts
+- Suggested Commit Title: `chore(ui-00): add intake vocabulary contracts — Phase 0 complete`
+- Completed:
+  - Ran UI-00 preflight scans:
+    - `rg --files src/features/intake` → path did not exist — new feature path required
+    - `rg -n "IntakeIntent|IntakeCapability|INTAKE_INTENTS|live_purchase|bulk_intake|supplier_sync" src app lib` → no prior implementation found
+    - Phase 0 scope confirmed as contracts-only: no DB interaction, no behavior changes
+  - UI-00 scoped additions (new feature path, no duplicate code):
+    - `src/features/intake/shared/intake.contracts.ts`:
+      - `INTAKE_INTENTS` + `IntakeIntent` (`live_purchase`, `bulk_intake`, `supplier_sync`)
+      - `INTAKE_SESSION_STATUSES` + `IntakeSessionStatus` (5 lifecycle states)
+      - `INTAKE_TERMINAL_STATUSES` readonly set
+      - `INTAKE_CAPABILITIES` + `IntakeCapability` (7 capability flags)
+      - `INTAKE_INTENT_ORDER_BY_INDUSTRY`: canonical intent ordering per IndustryType
+      - `INTAKE_INTENT_LABELS`, `INTAKE_INTENT_DESCRIPTIONS`: UI display strings
+      - `INTAKE_INTENT_CAPABILITIES`: per-intent capability sets
+    - `src/features/intake/shared/index.ts`: barrel re-export
+  - No schema migration required (contracts only)
+  - All existing flows unmodified; no behavior changes introduced
+  - Validation gates all pass:
+    - `npx tsc --noEmit --incremental false` → PASS
+    - `npx eslint` targeted on new files → PASS
+  - Completion: 21/38 = 55.26%
+- Next: `UI-01` (`docs/unified-inventory-intake-refactor-plan.md` Phase 1 — Intake Hub shell)
 
 ### 2026-02-27 - IN-08 complete: INCOME INTEGRATIONS PLAN CLOSED — all phases 0-8 done
 - Suggested Commit Title: `chore(in-08): close income integrations plan — all phases complete`

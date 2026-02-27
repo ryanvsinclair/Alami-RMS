@@ -57,8 +57,9 @@ High-level completion:
 What remains outside plan completion:
 - Manual integrated smoke testing across core flows (user-run / final QA pass).
 - Receipt post-OCR correction plan is complete through Phase 6 closeout (`RC-19`), with non-blocking follow-ups tracked separately.
-- **Income Integrations Onboarding Plan: COMPLETE** (all phases IN-00 through IN-08, security checklist 7/7). Next in sequence: UI-00 (Unified Inventory Intake Refactor — sequencing gate now clear).
-- Unified Intake regrouping refactor is planned but not yet implemented (see `docs/unified-inventory-intake-refactor-plan.md`).
+- **Income Integrations Onboarding Plan: COMPLETE** (all phases IN-00 through IN-08, security checklist 7/7).
+- **UI-00 complete**: Unified Inventory Intake vocabulary/contracts shipped (`src/features/intake/shared/`). Phase 1 (Hub shell) is next.
+- Unified Intake regrouping refactor Phase 0 is done; Phases 1–5 remain (see `docs/unified-inventory-intake-refactor-plan.md`).
 - Operational Calendar/Schedule refactor is planned and sequencing-locked behind completion of all current plans (see `docs/operational-calendar-schedule-plan.md`).
 
 ## Stack
@@ -123,6 +124,7 @@ Current feature folders:
 - `src/features/contacts`
 - `src/features/finance`
 - `src/features/home`
+- `src/features/intake` (new — Unified Inventory Intake refactor; Phase 0 contracts only)
 - `src/features/integrations`
 - `src/features/inventory`
 - `src/features/modules`

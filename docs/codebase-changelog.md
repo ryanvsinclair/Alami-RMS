@@ -20,6 +20,32 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-27 - UI-00: Unified Inventory Intake Phase 0 vocabulary/contracts
+- Suggested Commit Title: `chore(ui-00): add intake vocabulary contracts — Phase 0 complete`
+- Scope: Phase 0 vocabulary and contracts for the Unified Inventory Intake Refactor plan.
+- Preflight evidence (reuse/refactor-first):
+  - `src/features/intake/` did not exist — new feature path created
+  - No prior `IntakeIntent`, `IntakeCapability`, or `INTAKE_INTENTS` symbols found anywhere in `src app lib`
+  - Phase 0 scope is contracts-only; no DB interaction, no existing flow changes
+- Changes:
+  - `src/features/intake/shared/intake.contracts.ts` (NEW):
+    - `INTAKE_INTENTS` as const tuple + `IntakeIntent` type (`live_purchase`, `bulk_intake`, `supplier_sync`)
+    - `INTAKE_SESSION_STATUSES` as const + `IntakeSessionStatus` type (5 states: created → archived)
+    - `INTAKE_TERMINAL_STATUSES` readonly set (`committed`, `archived`)
+    - `INTAKE_CAPABILITIES` as const + `IntakeCapability` type (7 flags: barcode_capture, photo_assistance, receipt_parse, manual_entry, supplier_sync, produce_entry, invoice_entry)
+    - `INTAKE_INTENT_ORDER_BY_INDUSTRY`: per-IndustryType canonical intent ordering record
+    - `INTAKE_INTENT_LABELS`, `INTAKE_INTENT_DESCRIPTIONS`: UI display strings map
+    - `INTAKE_INTENT_CAPABILITIES`: per-intent capability sets
+  - `src/features/intake/shared/index.ts` (NEW): barrel re-export
+  - `docs/unified-inventory-intake-refactor-plan.md`: Added `## Latest Update` + `## Pick Up Here` sections
+  - `docs/master-plan-v1.md`: UI-00 `[x]`, left-off → UI-01, completion 21/38 = 55.26%
+  - `docs/codebase-overview.md`: Added `src/features/intake` to feature folder map, updated current status
+- No schema migration required (contracts only)
+- All existing flows unmodified; zero behavior changes
+- Validation:
+  - `npx tsc --noEmit --incremental false` → PASS
+  - `npx eslint` targeted on `src/features/intake/shared/` → PASS
+
 ### 2026-02-27 - IN-08: INCOME INTEGRATIONS PLAN COMPLETE — all phases 0-8 closed
 - Suggested Commit Title: `chore(in-08): close income integrations plan — all phases complete`
 - Scope: Documentation closure for Income Integrations Onboarding Plan (IN-08).

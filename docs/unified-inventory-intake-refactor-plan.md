@@ -1,6 +1,28 @@
 # Unified Inventory Intake Refactor Plan
 
-Last updated: February 27, 2026 (draft / planning-only, no feature-behavior changes)
+Last updated: February 27, 2026
+Status: Phase 0 complete; Phase 1 next
+
+## Latest Update
+
+### 2026-02-27 — UI-00 complete: Phase 0 vocabulary and contracts
+
+- Created `src/features/intake/shared/intake.contracts.ts`:
+  - `INTAKE_INTENTS` tuple + `IntakeIntent` type (`live_purchase`, `bulk_intake`, `supplier_sync`)
+  - `INTAKE_SESSION_STATUSES` tuple + `IntakeSessionStatus` type (`created`, `active`, `reviewing`, `committed`, `archived`)
+  - `INTAKE_TERMINAL_STATUSES` set (`committed`, `archived`)
+  - `INTAKE_CAPABILITIES` tuple + `IntakeCapability` type (7 capability flags)
+  - `INTAKE_INTENT_ORDER_BY_INDUSTRY`: canonical intent ordering per industry type
+  - `INTAKE_INTENT_LABELS`, `INTAKE_INTENT_DESCRIPTIONS`: UI display strings
+  - `INTAKE_INTENT_CAPABILITIES`: per-intent capability sets
+- Created `src/features/intake/shared/index.ts` — re-exports all contracts
+- Validation: `npx tsc --noEmit --incremental false` → PASS; `npx eslint` → PASS
+- No schema migration required (contracts only, no DB interaction)
+- All current flows remain unmodified; no behavior changes
+
+## Pick Up Here
+
+- Next task: **UI-01** — Phase 1 Intake Hub shell (intent-first entry cards, wiring existing flows)
 
 ## Purpose
 
