@@ -20,6 +20,23 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-27 - OC-07: close operational calendar plan and archive tracker to v2 standby
+
+- Suggested Commit Title: `chore(oc-07): close operational calendar plan and archive master tracker into v2 scaffold`
+- Scope: Operational Calendar Phase 6 closeout - plan/status closure only (docs slice).
+- Preflight evidence:
+  - Reviewed OC-07 checklist + closure requirements in `docs/master-plan-v1.md` and `docs/operational-calendar-schedule-plan.md`.
+  - Verified no existing v2 tracker file (`rg --files docs | rg "master-plan-v2|master-plan"`).
+  - Confirmed docs-only scope; no runtime/schema changes.
+- Deliverables:
+  - `docs/operational-calendar-schedule-plan.md`: status moved to COMPLETE; Pick Up Here closed; OC-07 closure entry added.
+  - `docs/master-plan-v1.md`: MP-01 + OC-07 marked `[x]`; completion moved to 38/38 (100%); status set to archived; Last Left Off marked `NONE`; OC-07 job summary added.
+  - `docs/master-plan-v2.md` (NEW): standby successor execution tracker scaffold.
+  - `docs/codebase-overview.md`: updated to reflect Operational Calendar completion and v1->v2 tracker transition.
+- Validation:
+  - docs closure consistency review -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS (baseline docs-only gate)
+- Master plan: MP-01/OC-07 `[x]`; completion 38/38 = 100.00%; no open checklist items.
 ### 2026-02-27 - OC-06: Phase 5 hardening and ops readiness - reliability metrics, load guard, permission/audit utilities
 
 - Suggested Commit Title: `feat(oc-06): add schedule ops hardening metrics, load guard, and permission/audit utilities`
@@ -2177,6 +2194,7 @@ Entry format (recommended):
 - Notes:
   - <caveats / follow-up / accepted exceptions>
 ```
+
 
 
 

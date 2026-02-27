@@ -1,6 +1,6 @@
 ﻿# Master Plan v1 - Cross-Plan Canonical Execution Guide
 
-Status: Active (single source of execution order for remaining plans)
+Status: Archived (superseded by `docs/master-plan-v2.md`; no open checklist tasks in v1)
 Created: 2026-02-27
 Last Updated: 2026-02-27
 Primary Purpose: centralize completed-plan history, open-plan sequencing, and a durable handoff checklist for all engineers/agents.
@@ -182,14 +182,14 @@ Use the `Canonical Order Checklist` statuses as the source of truth.
 Current snapshot (2026-02-27):
 
 - Total checklist items: `38`
-- `[x]` complete: `36`
+- `[x]` complete: `38`
 - `[~]` in progress: `0`
-- Strict completion: `94.74%`
-- Weighted progress: `94.74%`
+- Strict completion: `100.00%`
+- Weighted progress: `100.00%`
 - **Income Integrations Plan (IN-00 through IN-08): COMPLETE**
 - **Unified Inventory Intake Refactor Plan (UI-00 through UI-06): COMPLETE**
 - **QA-00/QA-01: COMPLETE â€” all manual smoke passed; migration FK bug found and fixed**
-- **OC-00/OC-01/OC-02/OC-03/OC-04/OC-05/OC-06: COMPLETE — activation, shell, provider sync, suggestion layer, and ops hardening shipped**
+- **OC-00/OC-01/OC-02/OC-03/OC-04/OC-05/OC-06/OC-07: COMPLETE — operational calendar plan closed and archived to v2 handoff scaffold**
 
 Update rule after each slice:
 
@@ -297,7 +297,7 @@ Status legend:
 ### A. Coordination Baseline
 
 - [x] MP-00 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then create master plan and complete cross-doc status audit (2026-02-27).
-- [ ] MP-01 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then keep this file as the only canonical execution order tracker for remaining open plans.
+- [x] MP-01 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then keep this file as the only canonical execution order tracker for remaining open plans.
 
 ### B. Finish Receipt Post-OCR Correction Plan First (current in-flight plan)
 
@@ -348,17 +348,17 @@ Status legend:
 - [x] OC-04 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 3 scheduling-platform expansion.
 - [x] OC-05 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 4 cross-feature suggestion layer.
 - [x] OC-06 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 5 hardening/metrics/ops readiness.
-- [ ] OC-07 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then mark operational calendar plan complete and archive this master plan into v2 (if needed).
+- [x] OC-07 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then mark operational calendar plan complete and archive this master plan into v2 (if needed).
 
 ## Last Left Off Here (Update This Block First)
 
-- Current task ID: `OC-07`
-- Current task: `Close operational calendar plan, synchronize docs/status, and finalize master-plan closure path`
-- Status: `READY`
+- Current task ID: `NONE`
+- Current task: `MASTER PLAN COMPLETE - no open checklist items`
+- Status: `CLOSED`
 - Last updated: `2026-02-27`
 - Primary source plan section:
-  - `docs/operational-calendar-schedule-plan.md` -> `### Phase 5 - Hardening and operational metrics`
-- Note: OC-06 (Phase 5) COMPLETE. Sync reliability metrics, duplicate suppression diagnostics, load guardrails, and permission/audit hardening utilities are now in place. OC-07 performs plan closure and canonical tracker sync.
+  - `N/A - plan closure complete`
+- Note: OC-07 closed Operational Calendar and archived tracker continuity into `docs/master-plan-v2.md`. Re-open planning in v2 only when a new active initiative is approved.
 
 ## Documentation Sync Checklist (Run Every Session)
 
@@ -370,6 +370,25 @@ Status legend:
 - [ ] `docs/codebase-overview.md` updated if behavior/architecture/canonical path descriptions changed.
 
 ## Latest Job Summary (Append New Entries At Top)
+
+### 2026-02-27 - OC-07 complete: operational calendar closure + master plan archive handoff
+
+- Suggested Commit Title: `chore(oc-07): close operational calendar plan and archive master tracker into v2 scaffold`
+- Preflight:
+  - Reviewed source-plan closure scope in `docs/operational-calendar-schedule-plan.md` and master-plan OC-07 checklist item.
+  - Verified no `docs/master-plan-v2.md` existed (`rg --files docs | rg "master-plan-v2|master-plan"`).
+  - Confirmed closure is docs-only; no runtime/schema changes required.
+- Deliverables:
+  - `docs/operational-calendar-schedule-plan.md`: status moved to COMPLETE; Pick Up Here marked `PLAN COMPLETE`; OC-07 closure entry appended.
+  - `docs/master-plan-v1.md`: MP-01 and OC-07 marked `[x]`; completion moved to 38/38 (100%); left-off block closed (`NONE`); status set to archived.
+  - `docs/master-plan-v2.md` (NEW): standby successor tracker scaffold for future initiatives.
+  - `docs/codebase-overview.md`: Operational Calendar status moved to COMPLETE and master tracker transition noted.
+  - `docs/codebase-changelog.md`: OC-07 closure entry appended at top.
+- Validation:
+  - docs integrity pass (`rg`/manual review) confirms checklist closure and v2 scaffold presence.
+  - `npx tsc --noEmit --incremental false` -> PASS (docs-only slice baseline check)
+- Completion: 38/38 = 100.00%
+- Next: none (open new execution in `docs/master-plan-v2.md` when needed)
 
 ### 2026-02-27 - OC-06 complete: Phase 5 hardening and ops readiness - reliability metrics, load guard, permission/audit hardening
 

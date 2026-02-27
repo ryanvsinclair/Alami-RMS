@@ -24,14 +24,15 @@ What this document is not:
 Related historical/planning docs (still useful for deep history):
 
 - `docs/codebase-changelog.md` (chronological engineering changelog + validation record)
-- `docs/master-plan-v1.md` (canonical cross-plan execution order, completed/open ledger, and handoff checkpoint for remaining initiatives)
+- `docs/master-plan-v1.md` (archived canonical execution ledger; all v1 checklist items complete)
+- `docs/master-plan-v2.md` (standby successor tracker for future initiatives)
 - `docs/app-structure-refactor-agent-playbook.md` (refactor execution history and wrapper decisions)
 - `docs/inventoryintakeplan.md` (inventory/barcode/receipt/enrichment rollout history)
 - `docs/combined-plan-coordination.md` (cross-plan sequencing and handoff history)
 - `docs/income-integrations-onboarding-plan.md` (business-type onboarding + income provider OAuth/sync rollout plan)
 - `docs/receipt-post-ocr-correction-plan.md` (post-TabScanner numeric/structural correction and reconciliation accuracy plan)
 - `docs/unified-inventory-intake-refactor-plan.md` (intent-first regrouping plan to unify Shopping + Receive under a single Inventory Intake Hub without changing core feature behavior)
-- `docs/operational-calendar-schedule-plan.md` (Operational Calendar plan — ACTIVE; OC-06 Phase 5 complete, OC-07 closure next)
+- `docs/operational-calendar-schedule-plan.md` (Operational Calendar plan — COMPLETE; OC-00 through OC-07 closed)
 
 ## Maintenance Rules (Required)
 
@@ -58,7 +59,7 @@ High-level completion:
 - App structure refactor plan: complete through Phase 8 (manual core-flow smoke deferred to user/integrated QA).
 - Inventory intake plan: complete through Phases 0, A, B, C, D, E.
 - Combined coordination plan: complete (manual integrated smoke remains a user QA task).
-- Master execution tracker: active in `docs/master-plan-v1.md` for canonical sequencing of all remaining non-completed plans.
+- Master execution tracker: `docs/master-plan-v1.md` archived complete; `docs/master-plan-v2.md` is the standby successor tracker.
 
 What remains outside plan completion:
 
@@ -66,7 +67,7 @@ What remains outside plan completion:
 - Receipt post-OCR correction plan is complete through Phase 6 closeout (`RC-19`), with non-blocking follow-ups tracked separately.
 - **Income Integrations Onboarding Plan: COMPLETE** (all phases IN-00 through IN-08, security checklist 7/7).
 - **Unified Inventory Intake Refactor Plan: COMPLETE** (all phases UI-00 through UI-06). `/intake` is the canonical Hub entry; capability-gating via `resolveVisibleIntents()`; all migration-era scaffolding removed; `/shopping` and `/receive` remain as full feature routes under the Hub.
-- **Operational Calendar Plan: ACTIVE** — OC-06 Phase 5 complete; schedule ops hardening layer now includes sync/duplicate metrics derivation, view-mode load guard caps, and permission/audit utilities. OC-07 (plan closure) is next.
+- **Operational Calendar Plan: COMPLETE** — OC-00 through OC-07 shipped (activation, shell, provider sync, scheduling connectors, suggestions, ops hardening, closure/archive transition).
 
 ## Stack
 
