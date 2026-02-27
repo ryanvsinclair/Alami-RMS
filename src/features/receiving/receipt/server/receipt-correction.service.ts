@@ -16,7 +16,7 @@ import type {
 } from "./receipt-correction.contracts";
 import { applyProduceLookupToCorrectionLines } from "./receipt-produce-lookup.service";
 
-const RECEIPT_CORRECTION_PARSER_VERSION = "v1.4-numeric-tax-produce-history-gated";
+const RECEIPT_CORRECTION_PARSER_VERSION = "v1.5-rollout-guarded-history-aware";
 
 function createConfidenceBandCounts(): ReceiptCorrectionConfidenceBandCounts {
   return {
@@ -192,6 +192,67 @@ function parseBooleanEnv(value: string | undefined): boolean | null {
   return null;
 }
 
+function parseIntegerEnv(value: string | undefined): number | null {
+  if (!value) return null;
+  const parsed = Number.parseInt(value.trim(), 10);
+  if (!Number.isFinite(parsed)) return null;
+  return parsed;
+}
+
+type EnforceRolloutGuardResult = {
+  effectiveMode: ReceiptPostOcrCorrectionMode;
+  status: "not_applicable" | "pass" | "fallback_to_shadow";
+  reasonCounts: ReceiptCorrectionCountMap;
+};
+
+function evaluateEnforceRolloutGuard(data: {
+  requestedMode: ReceiptPostOcrCorrectionMode;
+  core: ReceiptCorrectionCoreResult;
+  observability: ReturnType<typeof summarizeCorrectionCoreObservability>;
+}): EnforceRolloutGuardResult {
+  if (data.requestedMode !== "enforce") {
+    return {
+      effectiveMode: data.requestedMode,
+      status: "not_applicable",
+      reasonCounts: {},
+    };
+  }
+
+  const maxLowConfidenceLines = Math.max(
+    0,
+    parseIntegerEnv(process.env.RECEIPT_CORRECTION_ENFORCE_MAX_LOW_CONFIDENCE_LINES) ?? 0,
+  );
+  const allowTaxWarn =
+    parseBooleanEnv(process.env.RECEIPT_CORRECTION_ENFORCE_ALLOW_TAX_WARN) ?? false;
+  const requireTotalsPass =
+    parseBooleanEnv(process.env.RECEIPT_CORRECTION_ENFORCE_REQUIRE_TOTALS_PASS) ?? true;
+
+  const reasonCounts: ReceiptCorrectionCountMap = {};
+  if (requireTotalsPass && data.core.totals_check.status !== "pass") {
+    incrementCount(reasonCounts, "totals_not_pass");
+  }
+  if (data.observability.parse_confidence_band_counts.low > maxLowConfidenceLines) {
+    incrementCount(reasonCounts, "low_parse_confidence_lines_exceed_threshold");
+  }
+  if (!allowTaxWarn && data.core.tax_interpretation.status === "warn") {
+    incrementCount(reasonCounts, "tax_validation_warn");
+  }
+
+  if (Object.keys(reasonCounts).length > 0) {
+    return {
+      effectiveMode: "shadow",
+      status: "fallback_to_shadow",
+      reasonCounts,
+    };
+  }
+
+  return {
+    effectiveMode: "enforce",
+    status: "pass",
+    reasonCounts: {},
+  };
+}
+
 export function getReceiptPostOcrCorrectionMode(): ReceiptPostOcrCorrectionMode {
   const enabledOverride = parseBooleanEnv(process.env.RECEIPT_POST_OCR_CORRECTION_ENABLED);
   if (enabledOverride === false) return "off";
@@ -215,7 +276,7 @@ export function getReceiptPostOcrCorrectionMode(): ReceiptPostOcrCorrectionMode 
 export async function runReceiptPostOcrCorrection(
   input: ReceiptPostOcrCorrectionInput,
 ): Promise<ReceiptPostOcrCorrectionResult> {
-  const mode = getReceiptPostOcrCorrectionMode();
+  const requestedMode = getReceiptPostOcrCorrectionMode();
   const coreBase = runReceiptCorrectionCore({
     source: input.source,
     lines: input.lines,
@@ -239,16 +300,24 @@ export async function runReceiptPostOcrCorrection(
     hints: input.historical_price_hints,
     core,
   });
+  const rolloutGuard = evaluateEnforceRolloutGuard({
+    requestedMode,
+    core,
+    observability,
+  });
 
   const correctedLines = core.lines.map((entry) => entry.line);
 
   return {
-    mode,
-    lines: mode === "enforce" ? correctedLines : input.lines,
+    mode: rolloutGuard.effectiveMode,
+    lines: rolloutGuard.effectiveMode === "enforce" ? correctedLines : input.lines,
     core,
     summary: {
       parser_version: RECEIPT_CORRECTION_PARSER_VERSION,
-      mode,
+      requested_mode: requestedMode,
+      mode: rolloutGuard.effectiveMode,
+      rollout_guard_status: rolloutGuard.status,
+      rollout_guard_reason_counts: rolloutGuard.reasonCounts,
       source: input.source,
       line_count: core.stats.line_count,
       changed_line_count: core.stats.changed_line_count,

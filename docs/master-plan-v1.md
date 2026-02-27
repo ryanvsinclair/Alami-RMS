@@ -177,10 +177,10 @@ Use the `Canonical Order Checklist` statuses as the source of truth.
 Current snapshot (2026-02-27):
 
 - Total checklist items: `38`
-- `[x]` complete: `9`
+- `[x]` complete: `10`
 - `[~]` in progress: `0`
-- Strict completion: `23.68%`
-- Weighted progress: `23.68%`
+- Strict completion: `26.32%`
+- Weighted progress: `26.32%`
 
 Update rule after each slice:
 
@@ -226,10 +226,10 @@ Latest Update section review:
 - Produce normalization layer was added (9-prefix PLU normalization, organic keyword stripping, produce candidate gating).
 - `CorrectedReceiptLine` now includes `plu_code`, `produce_match`, `organic_flag`.
 - Phase 0 foundation is implemented; RC-10 closeout completed threshold tuning + fixture expansion to 20 scenarios.
-- Phase 1.5 schema-backed persistence is implemented for minimal produce metadata (`plu_code`, `organic_flag` on `ReceiptLineItem`), and RC-16/RC-17 parser + historical-loop upgrades are complete.
+- Phase 1.5 schema-backed persistence is implemented for minimal produce metadata (`plu_code`, `organic_flag` on `ReceiptLineItem`), and RC-16/RC-17/RC-18 parser + historical-loop + rollout-hardening upgrades are complete.
 
 Remaining high-impact work:
-- Execute Phase 6 (rollout hardening and tuning).
+- Execute receipt-plan closeout (`RC-19`) with final validation/status sync.
 
 ### 2) `docs/income-integrations-onboarding-plan.md` (not started)
 
@@ -284,7 +284,7 @@ Status legend:
 - [x] RC-15 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 3 store-specific parse profile memory.
 - [x] RC-16 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 4 hybrid structured parser upgrades.
 - [x] RC-17 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 5 historical feedback loop integration.
-- [ ] RC-18 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 6 rollout hardening (threshold tuning, versioning, diagnostics, safe enforce promotion).
+- [x] RC-18 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 6 rollout hardening (threshold tuning, versioning, diagnostics, safe enforce promotion).
 - [ ] RC-19 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then close receipt plan with validation evidence and final status updates.
 
 ### C. Implement Income Integrations Onboarding Plan
@@ -327,12 +327,12 @@ Status legend:
 
 ## Last Left Off Here (Update This Block First)
 
-- Current task ID: `RC-18`
-- Current task: `Phase 6 rollout hardening`
+- Current task ID: `RC-19`
+- Current task: `Receipt plan closeout and final validation evidence`
 - Status: `READY`
 - Last updated: `2026-02-27`
 - Primary source plan section:
-  - `docs/receipt-post-ocr-correction-plan.md` -> `Phase 6 - Hardening and rollout expansion`
+  - `docs/receipt-post-ocr-correction-plan.md` -> `Phase 6 closeout / RC-19 pickup block`
 
 ## Documentation Sync Checklist (Run Every Session)
 
@@ -344,6 +344,32 @@ Status legend:
 - [ ] `docs/codebase-overview.md` updated if behavior/architecture/canonical path descriptions changed.
 
 ## Latest Job Summary (Append New Entries At Top)
+
+### 2026-02-27 - RC-18 complete: rollout hardening (safe enforce guardrails, diagnostics payloads, and guard metrics)
+- Completed:
+  - Ran RC-18 preflight scans across phase scope and existing correction/workflow/profile paths:
+    - `rg -n "Phase 6 - Hardening and rollout expansion|RC-18|threshold tuning|parser versioning|safe enforce|diagnostics|backfill" docs/receipt-post-ocr-correction-plan.md docs/master-plan-v1.md docs/codebase-overview.md`
+    - `rg -n "parser_version|mode|shadow|enforce|threshold|tolerance|diagnostics|metrics|backfill|reparse" src/features/receiving/receipt/server src/domain/parsers`
+  - Reused existing correction-service orchestration and added scoped hardening only:
+    - enforce rollout guard evaluator with configurable thresholds
+    - per-receipt enforce->shadow fallback when guard conditions fail
+    - correction summary diagnostics (`requested_mode`, guard status, reason counts)
+    - workflow metrics aggregation for rollout guard status/reasons
+    - parse-profile signal accumulation for rollout guard reasons
+  - Added targeted correction hardening tests:
+    - `receipt-correction.service.test.mjs` for enforce fallback/pass behavior
+  - Completed validation gates:
+    - `npx tsx --test src/features/receiving/receipt/server/receipt-correction.service.test.mjs` -> PASS (2/2)
+    - `npx tsx --test src/features/receiving/receipt/server/receipt-workflow.historical-hints.test.mjs` -> PASS (3/3)
+    - `npx tsx --test src/features/receiving/receipt/server/receipt-parse-profile.service.test.mjs` -> PASS (5/5)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-core.test.mjs` -> PASS (14/14)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-fixtures.test.mjs` -> PASS (27/27)
+    - `npx tsc --noEmit --incremental false` -> PASS
+    - targeted `eslint` on touched correction/workflow/repository/profile files -> PASS
+- Remaining:
+  - Start `RC-19` receipt-plan closeout.
+- Next:
+  - `RC-19` in `docs/receipt-post-ocr-correction-plan.md`
 
 ### 2026-02-27 - RC-17 complete: outcome-aware historical feedback loop (confirmed/matched priors + fuzzy fallback + price proximity gate)
 - Completed:

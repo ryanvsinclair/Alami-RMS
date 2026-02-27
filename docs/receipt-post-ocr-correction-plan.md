@@ -4,6 +4,33 @@ Last updated: February 27, 2026 (draft / implementation-ready plan)
 
 ## Latest Update
 
+- **Phase 6 RC-18 complete: rollout hardening shipped (enforce safety guardrails + diagnostics payloads + guard metrics)** (February 27, 2026):
+  - Added enforce rollout guardrails in `receipt-correction.service.ts`:
+    - when `RECEIPT_POST_OCR_CORRECTION_MODE=enforce`, correction now validates safety gates before persisting corrected lines
+    - configurable guard controls via env:
+      - `RECEIPT_CORRECTION_ENFORCE_REQUIRE_TOTALS_PASS` (default true)
+      - `RECEIPT_CORRECTION_ENFORCE_ALLOW_TAX_WARN` (default false)
+      - `RECEIPT_CORRECTION_ENFORCE_MAX_LOW_CONFIDENCE_LINES` (default 0)
+    - if any guard fails, enforce requests auto-fallback to `shadow` for that receipt with explicit reason counts
+  - Added parser/correction versioning + diagnostics fields in persisted correction summary:
+    - parser version bumped to `v1.5-rollout-guarded-history-aware`
+    - summary now includes `requested_mode`, effective `mode`, `rollout_guard_status`, and `rollout_guard_reason_counts`
+  - Expanded correction metrics logging in workflow:
+    - added `rollout_guard_status_counts`
+    - added `rollout_guard_reason_counts`
+  - Extended store profile signal memory for diagnostics:
+    - `ReceiptParseProfile.signals` now accumulates `rollout_guard_reason_counts` from correction summaries
+  - Added targeted hardening regression tests:
+    - `receipt-correction.service.test.mjs` validates enforce->shadow fallback and enforce-pass behavior
+  - Validation:
+    - `npx tsx --test src/features/receiving/receipt/server/receipt-correction.service.test.mjs` -> PASS (2/2)
+    - `npx tsx --test src/features/receiving/receipt/server/receipt-workflow.historical-hints.test.mjs` -> PASS (3/3)
+    - `npx tsx --test src/features/receiving/receipt/server/receipt-parse-profile.service.test.mjs` -> PASS (5/5)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-core.test.mjs` -> PASS (14/14)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-fixtures.test.mjs` -> PASS (27/27)
+    - `npx tsc --noEmit --incremental false` -> PASS
+    - targeted `eslint` on touched correction/workflow/repository/profile files -> PASS
+
 - **Phase 5 RC-17 complete: historical feedback loop integrated with outcome-weighted priors + fuzzy fallback + price-proximity gating** (February 27, 2026):
   - Upgraded historical hint derivation in `receipt-workflow.service.ts` to prioritize feedback-aligned samples:
     - `confirmed` / `matched` receipt-line outcomes with `matched_item_id` now form high-confidence prior pools
@@ -288,18 +315,18 @@ Last updated: February 27, 2026 (draft / implementation-ready plan)
 
 ## Pick Up Here (Next Continuation)
 
-Continue with **Phase 6 (RC-18): hardening and rollout expansion**.
+Continue with **Phase 6 closeout (RC-19): final receipt-plan validation + status synchronization**.
 
 Recommended next implementation order:
 
-1. Add parser/correction versioning and diagnostics payloads in persisted summaries
-   - make per-receipt behavior auditable across tuning iterations
-2. Tune thresholds using production-observability fields
-   - harden historical/fuzzy gating and correction acceptance cutoffs
-3. Add rollout safety controls for enforce-mode promotion
-   - define explicit safe-enforce criteria and fallback toggles
-4. Evaluate optional targeted backfill/reparse tooling
-   - keep scope limited to selected receipts/stores and preserve idempotent writes
+1. Run final receipt-plan validation bundle and capture evidence in plan docs
+   - parser/core/fixture/workflow/profile tests + typecheck/lint status snapshot
+2. Confirm all phase statuses and pickup pointers are synchronized
+   - source plan + master plan + changelog + overview
+3. Record residual risks/deferred items explicitly
+   - optional backfill/reparse tooling and admin diagnostics remain opt-in/deferred
+4. Mark RC-19 complete in canonical checklist and move execution to next plan gate
+   - handoff to income integrations sequence (`IN-*`)
 
 Implementation guardrails (carry forward):
 
@@ -1461,7 +1488,7 @@ Progress notes (2026-02-27):
   - wired line-item persistence of `plu_code` and `organic_flag` in `receipt.repository.ts`
 - Remaining:
   - add broader multilingual produce fixtures and lookup validation cases
-  - continue with RC-18 hardening and rollout expansion
+  - continue with RC-19 receipt-plan closeout and final status synchronization
 
 ## Phase 2 - Line-level parse confidence and UI flags
 
@@ -1548,7 +1575,7 @@ Progress notes (2026-02-27):
 
 ## Phase 6 - Hardening and rollout expansion
 
-Status: `[ ]`
+Status: `[x]`
 
 Deliverables:
 
@@ -1556,6 +1583,13 @@ Deliverables:
 - parser versioning in `parsed_data`
 - backfill/reparse tooling for selected historical receipts (optional)
 - per-store parser profile diagnostics/admin debugging views (optional)
+
+Progress notes (2026-02-27):
+
+- Added enforce-mode safety guardrails with per-receipt fallback to shadow when totals/tax/low-confidence gates fail.
+- Added correction-summary rollout diagnostics (`requested_mode`, `rollout_guard_status`, reason counts) and bumped parser version metadata.
+- Added workflow-level rollout guard metrics aggregation and profile-signal accumulation of guard reasons for diagnostics.
+- Added targeted correction-service hardening tests for enforce fallback/pass behavior.
 
 ## Rollout Strategy (Risk-Controlled)
 

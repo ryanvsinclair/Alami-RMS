@@ -36,7 +36,10 @@ if (
 function createCorrectionSummary(overrides = {}) {
   return {
     parser_version: "v1-test",
+    requested_mode: "shadow",
     mode: "shadow",
+    rollout_guard_status: "not_applicable",
+    rollout_guard_reason_counts: {},
     source: "parsed_text",
     line_count: 5,
     changed_line_count: 2,

@@ -20,6 +20,63 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-27 - RC-18 complete: rollout hardening with enforce safety guardrails and diagnostics
+- Suggested Commit Title: `feat(rc-18): add receipt correction rollout guards and enforce fallback diagnostics`
+- Scope:
+  - Receipt correction Phase 6 (`RC-18`) hardening/tuning for safe enforce promotion and diagnostics.
+- Preflight evidence (reuse/refactor-first + DB/Prisma integrity):
+  - Reviewed source-plan RC-18 scope and pickup marker:
+    - `docs/receipt-post-ocr-correction-plan.md` (`Pick Up Here`, `Phase 6 - Hardening and rollout expansion`)
+  - Ran scoped scans before implementation:
+    - `rg -n "Phase 6 - Hardening and rollout expansion|RC-18|threshold tuning|parser versioning|safe enforce|diagnostics|backfill" docs/receipt-post-ocr-correction-plan.md docs/master-plan-v1.md docs/codebase-overview.md`
+    - `rg -n "parser_version|mode|shadow|enforce|threshold|tolerance|diagnostics|metrics|backfill|reparse" src/features/receiving/receipt/server src/domain/parsers`
+  - Reused existing correction/workflow/profile orchestration paths (`receipt-correction.service.ts`, `receipt-workflow.service.ts`, `receipt-parse-profile.service.ts`) and applied scoped hardening only.
+  - No schema or migration changes required.
+- What changed:
+  - Added enforce rollout guard evaluator in correction service:
+    - evaluate totals-pass requirement, low-confidence threshold, and tax-warn policy before applying enforce writes
+    - auto-fallback to `shadow` when guard conditions fail
+    - guard behavior tunable through env controls:
+      - `RECEIPT_CORRECTION_ENFORCE_REQUIRE_TOTALS_PASS`
+      - `RECEIPT_CORRECTION_ENFORCE_ALLOW_TAX_WARN`
+      - `RECEIPT_CORRECTION_ENFORCE_MAX_LOW_CONFIDENCE_LINES`
+  - Added correction summary diagnostics:
+    - `requested_mode`
+    - effective `mode`
+    - `rollout_guard_status`
+    - `rollout_guard_reason_counts`
+  - Bumped parser/correction summary version marker to:
+    - `v1.5-rollout-guarded-history-aware`
+  - Extended correction metrics aggregation/logging in workflow:
+    - rollout guard status counts
+    - rollout guard reason counts
+  - Extended parse-profile signal accumulation to include rollout guard reason counts.
+  - Added targeted hardening tests:
+    - `receipt-correction.service.test.mjs` covering enforce fallback and enforce-pass behavior.
+- Files changed:
+  - `src/features/receiving/receipt/server/receipt-correction.contracts.ts`
+  - `src/features/receiving/receipt/server/receipt-correction.service.ts`
+  - `src/features/receiving/receipt/server/receipt-correction.service.test.mjs`
+  - `src/features/receiving/receipt/server/receipt-workflow.service.ts`
+  - `src/features/receiving/receipt/server/receipt.repository.ts`
+  - `src/features/receiving/receipt/server/receipt-workflow.historical-hints.test.mjs`
+  - `src/features/receiving/receipt/server/receipt-parse-profile.service.ts`
+  - `src/features/receiving/receipt/server/receipt-parse-profile.service.test.mjs`
+  - `docs/receipt-post-ocr-correction-plan.md`
+  - `docs/master-plan-v1.md`
+  - `docs/codebase-overview.md`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - `npx tsx --test src/features/receiving/receipt/server/receipt-correction.service.test.mjs` -> PASS (2/2)
+  - `npx tsx --test src/features/receiving/receipt/server/receipt-workflow.historical-hints.test.mjs` -> PASS (3/3)
+  - `npx tsx --test src/features/receiving/receipt/server/receipt-parse-profile.service.test.mjs` -> PASS (5/5)
+  - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-core.test.mjs` -> PASS (14/14; expected Node experimental/module-type warnings)
+  - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-fixtures.test.mjs` -> PASS (27/27; expected Node experimental/module-type warnings)
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `npx eslint src/features/receiving/receipt/server/receipt-correction.contracts.ts src/features/receiving/receipt/server/receipt-correction.service.ts src/features/receiving/receipt/server/receipt-correction.service.test.mjs src/features/receiving/receipt/server/receipt-workflow.service.ts src/features/receiving/receipt/server/receipt.repository.ts src/features/receiving/receipt/server/receipt-workflow.historical-hints.test.mjs src/features/receiving/receipt/server/receipt-parse-profile.service.ts src/features/receiving/receipt/server/receipt-parse-profile.service.test.mjs --quiet` -> PASS
+- Notes:
+  - RC-18 marked complete; canonical next task is `RC-19` closeout.
+
 ### 2026-02-27 - RC-17 complete: historical feedback loop with outcome-aware priors and fuzzy fallback
 - Suggested Commit Title: `feat(rc-17): prioritize confirmed history priors with fuzzy fallback and price-proximity gating`
 - Scope:

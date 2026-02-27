@@ -26,6 +26,7 @@ type ReceiptParseProfileSignals = {
   parse_confidence_band_counts: CountMap;
   parse_flag_counts: CountMap;
   correction_action_type_counts: CountMap;
+  rollout_guard_reason_counts: CountMap;
 };
 
 type ReceiptParseProfileStats = {
@@ -129,6 +130,7 @@ function normalizeSignals(value: unknown): ReceiptParseProfileSignals {
     parse_confidence_band_counts: normalizeCountMap(source.parse_confidence_band_counts),
     parse_flag_counts: normalizeCountMap(source.parse_flag_counts),
     correction_action_type_counts: normalizeCountMap(source.correction_action_type_counts),
+    rollout_guard_reason_counts: normalizeCountMap(source.rollout_guard_reason_counts),
   };
 }
 
@@ -180,6 +182,7 @@ function applyCorrectionSummaryToProfile(data: {
   mergeCountMap(signals.parse_confidence_band_counts, summary.parse_confidence_band_counts);
   mergeCountMap(signals.parse_flag_counts, summary.parse_flag_counts);
   mergeCountMap(signals.correction_action_type_counts, summary.correction_action_type_counts);
+  mergeCountMap(signals.rollout_guard_reason_counts, summary.rollout_guard_reason_counts);
 
   stats.receipts_observed += 1;
   stats.lines_observed += Math.max(0, Math.round(summary.line_count));

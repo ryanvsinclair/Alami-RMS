@@ -297,6 +297,10 @@ Implemented capabilities:
   - confirmed/matched review outcomes (`ReceiptLineItem.status` + `matched_item_id`) are prioritized over unresolved noise
   - fuzzy parsed-name fallback can supply priors when exact keys are missing
   - price-proximity gating suppresses weak far-distance priors before they influence correction scoring
+- Rollout hardening for correction `enforce` mode is now active:
+  - enforce requests are guard-checked per receipt (totals pass, tax-warn policy, low-confidence threshold)
+  - failed guards automatically fall back to shadow for that receipt with explicit reason counts
+  - correction/workflow diagnostics now expose requested vs effective mode and rollout-guard metrics
 - Receipt-correction fixture corpus is expanded to 20 runnable scenarios, including discount-heavy parsed-text and historical-threshold boundary coverage
 - Idempotent receipt commit behavior in inventory ledger path
 - Receipt auto-resolution observability (process-local summaries)

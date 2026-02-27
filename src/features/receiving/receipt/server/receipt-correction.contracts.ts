@@ -28,7 +28,10 @@ export interface ReceiptPostOcrCorrectionInput {
 
 export interface ReceiptPostOcrCorrectionSummary {
   parser_version: string;
+  requested_mode: ReceiptPostOcrCorrectionMode;
   mode: ReceiptPostOcrCorrectionMode;
+  rollout_guard_status: "not_applicable" | "pass" | "fallback_to_shadow";
+  rollout_guard_reason_counts: ReceiptCorrectionCountMap;
   source: ReceiptCorrectionSource;
   line_count: number;
   changed_line_count: number;

@@ -93,6 +93,8 @@ type ReceiptCorrectionMetricsState = {
   receipts_processed: number;
   source_counts: Record<ReceiptCorrectionMetricsSource, number>;
   mode_counts: Record<"off" | "shadow" | "enforce", number>;
+  rollout_guard_status_counts: Record<"not_applicable" | "pass" | "fallback_to_shadow", number>;
+  rollout_guard_reason_counts: Record<string, number>;
   totals_check_status_counts: Record<"not_evaluated" | "pass" | "warn", number>;
   parse_confidence_band_counts: Record<"high" | "medium" | "low" | "none", number>;
   parse_flag_counts: Record<string, number>;
@@ -153,6 +155,12 @@ function createReceiptCorrectionMetricsState(): ReceiptCorrectionMetricsState {
       shadow: 0,
       enforce: 0,
     },
+    rollout_guard_status_counts: {
+      not_applicable: 0,
+      pass: 0,
+      fallback_to_shadow: 0,
+    },
+    rollout_guard_reason_counts: {},
     totals_check_status_counts: {
       not_evaluated: 0,
       pass: 0,
@@ -280,6 +288,8 @@ function maybeEmitReceiptCorrectionMetricsSummary(): void {
     receipts_processed: receiptCorrectionMetrics.receipts_processed,
     source_counts: receiptCorrectionMetrics.source_counts,
     mode_counts: receiptCorrectionMetrics.mode_counts,
+    rollout_guard_status_counts: receiptCorrectionMetrics.rollout_guard_status_counts,
+    rollout_guard_reason_counts: receiptCorrectionMetrics.rollout_guard_reason_counts,
     totals_check_status_counts: receiptCorrectionMetrics.totals_check_status_counts,
     parse_confidence_band_counts: receiptCorrectionMetrics.parse_confidence_band_counts,
     parse_flag_counts: receiptCorrectionMetrics.parse_flag_counts,
@@ -344,6 +354,7 @@ function recordReceiptCorrectionMetrics(data: {
   receiptCorrectionMetrics.receipts_since_last_emit += 1;
   receiptCorrectionMetrics.source_counts[data.source] += 1;
   receiptCorrectionMetrics.mode_counts[data.summary.mode] += 1;
+  receiptCorrectionMetrics.rollout_guard_status_counts[data.summary.rollout_guard_status] += 1;
   receiptCorrectionMetrics.totals_check_status_counts[data.summary.totals_check_status] += 1;
   receiptCorrectionMetrics.parse_confidence_band_counts.high +=
     data.summary.parse_confidence_band_counts.high;
@@ -376,6 +387,9 @@ function recordReceiptCorrectionMetrics(data: {
   }
   for (const [actionType, count] of Object.entries(data.summary.correction_action_type_counts)) {
     incrementDynamicCount(receiptCorrectionMetrics.correction_action_type_counts, actionType, count);
+  }
+  for (const [reason, count] of Object.entries(data.summary.rollout_guard_reason_counts)) {
+    incrementDynamicCount(receiptCorrectionMetrics.rollout_guard_reason_counts, reason, count);
   }
 
   maybeEmitReceiptCorrectionMetricsSummary();
