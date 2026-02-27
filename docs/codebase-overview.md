@@ -283,6 +283,7 @@ Implemented capabilities:
 - Raw-text receipt parser skip/noise filters now explicitly handle `Sub Total`/`Grand Total`, dotted tax labels (`H.S.T.`), and Quebec tax labels (`TPS`/`TVQ`) to reduce false line-item candidates before correction
 - Raw-text totals extraction now supports additional noisy label/amount variants (`Sub-Total`, `Total Due`, `Montant total`, spaced/comma-decimal amounts) for stronger tax/totals interpretation on parsed-text receipts
 - Service-layer produce lookup is now active post-core correction (`receipt-produce-lookup.service.ts`): PLU-first + fuzzy name matching against `produce_items`, with province-aware language order (`QC: FR -> EN`, default `EN`)
+- Schema-backed minimal produce persistence is active on `ReceiptLineItem` with nullable `plu_code` and `organic_flag` fields
 - Receipt-correction fixture corpus is expanded to 20 runnable scenarios, including discount-heavy parsed-text and historical-threshold boundary coverage
 - Idempotent receipt commit behavior in inventory ledger path
 - Receipt auto-resolution observability (process-local summaries)

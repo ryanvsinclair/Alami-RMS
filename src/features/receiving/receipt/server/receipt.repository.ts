@@ -208,6 +208,8 @@ export async function createLineItem(
     unit: string | null;
     line_cost: number | null;
     unit_cost: number | null;
+    plu_code?: number | null;
+    organic_flag?: boolean | null;
     matched_item_id: string | null;
     confidence: MatchConfidence | null;
     status: LineItemStatus;
@@ -223,6 +225,8 @@ export async function createLineItem(
       unit: line.unit as never,
       line_cost: line.line_cost,
       unit_cost: line.unit_cost,
+      plu_code: line.plu_code ?? null,
+      organic_flag: line.organic_flag ?? null,
       matched_item_id: line.matched_item_id,
       confidence: line.confidence ?? undefined,
       status: line.status,

@@ -20,6 +20,46 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-27 - RC-13 complete: schema-backed minimal produce metadata persistence (`ReceiptLineItem`)
+- Suggested Commit Title: `feat(rc-13): persist receipt line produce metadata with minimal nullable columns`
+- Scope:
+  - Receipt correction Phase 1.5 persistence slice (`RC-13`) using schema-backed minimal storage.
+- Preflight evidence (reuse/refactor-first + DB/Prisma integrity):
+  - Reviewed source-plan RC-13 section and prior blocker notes.
+  - Ran scoped scans before implementation:
+    - `rg -n "ReceiptLineItem|plu_code|organic_flag|produce_match|createLineItem|parsed_data" prisma/schema.prisma src/features/receiving/receipt/server docs`
+  - Reviewed canonical DB sources:
+    - `prisma/schema.prisma`
+    - latest migration `prisma/migrations/20260225223000_shopping_session_item_resolution_audit/migration.sql`
+  - Reused existing line-item write path in `receipt.repository.ts`; no new tables/services were introduced for persistence.
+- What changed:
+  - Added minimal nullable `ReceiptLineItem` fields in Prisma schema:
+    - `plu_code Int?`
+    - `organic_flag Boolean?`
+  - Added migration:
+    - `prisma/migrations/20260227190000_receipt_line_item_produce_metadata/migration.sql`
+  - Updated `createLineItem(...)` to persist `plu_code` and `organic_flag` from corrected lines.
+  - Regenerated Prisma client (`npx prisma generate`).
+  - Updated source/master plans to mark RC-13 complete and advance canonical pointer to RC-14.
+- Files changed:
+  - `prisma/schema.prisma`
+  - `prisma/migrations/20260227190000_receipt_line_item_produce_metadata/migration.sql`
+  - `src/features/receiving/receipt/server/receipt.repository.ts`
+  - `docs/receipt-post-ocr-correction-plan.md`
+  - `docs/master-plan-v1.md`
+  - `docs/codebase-overview.md`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - `npx prisma generate` -> PASS
+  - `npx prisma validate` -> PASS
+  - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-core.test.mjs` -> PASS (14/14; expected Node experimental/module-type warnings)
+  - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-fixtures.test.mjs` -> PASS (27/27; expected Node experimental/module-type warnings)
+  - `node --test --experimental-transform-types src/domain/parsers/receipt.test.mjs` -> PASS (3/3; expected Node experimental/module-type warnings)
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `npx eslint src/features/receiving/receipt/server/receipt.repository.ts prisma/schema.prisma --quiet` -> PASS
+- Notes:
+  - RC-13 is complete with minimal nullable schema-backed persistence only (no over-modeling, no new parse-confidence columns yet).
+
 ### 2026-02-27 - RC-13 blocked: parse/produce persistence path requires explicit approval
 - Suggested Commit Title: `chore(rc-13): mark persistence decision blocker and halt autonomous advance`
 - Scope:

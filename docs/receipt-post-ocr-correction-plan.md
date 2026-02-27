@@ -4,16 +4,24 @@ Last updated: February 27, 2026 (draft / implementation-ready plan)
 
 ## Latest Update
 
-- **RC-13 blocked: parse/produce metadata persistence path is unresolved** (February 27, 2026):
-  - RC-12 is complete and service-layer produce lookup is active, but RC-13 cannot proceed without explicit persistence-path approval.
-  - Blocking decision (from `Open Decisions` item 1):
-    - choose schema-light persistence in `receipt.parsed_data` only, or
-    - choose schema-backed persistence with new `ReceiptLineItem` columns/migration.
-  - Current stop condition rationale:
-    - this choice changes storage contract and carries migration/data-risk implications
-    - master-plan contract requires explicit approval before implementing schema-light shadow persistence or schema changes
-  - Unblock requirement:
-    - explicit product/engineering decision for RC-13 persistence path (schema-light vs schema-backed)
+- **Phase 1.5 RC-13 complete: schema-backed minimal produce metadata persistence** (February 27, 2026):
+  - RC-13 persistence decision is resolved to **schema-backed**.
+  - Added minimal nullable `ReceiptLineItem` columns (no over-modeling):
+    - `plu_code Int?`
+    - `organic_flag Boolean?`
+  - Added migration:
+    - `prisma/migrations/20260227190000_receipt_line_item_produce_metadata/migration.sql`
+  - Wired persistence in receipt line-item write path:
+    - `src/features/receiving/receipt/server/receipt.repository.ts` now writes `plu_code` and `organic_flag` from corrected lines
+  - Regenerated Prisma client:
+    - `npx prisma generate`
+  - Validation:
+    - `npx prisma validate` -> PASS
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-core.test.mjs` -> PASS (14/14)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-fixtures.test.mjs` -> PASS (27/27)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt.test.mjs` -> PASS (3/3)
+    - `npx tsc --noEmit --incremental false` -> PASS
+    - targeted `eslint` on touched repository/schema paths -> PASS
 
 - **Phase 1.5 RC-12 complete: produce lookup service (PLU + fuzzy + province/language fallback)** (February 27, 2026):
   - Implemented `src/features/receiving/receipt/server/receipt-produce-lookup.service.ts`:
@@ -161,16 +169,16 @@ Last updated: February 27, 2026 (draft / implementation-ready plan)
 
 ## Pick Up Here (Next Continuation)
 
-Continue with **Phase 1.5 persistence decision (RC-13)**.
+Continue with **Phase 2 (RC-14): parse confidence persistence + receipt review UI indicators**.
 
 Recommended next implementation order:
 
-1. Blocked: obtain explicit RC-13 persistence-path approval
-   - choose schema-light (`receipt.parsed_data`) or schema-backed (`ReceiptLineItem` columns + migration)
-2. Implement only the approved path
-   - include DB contract/migration validation if schema-backed is selected
-3. Add focused validation for persistence behavior
-   - verify metadata availability after parse/reload cycles without affecting inventory-match confidence semantics
+1. Persist parse-confidence metadata in a schema-safe path
+   - keep inventory-match confidence semantics unchanged (`ReceiptLineItem.confidence` remains match confidence)
+2. Surface parse-confidence indicators in receipt review UI
+   - add clear low/medium/high parse-confidence visibility without conflating with match status
+3. Add focused validation for persistence + UI behavior
+   - verify parse metadata survives parse/reload cycles and renders correctly in review workflows
 4. Keep production behavior risk-controlled
    - remain in `shadow` first, inspect correction metrics/deltas, then promote safe rules to `enforce`
 
@@ -1328,9 +1336,13 @@ Progress notes (2026-02-27):
   - added province-aware language preference + EN fallback (`QC: FR -> EN`, default `EN`)
   - wired lookup enrichment into `runReceiptPostOcrCorrection(...)` with parse-flag/action observability
   - added targeted lookup service tests (`npx tsx --test ...`)
+- Completed RC-13 schema-backed persistence slice:
+  - added nullable `ReceiptLineItem.plu_code` and `ReceiptLineItem.organic_flag` columns
+  - added migration `20260227190000_receipt_line_item_produce_metadata`
+  - wired line-item persistence of `plu_code` and `organic_flag` in `receipt.repository.ts`
 - Remaining:
-  - persist produce metadata (`plu_code`, `organic_flag`) on `ReceiptLineItem` once schema slice is approved
-  - resolve and implement RC-13 persistence decision path for parse/produce metadata
+  - add broader multilingual produce fixtures and lookup validation cases
+  - continue with RC-14 parse-confidence persistence and review UI indicators
 
 ## Phase 2 - Line-level parse confidence and UI flags
 
@@ -1431,7 +1443,9 @@ Enable by provider/store profile confidence:
 
 ## Open Decisions (Need Product/Engineering Confirmation)
 
-1. Do we want new `ReceiptLineItem` parse metadata columns now, or phase 1 schema-light via `receipt.parsed_data` only?
+1. [Resolved 2026-02-27] Parse/produce metadata persistence path:
+   - selected: schema-backed minimal `ReceiptLineItem` columns (`plu_code`, `organic_flag`, both nullable)
+   - deferred: additional parse metadata columns remain out of scope for RC-13
 2. Should `ReceiptParseProfile` be a dedicated table or a `Supplier` JSON field initially?
 3. What tolerance should total-consistency checks use (`0.01`, `0.02`, `0.05`)?
 4. Do discounts/coupons become first-class line types in phase 1 or phase 4?

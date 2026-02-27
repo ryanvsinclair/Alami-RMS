@@ -177,10 +177,10 @@ Use the `Canonical Order Checklist` statuses as the source of truth.
 Current snapshot (2026-02-27):
 
 - Total checklist items: `38`
-- `[x]` complete: `4`
+- `[x]` complete: `5`
 - `[~]` in progress: `0`
-- Strict completion: `10.53%`
-- Weighted progress: `10.53%`
+- Strict completion: `13.16%`
+- Weighted progress: `13.16%`
 
 Update rule after each slice:
 
@@ -226,10 +226,10 @@ Latest Update section review:
 - Produce normalization layer was added (9-prefix PLU normalization, organic keyword stripping, produce candidate gating).
 - `CorrectedReceiptLine` now includes `plu_code`, `produce_match`, `organic_flag`.
 - Phase 0 foundation is implemented; RC-10 closeout completed threshold tuning + fixture expansion to 20 scenarios.
-- Phase 1.5 service-layer lookup is implemented; persistence decision and multilingual hardening remain.
+- Phase 1.5 schema-backed persistence is implemented for minimal produce metadata (`plu_code`, `organic_flag` on `ReceiptLineItem`); multilingual hardening and Phase 2+ remain.
 
 Remaining high-impact work:
-- Continue Phase 1.5 via RC-13 parse/produce metadata persistence decision and implementation.
+- Continue with RC-14 parse-confidence persistence + receipt review UI indicators.
 - Execute Phases 2-6 (parse confidence UI, store memory, hybrid parser, feedback loop, rollout hardening).
 
 ### 2) `docs/income-integrations-onboarding-plan.md` (not started)
@@ -280,7 +280,7 @@ Status legend:
 - [x] RC-10 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then complete Phase 1 remaining items: threshold tuning, expanded fixture corpus, historical plausibility signal wiring.
 - [x] RC-11 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then complete Phase 1 tax hardening: province resolution hierarchy hardening + ON/QC tax fixture assertions + raw-text totals robustness.
 - [x] RC-12 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then complete Phase 1.5 service layer: implement `receipt-produce-lookup.service.ts` (PLU + fuzzy lookup with province/language preference + EN fallback).
-- [!] RC-13 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then resolve persistence decision for parse/produce metadata and implement approved schema-light or schema-backed path. Blocked: open decision requires explicit product/engineering approval on persistence path (schema-light vs schema-backed).
+- [x] RC-13 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then resolve persistence decision for parse/produce metadata and implement approved schema-light or schema-backed path.
 - [ ] RC-14 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 2 parse confidence persistence + receipt review UI indicators.
 - [ ] RC-15 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 3 store-specific parse profile memory.
 - [ ] RC-16 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 4 hybrid structured parser upgrades.
@@ -328,16 +328,16 @@ Status legend:
 
 ## Last Left Off Here (Update This Block First)
 
-- Current task ID: `RC-13`
-- Current task: `Resolve persistence decision for parse/produce metadata and implement approved schema-light or schema-backed path`
-- Status: `BLOCKED (explicit persistence-path approval required before implementation)`
+- Current task ID: `RC-14`
+- Current task: `Phase 2 parse confidence persistence + receipt review UI indicators`
+- Status: `READY (RC-13 complete; next canonical task not started yet)`
 - Last updated: `2026-02-27`
 - Primary source plan section:
-  - `docs/receipt-post-ocr-correction-plan.md` -> `Phase 1.5 - Produce resolution & organic normalization`
+  - `docs/receipt-post-ocr-correction-plan.md` -> `Phase 2 - Line-level parse confidence and UI flags`
 - Completion condition for this marker:
-  - mark `RC-13` complete
+  - mark `RC-14` complete
   - append a new entry to `## Latest Job Summary`
-  - move this marker to `RC-14`
+  - move this marker to `RC-15`
 
 ## Documentation Sync Checklist (Run Every Session)
 
@@ -349,6 +349,31 @@ Status legend:
 - [ ] `docs/codebase-overview.md` updated if behavior/architecture/canonical path descriptions changed.
 
 ## Latest Job Summary (Append New Entries At Top)
+
+### 2026-02-27 - RC-13 complete: schema-backed minimal produce metadata persistence on ReceiptLineItem
+- Completed:
+  - RC-13 persistence decision resolved to schema-backed by explicit product direction.
+  - Ran scoped preflight scans across plan + codebase and reused existing line-item write path:
+    - `prisma/schema.prisma`
+    - `src/features/receiving/receipt/server/receipt.repository.ts`
+    - `src/features/receiving/receipt/server/receipt-workflow.service.ts`
+  - Implemented minimal nullable schema additions on `ReceiptLineItem` only:
+    - `plu_code Int?`
+    - `organic_flag Boolean?`
+  - Added migration `prisma/migrations/20260227190000_receipt_line_item_produce_metadata/migration.sql`.
+  - Updated receipt repository line-item create path to persist `plu_code` and `organic_flag` (no extra columns/tables; no over-modeling).
+  - Regenerated Prisma client via `npx prisma generate`.
+  - Completed validation gates:
+    - `npx prisma validate` -> PASS
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-core.test.mjs` -> PASS (14/14)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-fixtures.test.mjs` -> PASS (27/27)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt.test.mjs` -> PASS (3/3)
+    - `npx tsc --noEmit --incremental false` -> PASS
+    - targeted `eslint` on touched repository/schema paths -> PASS
+- Remaining:
+  - Start `RC-14` (Phase 2 parse-confidence persistence + receipt review UI indicators).
+- Next:
+  - `RC-14` in `docs/receipt-post-ocr-correction-plan.md`
 
 ### 2026-02-27 - RC-13 blocked: parse/produce persistence path requires explicit approval
 - Completed:
