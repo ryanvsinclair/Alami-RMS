@@ -57,7 +57,7 @@ High-level completion:
 What remains outside plan completion:
 - Manual integrated smoke testing across core flows (user-run / final QA pass).
 - Receipt post-OCR correction plan is complete through Phase 6 closeout (`RC-19`), with non-blocking follow-ups tracked separately.
-- Income integrations onboarding plan Phase 0 (design/contracts) is complete; Phase 1+ implementation remains pending.
+- Income integrations onboarding plan Phase 1 is complete (provider catalog + onboarding/integrations UI shell); OAuth/sync implementation starts in Phase 2.
 - Unified Intake regrouping refactor is planned but not yet implemented (see `docs/unified-inventory-intake-refactor-plan.md`).
 - Operational Calendar/Schedule refactor is planned and sequencing-locked behind completion of all current plans (see `docs/operational-calendar-schedule-plan.md`).
 
@@ -222,6 +222,27 @@ Canonical paths:
 Wrappers:
 - `app/page.tsx` (route composition/state wiring)
 - `app/actions/core/financial.ts` (`getDashboardSummary` wrapper delegates to feature server)
+
+### Income integrations onboarding shell (Phase 1 complete)
+
+Implemented capabilities:
+- Industry-aware provider catalog and recommendation ordering for onboarding/integrations views
+- Onboarding setup route (`/onboarding/income-sources`) with provider cards, status badges, and skip flow
+- Dashboard integrations route (`/integrations`) with connection status shell
+- Signup industry selection upgraded from `<select>` to card/radio UI while preserving submitted `industry_type`
+- Bottom navigation now exposes an `Integrations` tab when the `integrations` module is enabled
+
+Canonical paths:
+- `src/features/integrations/shared/*`
+- `src/features/integrations/server/provider-catalog.ts`
+- `src/features/integrations/ui/*`
+
+Route wrappers:
+- `app/onboarding/*`
+- `app/(dashboard)/integrations/*`
+
+Current limitation:
+- OAuth/token exchange and real connection persistence are not active yet (planned for Phase 2+).
 
 ### Receiving (4 ingestion paths)
 

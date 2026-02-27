@@ -1,8 +1,36 @@
 # Income Integrations Onboarding Plan
 
-Last updated: February 27, 2026 (Phase 0 decisions/contracts finalized)
+Last updated: February 27, 2026 (Phase 1 onboarding/catalog shell complete)
 
 ## Latest Update
+
+- **IN-01 complete: provider catalog + onboarding UI shell shipped (no OAuth)** (February 27, 2026):
+  - Implemented provider-catalog filtering/sorting service and shared connection contracts:
+    - `src/features/integrations/server/provider-catalog.ts`
+    - `src/features/integrations/server/index.ts`
+    - `src/features/integrations/shared/income-connections.contracts.ts`
+    - expanded `src/features/integrations/shared/provider-catalog.contracts.ts`
+  - Added onboarding + integrations UI shell:
+    - `src/features/integrations/ui/IncomeOnboardingWizardClient.tsx`
+    - `src/features/integrations/ui/IncomeSourceSetupStep.tsx`
+    - `src/features/integrations/ui/IncomeProviderConnectCard.tsx`
+    - `src/features/integrations/ui/ConnectionStatusBadge.tsx`
+    - `src/features/integrations/ui/IncomeConnectionsPageClient.tsx`
+    - `src/features/integrations/ui/index.ts`
+  - Added route wrappers:
+    - `app/onboarding/page.tsx` -> step entry redirect
+    - `app/onboarding/income-sources/page.tsx` -> onboarding income-source setup route
+    - `app/(dashboard)/integrations/layout.tsx` -> integrations module gate
+    - `app/(dashboard)/integrations/page.tsx` -> integrations connection shell route
+  - Upgraded signup industry selection UI:
+    - `app/auth/signup/page.tsx` now uses card/radio selection while preserving submitted `industry_type`
+    - default post-signup continuation now routes to `/onboarding/income-sources`
+  - Navigation exposure:
+    - `components/nav/bottom-nav.tsx` now includes an `Integrations` nav item gated by `integrations` module enablement
+  - Validation:
+    - `npx tsx --test src/features/integrations/server/provider-catalog.test.mjs` -> PASS (2/2)
+    - `npx tsc --noEmit --incremental false` -> PASS
+    - targeted `eslint` on touched integrations/signup/onboarding/nav files -> PASS
 
 - **IN-00 complete: Phase 0 design/schema contracts and security model decisions finalized** (February 27, 2026):
   - Resolved Phase 0 decision set and removed IN-00 blockers:
@@ -26,11 +54,11 @@ Last updated: February 27, 2026 (Phase 0 decisions/contracts finalized)
 
 ## Pick Up Here (Next Continuation)
 
-- Next task ID: `IN-01`
-- Source section: `Phase 1 - Provider catalog + onboarding UI (no OAuth yet)`
+- Next task ID: `IN-02`
+- Source section: `Phase 2 - OAuth core infrastructure (provider-agnostic)`
 - Scope reminder:
-  - build provider registry and onboarding UI shell only
-  - do not implement OAuth token exchange until `IN-02`
+  - implement secure OAuth start/callback base and token-state persistence path
+  - wire provider adapters to OAuth framework without adding multi-provider sync breadth yet
 
 ## Goal
 
@@ -58,7 +86,7 @@ This plan also fits the current state of the repo:
 - `INDUSTRY_PRESETS` already drives defaults (`lib/config/presets.ts`)
 - `FinancialTransaction` and `ExternalSyncLog` already exist in Prisma
 - basic provider stubs exist in `lib/modules/integrations/*`
-- no onboarding wizard / OAuth connection system exists yet
+- onboarding and integrations UI shell now exists (OAuth still pending)
 
 ## Product Requirements (Target UX)
 
@@ -633,7 +661,7 @@ Validation:
 
 ## Phase 1 - Provider catalog + onboarding UI (no OAuth yet)
 
-Status: `[ ]`
+Status: `[x]`
 
 Goal:
 
@@ -641,16 +669,16 @@ Goal:
 
 Deliverables:
 
-- provider registry with industry filters
-- upgraded signup business-type cards
-- onboarding income-source setup screen
-- skip for now flow
-- connection status UI shell
+- [x] provider registry with industry filters
+- [x] upgraded signup business-type cards
+- [x] onboarding income-source setup screen
+- [x] skip for now flow
+- [x] connection status UI shell
 
 Notes:
 
-- no real OAuth yet; `Connect` can show "coming soon" per provider
-- useful for validating onboarding UX and provider mapping first
+- no real OAuth yet; `Connect` is intentionally disabled with "coming soon" labels for this phase
+- onboarding and dashboard integrations shells are in place to validate provider mapping before OAuth rollout
 
 ## Phase 2 - OAuth core infrastructure (provider-agnostic)
 

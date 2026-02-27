@@ -2,13 +2,21 @@ import Link from "next/link";
 import { signUpAction } from "@/app/actions/core/auth";
 import { INDUSTRY_LABELS, INDUSTRY_TYPES } from "@/lib/config/presets";
 
+const INDUSTRY_CARD_NOTES: Record<(typeof INDUSTRY_TYPES)[number], string> = {
+  restaurant: "POS + delivery source suggestions",
+  salon: "Service and payment source suggestions",
+  retail: "Store and ecommerce source suggestions",
+  contractor: "Payment-first source suggestions",
+  general: "Generic setup with flexible defaults",
+};
+
 export default async function SignupPage({
   searchParams,
 }: {
   searchParams: Promise<{ error?: string; next?: string }>;
 }) {
   const params = await searchParams;
-  const next = params?.next ? decodeURIComponent(params.next) : "/";
+  const next = params?.next ? decodeURIComponent(params.next) : "/onboarding/income-sources";
 
   return (
     <div className="space-y-6">
@@ -42,22 +50,27 @@ export default async function SignupPage({
             className="h-12 w-full rounded-2xl border border-border bg-foreground/[0.04] px-4 text-foreground placeholder:text-muted/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] outline-none focus:ring-2 focus:ring-primary/30"
           />
         </div>
-        <div className="space-y-1.5">
-          <label htmlFor="industry_type" className="text-xs font-semibold uppercase tracking-wide text-muted">
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
             Industry
-          </label>
-          <select
-            id="industry_type"
-            name="industry_type"
-            defaultValue="general"
-            className="h-12 w-full rounded-2xl border border-border bg-foreground/[0.04] px-4 text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] outline-none focus:ring-2 focus:ring-primary/30"
-          >
+          </p>
+          <div className="grid gap-2 sm:grid-cols-2">
             {INDUSTRY_TYPES.map((industry) => (
-              <option key={industry} value={industry} className="bg-card text-foreground">
-                {INDUSTRY_LABELS[industry]}
-              </option>
+              <label key={industry} className="block cursor-pointer">
+                <input
+                  type="radio"
+                  name="industry_type"
+                  value={industry}
+                  defaultChecked={industry === "general"}
+                  className="peer sr-only"
+                />
+                <div className="rounded-2xl border border-border bg-foreground/[0.02] px-4 py-3 transition-all peer-checked:border-primary peer-checked:bg-primary/10 peer-checked:shadow-[0_8px_20px_rgba(0,127,255,0.18)] hover:border-foreground/20">
+                  <p className="text-sm font-semibold text-foreground">{INDUSTRY_LABELS[industry]}</p>
+                  <p className="mt-1 text-xs text-muted">{INDUSTRY_CARD_NOTES[industry]}</p>
+                </div>
+              </label>
             ))}
-          </select>
+          </div>
           <p className="text-xs text-muted/80">We use this to set module defaults and terminology.</p>
         </div>
         <div className="space-y-1.5">

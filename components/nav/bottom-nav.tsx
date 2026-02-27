@@ -34,6 +34,18 @@ const navItems: NavItem[] = [
     ),
   },
   {
+    href: "/integrations",
+    label: "Integrations",
+    exact: false,
+    moduleId: "integrations",
+    icon: (
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h7.5M8.25 17.25h7.5M6.75 9.75h10.5v4.5H6.75v-4.5Z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 3.75v3m6-3v3m-6 10.5v3m6-3v3" />
+      </svg>
+    ),
+  },
+  {
     href: "/receive",
     label: "Receive",
     exact: false,

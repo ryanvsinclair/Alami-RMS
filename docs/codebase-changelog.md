@@ -20,6 +20,78 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-27 - IN-01 complete: provider catalog + onboarding/integrations UI shell (no OAuth)
+- Suggested Commit Title: `feat(in-01): ship income provider catalog and onboarding UI shell`
+- Scope:
+  - Income integrations onboarding Phase 1 (`IN-01`) provider-catalog + UI shell implementation only.
+- Preflight evidence (reuse/refactor-first + DB/Prisma integrity):
+  - Reviewed source-plan Phase 1 scope and continuation markers:
+    - `docs/income-integrations-onboarding-plan.md`
+    - `docs/master-plan-v1.md`
+  - Ran scoped scans for existing onboarding/integration implementation before creating files:
+    - `rg -n "## Phase 1|Phase 1 - Provider catalog|onboarding|income-sources|Connect" docs/income-integrations-onboarding-plan.md`
+    - `rg -n "onboarding|income sources|integrations page|Connect Your Income Sources|industry_type" app src lib`
+    - `rg --files src app test | rg "integrations|onboarding|oauth|income"`
+  - Reviewed reusable baseline files:
+    - `app/auth/signup/page.tsx`
+    - `app/actions/core/auth.ts`
+    - `components/nav/bottom-nav.tsx`
+    - `lib/modules/integrations/*.ts`
+    - `lib/config/presets.ts`
+  - Prisma contract reviewed for alignment; no schema/migration change required in IN-01.
+- What changed:
+  - Added provider catalog service + connection contracts:
+    - `src/features/integrations/server/provider-catalog.ts`
+    - `src/features/integrations/server/index.ts`
+    - `src/features/integrations/shared/income-connections.contracts.ts`
+    - expanded `src/features/integrations/shared/provider-catalog.contracts.ts`
+  - Added integrations UI shell components:
+    - `ConnectionStatusBadge`
+    - `IncomeProviderConnectCard`
+    - `IncomeSourceSetupStep`
+    - `IncomeOnboardingWizardClient`
+    - `IncomeConnectionsPageClient`
+    - `src/features/integrations/ui/index.ts`
+  - Added route wrappers:
+    - `app/onboarding/page.tsx`
+    - `app/onboarding/income-sources/page.tsx`
+    - `app/(dashboard)/integrations/layout.tsx`
+    - `app/(dashboard)/integrations/page.tsx`
+  - Upgraded signup industry input to card/radio UI and defaulted post-signup continuation to onboarding.
+  - Added module-gated integrations nav item in bottom navigation.
+  - Added targeted provider catalog tests:
+    - `src/features/integrations/server/provider-catalog.test.mjs`
+  - Updated source/master plans, overview, and next-task pointer to `IN-02`.
+- Files changed:
+  - `app/auth/signup/page.tsx`
+  - `app/onboarding/page.tsx`
+  - `app/onboarding/income-sources/page.tsx`
+  - `app/(dashboard)/integrations/layout.tsx`
+  - `app/(dashboard)/integrations/page.tsx`
+  - `components/nav/bottom-nav.tsx`
+  - `src/features/integrations/shared/provider-catalog.contracts.ts`
+  - `src/features/integrations/shared/income-connections.contracts.ts`
+  - `src/features/integrations/shared/index.ts`
+  - `src/features/integrations/server/provider-catalog.ts`
+  - `src/features/integrations/server/index.ts`
+  - `src/features/integrations/server/provider-catalog.test.mjs`
+  - `src/features/integrations/ui/ConnectionStatusBadge.tsx`
+  - `src/features/integrations/ui/IncomeProviderConnectCard.tsx`
+  - `src/features/integrations/ui/IncomeSourceSetupStep.tsx`
+  - `src/features/integrations/ui/IncomeOnboardingWizardClient.tsx`
+  - `src/features/integrations/ui/IncomeConnectionsPageClient.tsx`
+  - `src/features/integrations/ui/index.ts`
+  - `docs/income-integrations-onboarding-plan.md`
+  - `docs/master-plan-v1.md`
+  - `docs/codebase-overview.md`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - `npx tsx --test src/features/integrations/server/provider-catalog.test.mjs` -> PASS (2/2)
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `npx eslint app/auth/signup/page.tsx app/onboarding/page.tsx app/onboarding/income-sources/page.tsx app/(dashboard)/integrations/layout.tsx app/(dashboard)/integrations/page.tsx components/nav/bottom-nav.tsx src/features/integrations/shared/provider-catalog.contracts.ts src/features/integrations/shared/income-connections.contracts.ts src/features/integrations/shared/income-events.contracts.ts src/features/integrations/shared/oauth.contracts.ts src/features/integrations/shared/index.ts src/features/integrations/server/provider-catalog.ts src/features/integrations/server/index.ts src/features/integrations/server/provider-catalog.test.mjs src/features/integrations/ui/ConnectionStatusBadge.tsx src/features/integrations/ui/IncomeProviderConnectCard.tsx src/features/integrations/ui/IncomeSourceSetupStep.tsx src/features/integrations/ui/IncomeOnboardingWizardClient.tsx src/features/integrations/ui/IncomeConnectionsPageClient.tsx src/features/integrations/ui/index.ts --quiet` -> PASS
+- Notes:
+  - IN-01 is complete; canonical next task is `IN-02` (provider-agnostic OAuth core).
+
 ### 2026-02-27 - IN-00 complete: income integrations phase-0 decision lock and contract scaffolding
 - Suggested Commit Title: `chore(in-00): finalize income integration phase-0 contracts and decision lock`
 - Scope:

@@ -177,10 +177,10 @@ Use the `Canonical Order Checklist` statuses as the source of truth.
 Current snapshot (2026-02-27):
 
 - Total checklist items: `38`
-- `[x]` complete: `12`
+- `[x]` complete: `13`
 - `[~]` in progress: `0`
-- Strict completion: `31.58%`
-- Weighted progress: `31.58%`
+- Strict completion: `34.21%`
+- Weighted progress: `34.21%`
 
 Update rule after each slice:
 
@@ -199,7 +199,7 @@ Update rule after each slice:
 | `docs/inventoryintakeplan.phase0-audit.md` | Historical prerequisite audit | Completed (deprecated) | Superseded by `inventoryintakeplan.md`. |
 | `docs/inventoryintakeplan.progress-handoff.md` | Historical handoff | Historical snapshot | Superseded by later work in `inventoryintakeplan.md`. |
 | `docs/receipt-post-ocr-correction-plan.md` | Active feature plan | Complete (`[x]` through RC-19) | Plan closed with non-blocking follow-ups tracked separately. |
-| `docs/income-integrations-onboarding-plan.md` | Active feature plan | In progress (`[x]` Phase 0, `[ ]` phases 1-7) | Phase 0 contracts/decisions finalized; implementation phases pending. |
+| `docs/income-integrations-onboarding-plan.md` | Active feature plan | In progress (`[x]` phases 0-1, `[ ]` phases 2-7) | Onboarding/catalog UI shell shipped; OAuth/sync implementation pending. |
 | `docs/unified-inventory-intake-refactor-plan.md` | Active refactor plan | Planning-only, not implemented | Depends on preserving behavior while regrouping IA/session model. |
 | `docs/operational-calendar-schedule-plan.md` | Active feature plan | Planning-only, sequencing-locked | Explicitly blocked until other active plans are complete. |
 | `docs/codebase-overview.md` | Architecture reference | Active (living document) | Must stay aligned with implementation reality. |
@@ -235,16 +235,17 @@ Remaining high-impact work:
 ### 2) `docs/income-integrations-onboarding-plan.md` (in progress)
 
 Latest Update section review:
-- Phase 0 (`IN-00`) decisions/contracts are finalized:
-  - MVP provider sequence starts with GoDaddy POS, then Uber Eats and DoorDash.
-  - historical sync default is 90 days.
-  - scheduler baseline is internal cron route.
-  - canonical model strategy is `IncomeEvent` with MVP `FinancialTransaction` projection.
-  - `SkipTheDishes` is deferred to post-MVP rollout.
+- Phase 0 (`IN-00`) decisions/contracts remain finalized.
+- Phase 1 (`IN-01`) onboarding/catalog shell is now implemented:
+  - provider catalog filtering/sorting service is in place
+  - signup industry selection upgraded to card/radio UI while preserving `industry_type`
+  - onboarding route (`/onboarding/income-sources`) and dashboard integrations route (`/integrations`) now render provider connection cards with statuses
+  - integration nav entry is module-gated and visible for enabled businesses
+  - OAuth connect actions remain disabled/coming-soon by design for this phase
 
 Remaining work snapshot:
-- Phases 1-7 are still `[ ]` and pending implementation.
-- Next required implementation slice is `IN-01` (provider catalog + onboarding UI shell, no OAuth yet).
+- Phases 2-7 remain `[ ]` and pending implementation.
+- Next required implementation slice is `IN-02` (provider-agnostic OAuth core infrastructure).
 
 ### 3) `docs/unified-inventory-intake-refactor-plan.md` (planning-only)
 
@@ -296,7 +297,7 @@ Status legend:
 ### C. Implement Income Integrations Onboarding Plan
 
 - [x] IN-00 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then finalize Phase 0 design/schema contracts and security model decisions.
-- [ ] IN-01 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then ship Phase 1 provider catalog + onboarding UI (no OAuth yet).
+- [x] IN-01 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then ship Phase 1 provider catalog + onboarding UI (no OAuth yet).
 - [ ] IN-02 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 2 provider-agnostic OAuth core.
 - [ ] IN-03 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 3 first provider pilot end-to-end (connect -> token storage -> sync -> dashboard projection).
 - [ ] IN-04 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 4 restaurant-provider rollout (Uber Eats + DoorDash + POS set chosen by product/engineering).
@@ -333,12 +334,12 @@ Status legend:
 
 ## Last Left Off Here (Update This Block First)
 
-- Current task ID: `IN-01`
-- Current task: `Income integrations Phase 1 provider catalog + onboarding UI shell (no OAuth yet)`
+- Current task ID: `IN-02`
+- Current task: `Income integrations Phase 2 provider-agnostic OAuth core`
 - Status: `READY`
 - Last updated: `2026-02-27`
 - Primary source plan section:
-  - `docs/income-integrations-onboarding-plan.md` -> `Phase 1`
+  - `docs/income-integrations-onboarding-plan.md` -> `Phase 2`
 
 ## Documentation Sync Checklist (Run Every Session)
 
@@ -350,6 +351,35 @@ Status legend:
 - [ ] `docs/codebase-overview.md` updated if behavior/architecture/canonical path descriptions changed.
 
 ## Latest Job Summary (Append New Entries At Top)
+
+### 2026-02-27 - IN-01 complete: provider catalog and onboarding/integrations UI shell (no OAuth)
+- Completed:
+  - Ran IN-01 scoped preflight scans and reused existing signup/auth/module patterns:
+    - `rg -n "## Phase 1|Phase 1 - Provider catalog|onboarding|income-sources|Connect" docs/income-integrations-onboarding-plan.md`
+    - `rg -n "onboarding|income sources|integrations page|Connect Your Income Sources|industry_type" app src lib`
+    - reviewed existing baselines:
+      - `app/auth/signup/page.tsx`
+      - `app/actions/core/auth.ts`
+      - `components/nav/bottom-nav.tsx`
+      - `lib/modules/integrations/*.ts`
+      - `lib/config/presets.ts`
+  - Implemented IN-01 scope only:
+    - provider-catalog filtering/sorting service and connection DTO contracts
+    - onboarding + integrations UI shell components (status cards, connect-coming-soon state)
+    - new onboarding and dashboard integrations routes/wrappers
+    - signup industry card/radio UI upgrade preserving `industry_type` contract
+    - module-gated integrations nav item
+    - targeted provider-catalog test coverage
+  - No schema changes or migrations required for IN-01.
+  - Completed validation gates:
+    - `npx tsx --test src/features/integrations/server/provider-catalog.test.mjs` -> PASS (2/2)
+    - `npx tsc --noEmit --incremental false` -> PASS
+    - targeted `eslint` on touched integrations/signup/onboarding/nav files -> PASS
+  - Updated source/master plans, completion percentages, overview, and changelog for IN-01 completion.
+- Remaining:
+  - Start `IN-02` (OAuth core infrastructure, token/state persistence models, callback/start framework).
+- Next:
+  - `IN-02` in `docs/income-integrations-onboarding-plan.md`
 
 ### 2026-02-27 - IN-00 complete: income integrations phase-0 contracts and decision lock finalized
 - Completed:
