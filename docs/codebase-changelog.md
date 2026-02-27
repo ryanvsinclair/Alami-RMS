@@ -19,6 +19,44 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-27 - RC-10 continuation: raw-text parser noise hardening + tax-assertion fixture expansion to 18 scenarios
+- Scope:
+  - Receipt correction Phase 1 (RC-10) continuation focused on raw-text pre-correction quality and fixture-driven tax validation coverage
+- What changed:
+  - Hardened raw-text parser skip/noise patterns in `parseReceiptText(...)`:
+    - handles `Sub Total` / `Subtotal` / `Grand Total` variants
+    - handles dotted tax labels (`H.S.T.`) and Quebec tax labels (`TPS`, `TVQ`)
+    - skips coupon/discount header-style summary lines
+  - Added targeted parser tests:
+    - `src/domain/parsers/receipt.test.mjs` covering dotted HST and TPS/TVQ skip behavior
+  - Expanded fixture harness assertions:
+    - `expected.assertions.tax_interpretation` is now machine-checkable (`status`, `province`, `province_source`, `structure`, `zero_tax_grocery_candidate`, `required_flags`)
+  - Added 3 new parsed-text fixtures:
+    - `ontario-parsed-text-hst-dotted-pass-001.json`
+    - `quebec-parsed-text-tps-tvq-pass-001.json`
+    - `grocery-parsed-text-zero-tax-subtotal-total-001.json`
+  - Fixture corpus is now 18 scenarios (RC-10 target progression toward 20).
+- Files changed:
+  - `src/domain/parsers/receipt.ts`
+  - `src/domain/parsers/receipt.test.mjs`
+  - `src/domain/parsers/receipt-correction-fixtures.test.mjs`
+  - `test/fixtures/receipt-correction/ontario-parsed-text-hst-dotted-pass-001.json`
+  - `test/fixtures/receipt-correction/quebec-parsed-text-tps-tvq-pass-001.json`
+  - `test/fixtures/receipt-correction/grocery-parsed-text-zero-tax-subtotal-total-001.json`
+  - `test/fixtures/receipt-correction/README.md`
+  - `docs/receipt-post-ocr-correction-plan.md`
+  - `docs/master-plan-v1.md`
+  - `docs/codebase-overview.md`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - `node --test --experimental-transform-types src/domain/parsers/receipt.test.mjs` -> PASS (2/2; expected Node experimental/module-type warnings)
+  - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-core.test.mjs` -> PASS (10/10; expected Node experimental/module-type warnings)
+  - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-fixtures.test.mjs` -> PASS (19/19; expected Node experimental/module-type warnings)
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `npx eslint src/domain/parsers/receipt.ts src/domain/parsers/receipt.test.mjs src/domain/parsers/receipt-correction-fixtures.test.mjs src/features/receiving/receipt/server/receipt-correction.contracts.ts src/features/receiving/receipt/server/receipt-correction.service.ts src/features/receiving/receipt/server/receipt-workflow.service.ts src/features/receiving/receipt/server/receipt.repository.ts test/fixtures/receipt-correction/README.md --quiet` -> PASS
+- Notes:
+  - RC-10 remains in progress; next closeout slice should add final 2 fixtures and complete threshold tuning review against shadow metrics.
+
 ### 2026-02-27 - RC-10 continuation: historical hint quality gates, observability expansion, and fixture corpus growth
 - Scope:
   - Receipt correction Phase 1 (RC-10) threshold-hardening continuation after initial historical plausibility wiring

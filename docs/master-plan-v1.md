@@ -160,7 +160,7 @@ Status legend:
 
 - Current task ID: `RC-10`
 - Current task: `Continue RC-10 threshold tuning + fixture expansion after historical plausibility wiring and quality-gate slices`
-- Status: `IN PROGRESS (history wiring + quality gates + observability + fixture corpus 15/20 complete)`
+- Status: `IN PROGRESS (history wiring + quality gates + observability + parser noise hardening + fixture corpus 18/20 complete)`
 - Last updated: `2026-02-27`
 - Primary source plan section:
   - `docs/receipt-post-ocr-correction-plan.md` -> `Phase 1 - Numeric sanity + dual interpretation + totals check`
@@ -177,6 +177,17 @@ Status legend:
 - [ ] `docs/codebase-overview.md` updated if behavior/architecture/canonical path descriptions changed.
 
 ## Latest Job Summary (Append New Entries At Top)
+
+### 2026-02-27 - RC-10 continuation: parser noise hardening + tax assertion fixture expansion (18/20)
+- Completed:
+  - Hardened raw-text parser skip filters for subtotal/total and dotted/Quebec tax-label summary lines.
+  - Added machine-checkable `tax_interpretation` assertions in fixture harness.
+  - Added parser unit tests and expanded fixture corpus to 18 scenarios.
+- Remaining:
+  - Expand fixture corpus to 20 scenarios.
+  - Continue threshold/margin tuning using shadow metrics.
+- Next:
+  - `RC-10` in `docs/receipt-post-ocr-correction-plan.md`
 
 ### 2026-02-27 - RC-10 continuation: quality gates + observability + fixture corpus expansion
 - Completed:

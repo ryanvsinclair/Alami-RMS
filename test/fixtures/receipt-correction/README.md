@@ -8,7 +8,7 @@ Purpose:
 Status:
 
 - Phase 0 scaffold (seed fixtures only)
-- expand to 10-20+ fixtures before threshold tuning work begins
+- expanded corpus in progress (currently 18 scenarios)
 
 Recommended fixture contents:
 
@@ -30,7 +30,7 @@ Optional machine-checkable assertions (recommended for active tuning):
 - `expected.assertions.outlier_line_numbers`
 - `expected.assertions.expected_line_costs[]` (`line_number`, `line_cost`)
 - `expected.assertions.required_parse_flags[]` (`line_number`, `flags[]`)
-- `expected.assertions.tax_interpretation` (planned schema for ON/QC province/tax-structure expectations)
+- `expected.assertions.tax_interpretation` (supported keys: `status`, `province`, `province_source`, `structure`, `zero_tax_grocery_candidate`, `required_flags[]`)
 - `expected.assertions.expected_produce_fields[]` (`line_number`, optional `plu_code`, `organic_flag`, `parsed_name`)
 
 Fixture harness notes:

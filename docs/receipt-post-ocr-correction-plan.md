@@ -4,6 +4,24 @@ Last updated: February 27, 2026 (draft / implementation-ready plan)
 
 ## Latest Update
 
+- **Phase 1 RC-10 continuation: raw-text parser noise hardening + tax assertion fixtures expanded to 18 scenarios** (February 27, 2026):
+  - Hardened `parseReceiptText(...)` skip/noise filters to better suppress receipt-summary lines before correction:
+    - `Sub Total`/`Subtotal`/`Grand Total` variants
+    - dotted tax labels (`H.S.T.` etc.) and Quebec labels (`TPS`/`TVQ`)
+    - coupon/discount header-style noise lines
+  - Added fixture-harness support for machine-checkable `tax_interpretation` assertions.
+  - Added targeted parser tests (`src/domain/parsers/receipt.test.mjs`) for dotted HST and TPS/TVQ skip behavior.
+  - Expanded fixture corpus from `15` to `18` scenarios:
+    - `ontario-parsed-text-hst-dotted-pass-001.json`
+    - `quebec-parsed-text-tps-tvq-pass-001.json`
+    - `grocery-parsed-text-zero-tax-subtotal-total-001.json`
+  - Validation:
+    - `node --test --experimental-transform-types src/domain/parsers/receipt.test.mjs` -> PASS (2/2)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-core.test.mjs` -> PASS (10/10)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-fixtures.test.mjs` -> PASS (19/19)
+    - `npx tsc --noEmit --incremental false` -> PASS
+    - targeted `eslint` on touched parser/correction/workflow/repository files -> PASS
+
 - **Phase 1 RC-10 continuation: historical hint quality gates + observability + fixture expansion** (February 27, 2026):
   - Added quality gates to feature-layer historical hint derivation:
     - minimum sample size required for hint generation (`>= 4`)
@@ -75,7 +93,7 @@ Recommended next implementation order:
 
 1. Continue Phase 1 threshold tuning using newly wired historical price hints
    - tune candidate-scoring weights/margins against fixture corpus and shadow metrics
-2. Expand fixture corpus further toward 18-20 representative receipts before enabling `enforce`
+2. Expand fixture corpus further toward 20 representative receipts before enabling `enforce`
    - include more discount-heavy, noisy, and mixed-tax label variants
 3. Continue hardening historical hint quality gates
    - tune sample/recency thresholds and monitor hint coverage/hit-quality observability
@@ -1178,9 +1196,10 @@ Progress notes (2026-02-27):
   - sample recency lookback window (120 days)
   - historical hint coverage/sample-size metrics in correction summary + periodic workflow metrics logs
 - Expanded fixture corpus to 15 scenarios (history low-sample gate + noisy dotted-tax label + split-token-with-totals coverage).
+- Hardened raw-text parser skip behavior for subtotal/tax summary lines and expanded tax-focused fixture assertions/corpus to 18 scenarios.
 - Remaining in Phase 1:
   - tune scoring thresholds/margins with expanded shadow metrics and larger fixture corpus
-  - expand fixture corpus to 18-20 scenarios
+  - expand fixture corpus to 20 scenarios
   - add richer tax-focused fixtures and raw-text totals robustness hardening
 
 ## Phase 1.5 - Produce resolution & organic normalization

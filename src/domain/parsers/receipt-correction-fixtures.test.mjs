@@ -38,10 +38,19 @@ function detectTaxLabelFromLine(text) {
   return null;
 }
 
+function sumTaxLineAmounts(taxLines) {
+  const amounts = taxLines
+    .map((line) => (line.amount == null ? null : Number(line.amount)))
+    .filter((value) => value != null && Number.isFinite(value));
+
+  if (amounts.length === 0) return null;
+  return roundCurrency(amounts.reduce((sum, amount) => sum + amount, 0));
+}
+
 function extractPrintedTotalsFromRawText(rawText) {
   let subtotal = null;
-  let tax = null;
   let total = null;
+  const taxLines = [];
 
   const lines = rawText
     .split(/\r?\n/)
@@ -59,7 +68,7 @@ function extractPrintedTotalsFromRawText(rawText) {
     const taxLabel = detectTaxLabelFromLine(normalized);
     if (taxLabel) {
       const amount = parseTrailingAmountFromText(normalized);
-      if (amount != null) tax = amount;
+      taxLines.push({ label: taxLabel, amount });
       continue;
     }
 
@@ -70,8 +79,15 @@ function extractPrintedTotalsFromRawText(rawText) {
     }
   }
 
-  if (subtotal == null && tax == null && total == null) return undefined;
-  return { subtotal, tax, total };
+  const tax = sumTaxLineAmounts(taxLines);
+
+  if (subtotal == null && tax == null && total == null && taxLines.length === 0) return undefined;
+  return {
+    subtotal,
+    tax,
+    total,
+    tax_lines: taxLines.length > 0 ? taxLines : undefined,
+  };
 }
 
 function normalizeTabscannerFixtureLines(tabscannerResult) {
@@ -216,6 +232,57 @@ function assertFixtureExpectations(fixture, coreResult) {
         line.line.parsed_name ?? null,
         expectedProduce.parsed_name ?? null,
         `${fixture.id}: line ${expectedProduce.line_number} produce parsed_name mismatch`
+      );
+    }
+  }
+
+  if (assertions.tax_interpretation != null) {
+    const expectedTax = assertions.tax_interpretation;
+
+    if (expectedTax.status != null) {
+      assert.equal(
+        coreResult.tax_interpretation.status,
+        expectedTax.status,
+        `${fixture.id}: tax interpretation status mismatch`
+      );
+    }
+
+    if (Object.hasOwn(expectedTax, "province")) {
+      assert.equal(
+        coreResult.tax_interpretation.province ?? null,
+        expectedTax.province ?? null,
+        `${fixture.id}: tax interpretation province mismatch`
+      );
+    }
+
+    if (expectedTax.province_source != null) {
+      assert.equal(
+        coreResult.tax_interpretation.province_source,
+        expectedTax.province_source,
+        `${fixture.id}: tax interpretation province source mismatch`
+      );
+    }
+
+    if (expectedTax.structure != null) {
+      assert.equal(
+        coreResult.tax_interpretation.structure,
+        expectedTax.structure,
+        `${fixture.id}: tax interpretation structure mismatch`
+      );
+    }
+
+    if (Object.hasOwn(expectedTax, "zero_tax_grocery_candidate")) {
+      assert.equal(
+        coreResult.tax_interpretation.zero_tax_grocery_candidate,
+        expectedTax.zero_tax_grocery_candidate,
+        `${fixture.id}: tax interpretation zero-tax candidate mismatch`
+      );
+    }
+
+    for (const flag of expectedTax.required_flags ?? []) {
+      assert.ok(
+        coreResult.tax_interpretation.flags.includes(flag),
+        `${fixture.id}: tax interpretation missing flag '${flag}'`
       );
     }
   }

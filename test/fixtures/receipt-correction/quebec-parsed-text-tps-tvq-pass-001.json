@@ -1,0 +1,25 @@
+{
+  "id": "quebec-parsed-text-tps-tvq-pass-001",
+  "source": "parsed_text",
+  "store": {
+    "name": "Quebec Grocery",
+    "google_place_id": "test_qc_grocery_place"
+  },
+  "raw_text": "FROMAGE 10.00\nPAIN 2.00\nSubtotal 12.00\nTPS 0.60\nTVQ 1.20\nTotal 13.80",
+  "expected": {
+    "notes": [
+      "Parser should skip TPS/TVQ tax lines and keep purchase lines only.",
+      "Tax interpretation should resolve Quebec dual-tax structure."
+    ],
+    "assertions": {
+      "totals_status": "pass",
+      "totals_delta_to_total": 0,
+      "changed_line_numbers": [],
+      "tax_interpretation": {
+        "status": "pass",
+        "province": "QC",
+        "structure": "qc_gst_qst"
+      }
+    }
+  }
+}

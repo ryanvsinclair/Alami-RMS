@@ -1,0 +1,25 @@
+{
+  "id": "grocery-parsed-text-zero-tax-subtotal-total-001",
+  "source": "parsed_text",
+  "store": {
+    "name": "Grocery No Tax",
+    "google_place_id": "test_grocery_notax_place"
+  },
+  "raw_text": "APPLES 4.00\nBREAD 3.00\nSub Total 7.00\nTotal 7.00",
+  "expected": {
+    "notes": [
+      "No tax line with subtotal==total should remain a pass candidate (zero-rated basket style)."
+    ],
+    "assertions": {
+      "totals_status": "pass",
+      "totals_delta_to_total": 0,
+      "changed_line_numbers": [],
+      "tax_interpretation": {
+        "status": "pass",
+        "structure": "no_tax_line",
+        "zero_tax_grocery_candidate": true,
+        "required_flags": ["zero_tax_subtotal_equals_total_candidate"]
+      }
+    }
+  }
+}

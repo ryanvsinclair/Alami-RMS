@@ -278,6 +278,7 @@ Implemented capabilities:
 - Receipt parse/review/commit lifecycle
 - Post-OCR correction now accepts line-level historical price plausibility hints derived from recent receipt line history (scoped by business and supplier/place when available)
 - Historical hint quality gates are active (minimum sample-size threshold + recent-history lookback window) with summary metrics for hint coverage/sample quality
+- Raw-text receipt parser skip/noise filters now explicitly handle `Sub Total`/`Grand Total`, dotted tax labels (`H.S.T.`), and Quebec tax labels (`TPS`/`TVQ`) to reduce false line-item candidates before correction
 - Idempotent receipt commit behavior in inventory ledger path
 - Receipt auto-resolution observability (process-local summaries)
 

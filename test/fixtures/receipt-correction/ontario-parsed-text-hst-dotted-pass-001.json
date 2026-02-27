@@ -1,0 +1,25 @@
+{
+  "id": "ontario-parsed-text-hst-dotted-pass-001",
+  "source": "parsed_text",
+  "store": {
+    "name": "Ontario Market",
+    "google_place_id": "test_on_market_place"
+  },
+  "raw_text": "BREAD 4.99\nMILK 3.00\nSub Total 7.99\nH.S.T. 1.04\nTotal 9.03",
+  "expected": {
+    "notes": [
+      "Parser should skip subtotal/tax/total summary lines.",
+      "Dotted H.S.T. tax label should still classify as Ontario HST."
+    ],
+    "assertions": {
+      "totals_status": "pass",
+      "totals_delta_to_total": 0,
+      "changed_line_numbers": [],
+      "tax_interpretation": {
+        "status": "pass",
+        "province": "ON",
+        "structure": "on_hst"
+      }
+    }
+  }
+}

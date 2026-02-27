@@ -128,9 +128,10 @@ export function parseReceiptText(rawText: string): ParsedLineItem[] {
 
   // Filter out non-item lines
   const SKIP_PATTERNS = [
-    /^(sub)?total/i,
-    /^tax/i,
-    /^change/i,
+    /^(?:sub\s*total|subtotal|grand\s*total|total)\b/i,
+    /^(?:sales\s+)?tax\b/i,
+    /^(?:g\.?\s*s\.?\s*t|h\.?\s*s\.?\s*t|p\.?\s*s\.?\s*t|q\.?\s*s\.?\s*t|t\.?\s*p\.?\s*s|t\.?\s*v\.?\s*q)\b/i,
+    /^change\b/i,
     /^cash/i,
     /^credit|debit|visa|master/i,
     /^thank\s*you/i,
@@ -143,7 +144,8 @@ export function parseReceiptText(rawText: string): ParsedLineItem[] {
     /^-+$/, // separators
     /^=+$/, // separators
     /^store|branch|location/i,
-    /^(gst|hst|pst)/i,
+    /^coupon\b/i,
+    /^discount\b/i,
     /^savings/i,
     /^member/i,
     /^balance/i,
