@@ -1,7 +1,9 @@
 import {
   runReceiptCorrectionCore,
 } from "@/domain/parsers/receipt-correction-core";
+import type { ParsedLineItem, ParsedLineProduceMatch } from "@/domain/parsers/receipt";
 import type {
+  ReceiptCorrectionCoreResult,
   ReceiptCorrectionConfidenceBand,
   ReceiptCorrectionHistoricalPriceHint,
 } from "@/domain/parsers/receipt-correction-core";
@@ -12,6 +14,7 @@ import type {
   ReceiptPostOcrCorrectionMode,
   ReceiptPostOcrCorrectionResult,
 } from "./receipt-correction.contracts";
+import { applyProduceLookupToCorrectionLines } from "./receipt-produce-lookup.service";
 
 const RECEIPT_CORRECTION_PARSER_VERSION = "v1.4-numeric-tax-produce-history-gated";
 
@@ -26,6 +29,61 @@ function createConfidenceBandCounts(): ReceiptCorrectionConfidenceBandCounts {
 
 function incrementCount(map: ReceiptCorrectionCountMap, key: string): void {
   map[key] = (map[key] ?? 0) + 1;
+}
+
+function sameMoney(a: number | null | undefined, b: number | null | undefined): boolean {
+  if (a == null && b == null) return true;
+  if (a == null || b == null) return false;
+  return Math.abs(a - b) <= 0.005;
+}
+
+function sameProduceMatch(
+  a: ParsedLineProduceMatch | null | undefined,
+  b: ParsedLineProduceMatch | null | undefined,
+): boolean {
+  if (a == null && b == null) return true;
+  if (a == null || b == null) return false;
+  return (
+    a.display_name === b.display_name &&
+    a.commodity === b.commodity &&
+    (a.variety ?? null) === (b.variety ?? null) &&
+    a.language_code === b.language_code &&
+    a.match_method === b.match_method
+  );
+}
+
+function lineChangedFromInput(original: ParsedLineItem, next: ParsedLineItem): boolean {
+  return (
+    original.parsed_name !== next.parsed_name ||
+    original.quantity !== next.quantity ||
+    original.unit !== next.unit ||
+    !sameMoney(original.line_cost, next.line_cost) ||
+    !sameMoney(original.unit_cost, next.unit_cost) ||
+    (original.plu_code ?? null) !== (next.plu_code ?? null) ||
+    (original.organic_flag ?? null) !== (next.organic_flag ?? null) ||
+    !sameProduceMatch(original.produce_match, next.produce_match)
+  );
+}
+
+function rebuildCoreStatsWithProduceLookup(data: {
+  inputLines: ParsedLineItem[];
+  lines: ReceiptCorrectionCoreResult["lines"];
+}): ReceiptCorrectionCoreResult["stats"] {
+  const changedLineCount = data.lines.reduce((count, entry, index) => {
+    const original = data.inputLines[index];
+    if (!original) return count + 1;
+    return lineChangedFromInput(original, entry.line) ? count + 1 : count;
+  }, 0);
+  const correctionActionsApplied = data.lines.reduce(
+    (sum, entry) => sum + entry.correction_actions.length,
+    0,
+  );
+
+  return {
+    line_count: data.lines.length,
+    changed_line_count: changedLineCount,
+    correction_actions_applied: correctionActionsApplied,
+  };
 }
 
 function summarizeCorrectionCoreObservability(
@@ -158,12 +216,24 @@ export async function runReceiptPostOcrCorrection(
   input: ReceiptPostOcrCorrectionInput,
 ): Promise<ReceiptPostOcrCorrectionResult> {
   const mode = getReceiptPostOcrCorrectionMode();
-  const core = runReceiptCorrectionCore({
+  const coreBase = runReceiptCorrectionCore({
     source: input.source,
     lines: input.lines,
     totals: input.totals,
     historical_price_hints: input.historical_price_hints,
   });
+  const linesWithProduceLookup = await applyProduceLookupToCorrectionLines(
+    coreBase.lines,
+    { provinceHint: coreBase.tax_interpretation.province },
+  );
+  const core: ReceiptCorrectionCoreResult = {
+    ...coreBase,
+    lines: linesWithProduceLookup,
+    stats: rebuildCoreStatsWithProduceLookup({
+      inputLines: input.lines,
+      lines: linesWithProduceLookup,
+    }),
+  };
   const observability = summarizeCorrectionCoreObservability(core);
   const historicalHintObservability = summarizeHistoricalHintObservability({
     hints: input.historical_price_hints,

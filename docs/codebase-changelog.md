@@ -20,6 +20,51 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-27 - RC-12 complete: produce lookup service wired (PLU/fuzzy + province language preference + EN fallback)
+- Suggested Commit Title: `feat(rc-12): add produce lookup service with province-aware language fallback`
+- Scope:
+  - Receipt correction Phase 1.5 service-layer completion (`RC-12`) for produce-item lookup enrichment after correction-core processing.
+- Preflight evidence (reuse/refactor-first + DB/Prisma integrity):
+  - Reviewed source-plan RC-12 scope in `docs/receipt-post-ocr-correction-plan.md`.
+  - Ran scoped implementation scans:
+    - `rg -n "receipt-produce-lookup|produce_items|plu_code|produce_match|organic_flag|language fallback|province.*language" src app test docs`
+    - `rg --files src app test docs | rg "produce|receipt-correction|receipt-workflow|receipt.*lookup|plu"`
+  - Confirmed no existing `receipt-produce-lookup.service.ts` implementation and extended existing correction-service integration path instead of introducing parallel pipelines.
+  - DB/Prisma integrity preflight completed:
+    - reviewed `prisma/schema.prisma` (`ProduceItem` model + composite key)
+    - reviewed latest migration `prisma/migrations/20260225223000_shopping_session_item_resolution_audit/migration.sql`
+    - no schema/migration changes required for this read-only lookup slice.
+- What changed:
+  - Added `src/features/receiving/receipt/server/receipt-produce-lookup.service.ts`:
+    - PLU-first produce lookup (`plu_code + language_code`)
+    - fuzzy-name fallback using trigram similarity scoring and produce-keyword gating
+    - province-aware language order (`QC: FR -> EN`, default `EN`) with explicit EN fallback flagging
+  - Wired lookup enrichment into `runReceiptPostOcrCorrection(...)`:
+    - applies produce lookup after correction-core output
+    - enriches lines with canonical `produce_match`
+    - appends lookup parse flags/actions for observability
+    - recomputes correction stats after lookup enrichment
+  - Added targeted service tests:
+    - `src/features/receiving/receipt/server/receipt-produce-lookup.service.test.mjs`
+    - verifies preferred-language behavior, EN fallback, fuzzy match path, and non-produce skip guard.
+- Files changed:
+  - `src/features/receiving/receipt/server/receipt-produce-lookup.service.ts`
+  - `src/features/receiving/receipt/server/receipt-produce-lookup.service.test.mjs`
+  - `src/features/receiving/receipt/server/receipt-correction.service.ts`
+  - `docs/receipt-post-ocr-correction-plan.md`
+  - `docs/master-plan-v1.md`
+  - `docs/codebase-overview.md`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - `npx tsx --test src/features/receiving/receipt/server/receipt-produce-lookup.service.test.mjs` -> PASS (3/3)
+  - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-core.test.mjs` -> PASS (14/14; expected Node experimental/module-type warnings)
+  - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-fixtures.test.mjs` -> PASS (27/27; expected Node experimental/module-type warnings)
+  - `node --test --experimental-transform-types src/domain/parsers/receipt.test.mjs` -> PASS (3/3; expected Node experimental/module-type warnings)
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `npx eslint src/features/receiving/receipt/server/receipt-correction.service.ts src/features/receiving/receipt/server/receipt-produce-lookup.service.ts src/features/receiving/receipt/server/receipt-produce-lookup.service.test.mjs --quiet` -> PASS
+- Notes:
+  - `RC-12` marked complete; canonical next task is `RC-13`.
+
 ### 2026-02-27 - RC-11 complete: province hierarchy hardening + ON/QC tax assertion expansion + raw-text totals robustness
 - Suggested Commit Title: `feat(rc-11): harden province resolution hierarchy, tax assertions, and raw-text totals extraction`
 - Scope:

@@ -4,6 +4,28 @@ Last updated: February 27, 2026 (draft / implementation-ready plan)
 
 ## Latest Update
 
+- **Phase 1.5 RC-12 complete: produce lookup service (PLU + fuzzy + province/language fallback)** (February 27, 2026):
+  - Implemented `src/features/receiving/receipt/server/receipt-produce-lookup.service.ts`:
+    - PLU-first produce lookup against `produce_items` via Prisma composite key (`plu_code`, `language_code`)
+    - fuzzy produce-name lookup with trigram similarity scoring and produce-keyword gating
+    - province-aware language order (`QC -> FR -> EN`, default `EN`)
+    - deterministic EN fallback tracking when preferred language misses
+  - Wired produce lookup into `runReceiptPostOcrCorrection(...)`:
+    - applies lookup results after domain correction-core output while preserving domain purity
+    - enriches corrected lines with canonical `produce_match` payload
+    - appends lookup parse flags/actions for observability (`produce_lookup_plu_match`, `produce_lookup_name_fuzzy_match`, `produce_lookup_language_fallback_en`)
+    - refreshes correction stats after lookup enrichment so summary counts remain accurate in `shadow`/`enforce` modes
+  - Added targeted service-layer regression tests:
+    - `src/features/receiving/receipt/server/receipt-produce-lookup.service.test.mjs`
+    - covers Quebec preferred-language behavior, EN fallback on PLU miss, fuzzy-name match path, and non-produce skip guard
+  - Validation:
+    - `npx tsx --test src/features/receiving/receipt/server/receipt-produce-lookup.service.test.mjs` -> PASS (3/3)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-core.test.mjs` -> PASS (14/14)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-fixtures.test.mjs` -> PASS (27/27)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt.test.mjs` -> PASS (3/3)
+    - `npx tsc --noEmit --incremental false` -> PASS
+    - targeted `eslint` on touched correction/produce-lookup files -> PASS
+
 - **Phase 1 RC-11 complete: province hierarchy hardening + ON/QC tax assertions + raw-text totals robustness** (February 27, 2026):
   - Hardened province determination hierarchy in workflow orchestration:
     - added Google Place Details province resolution (`address_components`/`formatted_address`) when `google_place_id` exists
@@ -128,18 +150,19 @@ Last updated: February 27, 2026 (draft / implementation-ready plan)
 
 ## Pick Up Here (Next Continuation)
 
-Continue with **Phase 1.5 service layer (RC-12)**, using `shadow` mode first for lookup-driven enrichment.
+Continue with **Phase 1.5 persistence decision (RC-13)**.
 
 Recommended next implementation order:
 
-1. Implement `receipt-produce-lookup.service.ts` for `produce_items` resolution
-   - support PLU exact lookup and fuzzy name lookup with deterministic scoring guards
-2. Add province-aware language preference with EN fallback
-   - Ontario -> EN preferred, Quebec -> FR preferred, fallback to EN when preferred language misses
-3. Wire produce lookup into correction workflow service path
-   - enrich corrected lines with lookup-backed `produce_match` while preserving domain purity boundaries
+1. Resolve parse/produce metadata persistence path (schema-light vs schema-backed)
+   - explicitly choose where `plu_code` / `organic_flag` / `produce_match` metadata should persist
+2. Implement approved persistence path with minimal migration risk
+   - if schema-backed, add migration + schema/docs sync
+   - if schema-light, persist deterministic correction metadata in existing JSON summary path
+3. Add focused validation for persistence behavior
+   - verify metadata availability after parse/reload cycles without affecting inventory-match confidence semantics
 4. Keep production behavior risk-controlled
-   - run in `shadow` first, inspect correction metrics/deltas, then promote safe rules to `enforce`
+   - remain in `shadow` first, inspect correction metrics/deltas, then promote safe rules to `enforce`
 
 Implementation guardrails (carry forward):
 
@@ -1290,11 +1313,14 @@ Progress notes (2026-02-27):
 - Added test coverage:
   - targeted `node:test` cases in `src/domain/parsers/receipt-correction-core.test.mjs`
   - fixture-harness support for produce assertions + produce fixture in `test/fixtures/receipt-correction/*`
+- Completed RC-12 service-layer lookup slice:
+  - added `receipt-produce-lookup.service.ts` (PLU exact + fuzzy produce name matching)
+  - added province-aware language preference + EN fallback (`QC: FR -> EN`, default `EN`)
+  - wired lookup enrichment into `runReceiptPostOcrCorrection(...)` with parse-flag/action observability
+  - added targeted lookup service tests (`npx tsx --test ...`)
 - Remaining:
-  - implement `receipt-produce-lookup.service.ts` (PLU + fuzzy name lookup against `produce_items`)
-  - add province-aware language preference + EN fallback in feature-layer lookup orchestration
   - persist produce metadata (`plu_code`, `organic_flag`) on `ReceiptLineItem` once schema slice is approved
-  - add broader multilingual produce fixtures and lookup validation cases
+  - resolve and implement RC-13 persistence decision path for parse/produce metadata
 
 ## Phase 2 - Line-level parse confidence and UI flags
 

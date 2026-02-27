@@ -177,10 +177,10 @@ Use the `Canonical Order Checklist` statuses as the source of truth.
 Current snapshot (2026-02-27):
 
 - Total checklist items: `38`
-- `[x]` complete: `3`
+- `[x]` complete: `4`
 - `[~]` in progress: `0`
-- Strict completion: `7.89%`
-- Weighted progress: `7.89%`
+- Strict completion: `10.53%`
+- Weighted progress: `10.53%`
 
 Update rule after each slice:
 
@@ -226,11 +226,10 @@ Latest Update section review:
 - Produce normalization layer was added (9-prefix PLU normalization, organic keyword stripping, produce candidate gating).
 - `CorrectedReceiptLine` now includes `plu_code`, `produce_match`, `organic_flag`.
 - Phase 0 foundation is implemented; RC-10 closeout completed threshold tuning + fixture expansion to 20 scenarios.
-- Phase 1.5 scaffold is started; lookup/persistence/multilingual hardening remain.
+- Phase 1.5 service-layer lookup is implemented; persistence decision and multilingual hardening remain.
 
 Remaining high-impact work:
-- Continue Phase 1.5 via RC-12 produce lookup service completion (PLU/fuzzy lookup + province-aware language preference + EN fallback).
-- Resolve RC-13 persistence decision for parse/produce metadata and implement the approved path.
+- Continue Phase 1.5 via RC-13 parse/produce metadata persistence decision and implementation.
 - Execute Phases 2-6 (parse confidence UI, store memory, hybrid parser, feedback loop, rollout hardening).
 
 ### 2) `docs/income-integrations-onboarding-plan.md` (not started)
@@ -280,7 +279,7 @@ Status legend:
 
 - [x] RC-10 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then complete Phase 1 remaining items: threshold tuning, expanded fixture corpus, historical plausibility signal wiring.
 - [x] RC-11 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then complete Phase 1 tax hardening: province resolution hierarchy hardening + ON/QC tax fixture assertions + raw-text totals robustness.
-- [ ] RC-12 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then complete Phase 1.5 service layer: implement `receipt-produce-lookup.service.ts` (PLU + fuzzy lookup with province/language preference + EN fallback).
+- [x] RC-12 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then complete Phase 1.5 service layer: implement `receipt-produce-lookup.service.ts` (PLU + fuzzy lookup with province/language preference + EN fallback).
 - [ ] RC-13 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then resolve persistence decision for parse/produce metadata and implement approved schema-light or schema-backed path.
 - [ ] RC-14 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 2 parse confidence persistence + receipt review UI indicators.
 - [ ] RC-15 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 3 store-specific parse profile memory.
@@ -329,16 +328,16 @@ Status legend:
 
 ## Last Left Off Here (Update This Block First)
 
-- Current task ID: `RC-12`
-- Current task: `Phase 1.5 service layer: implement receipt-produce-lookup.service.ts (PLU/fuzzy lookup + province/language preference + EN fallback)`
-- Status: `READY (RC-11 complete; next canonical task not started yet)`
+- Current task ID: `RC-13`
+- Current task: `Resolve persistence decision for parse/produce metadata and implement approved schema-light or schema-backed path`
+- Status: `READY (RC-12 complete; next canonical task not started yet)`
 - Last updated: `2026-02-27`
 - Primary source plan section:
   - `docs/receipt-post-ocr-correction-plan.md` -> `Phase 1.5 - Produce resolution & organic normalization`
 - Completion condition for this marker:
-  - mark `RC-12` complete
+  - mark `RC-13` complete
   - append a new entry to `## Latest Job Summary`
-  - move this marker to `RC-13`
+  - move this marker to `RC-14`
 
 ## Documentation Sync Checklist (Run Every Session)
 
@@ -350,6 +349,31 @@ Status legend:
 - [ ] `docs/codebase-overview.md` updated if behavior/architecture/canonical path descriptions changed.
 
 ## Latest Job Summary (Append New Entries At Top)
+
+### 2026-02-27 - RC-12 complete: produce lookup service wired (PLU/fuzzy + province language preference + EN fallback)
+- Completed:
+  - Ran scoped preflight scans (`rg -n` + `rg --files`) for produce lookup/service-layer paths; confirmed `receipt-produce-lookup.service.ts` did not exist and reused existing correction-core/workflow contracts instead of duplicating pipelines.
+  - Verified DB/Prisma preflight for `produce_items` access:
+    - reviewed `prisma/schema.prisma`
+    - reviewed latest migration `prisma/migrations/20260225223000_shopping_session_item_resolution_audit/migration.sql`
+    - confirmed RC-12 required no schema change (service-layer read path only).
+  - Implemented `src/features/receiving/receipt/server/receipt-produce-lookup.service.ts` with:
+    - PLU-first lookup via `produce_items` composite key (`plu_code`, `language_code`)
+    - fuzzy-name lookup with trigram similarity scoring + produce keyword gating
+    - province-aware language order (`QC: FR -> EN`, default `EN`) and deterministic EN fallback handling
+  - Wired lookup enrichment into `runReceiptPostOcrCorrection(...)` so correction lines receive canonical `produce_match` metadata post-core while keeping domain parsing logic DB-free.
+  - Added targeted service tests in `src/features/receiving/receipt/server/receipt-produce-lookup.service.test.mjs` (preferred-language behavior, EN fallback, fuzzy match path, non-produce skip).
+  - Completed validation gates:
+    - `npx tsx --test src/features/receiving/receipt/server/receipt-produce-lookup.service.test.mjs` -> PASS (3/3)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-core.test.mjs` -> PASS (14/14)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-fixtures.test.mjs` -> PASS (27/27)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt.test.mjs` -> PASS (3/3)
+    - `npx tsc --noEmit --incremental false` -> PASS
+    - targeted `eslint` on touched correction/produce-lookup files -> PASS
+- Remaining:
+  - Start `RC-13` persistence decision + implementation for parse/produce metadata.
+- Next:
+  - `RC-13` in `docs/receipt-post-ocr-correction-plan.md`
 
 ### 2026-02-27 - RC-11 complete: province hierarchy hardening + ON/QC tax assertion expansion + raw-text totals robustness
 - Completed:
