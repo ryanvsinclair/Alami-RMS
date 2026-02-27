@@ -1,7 +1,7 @@
 CREATE TABLE "receipt_parse_profiles" (
-  "id" UUID NOT NULL DEFAULT gen_random_uuid(),
-  "business_id" UUID NOT NULL,
-  "supplier_id" UUID,
+  "id" TEXT NOT NULL DEFAULT gen_random_uuid(),
+  "business_id" TEXT NOT NULL,
+  "supplier_id" TEXT,
   "google_place_id" TEXT,
   "profile_key" TEXT NOT NULL,
   "signals" JSONB,

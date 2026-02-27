@@ -1,17 +1,11 @@
 /**
- * Unified Inventory Intake — session orchestration adapter contracts (UI-02 Phase 2).
+ * Unified Inventory Intake — session orchestration adapter contracts.
  *
- * This file bridges existing session/lifecycle models from the Shopping and
- * Receiving features to the canonical IntakeSessionStatus vocabulary defined
- * in intake.contracts.ts.
+ * Bridges existing session/lifecycle models from the Shopping and Receiving
+ * features to the canonical IntakeSessionStatus vocabulary defined in
+ * intake.contracts.ts.
  *
- * Design constraints (from unified-inventory-intake-refactor-plan.md, Phase 2):
- *  - Do NOT change any existing feature service behavior.
- *  - Do NOT change any Prisma schema or DB model.
- *  - Normalize route-level state and lifecycle handling only.
- *  - Keep existing feature services (Shopping, Receiving) under the hood.
- *
- * Existing status models being mapped:
+ * Status models being mapped:
  *  - ShoppingSessionStatus: draft | reconciling | ready | committed | cancelled
  *  - ReceiptStatus:         pending | parsing | review | committed | failed
  *
@@ -114,7 +108,7 @@ export interface IntakeSessionSummary {
 }
 
 // ---------------------------------------------------------------------------
-// Intent → route builder (extends UI-01 compatibility map)
+// Intent → route builder
 // ---------------------------------------------------------------------------
 
 /**

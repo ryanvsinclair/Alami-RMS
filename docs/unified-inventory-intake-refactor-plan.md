@@ -1,9 +1,33 @@
 # Unified Inventory Intake Refactor Plan
 
 Last updated: February 27, 2026
-Status: Phase 3 complete; Phase 4 next
+Status: COMPLETE — all phases 0–5 done
 
 ## Latest Update
+
+### 2026-02-27 — UI-05/UI-06 complete: Phase 5 cleanup/deprecation + plan closure
+
+- Removed all migration-era "compatibility wrapper", "UI-0x phase N", and "extends ... compatibility map" comments from all intake files.
+- Files updated (comment promotion to stable language only; no logic changes):
+  - `components/nav/bottom-nav.tsx`
+  - `src/features/intake/ui/IntakeHubClient.tsx`
+  - `src/features/intake/shared/intake.contracts.ts`
+  - `src/features/intake/shared/intake-session.contracts.ts`
+  - `src/features/intake/shared/intake-capability.service.ts`
+  - `app/(dashboard)/intake/page.tsx`
+- No functional routes removed — `/shopping` and `/receive` are full feature routes (plan non-goal: no capability removal).
+- Adoption check: `/intake` is the canonical nav entry; Hub routes all intake intents; no redundant nav duplication remains.
+- Validation: `npx tsc --noEmit --incremental false` → PASS; `npx eslint` on all touched files → PASS
+
+### 2026-02-27 — UI-04 complete: Phase 4 navigation consolidation
+
+- Refactored `components/nav/bottom-nav.tsx`:
+  - Removed standalone `/shopping` and `/receive` entry logic (now purely accessed via Hub).
+  - Maintained `/shopping` dynamic active-state highlight by ensuring `/intake` illuminates when on `/intake`, `/shopping`, or `/receive` routes.
+  - Cleaned up dead code (`shoppingLabel`, `receiveLabel`, `moduleId === "receipts|shopping"` checks).
+  - Ensured compatibility `/shopping` and `/receive` routes remain completely intact mapping to existing pages.
+- Validation: `npx tsc --noEmit --incremental false` → PASS; `npx eslint components/nav/bottom-nav.tsx` → PASS
+- No schema migration required; no broken links.
 
 ### 2026-02-27 — UI-03 complete: Phase 3 capability gating service
 
@@ -68,7 +92,7 @@ Status: Phase 3 complete; Phase 4 next
 
 ## Pick Up Here
 
-- Next task: **UI-04** — Phase 4 navigation consolidation (with compatibility routes/wrappers retained)
+- PLAN COMPLETE — all phases 0–5 done. Next: QA-00 in master plan.
 
 ## Purpose
 

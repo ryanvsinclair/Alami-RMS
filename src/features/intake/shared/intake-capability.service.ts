@@ -1,18 +1,14 @@
 /**
- * Unified Inventory Intake — capability gating service (UI-03 Phase 3).
+ * Unified Inventory Intake — capability gating service.
  *
  * Resolves the active set of IntakeCapabilities for a given business context
  * and determines intent visibility + ordering from those capabilities.
  *
- * Design rule (from unified-inventory-intake-refactor-plan.md, Phase 3):
+ * Design rule:
  *  - UI visibility must be driven by capability flags — NOT by hardcoded
  *    per-industry route forks or scattered module checks in components.
  *  - All capability decisions route through this service.
- *
- * Phase 3 constraints:
- *  - No schema changes, no DB interaction.
- *  - No existing feature service changes.
- *  - Pure functions only — easy to test, easy to override in tests/stubs.
+ *  - Pure functions only — no schema/DB interaction.
  */
 
 import type { IndustryType } from "@/lib/generated/prisma/client";

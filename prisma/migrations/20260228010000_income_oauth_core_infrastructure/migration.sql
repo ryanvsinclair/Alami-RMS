@@ -17,8 +17,8 @@ CREATE TYPE "IncomeConnectionStatus" AS ENUM (
 );
 
 CREATE TABLE "business_income_connections" (
-  "id" UUID NOT NULL DEFAULT gen_random_uuid(),
-  "business_id" UUID NOT NULL,
+  "id" TEXT NOT NULL DEFAULT gen_random_uuid(),
+  "business_id" TEXT NOT NULL,
   "provider_id" "IncomeProvider" NOT NULL,
   "provider_type" TEXT,
   "display_name" TEXT,
@@ -54,8 +54,8 @@ CREATE INDEX "business_income_connections_provider_id_status_idx"
   ON "business_income_connections"("provider_id", "status");
 
 CREATE TABLE "income_oauth_states" (
-  "id" UUID NOT NULL DEFAULT gen_random_uuid(),
-  "business_id" UUID NOT NULL,
+  "id" TEXT NOT NULL DEFAULT gen_random_uuid(),
+  "business_id" TEXT NOT NULL,
   "user_id" TEXT NOT NULL,
   "provider_id" "IncomeProvider" NOT NULL,
   "state_hash" TEXT NOT NULL,

@@ -1,11 +1,7 @@
 /**
- * Unified Inventory Intake — shared vocabulary and intent contracts (UI-00 Phase 0).
+ * Unified Inventory Intake — shared vocabulary and intent contracts.
  *
- * This file defines the canonical terminology for the Inventory Intake system.
- * It does NOT change any existing behavior — existing Shopping and Receiving
- * features continue to operate independently. This vocabulary layer establishes
- * the shared language that future Intake Hub phases (UI-01 through UI-06) will
- * build on top of.
+ * Canonical terminology for the Inventory Intake system.
  *
  * Relationship to existing features:
  * - Live Purchase intent  →  src/features/shopping/*

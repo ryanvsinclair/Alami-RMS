@@ -1,7 +1,7 @@
 CREATE TABLE "income_events" (
-  "id" UUID NOT NULL DEFAULT gen_random_uuid(),
-  "business_id" UUID NOT NULL,
-  "connection_id" UUID NOT NULL,
+  "id" TEXT NOT NULL DEFAULT gen_random_uuid(),
+  "business_id" TEXT NOT NULL,
+  "connection_id" TEXT NOT NULL,
   "provider_id" "IncomeProvider" NOT NULL,
   "source_name" TEXT NOT NULL,
   "external_id" TEXT NOT NULL,

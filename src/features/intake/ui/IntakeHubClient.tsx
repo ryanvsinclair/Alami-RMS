@@ -1,22 +1,19 @@
 "use client";
 
 /**
- * Unified Inventory Intake Hub — UI-01/UI-03.
+ * Unified Inventory Intake Hub.
  *
  * Intent-first landing surface for all inventory intake workflows.
  * Renders ordered intent cards based on capability-driven visibility
- * resolved from industry type and enabled modules (UI-03).
+ * resolved from industry type and enabled modules.
  *
  * Visibility gating delegates to resolveVisibleIntents() — no hardcoded
  * per-intent module checks in this component.
  *
- * Routing (compatibility wrappers — existing routes preserved):
- *   live_purchase  →  /shopping       (existing Shopping flow)
- *   bulk_intake    →  /receive        (existing Receive flow)
+ * Routing:
+ *   live_purchase  →  /shopping       (Live Purchase flow)
+ *   bulk_intake    →  /receive        (Bulk Intake / Receive flow)
  *   supplier_sync  →  /integrations   (capability-gated via service)
- *
- * No behavior changes to existing flows.
- * All existing /shopping and /receive routes remain fully operational.
  */
 
 import { useRouter } from "next/navigation";
@@ -29,7 +26,7 @@ import {
 } from "@/features/intake/shared";
 
 // ---------------------------------------------------------------------------
-// Intent → route mapping (compatibility layer — existing routes preserved)
+// Intent → route mapping
 // ---------------------------------------------------------------------------
 
 const INTENT_HREF: Record<IntakeIntent, string> = {
@@ -75,8 +72,7 @@ export default function IntakeHubClient() {
   const router = useRouter();
   const { industryType, enabledModules } = useBusinessConfig();
 
-  // UI-03: capability-gate driven visibility — delegates to resolveVisibleIntents()
-  // rather than hardcoded per-intent module checks.
+  // Capability-gate driven visibility — delegates to resolveVisibleIntents().
   const visibleIntents = resolveVisibleIntents(industryType, enabledModules);
 
   return (

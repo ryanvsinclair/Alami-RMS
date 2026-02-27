@@ -1,14 +1,26 @@
 "use client";
 
+/**
+ * Bottom navigation bar.
+ *
+ * Final nav order (OC-01): Home | Staff | Intake | Inventory | Schedule
+ *
+ * - /intake highlights when user is anywhere in /intake, /shopping, or /receive.
+ * - /shopping and /receive are full feature routes accessible via the Intake Hub.
+ * - /integrations is accessible directly but not a primary nav slot.
+ */
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useBusinessConfig, useTerm } from "@/lib/config/context";
+import { useBusinessConfig } from "@/lib/config/context";
+
+// /intake highlights when user is inside any intake-family route.
+const INTAKE_ACTIVE_PREFIXES = ["/intake", "/shopping", "/receive"];
 
 type NavItem = {
   href: string;
   label: string;
   exact: boolean;
-  moduleId?: string;
   icon: React.ReactNode;
 };
 
@@ -33,20 +45,7 @@ const navItems: NavItem[] = [
       </svg>
     ),
   },
-  {
-    href: "/integrations",
-    label: "Integrations",
-    exact: false,
-    moduleId: "integrations",
-    icon: (
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h7.5M8.25 17.25h7.5M6.75 9.75h10.5v4.5H6.75v-4.5Z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 3.75v3m6-3v3m-6 10.5v3m6-3v3" />
-      </svg>
-    ),
-  },
-  // UI-01: Intake Hub nav entry — intent-first unified landing for Shopping + Receive.
-  // Existing /shopping and /receive nav entries preserved during migration (UI-04 consolidates).
+  // Intake Hub — single nav entry for all inventory intake workflows.
   {
     href: "/intake",
     label: "Intake",
@@ -67,29 +66,24 @@ const navItems: NavItem[] = [
       </svg>
     ),
   },
+  // Operational Calendar — aggregated schedule for all business event types.
   {
-    href: "/shopping",
-    label: "Shopping",
+    href: "/schedule",
+    label: "Schedule",
     exact: false,
-    moduleId: "shopping",
     icon: (
       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.085.837l.383 1.437m0 0L6.75 12h10.5l2.01-5.69a.75.75 0 0 0-.707-.997H5.104Zm1.146 6.69a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Zm10.5 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
       </svg>
     ),
   },
 ];
 
-export function BottomNav({ enabledModules }: { enabledModules?: string[] }) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function BottomNav({ enabledModules: _enabledModules }: { enabledModules?: string[] }) {
   const pathname = usePathname();
-  const config = useBusinessConfig();
-  const receiveLabel = useTerm("receive");
-  const shoppingLabel = useTerm("shopping");
-  const effectiveEnabledModules = enabledModules ?? config.enabledModules;
-  const moduleSet = effectiveEnabledModules ? new Set(effectiveEnabledModules) : null;
-  const visibleItems = navItems.filter(
-    (item) => !item.moduleId || !moduleSet || moduleSet.has(item.moduleId)
-  );
+  useBusinessConfig(); // keep context subscription for potential future capability gating
+  const visibleItems = navItems;
 
   return (
     <nav className="fixed inset-x-0 bottom-4 z-50 px-3 pointer-events-none safe-bottom">
@@ -102,9 +96,12 @@ export function BottomNav({ enabledModules }: { enabledModules?: string[] }) {
         }}
       >
         {visibleItems.map((item) => {
+          // /intake highlights for all intake-family routes (shopping, receive, intake).
           const isActive = item.exact
             ? pathname === item.href
-            : pathname.startsWith(item.href);
+            : item.href === "/intake"
+              ? INTAKE_ACTIVE_PREFIXES.some((p) => pathname.startsWith(p))
+              : pathname.startsWith(item.href);
           return (
             <Link
               key={item.href}
@@ -128,11 +125,7 @@ export function BottomNav({ enabledModules }: { enabledModules?: string[] }) {
               `}
             >
               {item.icon}
-              {item.moduleId === "receipts"
-                ? receiveLabel
-                : item.moduleId === "shopping"
-                  ? shoppingLabel
-                  : item.label}
+              {item.label}
             </Link>
           );
         })}
