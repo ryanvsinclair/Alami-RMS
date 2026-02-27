@@ -1,14 +1,48 @@
 import type { ParsedLineItem } from "./receipt";
+import { normalizeReceiptProduceLine } from "./receipt-produce-normalization.js";
 
 export type ReceiptCorrectionSource = "parsed_text" | "tabscanner";
 
 export type ReceiptCorrectionConfidenceBand = "high" | "medium" | "low" | "none";
+export type ReceiptCorrectionProvinceCode = "ON" | "QC";
+export type ReceiptCorrectionProvinceSource =
+  | "google_places"
+  | "tax_labels"
+  | "address_fallback"
+  | "none";
+export type ReceiptCorrectionTaxStructure =
+  | "on_hst"
+  | "qc_gst_qst"
+  | "gst_only"
+  | "qst_only"
+  | "generic_tax"
+  | "no_tax_line"
+  | "unknown";
+export type ReceiptCorrectionTaxValidationStatus = "not_evaluated" | "pass" | "warn";
+
+export interface ReceiptCorrectionTaxLineInput {
+  label: string;
+  amount?: number | null;
+  rate_percent?: number | null;
+}
 
 export interface ReceiptCorrectionTotalsInput {
   subtotal?: number | null;
   tax?: number | null;
   total?: number | null;
   currency?: string | null;
+  tax_lines?: ReceiptCorrectionTaxLineInput[] | null;
+  province_hint?: ReceiptCorrectionProvinceCode | null;
+  province_hint_source?: "google_places" | "manual" | null;
+  address_text?: string | null;
+}
+
+export interface ReceiptCorrectionHistoricalPriceHint {
+  line_number: number;
+  reference_line_cost: number;
+  reference_unit_cost?: number | null;
+  sample_size: number;
+  source?: "receipt_line_history" | "item_price_history" | "manual";
 }
 
 export interface ReceiptCorrectionAction {
@@ -38,9 +72,42 @@ export interface ReceiptCorrectionTotalsCheck {
   outlier_line_numbers: number[];
 }
 
+export interface ReceiptCorrectionTaxInterpretation {
+  province: ReceiptCorrectionProvinceCode | null;
+  province_source: ReceiptCorrectionProvinceSource;
+  structure: ReceiptCorrectionTaxStructure;
+  status: ReceiptCorrectionTaxValidationStatus;
+  zero_tax_grocery_candidate: boolean;
+  detected_tax_labels: string[];
+  detected_tax_label_counts: Record<string, number>;
+  flags: string[];
+  amounts: {
+    tax_total_printed: number | null;
+    tax_total_from_lines: number | null;
+    hst: number | null;
+    gst: number | null;
+    qst: number | null;
+    tps: number | null;
+    tvq: number | null;
+  };
+  expected: {
+    on_hst: number | null;
+    qc_gst: number | null;
+    qc_qst: number | null;
+    qc_total: number | null;
+  };
+  deltas: {
+    on_hst: number | null;
+    qc_gst: number | null;
+    qc_qst: number | null;
+    qc_total: number | null;
+  };
+}
+
 export interface ReceiptCorrectionCoreResult {
   lines: CorrectedReceiptParsedLine[];
   totals_check: ReceiptCorrectionTotalsCheck;
+  tax_interpretation: ReceiptCorrectionTaxInterpretation;
   stats: {
     line_count: number;
     changed_line_count: number;
@@ -52,9 +119,11 @@ export interface ReceiptCorrectionCoreInput {
   source: ReceiptCorrectionSource;
   lines: ParsedLineItem[];
   totals?: ReceiptCorrectionTotalsInput;
+  historical_price_hints?: ReceiptCorrectionHistoricalPriceHint[];
 }
 
 const TOTAL_TOLERANCE = 0.05;
+const TAX_TOLERANCE = 0.05;
 const HIGH_CONFIDENCE_THRESHOLD = 0.92;
 const MEDIUM_CONFIDENCE_THRESHOLD = 0.75;
 const LOCAL_SELECTION_MARGIN = 0.12;
@@ -64,6 +133,9 @@ const TOTALS_RECHECK_MIN_IMPROVEMENT = 0.1;
 const MAX_TOTALS_RECHECK_PASSES = 2;
 const NON_PURCHASE_LINE_PATTERN =
   /\b(sub\s*total|subtotal|total|tax|hst|gst|pst|qst|change|tender|cash|visa|mastercard|amex|debit|credit|balance|coupon|discount|savings|payment)\b/i;
+const ON_HST_RATE = 0.13;
+const QC_GST_RATE = 0.05;
+const QC_QST_RATE = 0.09975;
 
 type NumericCandidateOrigin =
   | "raw_decimal"
@@ -108,6 +180,58 @@ interface LineVariantSet {
   had_multiple_numeric_candidates: boolean;
 }
 
+function normalizeHistoricalPriceHint(
+  hint: ReceiptCorrectionHistoricalPriceHint,
+): ReceiptCorrectionHistoricalPriceHint | null {
+  const lineNumber = Number(hint.line_number);
+  const referenceLineCost = Number(hint.reference_line_cost);
+  const sampleSize = Number(hint.sample_size);
+  const referenceUnitCost =
+    hint.reference_unit_cost == null ? null : Number(hint.reference_unit_cost);
+
+  if (
+    !Number.isFinite(lineNumber) ||
+    !Number.isInteger(lineNumber) ||
+    lineNumber <= 0 ||
+    !Number.isFinite(referenceLineCost) ||
+    referenceLineCost <= 0 ||
+    !Number.isFinite(sampleSize) ||
+    sampleSize < 1
+  ) {
+    return null;
+  }
+
+  return {
+    line_number: lineNumber,
+    reference_line_cost: roundCurrency(referenceLineCost),
+    reference_unit_cost:
+      referenceUnitCost == null || !Number.isFinite(referenceUnitCost) || referenceUnitCost <= 0
+        ? null
+        : roundCurrency(referenceUnitCost),
+    sample_size: Math.max(1, Math.round(sampleSize)),
+    source: hint.source,
+  };
+}
+
+function buildHistoricalPriceHintMap(
+  hints: ReceiptCorrectionHistoricalPriceHint[] | undefined,
+): Map<number, ReceiptCorrectionHistoricalPriceHint> {
+  const map = new Map<number, ReceiptCorrectionHistoricalPriceHint>();
+  if (!hints || hints.length === 0) return map;
+
+  for (const rawHint of hints) {
+    const hint = normalizeHistoricalPriceHint(rawHint);
+    if (!hint) continue;
+
+    const existing = map.get(hint.line_number);
+    if (!existing || hint.sample_size > existing.sample_size) {
+      map.set(hint.line_number, hint);
+    }
+  }
+
+  return map;
+}
+
 interface TotalsRecheckDecision {
   selected_indices: number[];
   outlier_line_numbers: number[];
@@ -135,6 +259,101 @@ function sameMoney(a: number | null | undefined, b: number | null | undefined): 
   if (a == null && b == null) return true;
   if (a == null || b == null) return false;
   return Math.abs(roundCurrency(a) - roundCurrency(b)) < 0.005;
+}
+
+function sameProduceMatch(
+  a: ParsedLineItem["produce_match"] | null | undefined,
+  b: ParsedLineItem["produce_match"] | null | undefined,
+): boolean {
+  const left = a ?? null;
+  const right = b ?? null;
+  if (left == null && right == null) return true;
+  if (left == null || right == null) return false;
+  return (
+    left.display_name === right.display_name &&
+    left.commodity === right.commodity &&
+    left.variety === right.variety &&
+    left.language_code === right.language_code &&
+    left.match_method === right.match_method
+  );
+}
+
+function incrementCountMap(map: Record<string, number>, key: string): void {
+  map[key] = (map[key] ?? 0) + 1;
+}
+
+function normalizeTaxLabelKey(label: string): string {
+  const compact = label.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+  if (compact.includes("hst")) return "hst";
+  if (compact.includes("gst")) return "gst";
+  if (compact.includes("qst")) return "qst";
+  if (compact.includes("tps")) return "tps";
+  if (compact.includes("tvq")) return "tvq";
+  if (compact.includes("tax")) return "tax";
+  return "other";
+}
+
+function sumMoney(values: Array<number | null | undefined>): number | null {
+  const normalized = values
+    .map((value) => (value == null ? null : Number(value)))
+    .filter((value): value is number => value != null && Number.isFinite(value));
+  if (normalized.length === 0) return null;
+  return roundCurrency(normalized.reduce((sum, value) => sum + value, 0));
+}
+
+function deriveProvinceFromAddressText(
+  addressText: string | null | undefined,
+): ReceiptCorrectionProvinceCode | null {
+  if (!addressText) return null;
+
+  const normalized = addressText
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase();
+
+  if (/\b(ON|ONTARIO)\b/.test(normalized)) return "ON";
+  if (/\b(QC|QUEBEC)\b/.test(normalized)) return "QC";
+  return null;
+}
+
+function deriveProvinceFromTaxLabels(
+  labelCounts: Record<string, number>,
+): ReceiptCorrectionProvinceCode | null {
+  const hstCount = labelCounts.hst ?? 0;
+  const qstLikeCount = (labelCounts.qst ?? 0) + (labelCounts.tvq ?? 0);
+  const gstLikeCount = (labelCounts.gst ?? 0) + (labelCounts.tps ?? 0);
+
+  if (qstLikeCount > 0) return "QC";
+  if (hstCount > 0 && qstLikeCount === 0) return "ON";
+  if (gstLikeCount > 0 && qstLikeCount > 0) return "QC";
+  return null;
+}
+
+function classifyTaxStructure(input: {
+  labelCounts: Record<string, number>;
+  taxTotalPrinted: number | null;
+  taxLinesCount: number;
+}): ReceiptCorrectionTaxStructure {
+  const hstCount = input.labelCounts.hst ?? 0;
+  const gstLikeCount = (input.labelCounts.gst ?? 0) + (input.labelCounts.tps ?? 0);
+  const qstLikeCount = (input.labelCounts.qst ?? 0) + (input.labelCounts.tvq ?? 0);
+  const genericTaxCount = input.labelCounts.tax ?? 0;
+
+  if (hstCount > 0) return "on_hst";
+  if (gstLikeCount > 0 && qstLikeCount > 0) return "qc_gst_qst";
+  if (qstLikeCount > 0) return "qst_only";
+  if (gstLikeCount > 0) return "gst_only";
+  if (genericTaxCount > 0) return "generic_tax";
+
+  if (input.taxLinesCount === 0 && (input.taxTotalPrinted == null || sameMoney(input.taxTotalPrinted, 0))) {
+    return "no_tax_line";
+  }
+
+  if (input.taxLinesCount === 0 && input.taxTotalPrinted != null && !sameMoney(input.taxTotalPrinted, 0)) {
+    return "generic_tax";
+  }
+
+  return "unknown";
 }
 
 function isLikelyNonPurchaseLine(line: ParsedLineItem): boolean {
@@ -348,7 +567,49 @@ function buildNumericCandidateProposals(line: ParsedLineItem): NumericCandidateP
   return proposals.filter((proposal) => Number.isFinite(proposal.value) && proposal.value >= 0);
 }
 
-function scoreBaselineLine(line: ParsedLineItem): number | null {
+function historicalPlausibilityAdjustment(data: {
+  line: ParsedLineItem;
+  candidate_line_cost: number;
+  hint?: ReceiptCorrectionHistoricalPriceHint | null;
+}): number {
+  const hint = data.hint;
+  if (!hint || hint.sample_size < 2) {
+    return 0;
+  }
+
+  let adjustment = 0;
+  const lineCost = data.candidate_line_cost;
+  const lineRef = hint.reference_line_cost;
+  const lineDeviation = Math.abs(lineCost - lineRef) / Math.max(lineRef, 0.01);
+
+  if (lineDeviation <= 0.12) adjustment += 0.13;
+  else if (lineDeviation <= 0.25) adjustment += 0.08;
+  else if (lineDeviation <= 0.45) adjustment += 0.03;
+  else if (lineDeviation >= 2.0) adjustment -= 0.28;
+  else if (lineDeviation >= 1.0) adjustment -= 0.18;
+  else if (lineDeviation >= 0.75) adjustment -= 0.1;
+
+  const qty = data.line.quantity;
+  if (hint.reference_unit_cost != null && qty != null && Number.isFinite(qty) && qty > 0) {
+    const unitCost = lineCost / qty;
+    const unitRef = hint.reference_unit_cost;
+    const unitDeviation = Math.abs(unitCost - unitRef) / Math.max(unitRef, 0.01);
+
+    if (unitDeviation <= 0.15) adjustment += 0.06;
+    else if (unitDeviation <= 0.3) adjustment += 0.03;
+    else if (unitDeviation >= 1.5) adjustment -= 0.08;
+    else if (unitDeviation >= 0.9) adjustment -= 0.05;
+  }
+
+  const sampleWeight = Math.min(1.15, 0.65 + hint.sample_size * 0.06);
+  const weighted = adjustment * sampleWeight;
+  return Math.max(-0.35, Math.min(0.22, weighted));
+}
+
+function scoreBaselineLine(
+  line: ParsedLineItem,
+  historicalHint?: ReceiptCorrectionHistoricalPriceHint | null,
+): number | null {
   if (line.line_cost == null || !Number.isFinite(line.line_cost)) {
     return null;
   }
@@ -378,12 +639,19 @@ function scoreBaselineLine(line: ParsedLineItem): number | null {
   if (line.parsed_name) score += 0.02;
   if (nonPurchase) score = Math.max(score - 0.2, 0.05);
 
+  score += historicalPlausibilityAdjustment({
+    line,
+    candidate_line_cost: value,
+    hint: historicalHint,
+  });
+
   return clamp01(score);
 }
 
 function scoreNumericCandidate(
   line: ParsedLineItem,
   proposal: NumericCandidateProposal,
+  historicalHint?: ReceiptCorrectionHistoricalPriceHint | null,
 ): number {
   const nonPurchase = isLikelyNonPurchaseLine(line);
   let score = 0.4;
@@ -449,6 +717,12 @@ function scoreNumericCandidate(
     score -= 0.1;
   }
 
+  score += historicalPlausibilityAdjustment({
+    line,
+    candidate_line_cost: value,
+    hint: historicalHint,
+  });
+
   return clamp01(score);
 }
 
@@ -490,13 +764,16 @@ function buildCorrectionAction(
   };
 }
 
-function buildLineVariantSet(line: ParsedLineItem): LineVariantSet {
-  const baselineScore = scoreBaselineLine(line);
+function buildLineVariantSet(
+  line: ParsedLineItem,
+  historicalHint?: ReceiptCorrectionHistoricalPriceHint | null,
+): LineVariantSet {
+  const baselineScore = scoreBaselineLine(line, historicalHint);
   const variants: LineVariant[] = [
     {
       line,
       local_score: baselineScore,
-      parse_flags: [],
+      parse_flags: historicalHint ? ["historical_price_signal_available"] : [],
       correction_actions: [],
       changed: false,
       line_cost_origin: "baseline",
@@ -519,7 +796,7 @@ function buildLineVariantSet(line: ParsedLineItem): LineVariantSet {
       continue;
     }
 
-    const score = scoreNumericCandidate(line, proposal);
+    const score = scoreNumericCandidate(line, proposal, historicalHint);
     const nextLineCost = roundCurrency(proposal.value);
     const nextLine: ParsedLineItem = {
       ...line,
@@ -532,6 +809,7 @@ function buildLineVariantSet(line: ParsedLineItem): LineVariantSet {
         ...proposal.flags,
         ...(line.line_cost == null ? ["line_cost_inferred"] : []),
         ...(hadMultipleNumericCandidates ? ["dual_numeric_interpretation_considered"] : []),
+        ...(historicalHint ? ["historical_price_signal_available"] : []),
       ]),
     );
 
@@ -583,7 +861,27 @@ function buildLineVariantSet(line: ParsedLineItem): LineVariantSet {
       topScore >= HIGH_CONFIDENCE_THRESHOLD &&
       margin >= LOCAL_SELECTION_MARGIN;
 
-    if (!canInferMissingValue && !canSafelyReplaceExistingValue) {
+    const aggressiveHistoricalBoost =
+      historicalHint && top.line.line_cost != null
+        ? historicalPlausibilityAdjustment({
+            line,
+            candidate_line_cost: top.line.line_cost,
+            hint: historicalHint,
+          })
+        : 0;
+
+    const canAggressiveReplaceExistingValueWithHistory =
+      !originalMissingLineCost &&
+      isAggressive &&
+      topScore >= HIGH_CONFIDENCE_THRESHOLD &&
+      margin >= LOCAL_SELECTION_MARGIN + 0.06 &&
+      aggressiveHistoricalBoost >= 0.1;
+
+    if (
+      !canInferMissingValue &&
+      !canSafelyReplaceExistingValue &&
+      !canAggressiveReplaceExistingValueWithHistory
+    ) {
       selectedIndex = 0;
     }
   }
@@ -636,6 +934,207 @@ function buildTotalsCheck(data: {
     status: Math.abs(delta) <= TOTAL_TOLERANCE ? "pass" : "warn",
     tolerance: TOTAL_TOLERANCE,
     outlier_line_numbers: data.outlier_line_numbers ?? [],
+  };
+}
+
+function buildTaxInterpretation(data: {
+  lines: ParsedLineItem[];
+  totals?: ReceiptCorrectionTotalsInput;
+}): ReceiptCorrectionTaxInterpretation {
+  const subtotal = data.totals?.subtotal ?? null;
+  const taxTotalPrinted = data.totals?.tax ?? null;
+  const total = data.totals?.total ?? null;
+  const taxLines = (data.totals?.tax_lines ?? []).filter(
+    (line): line is ReceiptCorrectionTaxLineInput => !!line && typeof line.label === "string",
+  );
+
+  const labelCounts: Record<string, number> = {};
+  const detectedTaxLabels: string[] = [];
+  const lineAmountsByKey: Record<string, number[]> = {};
+
+  for (const taxLine of taxLines) {
+    const key = normalizeTaxLabelKey(taxLine.label);
+    detectedTaxLabels.push(key);
+    incrementCountMap(labelCounts, key);
+
+    const amount = taxLine.amount == null ? null : Number(taxLine.amount);
+    if (amount != null && Number.isFinite(amount)) {
+      if (!lineAmountsByKey[key]) lineAmountsByKey[key] = [];
+      lineAmountsByKey[key].push(roundCurrency(amount));
+    }
+  }
+
+  const hstAmount = sumMoney(lineAmountsByKey.hst ?? []);
+  const gstAmount = sumMoney(lineAmountsByKey.gst ?? []);
+  const qstAmount = sumMoney(lineAmountsByKey.qst ?? []);
+  const tpsAmount = sumMoney(lineAmountsByKey.tps ?? []);
+  const tvqAmount = sumMoney(lineAmountsByKey.tvq ?? []);
+  const taxTotalFromLines = sumMoney(
+    taxLines.map((line) => (line.amount == null ? null : Number(line.amount))),
+  );
+
+  let province: ReceiptCorrectionProvinceCode | null = data.totals?.province_hint ?? null;
+  let provinceSource: ReceiptCorrectionProvinceSource =
+    province != null && data.totals?.province_hint_source === "google_places"
+      ? "google_places"
+      : "none";
+
+  const labelProvince = deriveProvinceFromTaxLabels(labelCounts);
+  const addressProvince = deriveProvinceFromAddressText(data.totals?.address_text ?? null);
+
+  const flags: string[] = [];
+
+  if (province == null && labelProvince != null) {
+    province = labelProvince;
+    provinceSource = "tax_labels";
+  }
+  if (province == null && addressProvince != null) {
+    province = addressProvince;
+    provinceSource = "address_fallback";
+  }
+
+  if (province != null && labelProvince != null && province !== labelProvince) {
+    flags.push("province_signal_conflict_tax_labels");
+  }
+  if (province != null && addressProvince != null && province !== addressProvince) {
+    flags.push("province_signal_conflict_address_fallback");
+  }
+
+  const structure = classifyTaxStructure({
+    labelCounts,
+    taxTotalPrinted,
+    taxLinesCount: taxLines.length,
+  });
+
+  const qstCombined = sumMoney([qstAmount, tvqAmount]);
+  const gstCombined = sumMoney([gstAmount, tpsAmount]);
+  const onExpected = subtotal == null ? null : roundCurrency(subtotal * ON_HST_RATE);
+  const qcGstExpected = subtotal == null ? null : roundCurrency(subtotal * QC_GST_RATE);
+  const qcQstExpected = subtotal == null ? null : roundCurrency(subtotal * QC_QST_RATE);
+  const qcTotalExpected =
+    qcGstExpected == null || qcQstExpected == null
+      ? null
+      : roundCurrency(qcGstExpected + qcQstExpected);
+
+  const effectiveTaxTotal = taxTotalPrinted ?? taxTotalFromLines;
+
+  const zeroTaxGroceryCandidate =
+    subtotal != null &&
+    total != null &&
+    sameMoney(subtotal, total) &&
+    (effectiveTaxTotal == null || sameMoney(effectiveTaxTotal, 0)) &&
+    taxLines.length === 0 &&
+    data.lines.length > 0;
+
+  if (zeroTaxGroceryCandidate) {
+    flags.push("zero_tax_subtotal_equals_total_candidate");
+  }
+
+  let status: ReceiptCorrectionTaxValidationStatus = "not_evaluated";
+
+  const onDelta =
+    onExpected == null || effectiveTaxTotal == null
+      ? null
+      : roundCurrency(effectiveTaxTotal - onExpected);
+  const qcGstDelta =
+    qcGstExpected == null || gstCombined == null ? null : roundCurrency(gstCombined - qcGstExpected);
+  const qcQstDelta =
+    qcQstExpected == null || qstCombined == null ? null : roundCurrency(qstCombined - qcQstExpected);
+  const qcTotalDelta =
+    qcTotalExpected == null || effectiveTaxTotal == null
+      ? null
+      : roundCurrency(effectiveTaxTotal - qcTotalExpected);
+
+  if (province === "ON") {
+    const qstLikeCount = (labelCounts.qst ?? 0) + (labelCounts.tvq ?? 0);
+    const gstLikeCount = (labelCounts.gst ?? 0) + (labelCounts.tps ?? 0);
+    const hstCount = labelCounts.hst ?? 0;
+
+    if (qstLikeCount > 0) {
+      flags.push("tax_structure_unexpected_for_on");
+    }
+    if (gstLikeCount > 0 && hstCount === 0) {
+      flags.push("gst_only_unexpected_for_on");
+    }
+    if (taxLines.length > 1 && qstLikeCount === 0 && gstLikeCount === 0 && hstCount > 0) {
+      flags.push("multiple_tax_lines_unexpected_for_on");
+    }
+
+    if (zeroTaxGroceryCandidate) {
+      status = "pass";
+    } else if (subtotal != null && effectiveTaxTotal != null) {
+      status =
+        onDelta != null &&
+        Math.abs(onDelta) <= TAX_TOLERANCE &&
+        !flags.includes("tax_structure_unexpected_for_on") &&
+        !flags.includes("gst_only_unexpected_for_on")
+          ? "pass"
+          : "warn";
+    } else if (subtotal != null && total != null && !zeroTaxGroceryCandidate) {
+      status = "warn";
+      flags.push("tax_missing_for_on");
+    }
+  } else if (province === "QC") {
+    const hstCount = labelCounts.hst ?? 0;
+    const hasGstComponent = gstCombined != null;
+    const hasQstComponent = qstCombined != null;
+
+    if (hstCount > 0) {
+      flags.push("hst_unexpected_for_qc");
+    }
+    if (!hasGstComponent || !hasQstComponent) {
+      if (!zeroTaxGroceryCandidate) {
+        flags.push("missing_qc_tax_components");
+      }
+    }
+
+    if (zeroTaxGroceryCandidate) {
+      status = "pass";
+    } else if (subtotal != null && hasGstComponent && hasQstComponent) {
+      const gstPass = qcGstDelta != null && Math.abs(qcGstDelta) <= TAX_TOLERANCE;
+      const qstPass = qcQstDelta != null && Math.abs(qcQstDelta) <= TAX_TOLERANCE;
+      status = gstPass && qstPass && !flags.includes("hst_unexpected_for_qc") ? "pass" : "warn";
+    } else if (subtotal != null && effectiveTaxTotal != null) {
+      status = "warn";
+    }
+  } else if (zeroTaxGroceryCandidate) {
+    status = "pass";
+  }
+
+  if (province == null && taxLines.length > 0) {
+    flags.push("province_undetermined");
+  }
+
+  return {
+    province,
+    province_source: provinceSource,
+    structure,
+    status,
+    zero_tax_grocery_candidate: zeroTaxGroceryCandidate,
+    detected_tax_labels: detectedTaxLabels,
+    detected_tax_label_counts: labelCounts,
+    flags: Array.from(new Set(flags)),
+    amounts: {
+      tax_total_printed: taxTotalPrinted,
+      tax_total_from_lines: taxTotalFromLines,
+      hst: hstAmount,
+      gst: gstAmount,
+      qst: qstAmount,
+      tps: tpsAmount,
+      tvq: tvqAmount,
+    },
+    expected: {
+      on_hst: onExpected,
+      qc_gst: qcGstExpected,
+      qc_qst: qcQstExpected,
+      qc_total: qcTotalExpected,
+    },
+    deltas: {
+      on_hst: onDelta,
+      qc_gst: qcGstDelta,
+      qc_qst: qcQstDelta,
+      qc_total: qcTotalDelta,
+    },
   };
 }
 
@@ -756,7 +1255,10 @@ function lineChanged(original: ParsedLineItem, next: ParsedLineItem): boolean {
     original.quantity !== next.quantity ||
     original.unit !== next.unit ||
     !sameMoney(original.line_cost, next.line_cost) ||
-    !sameMoney(original.unit_cost, next.unit_cost)
+    !sameMoney(original.unit_cost, next.unit_cost) ||
+    (original.plu_code ?? null) !== (next.plu_code ?? null) ||
+    (original.organic_flag ?? null) !== (next.organic_flag ?? null) ||
+    !sameProduceMatch(original.produce_match, next.produce_match)
   );
 }
 
@@ -767,12 +1269,17 @@ function lineChanged(original: ParsedLineItem, next: ParsedLineItem): boolean {
 export function runReceiptCorrectionCore(
   input: ReceiptCorrectionCoreInput,
 ): ReceiptCorrectionCoreResult {
-  const variantSets = input.lines.map(buildLineVariantSet);
+  const historicalHintMap = buildHistoricalPriceHintMap(input.historical_price_hints);
+  const variantSets = input.lines.map((line) =>
+    buildLineVariantSet(line, historicalHintMap.get(line.line_number) ?? null),
+  );
   const totalsRecheck = runTotalsOutlierRecheck(variantSets, input.totals);
   const totalsSelectedLineNumbers = new Set(totalsRecheck.totals_selected_line_numbers);
 
   const lines = variantSets.map((set, setIndex) => {
     const selected = set.variants[totalsRecheck.selected_indices[setIndex]];
+    const produceNormalized = normalizeReceiptProduceLine(selected.line);
+    const normalizedLine = produceNormalized.line;
     const changed = lineChanged(set.original, selected.line);
 
     const baseScore = selected.local_score;
@@ -784,6 +1291,7 @@ export function runReceiptCorrectionCore(
     const parseFlags = Array.from(
       new Set([
         ...selected.parse_flags,
+        ...produceNormalized.parse_flags,
         ...(totalsSelectedLineNumbers.has(set.original.line_number)
           ? ["totals_outlier_recheck_selected"]
           : []),
@@ -791,6 +1299,16 @@ export function runReceiptCorrectionCore(
     );
 
     const correctionActions = [...selected.correction_actions];
+    for (const correction of produceNormalized.corrections) {
+      correctionActions.push({
+        type: correction.type,
+        before: correction.before,
+        after: correction.after,
+        confidence: 0.99,
+        reason: correction.reason,
+      });
+    }
+
     if (totalsSelectedLineNumbers.has(set.original.line_number) && changed) {
       correctionActions.push({
         type: "totals_outlier_recheck",
@@ -802,7 +1320,7 @@ export function runReceiptCorrectionCore(
     }
 
     return {
-      line: selected.line,
+      line: normalizedLine,
       parse_confidence_score: boostedScore,
       parse_confidence_band: toConfidenceBand(boostedScore),
       parse_flags: parseFlags,
@@ -815,6 +1333,10 @@ export function runReceiptCorrectionCore(
     totals: input.totals,
     outlier_line_numbers: totalsRecheck.outlier_line_numbers,
   });
+  const taxInterpretation = buildTaxInterpretation({
+    lines: lines.map((entry) => entry.line),
+    totals: input.totals,
+  });
 
   const changedLineCount = lines.filter((entry, index) => lineChanged(input.lines[index], entry.line)).length;
   const correctionActionsApplied = lines.reduce(
@@ -825,6 +1347,7 @@ export function runReceiptCorrectionCore(
   return {
     lines,
     totals_check: totalsCheck,
+    tax_interpretation: taxInterpretation,
     stats: {
       line_count: lines.length,
       changed_line_count: changedLineCount,

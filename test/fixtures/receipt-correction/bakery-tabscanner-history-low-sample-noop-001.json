@@ -1,0 +1,49 @@
+{
+  "id": "bakery-tabscanner-history-low-sample-noop-001",
+  "source": "tabscanner",
+  "store": {
+    "name": "Neighborhood Bakery",
+    "google_place_id": "test_bakery_place"
+  },
+  "historical_price_hints": [
+    {
+      "line_number": 1,
+      "reference_line_cost": 14.95,
+      "reference_unit_cost": 14.95,
+      "sample_size": 1,
+      "source": "receipt_line_history"
+    }
+  ],
+  "tabscanner_result": {
+    "establishment": "NEIGHBORHOOD BAKERY",
+    "currency": "CAD",
+    "lineItems": [
+      {
+        "desc": "AGED CHEDDAR 14900",
+        "descClean": "AGED CHEDDAR",
+        "qty": 1,
+        "price": 14900,
+        "lineTotal": 14900
+      }
+    ]
+  },
+  "expected": {
+    "notes": [
+      "Low-sample historical hints should not force history-guided correction behavior.",
+      "Baseline numeric inference may still apply without sufficient historical confidence."
+    ],
+    "assertions": {
+      "totals_status": "not_evaluated",
+      "changed_line_numbers": [1],
+      "expected_line_costs": [
+        { "line_number": 1, "line_cost": 149 }
+      ],
+      "required_parse_flags": [
+        {
+          "line_number": 1,
+          "flags": ["historical_price_signal_available"]
+        }
+      ]
+    }
+  }
+}

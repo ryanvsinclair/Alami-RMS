@@ -1,7 +1,7 @@
 # Codebase Overview and Engineering Guide
 
 Status: Active (living document)
-Last Updated: 2026-02-26
+Last Updated: 2026-02-27
 Primary Purpose: Current architecture reference, implementation summary, and feature-placement rules.
 
 ## How To Use This Document
@@ -21,11 +21,14 @@ What this document is not:
 
 Related historical/planning docs (still useful for deep history):
 - `docs/codebase-changelog.md` (chronological engineering changelog + validation record)
+- `docs/master-plan-v1.md` (canonical cross-plan execution order, completed/open ledger, and handoff checkpoint for remaining initiatives)
 - `docs/app-structure-refactor-agent-playbook.md` (refactor execution history and wrapper decisions)
 - `docs/inventoryintakeplan.md` (inventory/barcode/receipt/enrichment rollout history)
 - `docs/combined-plan-coordination.md` (cross-plan sequencing and handoff history)
 - `docs/income-integrations-onboarding-plan.md` (business-type onboarding + income provider OAuth/sync rollout plan)
 - `docs/receipt-post-ocr-correction-plan.md` (post-TabScanner numeric/structural correction and reconciliation accuracy plan)
+- `docs/unified-inventory-intake-refactor-plan.md` (intent-first regrouping plan to unify Shopping + Receive under a single Inventory Intake Hub without changing core feature behavior)
+- `docs/operational-calendar-schedule-plan.md` (sequencing-locked plan for a cross-industry Operational Calendar schedule tab that starts only after current active plans are complete)
 
 ## Maintenance Rules (Required)
 
@@ -43,15 +46,20 @@ Changelog policy (`docs/codebase-changelog.md`):
 - Keep entries concise but concrete: what changed, which files, validation, caveats.
 - Do not delete historical entries; add corrections as new entries.
 
-## Current Status (As Of 2026-02-26)
+## Current Status (As Of 2026-02-27)
 
 High-level completion:
 - App structure refactor plan: complete through Phase 8 (manual core-flow smoke deferred to user/integrated QA).
 - Inventory intake plan: complete through Phases 0, A, B, C, D, E.
 - Combined coordination plan: complete (manual integrated smoke remains a user QA task).
+- Master execution tracker: active in `docs/master-plan-v1.md` for canonical sequencing of all remaining non-completed plans.
 
 What remains outside plan completion:
 - Manual integrated smoke testing across core flows (user-run / final QA pass).
+- Receipt post-OCR correction plan is in progress (Phases 0/1/1.5 partial; later phases pending).
+- Income integrations onboarding plan is implementation-ready but not started.
+- Unified Intake regrouping refactor is planned but not yet implemented (see `docs/unified-inventory-intake-refactor-plan.md`).
+- Operational Calendar/Schedule refactor is planned and sequencing-locked behind completion of all current plans (see `docs/operational-calendar-schedule-plan.md`).
 
 ## Stack
 
@@ -268,6 +276,8 @@ Implemented capabilities:
 - Place-scoped receipt aliasing (`google_place_id`)
 - Receipt line matching and alias learning
 - Receipt parse/review/commit lifecycle
+- Post-OCR correction now accepts line-level historical price plausibility hints derived from recent receipt line history (scoped by business and supplier/place when available)
+- Historical hint quality gates are active (minimum sample-size threshold + recent-history lookback window) with summary metrics for hint coverage/sample quality
 - Idempotent receipt commit behavior in inventory ledger path
 - Receipt auto-resolution observability (process-local summaries)
 
@@ -401,11 +411,14 @@ High-level flow:
 High-level flow:
 1. OCR/manual receipt text ingestion
 2. Parse into line items
-3. Run post-OCR numeric correction/reconciliation (feature-flagged; shadow/enforce modes)
-4. Resolve lines using alias + matching pipeline
-5. User reviews/edits unresolved/suggested lines
-6. Commit receipt transactions atomically
-7. Learn aliases from user confirmations
+3. Derive optional historical line-price hints from recent receipt history for current parsed names (feature-layer orchestration)
+4. Run post-OCR numeric correction/reconciliation (feature-flagged; shadow/enforce modes)
+5. Apply tax interpretation checks (province/tax-structure/math validation where signals exist)
+6. Apply produce normalization (9-prefix PLU handling + organic keyword stripping on produce candidates)
+7. Resolve lines using alias + matching pipeline
+8. User reviews/edits unresolved/suggested lines
+9. Commit receipt transactions atomically
+10. Learn aliases from user confirmations
 
 Behavior invariants:
 - Commit remains idempotent

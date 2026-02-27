@@ -1,0 +1,32 @@
+{
+  "id": "grocery-parsed-text-split-token-with-subtotal-tax-001",
+  "source": "parsed_text",
+  "store": {
+    "name": "Neighborhood Grocery",
+    "google_place_id": "test_neighborhood_grocery_place"
+  },
+  "raw_text": "ORGANIC KALE 3 49\nAVOCADO BAG 12.00\nSubtotal 15.49\nTax 0.77\nTotal 16.26",
+  "expected": {
+    "notes": [
+      "Split numeric token should resolve to decimal line cost.",
+      "Totals should pass after split-token correction."
+    ],
+    "assertions": {
+      "totals_status": "pass",
+      "totals_delta_to_total": 0,
+      "changed_line_numbers": [1],
+      "expected_line_costs": [
+        { "line_number": 1, "line_cost": 3.49 }
+      ],
+      "required_parse_flags": [
+        {
+          "line_number": 1,
+          "flags": [
+            "split_numeric_token_detected",
+            "dual_numeric_interpretation_considered"
+          ]
+        }
+      ]
+    }
+  }
+}

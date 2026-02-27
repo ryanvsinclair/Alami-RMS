@@ -1,0 +1,49 @@
+{
+  "id": "grocery-parsed-text-produce-organic-plu-001",
+  "source": "parsed_text",
+  "store": {
+    "name": "Local Grocer",
+    "google_place_id": "test_local_grocer_place"
+  },
+  "raw_text": "STORE\nORGANIC BANANAS 94131 4.99\nPOMMES BIO 3.99\nTotal 8.98",
+  "expected": {
+    "notes": [
+      "Organic 9-prefix PLU should normalize to canonical base PLU for produce.",
+      "Organic adjectives should be stripped from produce names without changing non-produce line costs."
+    ],
+    "assertions": {
+      "totals_status": "pass",
+      "totals_delta_to_total": 0,
+      "changed_line_numbers": [1, 2],
+      "outlier_line_numbers": [],
+      "expected_line_costs": [
+        { "line_number": 1, "line_cost": 4.99 },
+        { "line_number": 2, "line_cost": 3.99 }
+      ],
+      "required_parse_flags": [
+        {
+          "line_number": 1,
+          "flags": ["plu_9prefix_normalized", "organic_keyword_stripped"]
+        },
+        {
+          "line_number": 2,
+          "flags": ["organic_keyword_stripped"]
+        }
+      ],
+      "expected_produce_fields": [
+        {
+          "line_number": 1,
+          "plu_code": 4131,
+          "organic_flag": true,
+          "parsed_name": "BANANAS 94131"
+        },
+        {
+          "line_number": 2,
+          "plu_code": null,
+          "organic_flag": true,
+          "parsed_name": "POMMES"
+        }
+      ]
+    }
+  }
+}

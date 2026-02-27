@@ -1,7 +1,10 @@
 import {
   runReceiptCorrectionCore,
 } from "@/domain/parsers/receipt-correction-core";
-import type { ReceiptCorrectionConfidenceBand } from "@/domain/parsers/receipt-correction-core";
+import type {
+  ReceiptCorrectionConfidenceBand,
+  ReceiptCorrectionHistoricalPriceHint,
+} from "@/domain/parsers/receipt-correction-core";
 import type {
   ReceiptCorrectionConfidenceBandCounts,
   ReceiptCorrectionCountMap,
@@ -10,7 +13,7 @@ import type {
   ReceiptPostOcrCorrectionResult,
 } from "./receipt-correction.contracts";
 
-const RECEIPT_CORRECTION_PARSER_VERSION = "v1-numeric-sanity-dual-interpretation";
+const RECEIPT_CORRECTION_PARSER_VERSION = "v1.4-numeric-tax-produce-history-gated";
 
 function createConfidenceBandCounts(): ReceiptCorrectionConfidenceBandCounts {
   return {
@@ -28,6 +31,8 @@ function incrementCount(map: ReceiptCorrectionCountMap, key: string): void {
 function summarizeCorrectionCoreObservability(
   core: ReturnType<typeof runReceiptCorrectionCore>,
 ): {
+  tax_flag_counts: ReceiptCorrectionCountMap;
+  tax_label_counts: ReceiptCorrectionCountMap;
   parse_confidence_band_counts: ReceiptCorrectionConfidenceBandCounts;
   lines_with_parse_flags_count: number;
   lines_with_correction_actions_count: number;
@@ -37,6 +42,8 @@ function summarizeCorrectionCoreObservability(
   const parseConfidenceBandCounts = createConfidenceBandCounts();
   const parseFlagCounts: ReceiptCorrectionCountMap = {};
   const correctionActionTypeCounts: ReceiptCorrectionCountMap = {};
+  const taxFlagCounts: ReceiptCorrectionCountMap = {};
+  const taxLabelCounts: ReceiptCorrectionCountMap = {};
   let linesWithParseFlagsCount = 0;
   let linesWithCorrectionActionsCount = 0;
 
@@ -59,12 +66,63 @@ function summarizeCorrectionCoreObservability(
     }
   }
 
+  for (const flag of core.tax_interpretation.flags) {
+    incrementCount(taxFlagCounts, flag);
+  }
+  for (const [label, count] of Object.entries(core.tax_interpretation.detected_tax_label_counts)) {
+    taxLabelCounts[label] = count;
+  }
+
   return {
+    tax_flag_counts: taxFlagCounts,
+    tax_label_counts: taxLabelCounts,
     parse_confidence_band_counts: parseConfidenceBandCounts,
     lines_with_parse_flags_count: linesWithParseFlagsCount,
     lines_with_correction_actions_count: linesWithCorrectionActionsCount,
     parse_flag_counts: parseFlagCounts,
     correction_action_type_counts: correctionActionTypeCounts,
+  };
+}
+
+function summarizeHistoricalHintObservability(data: {
+  hints: ReceiptCorrectionHistoricalPriceHint[] | undefined;
+  core: ReturnType<typeof runReceiptCorrectionCore>;
+}): {
+  historical_hint_lines_count: number;
+  historical_hint_sample_size_total: number;
+  historical_hint_max_sample_size: number;
+  historical_hint_lines_applied_count: number;
+} {
+  const hints = data.hints ?? [];
+  const hintLines = new Set<number>();
+  let sampleTotal = 0;
+  let maxSampleSize = 0;
+
+  for (const hint of hints) {
+    const lineNumber = Number(hint.line_number);
+    const sampleSize = Number(hint.sample_size);
+    if (!Number.isFinite(lineNumber) || !Number.isInteger(lineNumber) || lineNumber <= 0) continue;
+    if (!Number.isFinite(sampleSize) || sampleSize <= 0) continue;
+    hintLines.add(lineNumber);
+    sampleTotal += Math.max(1, Math.round(sampleSize));
+    maxSampleSize = Math.max(maxSampleSize, Math.max(1, Math.round(sampleSize)));
+  }
+
+  let linesAppliedCount = 0;
+  for (const line of data.core.lines) {
+    if (
+      hintLines.has(line.line.line_number) &&
+      line.parse_flags.includes("historical_price_signal_available")
+    ) {
+      linesAppliedCount += 1;
+    }
+  }
+
+  return {
+    historical_hint_lines_count: hintLines.size,
+    historical_hint_sample_size_total: sampleTotal,
+    historical_hint_max_sample_size: maxSampleSize,
+    historical_hint_lines_applied_count: linesAppliedCount,
   };
 }
 
@@ -104,8 +162,13 @@ export async function runReceiptPostOcrCorrection(
     source: input.source,
     lines: input.lines,
     totals: input.totals,
+    historical_price_hints: input.historical_price_hints,
   });
   const observability = summarizeCorrectionCoreObservability(core);
+  const historicalHintObservability = summarizeHistoricalHintObservability({
+    hints: input.historical_price_hints,
+    core,
+  });
 
   const correctedLines = core.lines.map((entry) => entry.line);
 
@@ -123,9 +186,20 @@ export async function runReceiptPostOcrCorrection(
       totals_check_status: core.totals_check.status,
       totals_delta_to_total: core.totals_check.delta_to_total,
       totals_line_sum: core.totals_check.lines_sum,
+      tax_validation_status: core.tax_interpretation.status,
+      tax_structure: core.tax_interpretation.structure,
+      tax_province: core.tax_interpretation.province,
+      tax_province_source: core.tax_interpretation.province_source,
+      tax_zero_grocery_candidate: core.tax_interpretation.zero_tax_grocery_candidate,
+      tax_flag_counts: observability.tax_flag_counts,
+      tax_label_counts: observability.tax_label_counts,
       parse_confidence_band_counts: observability.parse_confidence_band_counts,
       lines_with_parse_flags_count: observability.lines_with_parse_flags_count,
       lines_with_correction_actions_count: observability.lines_with_correction_actions_count,
+      historical_hint_lines_count: historicalHintObservability.historical_hint_lines_count,
+      historical_hint_sample_size_total: historicalHintObservability.historical_hint_sample_size_total,
+      historical_hint_max_sample_size: historicalHintObservability.historical_hint_max_sample_size,
+      historical_hint_lines_applied_count: historicalHintObservability.historical_hint_lines_applied_count,
       parse_flag_counts: observability.parse_flag_counts,
       correction_action_type_counts: observability.correction_action_type_counts,
     },

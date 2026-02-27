@@ -559,6 +559,23 @@ model Contact {
   @@map("contacts")
 }
 
+model ProduceItem {
+  plu_code        Int
+  language_code   String
+  category        String
+  commodity       String
+  variety         String?
+  size_label      String?
+  scientific_name String?
+  display_name    String
+
+  @@id([plu_code, language_code])
+  @@index([display_name(ops: raw("gin_trgm_ops"))], type: Gin)
+  @@index([commodity(ops: raw("gin_trgm_ops"))], type: Gin)
+  @@index([variety(ops: raw("gin_trgm_ops"))], type: Gin)
+  @@map("produce_items")
+}
+
 model Business {
   id             String                 @id @default(uuid())
   name           String

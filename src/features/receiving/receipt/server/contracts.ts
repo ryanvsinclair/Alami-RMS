@@ -5,6 +5,7 @@
 
 import type { Prisma, MatchConfidence, LineItemStatus } from "@/lib/generated/prisma/client";
 import type { ReceiptPostOcrCorrectionSummary } from "./receipt-correction.contracts";
+import type { ParsedLineProduceMatch } from "@/domain/parsers/receipt";
 
 // ---- Standard Prisma includes ----------------------------------------
 
@@ -50,6 +51,9 @@ export type ResolvedLineItem = {
   unit: string | null;
   line_cost: number | null;
   unit_cost: number | null;
+  plu_code?: number | null;
+  produce_match?: ParsedLineProduceMatch | null;
+  organic_flag?: boolean | null;
   matched_item_id: string | null;
   confidence: MatchConfidence | null;
   status: LineItemStatus;

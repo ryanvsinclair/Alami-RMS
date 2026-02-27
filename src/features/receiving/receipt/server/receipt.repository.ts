@@ -12,6 +12,12 @@ import {
   RECEIPT_LIST_INCLUDE,
 } from "./contracts";
 
+export interface ReceiptHistoricalLinePriceSample {
+  parsed_name: string;
+  line_cost: number;
+  unit_cost: number | null;
+}
+
 // ---- Single receipt queries -------------------------------------------
 
 export async function findReceiptById(receiptId: string, businessId: string) {
@@ -30,7 +36,7 @@ export async function findReceiptWithSupplier(
     where: { id: receiptId, business_id: businessId },
     include: {
       supplier: {
-        select: { google_place_id: true },
+        select: { google_place_id: true, formatted_address: true },
       },
     },
   });
@@ -55,6 +61,90 @@ export async function findReceipts(businessId: string, status?: string) {
     include: RECEIPT_LIST_INCLUDE,
   });
   return serialize(receipts);
+}
+
+export async function findRecentReceiptLinePriceSamples(params: {
+  businessId: string;
+  parsedNames: string[];
+  excludeReceiptId?: string;
+  supplierId?: string | null;
+  googlePlaceId?: string | null;
+  take?: number;
+  lookbackDays?: number;
+}): Promise<ReceiptHistoricalLinePriceSample[]> {
+  const normalizedNames = Array.from(
+    new Set(
+      params.parsedNames
+        .map((name) => name.trim())
+        .filter((name) => name.length > 0),
+    ),
+  );
+
+  if (normalizedNames.length === 0) {
+    return [];
+  }
+
+  const lookbackDays = Math.max(1, Math.min(params.lookbackDays ?? 120, 720));
+  const lookbackStart = new Date(Date.now() - lookbackDays * 24 * 60 * 60 * 1000);
+
+  const where: Prisma.ReceiptLineItemWhereInput = {
+    receipt: {
+      business_id: params.businessId,
+      created_at: { gte: lookbackStart },
+      ...(params.excludeReceiptId ? { id: { not: params.excludeReceiptId } } : {}),
+      ...(params.supplierId
+        ? { supplier_id: params.supplierId }
+        : params.googlePlaceId
+          ? { supplier: { google_place_id: params.googlePlaceId } }
+          : {}),
+    },
+    parsed_name: {
+      not: null,
+    },
+    line_cost: {
+      not: null,
+    },
+    OR: normalizedNames.map((name) => ({
+      parsed_name: {
+        equals: name,
+        mode: "insensitive",
+      },
+    })),
+  };
+
+  const rows = await prisma.receiptLineItem.findMany({
+    where,
+    select: {
+      parsed_name: true,
+      line_cost: true,
+      unit_cost: true,
+      created_at: true,
+    },
+    orderBy: { created_at: "desc" },
+    take: Math.min(Math.max(params.take ?? normalizedNames.length * 40, 40), 800),
+  });
+
+  const result: ReceiptHistoricalLinePriceSample[] = [];
+  for (const row of rows) {
+    if (!row.parsed_name || row.line_cost == null) continue;
+
+    const lineCost = Number(row.line_cost);
+    if (!Number.isFinite(lineCost) || lineCost <= 0) continue;
+
+    const unitCostNumber = row.unit_cost == null ? null : Number(row.unit_cost);
+    const unitCost =
+      unitCostNumber == null || !Number.isFinite(unitCostNumber) || unitCostNumber <= 0
+        ? null
+        : unitCostNumber;
+
+    result.push({
+      parsed_name: row.parsed_name,
+      line_cost: lineCost,
+      unit_cost: unitCost,
+    });
+  }
+
+  return result;
 }
 
 // ---- Mutations -------------------------------------------------------

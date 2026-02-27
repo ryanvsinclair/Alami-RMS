@@ -1,6 +1,11 @@
 # Inventory Intake Plan
 
-Last updated: February 26, 2026 (all phases complete)
+Last updated: February 27, 2026 (all phases complete; follow-on regrouping plan linked)
+
+Follow-on structural planning note:
+
+- For the Shopping + Receive regrouping vision (intent-first unified Intake Hub), see `docs/unified-inventory-intake-refactor-plan.md`.
+- This file remains the historical implementation log for completed intake capability phases.
 
 ## How To Use This Plan
 

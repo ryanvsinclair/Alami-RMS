@@ -16,6 +16,8 @@ Recommended fixture contents:
 - store identity (`store_name`, `google_place_id` if available)
 - raw parser input:
   - TabScanner structured result OR raw OCR text
+- optional correction context inputs:
+  - `historical_price_hints[]` for line-level plausibility priors (line number + reference costs + sample size)
 - expected corrected lines
 - expected totals consistency outcome
 - notes describing the OCR/parsing failure mode being tested
@@ -29,12 +31,20 @@ Optional machine-checkable assertions (recommended for active tuning):
 - `expected.assertions.expected_line_costs[]` (`line_number`, `line_cost`)
 - `expected.assertions.required_parse_flags[]` (`line_number`, `flags[]`)
 - `expected.assertions.tax_interpretation` (planned schema for ON/QC province/tax-structure expectations)
+- `expected.assertions.expected_produce_fields[]` (`line_number`, optional `plu_code`, `organic_flag`, `parsed_name`)
 
 Fixture harness notes:
 
 - TabScanner fixtures are normalized into parser-like line items using the same qty/unit-cost mapping used by the workflow service.
 - Parsed-text fixtures are run through `parseReceiptText(...)` first, then the correction core.
 - Parsed-text fixture totals (for totals checks) are inferred from labeled lines (`Subtotal`, `Tax`, `Total`) in the raw text when present.
+- Tax label detection in the fixture harness also recognizes dotted/variant labels (`H.S.T.`, `TPS`, `TVQ`, etc.) to mirror workflow extraction behavior.
+
+Historical-hint fixture guidance:
+
+- prefer `sample_size >= 4` for scenarios that should influence candidate selection
+- include low-sample (`sample_size: 1`) no-op scenarios to verify guardrails
+- historical samples in workflow are currently scoped to recent receipt-line history (default lookback window: 120 days)
 
 Tax-focused fixture scenarios to add/maintain:
 
@@ -43,6 +53,13 @@ Tax-focused fixture scenarios to add/maintain:
 - zero-rated grocery receipts (`subtotal == total`, no tax line)
 - mixed taxable + zero-rated baskets
 - incomplete/incorrect tax structures (for mismatch detection)
+
+Produce-focused fixture scenarios to add/maintain:
+
+- 5-digit organic PLU normalization (`94131` -> `4131`)
+- organic keyword stripping in EN/FR/ES produce names
+- produce lines resolved by PLU vs fuzzy-name fallback
+- packaged SKU lines that should not be treated as produce
 
 Naming convention:
 

@@ -1,0 +1,49 @@
+{
+  "id": "bakery-tabscanner-history-guided-decimal-001",
+  "source": "tabscanner",
+  "store": {
+    "name": "Neighborhood Bakery",
+    "google_place_id": "test_bakery_place"
+  },
+  "historical_price_hints": [
+    {
+      "line_number": 1,
+      "reference_line_cost": 14.95,
+      "reference_unit_cost": 14.95,
+      "sample_size": 8,
+      "source": "receipt_line_history"
+    }
+  ],
+  "tabscanner_result": {
+    "establishment": "NEIGHBORHOOD BAKERY",
+    "currency": "CAD",
+    "lineItems": [
+      {
+        "desc": "AGED CHEDDAR 14900",
+        "descClean": "AGED CHEDDAR",
+        "qty": 1,
+        "price": 14900,
+        "lineTotal": 14900
+      }
+    ]
+  },
+  "expected": {
+    "notes": [
+      "No printed totals are provided, so totals checks should remain not evaluated.",
+      "Historical price hints should favor 14.90 over 149.00 for the integer-like OCR token."
+    ],
+    "assertions": {
+      "totals_status": "not_evaluated",
+      "changed_line_numbers": [1],
+      "expected_line_costs": [
+        { "line_number": 1, "line_cost": 14.9 }
+      ],
+      "required_parse_flags": [
+        {
+          "line_number": 1,
+          "flags": ["decimal_inferred", "historical_price_signal_available"]
+        }
+      ]
+    }
+  }
+}

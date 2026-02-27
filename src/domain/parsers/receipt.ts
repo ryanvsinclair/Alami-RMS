@@ -13,6 +13,17 @@ export interface ParsedLineItem {
   unit: UnitType | null;
   line_cost: number | null;
   unit_cost: number | null;
+  plu_code?: number | null;
+  produce_match?: ParsedLineProduceMatch | null;
+  organic_flag?: boolean | null;
+}
+
+export interface ParsedLineProduceMatch {
+  display_name: string;
+  commodity: string;
+  variety: string | null;
+  language_code: string;
+  match_method: "plu" | "name_fuzzy";
 }
 
 // Common unit patterns found on receipts

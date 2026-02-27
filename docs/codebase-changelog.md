@@ -1,7 +1,7 @@
 # Codebase Changelog
 
 Status: Active (living document)
-Last Updated: 2026-02-26
+Last Updated: 2026-02-27
 Primary Purpose: Chronological engineering changelog and validation record.
 
 Companion overview: `docs/codebase-overview.md`
@@ -18,6 +18,264 @@ Companion overview: `docs/codebase-overview.md`
 - Do not delete historical entries; add corrections as new entries.
 
 ## Changelog (Append New Entries At Top)
+
+### 2026-02-27 - RC-10 continuation: historical hint quality gates, observability expansion, and fixture corpus growth
+- Scope:
+  - Receipt correction Phase 1 (RC-10) threshold-hardening continuation after initial historical plausibility wiring
+- What changed:
+  - Hardened feature-layer historical hint derivation:
+    - added minimum sample-size gate for generated hints (`>= 4`)
+    - added recency lookback filter for sampled receipt lines (default `120` days)
+  - Expanded correction observability payloads/metrics:
+    - historical hint line counts
+    - historical hint sample-size totals/max
+    - hinted lines applied counts
+  - Bumped parser version label to `v1.4-numeric-tax-produce-history-gated`
+  - Fixture and harness expansion:
+    - added `market-parsed-text-hst-dotted-label-missing-decimal-001.json`
+    - added `grocery-parsed-text-split-token-with-subtotal-tax-001.json`
+    - added `bakery-tabscanner-history-low-sample-noop-001.json`
+    - updated fixture harness tax-label extraction to include dotted/variant labels (`H.S.T.`, `TPS`, `TVQ`)
+  - Updated RC-10 documentation status/remaining tasks in master + receipt plan docs.
+- Files changed:
+  - `src/features/receiving/receipt/server/receipt.repository.ts`
+  - `src/features/receiving/receipt/server/receipt-workflow.service.ts`
+  - `src/features/receiving/receipt/server/receipt-correction.contracts.ts`
+  - `src/features/receiving/receipt/server/receipt-correction.service.ts`
+  - `src/domain/parsers/receipt-correction-fixtures.test.mjs`
+  - `test/fixtures/receipt-correction/market-parsed-text-hst-dotted-label-missing-decimal-001.json`
+  - `test/fixtures/receipt-correction/grocery-parsed-text-split-token-with-subtotal-tax-001.json`
+  - `test/fixtures/receipt-correction/bakery-tabscanner-history-low-sample-noop-001.json`
+  - `test/fixtures/receipt-correction/README.md`
+  - `docs/receipt-post-ocr-correction-plan.md`
+  - `docs/master-plan-v1.md`
+  - `docs/codebase-overview.md`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-core.test.mjs` -> PASS (10/10; expected Node experimental/module-type warnings)
+  - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-fixtures.test.mjs` -> PASS (16/16; expected Node experimental/module-type warnings)
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `npx eslint src/domain/parsers/receipt-correction-core.ts src/domain/parsers/receipt-correction-core.test.mjs src/domain/parsers/receipt-correction-fixtures.test.mjs src/features/receiving/receipt/server/receipt-correction.contracts.ts src/features/receiving/receipt/server/receipt-correction.service.ts src/features/receiving/receipt/server/receipt-workflow.service.ts src/features/receiving/receipt/server/receipt.repository.ts test/fixtures/receipt-correction/README.md --quiet` -> PASS
+- Notes:
+  - RC-10 remains in progress; fixture corpus now at 15 scenarios, with 18-20 target still pending before closeout.
+
+### 2026-02-27 - RC-10 kickoff: historical price plausibility wiring for receipt correction + fixture/test expansion
+- Scope:
+  - Receipt post-OCR correction Phase 1 (RC-10) continuation focused on feature-layer historical plausibility signals and threshold-tuning scaffolding
+- What changed:
+  - Extended correction-core input/contracts:
+    - added `historical_price_hints` support in `runReceiptCorrectionCore(...)`
+    - added history-aware plausibility adjustments in baseline/candidate scoring
+    - added guarded aggressive-candidate acceptance path only when historical support is strong
+    - added parse flag `historical_price_signal_available` for observability
+  - Added feature-layer historical hint orchestration (no DB access in domain core):
+    - new receipt repository query to fetch recent receipt line price samples by parsed name, scoped to business and optionally supplier/place
+    - workflow service now derives per-line median price hints and passes them into correction for both parsed-text and TabScanner paths
+  - Expanded regression coverage:
+    - added correction-core tests for history-guided candidate selection and low-sample no-op behavior
+    - fixture harness now supports optional `historical_price_hints`
+    - added fixture `test/fixtures/receipt-correction/bakery-tabscanner-history-guided-decimal-001.json`
+  - Updated parser version string:
+    - `v1.3-numeric-tax-produce-history-tuned`
+  - Synced documentation:
+    - receipt correction plan `Latest Update` + Phase 1 progress notes updated
+    - master plan RC-10 marked in progress with latest job summary
+    - overview workflow/capability sections updated for historical hint stage
+- Files changed:
+  - `src/domain/parsers/receipt-correction-core.ts`
+  - `src/domain/parsers/receipt-correction-core.test.mjs`
+  - `src/domain/parsers/receipt-correction-fixtures.test.mjs`
+  - `src/features/receiving/receipt/server/receipt-correction.contracts.ts`
+  - `src/features/receiving/receipt/server/receipt-correction.service.ts`
+  - `src/features/receiving/receipt/server/receipt.repository.ts`
+  - `src/features/receiving/receipt/server/receipt-workflow.service.ts`
+  - `test/fixtures/receipt-correction/bakery-tabscanner-history-guided-decimal-001.json`
+  - `test/fixtures/receipt-correction/README.md`
+  - `docs/receipt-post-ocr-correction-plan.md`
+  - `docs/master-plan-v1.md`
+  - `docs/codebase-overview.md`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-core.test.mjs` -> PASS (10/10; expected Node experimental/module-type warnings)
+  - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-fixtures.test.mjs` -> PASS (13/13; expected Node experimental/module-type warnings)
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `npx eslint src/domain/parsers/receipt-correction-core.ts src/domain/parsers/receipt-correction-core.test.mjs src/domain/parsers/receipt-correction-fixtures.test.mjs src/features/receiving/receipt/server/receipt-correction.contracts.ts src/features/receiving/receipt/server/receipt-correction.service.ts src/features/receiving/receipt/server/receipt-workflow.service.ts src/features/receiving/receipt/server/receipt.repository.ts test/fixtures/receipt-correction/README.md --quiet` -> PASS
+- Notes:
+  - RC-10 remains in progress; this slice implemented historical signal wiring and first fixture expansion, with threshold tuning and broader fixture growth still pending.
+
+### 2026-02-27 - Master plan checklist hardened with mandatory per-step scoped implementation pre-checks
+- Scope:
+  - Documentation/process hardening to reduce duplicate code creation risk during ongoing plan execution
+- What changed:
+  - Updated `docs/master-plan-v1.md` so every canonical checklist item now begins with an explicit pre-check requirement:
+    - review currently implemented scoped files/logic first
+    - prefer build-on/refactor/remove/move of existing scope-related code before creating new code/files
+  - Added a matching session summary entry in the master plan log to make the rule visible in future handoffs
+- Files changed:
+  - `docs/master-plan-v1.md`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - Documentation update only (no code validation commands run)
+- Notes:
+  - No runtime behavior, schema, or architecture implementation changed in this slice.
+
+### 2026-02-27 - Created Master Plan v1 for canonical continuation order across remaining plans
+- Scope:
+  - Documentation coordination and execution-order consolidation across all current plan docs
+- What changed:
+  - Added new master tracker document:
+    - `docs/master-plan-v1.md`
+  - Master plan contents now include:
+    - full markdown-doc inventory review snapshot
+    - completed-plan ledger
+    - non-completed plan review, including explicit latest-update review for open plans
+    - single canonical checklist order for remaining initiatives
+    - `Last Left Off Here` checkpoint block for future handoffs
+    - per-session documentation sync checklist and summary template
+  - Synced architecture reference:
+    - added `docs/master-plan-v1.md` to related planning docs in `docs/codebase-overview.md`
+    - updated overview current-status snapshot to reflect open plans (receipt correction in progress, income integrations not started)
+- Files changed:
+  - `docs/master-plan-v1.md`
+  - `docs/codebase-overview.md`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - Documentation update only (no code validation commands run)
+- Notes:
+  - No runtime behavior or schema changes were made in this slice.
+
+### 2026-02-27 - Added sequencing-locked Operational Calendar (Schedule tab) plan
+- Scope:
+  - Product/system-design planning for a cross-industry Schedule tab as an Operational Calendar, with explicit start-order gating after all current active plans
+- What changed:
+  - Added new dedicated plan:
+    - `docs/operational-calendar-schedule-plan.md`
+  - Reviewed and strengthened the proposed schedule concept into an implementation-ready planning structure:
+    - clarified that Schedule is an operational calendar (not single-vertical booking UI)
+    - defined cross-industry event model and event types
+    - defined integration/sync/dedupe/read-only policies at high level
+    - defined simple no-integration mode
+    - defined phased rollout and architecture layers
+    - added strict sequencing gate requiring completion of existing plans (including Intake regrouping)
+  - Synced planning references:
+    - linked Schedule plan in `docs/codebase-overview.md`
+    - added downstream dependency note in `docs/unified-inventory-intake-refactor-plan.md`
+- Files changed:
+  - `docs/operational-calendar-schedule-plan.md`
+  - `docs/unified-inventory-intake-refactor-plan.md`
+  - `docs/codebase-overview.md`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - Documentation update only (no code validation commands run)
+- Notes:
+  - This is planning-only; no feature behavior or architecture implementation changed in this slice.
+
+### 2026-02-27 - Added unified Inventory Intake regrouping refactor plan (planning-only, no behavior changes)
+- Scope:
+  - Product-structure planning update to unify Shopping + Receive under an intent-first Intake model without changing feature behavior
+- What changed:
+  - Added a new dedicated planning document:
+    - `docs/unified-inventory-intake-refactor-plan.md`
+  - Documented the requested unified model and constraints:
+    - Inventory Intake Hub with three intents (`Live Purchase`, `Bulk Intake`, `Supplier Sync`)
+    - capability-driven industry adaptation (restaurants, contractors, salons, retailers)
+    - shared Intake Session lifecycle (`Created`, `Active`, `Reviewing`, `Committed`, `Archived`)
+    - migration strategy from current Shopping/Receive structure to unified intent-based navigation
+    - explicit non-goal that this is grouping/orchestration refactor only (no feature removals or behavior changes)
+  - Synced doc references so planning docs remain discoverable:
+    - added the new plan to `docs/codebase-overview.md` related-plans list
+    - added a follow-on pointer in `docs/inventoryintakeplan.md` to avoid split-brain planning
+- Files changed:
+  - `docs/unified-inventory-intake-refactor-plan.md`
+  - `docs/codebase-overview.md`
+  - `docs/inventoryintakeplan.md`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - Documentation update only (no code validation commands run)
+- Notes:
+  - Current implementation remains unchanged. This entry records product/system-design planning alignment only.
+
+### 2026-02-27 - Receipt correction Phase 1.5 scaffold: produce normalization wired into core
+- Scope:
+  - Initial code implementation slice for produce normalization/organic handling in the post-OCR correction pipeline
+- What changed:
+  - Added pure domain produce normalization module:
+    - `src/domain/parsers/receipt-produce-normalization.ts`
+    - 9-prefix PLU normalization (`94131` -> `4131`)
+    - organic keyword stripping for EN/FR/ES tokens
+    - conservative produce candidate gating (PLU/high-signal name hints + packaged SKU exclusion)
+  - Wired produce normalization into `runReceiptCorrectionCore(...)` so corrected lines now populate:
+    - `plu_code`
+    - `organic_flag`
+    - produce parse flags/actions (`plu_9prefix_normalized`, `organic_keyword_stripped`)
+  - Added runtime bridge `src/domain/parsers/receipt-produce-normalization.js` so Node `--experimental-transform-types` tests resolve module imports while TypeScript remains strict
+  - Extended receipt workflow/contracts pass-through shapes for produce fields (`ResolvedLineItem` optional produce fields, TabScanner-path propagation from corrected lines)
+  - Expanded regression coverage:
+    - added produce-focused unit tests in `src/domain/parsers/receipt-correction-core.test.mjs`
+    - added fixture-harness produce assertions in `src/domain/parsers/receipt-correction-fixtures.test.mjs`
+    - added produce fixture `test/fixtures/receipt-correction/grocery-parsed-text-produce-organic-plu-001.json`
+  - Bumped correction parser version to `v1.2-numeric-tax-produce-normalization`
+  - Updated overview/plan docs to reflect Phase 1.5 in-progress state and current implemented-vs-remaining scope
+- Files changed:
+  - `src/domain/parsers/receipt-produce-normalization.ts`
+  - `src/domain/parsers/receipt-produce-normalization.js`
+  - `src/domain/parsers/receipt-correction-core.ts`
+  - `src/domain/parsers/receipt-correction-core.test.mjs`
+  - `src/domain/parsers/receipt-correction-fixtures.test.mjs`
+  - `src/features/receiving/receipt/server/contracts.ts`
+  - `src/features/receiving/receipt/server/receipt-correction.service.ts`
+  - `src/features/receiving/receipt/server/receipt-workflow.service.ts`
+  - `test/fixtures/receipt-correction/grocery-parsed-text-produce-organic-plu-001.json`
+  - `test/fixtures/receipt-correction/README.md`
+  - `docs/receipt-post-ocr-correction-plan.md`
+  - `docs/codebase-overview.md`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-core.test.mjs` -> PASS (8/8; Node emitted expected experimental/module-type warnings)
+  - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-fixtures.test.mjs` -> PASS (12/12; Node emitted expected experimental/module-type warnings)
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `npx eslint src/domain/parsers/receipt-produce-normalization.ts src/domain/parsers/receipt-produce-normalization.js src/domain/parsers/receipt-correction-core.ts src/domain/parsers/receipt-correction-core.test.mjs src/domain/parsers/receipt-correction-fixtures.test.mjs src/features/receiving/receipt/server/contracts.ts src/features/receiving/receipt/server/receipt-correction.service.ts src/features/receiving/receipt/server/receipt-workflow.service.ts test/fixtures/receipt-correction/README.md --quiet` -> PASS
+- Notes:
+  - This slice is intentionally domain-first. `receipt-produce-lookup.service.ts` and DB persistence fields (`ReceiptLineItem.plu_code`, `organic_flag`) remain pending follow-up schema/service work.
+
+### 2026-02-26 - Receipt correction Phase 1 tax scaffold implemented (ON/QC interpretation + validation signals)
+- Scope:
+  - Initial code implementation slice for province-aware tax interpretation in the post-OCR receipt correction pipeline
+- What changed:
+  - Extended correction-core totals input to carry tax signal/context fields (`tax_lines`, province hint/source, address text)
+  - Added tax interpretation output in `runReceiptCorrectionCore(...)` with:
+    - province/source inference (`google_places`, `tax_labels`, `address_fallback`)
+    - tax structure classification (`on_hst`, `qc_gst_qst`, etc.)
+    - Ontario HST and Quebec GST/QST/TPS/TVQ math validation status (`pass`/`warn`/`not_evaluated`)
+    - zero-tax candidate detection (`subtotal == total` with no tax lines) to reduce false-positive warnings
+    - tax flags + label counts for observability
+  - Wired workflow tax signals into correction calls:
+    - raw-text path now extracts labeled tax lines and passes receipt text for address fallback
+    - supplier `formatted_address` is now selected and used as a Google Places province hint when available
+    - TabScanner path now passes generic tax lines plus province hints from supplier place context when available
+  - Extended correction summary payload with tax interpretation fields (status/structure/province/source/flags/labels)
+  - Added targeted correction-core tests for:
+    - Ontario HST pass case
+    - Quebec TPS/TVQ dual-tax pass case
+    - zero-tax subtotal==total candidate handling
+  - Updated overview and receipt-plan docs to reflect the implemented tax scaffold and next hardening steps
+- Files changed:
+  - `src/domain/parsers/receipt-correction-core.ts`
+  - `src/domain/parsers/receipt-correction-core.test.mjs`
+  - `src/features/receiving/receipt/server/receipt.repository.ts`
+  - `src/features/receiving/receipt/server/receipt-correction.contracts.ts`
+  - `src/features/receiving/receipt/server/receipt-correction.service.ts`
+  - `src/features/receiving/receipt/server/receipt-workflow.service.ts`
+  - `docs/receipt-post-ocr-correction-plan.md`
+  - `docs/codebase-overview.md`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-core.test.mjs` -> PASS (6/6; Node emitted expected experimental/module-type warnings)
+  - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-fixtures.test.mjs` -> PASS (11/11; Node emitted expected experimental/module-type warnings)
+  - `npx eslint src/domain/parsers/receipt-correction-core.ts src/domain/parsers/receipt-correction-core.test.mjs src/features/receiving/receipt/server/receipt.repository.ts src/features/receiving/receipt/server/receipt-correction.contracts.ts src/features/receiving/receipt/server/receipt-correction.service.ts src/features/receiving/receipt/server/receipt-workflow.service.ts --quiet` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Notes:
+  - Google Places remains primary in policy, but this slice uses stored supplier `formatted_address` as the current place-context province signal (explicit place-details province fetch can be added in a follow-up hardening step).
 
 ### 2026-02-26 - Added Ontario/Quebec tax interpretation design guidance to receipt correction plan
 - Scope:

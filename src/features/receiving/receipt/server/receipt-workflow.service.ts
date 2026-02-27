@@ -6,7 +6,12 @@
 import { prisma } from "@/server/db/prisma";
 import { parseReceiptText } from "@/domain/parsers/receipt";
 import type { ParsedLineItem } from "@/domain/parsers/receipt";
-import type { ReceiptCorrectionTotalsInput } from "@/domain/parsers/receipt-correction-core";
+import type {
+  ReceiptCorrectionHistoricalPriceHint,
+  ReceiptCorrectionProvinceCode,
+  ReceiptCorrectionTaxLineInput,
+  ReceiptCorrectionTotalsInput,
+} from "@/domain/parsers/receipt-correction-core";
 import { resolveReceiptLineMatch } from "@/server/matching/receipt-line";
 import { scanReceipt } from "@/server/integrations/receipts/tabscanner";
 import { uploadReceiptImage } from "@/server/storage/supabase/receipt-images";
@@ -20,12 +25,16 @@ import {
   createLineItem,
   findReceiptWithSupplier,
   findReceiptById,
+  findRecentReceiptLinePriceSamples,
+  type ReceiptHistoricalLinePriceSample,
 } from "./receipt.repository";
 
 const RECEIPT_MATCH_METRICS_LOG_EVERY_RECEIPTS = 10;
 const RECEIPT_MATCH_METRICS_LOG_INTERVAL_MS = 5 * 60 * 1000;
 const RECEIPT_CORRECTION_METRICS_LOG_EVERY_RECEIPTS = 10;
 const RECEIPT_CORRECTION_METRICS_LOG_INTERVAL_MS = 5 * 60 * 1000;
+const HISTORICAL_HINT_MIN_SAMPLE_SIZE = 4;
+const HISTORICAL_HINT_LOOKBACK_DAYS = 120;
 
 type ReceiptMatchMetricsSource = "parsed_text" | "tabscanner";
 type ReceiptCorrectionMetricsSource = "parsed_text" | "tabscanner";
@@ -64,6 +73,12 @@ type ReceiptCorrectionMetricsState = {
     correction_actions_applied: number;
     lines_with_parse_flags_count: number;
     lines_with_correction_actions_count: number;
+  };
+  historical_hint_totals: {
+    hinted_line_count: number;
+    hinted_line_applied_count: number;
+    sample_size_total: number;
+    max_sample_size_seen: number;
   };
 };
 
@@ -127,6 +142,12 @@ function createReceiptCorrectionMetricsState(): ReceiptCorrectionMetricsState {
       correction_actions_applied: 0,
       lines_with_parse_flags_count: 0,
       lines_with_correction_actions_count: 0,
+    },
+    historical_hint_totals: {
+      hinted_line_count: 0,
+      hinted_line_applied_count: 0,
+      sample_size_total: 0,
+      max_sample_size_seen: 0,
     },
   };
 }
@@ -234,6 +255,7 @@ function maybeEmitReceiptCorrectionMetricsSummary(): void {
     parse_flag_counts: receiptCorrectionMetrics.parse_flag_counts,
     correction_action_type_counts: receiptCorrectionMetrics.correction_action_type_counts,
     line_totals: receiptCorrectionMetrics.line_totals,
+    historical_hint_totals: receiptCorrectionMetrics.historical_hint_totals,
     derived_rates: {
       changed_line_ratio:
         lineCount > 0
@@ -257,6 +279,23 @@ function maybeEmitReceiptCorrectionMetricsSummary(): void {
               (
                 receiptCorrectionMetrics.parse_confidence_band_counts.low / lineCount
               ).toFixed(4),
+            )
+          : null,
+      historical_hint_line_ratio:
+        lineCount > 0
+          ? Number(
+              (
+                receiptCorrectionMetrics.historical_hint_totals.hinted_line_applied_count / lineCount
+              ).toFixed(4),
+            )
+          : null,
+      avg_historical_hint_sample_size:
+        receiptCorrectionMetrics.historical_hint_totals.hinted_line_count > 0
+          ? Number(
+              (
+                receiptCorrectionMetrics.historical_hint_totals.sample_size_total /
+                receiptCorrectionMetrics.historical_hint_totals.hinted_line_count
+              ).toFixed(2),
             )
           : null,
     },
@@ -291,6 +330,16 @@ function recordReceiptCorrectionMetrics(data: {
     data.summary.lines_with_parse_flags_count;
   receiptCorrectionMetrics.line_totals.lines_with_correction_actions_count +=
     data.summary.lines_with_correction_actions_count;
+  receiptCorrectionMetrics.historical_hint_totals.hinted_line_count +=
+    data.summary.historical_hint_lines_count;
+  receiptCorrectionMetrics.historical_hint_totals.hinted_line_applied_count +=
+    data.summary.historical_hint_lines_applied_count;
+  receiptCorrectionMetrics.historical_hint_totals.sample_size_total +=
+    data.summary.historical_hint_sample_size_total;
+  receiptCorrectionMetrics.historical_hint_totals.max_sample_size_seen = Math.max(
+    receiptCorrectionMetrics.historical_hint_totals.max_sample_size_seen,
+    data.summary.historical_hint_max_sample_size,
+  );
 
   for (const [flag, count] of Object.entries(data.summary.parse_flag_counts)) {
     incrementDynamicCount(receiptCorrectionMetrics.parse_flag_counts, flag, count);
@@ -316,8 +365,129 @@ function buildMatchSummary(lines: ResolvedLineItem[]): Pick<
   };
 }
 
+function normalizePriceSignalKey(text: string | null | undefined): string | null {
+  if (!text) return null;
+  const normalized = text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return normalized.length > 0 ? normalized : null;
+}
+
+function medianCurrency(values: number[]): number | null {
+  if (values.length === 0) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  if (sorted.length % 2 === 1) {
+    return roundCurrency(sorted[mid]);
+  }
+  return roundCurrency((sorted[mid - 1] + sorted[mid]) / 2);
+}
+
+function buildHistoricalPriceHintsFromSamples(data: {
+  lines: ParsedLineItem[];
+  samples: ReceiptHistoricalLinePriceSample[];
+}): ReceiptCorrectionHistoricalPriceHint[] {
+  const sampleMap = new Map<
+    string,
+    {
+      lineCosts: number[];
+      unitCosts: number[];
+    }
+  >();
+
+  for (const sample of data.samples) {
+    const key = normalizePriceSignalKey(sample.parsed_name);
+    if (!key) continue;
+
+    const bucket = sampleMap.get(key) ?? { lineCosts: [], unitCosts: [] };
+    bucket.lineCosts.push(sample.line_cost);
+    if (sample.unit_cost != null) {
+      bucket.unitCosts.push(sample.unit_cost);
+    }
+    sampleMap.set(key, bucket);
+  }
+
+  const hints: ReceiptCorrectionHistoricalPriceHint[] = [];
+
+  for (const line of data.lines) {
+    const key = normalizePriceSignalKey(line.parsed_name);
+    if (!key) continue;
+
+    const bucket = sampleMap.get(key);
+    if (!bucket || bucket.lineCosts.length < HISTORICAL_HINT_MIN_SAMPLE_SIZE) continue;
+
+    const referenceLineCost = medianCurrency(bucket.lineCosts);
+    if (referenceLineCost == null || referenceLineCost <= 0) continue;
+
+    const referenceUnitCost =
+      bucket.unitCosts.length >= 2 ? medianCurrency(bucket.unitCosts) : null;
+
+    hints.push({
+      line_number: line.line_number,
+      reference_line_cost: referenceLineCost,
+      reference_unit_cost: referenceUnitCost,
+      sample_size: bucket.lineCosts.length,
+      source: "receipt_line_history",
+    });
+  }
+
+  return hints;
+}
+
+async function resolveHistoricalPriceHintsForCorrection(params: {
+  businessId: string;
+  receiptId?: string;
+  supplierId?: string | null;
+  googlePlaceId?: string | null;
+  lines: ParsedLineItem[];
+}): Promise<ReceiptCorrectionHistoricalPriceHint[] | undefined> {
+  const parsedNames = Array.from(
+    new Set(
+      params.lines
+        .map((line) => line.parsed_name?.trim())
+        .filter((name): name is string => !!name && name.length > 0),
+    ),
+  );
+
+  if (parsedNames.length === 0) {
+    return undefined;
+  }
+
+  const samples = await findRecentReceiptLinePriceSamples({
+    businessId: params.businessId,
+    parsedNames,
+    excludeReceiptId: params.receiptId,
+    supplierId: params.supplierId ?? null,
+    googlePlaceId: params.googlePlaceId ?? null,
+    take: Math.min(Math.max(parsedNames.length * 50, 120), 900),
+    lookbackDays: HISTORICAL_HINT_LOOKBACK_DAYS,
+  });
+
+  const hints = buildHistoricalPriceHintsFromSamples({
+    lines: params.lines,
+    samples,
+  });
+
+  return hints.length > 0 ? hints : undefined;
+}
+
 function roundCurrency(value: number): number {
   return Math.round(value * 100) / 100;
+}
+
+function extractProvinceCodeFromText(text: string | null | undefined): ReceiptCorrectionProvinceCode | null {
+  if (!text) return null;
+
+  const normalized = text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase();
+
+  if (/\b(ON|ONTARIO)\b/.test(normalized)) return "ON";
+  if (/\b(QC|QUEBEC)\b/.test(normalized)) return "QC";
+  return null;
 }
 
 function parseTrailingAmountFromText(text: string): number | null {
@@ -333,10 +503,29 @@ function parseTrailingAmountFromText(text: string): number | null {
   return roundCurrency(numeric);
 }
 
+function detectTaxLabelFromLine(text: string): string | null {
+  if (/\bH\.?\s*S\.?\s*T\b/i.test(text)) return "HST";
+  if (/\bQST\b/i.test(text)) return "QST";
+  if (/\bTVQ\b/i.test(text)) return "TVQ";
+  if (/\bGST\b/i.test(text)) return "GST";
+  if (/\bTPS\b/i.test(text)) return "TPS";
+  if (/^(?:sales\s+)?tax\b/i.test(text)) return "Tax";
+  return null;
+}
+
+function sumTaxLineAmounts(taxLines: ReceiptCorrectionTaxLineInput[]): number | null {
+  const amounts = taxLines
+    .map((line) => (line.amount == null ? null : Number(line.amount)))
+    .filter((value): value is number => value != null && Number.isFinite(value));
+
+  if (amounts.length === 0) return null;
+  return roundCurrency(amounts.reduce((sum, amount) => sum + amount, 0));
+}
+
 function extractRawReceiptTotals(rawText: string): ReceiptCorrectionTotalsInput | undefined {
   let subtotal: number | null = null;
-  let tax: number | null = null;
   let total: number | null = null;
+  const taxLines: ReceiptCorrectionTaxLineInput[] = [];
 
   const lines = rawText
     .split(/\r?\n/)
@@ -352,9 +541,10 @@ function extractRawReceiptTotals(rawText: string): ReceiptCorrectionTotalsInput 
       continue;
     }
 
-    if (/^(?:sales\s+)?tax\b/i.test(normalized) || /^(?:gst|hst|pst|qst)\b/i.test(normalized)) {
+    const taxLabel = detectTaxLabelFromLine(normalized);
+    if (taxLabel) {
       const amount = parseTrailingAmountFromText(normalized);
-      if (amount != null) tax = amount;
+      taxLines.push({ label: taxLabel, amount });
       continue;
     }
 
@@ -365,7 +555,9 @@ function extractRawReceiptTotals(rawText: string): ReceiptCorrectionTotalsInput 
     }
   }
 
-  if (subtotal == null && tax == null && total == null) {
+  const tax = sumTaxLineAmounts(taxLines);
+
+  if (subtotal == null && tax == null && total == null && taxLines.length === 0) {
     return undefined;
   }
 
@@ -373,6 +565,8 @@ function extractRawReceiptTotals(rawText: string): ReceiptCorrectionTotalsInput 
     subtotal,
     tax,
     total,
+    tax_lines: taxLines.length > 0 ? taxLines : undefined,
+    address_text: rawText,
   };
 }
 
@@ -436,6 +630,17 @@ export async function parseAndMatchReceipt(
   // Parse raw OCR text into structured line items
   const parsedLines = parseReceiptText(receipt.raw_text);
   const rawTextTotals = extractRawReceiptTotals(receipt.raw_text);
+  const supplierProvinceHint =
+    receipt.supplier?.google_place_id && receipt.supplier?.formatted_address
+      ? extractProvinceCodeFromText(receipt.supplier.formatted_address)
+      : null;
+  const historicalPriceHints = await resolveHistoricalPriceHintsForCorrection({
+    businessId,
+    receiptId,
+    supplierId: receipt.supplier_id,
+    googlePlaceId: receipt.supplier?.google_place_id ?? null,
+    lines: parsedLines,
+  });
   const correction = await runReceiptPostOcrCorrection({
     businessId,
     receiptId,
@@ -443,7 +648,19 @@ export async function parseAndMatchReceipt(
     googlePlaceId: receipt.supplier?.google_place_id,
     source: "parsed_text",
     lines: parsedLines,
-    totals: rawTextTotals,
+    historical_price_hints: historicalPriceHints,
+    totals:
+      rawTextTotals || supplierProvinceHint
+        ? {
+            ...(rawTextTotals ?? {}),
+            ...(supplierProvinceHint
+              ? {
+                  province_hint: supplierProvinceHint,
+                  province_hint_source: "google_places" as const,
+                }
+              : {}),
+          }
+        : undefined,
   });
 
   // Match each line item against inventory
@@ -511,14 +728,19 @@ export async function processReceiptImage(
   businessId: string,
   supplierId?: string,
 ) {
-  const supplierGooglePlaceId = supplierId
+  const supplierPlaceContext = supplierId
     ? (
         await prisma.supplier.findFirst({
           where: { id: supplierId, business_id: businessId },
-          select: { google_place_id: true },
+          select: { google_place_id: true, formatted_address: true },
         })
-      )?.google_place_id
+      )
     : null;
+  const supplierGooglePlaceId = supplierPlaceContext?.google_place_id ?? null;
+  const supplierProvinceHint =
+    supplierPlaceContext?.google_place_id && supplierPlaceContext.formatted_address
+      ? extractProvinceCodeFromText(supplierPlaceContext.formatted_address)
+      : null;
 
   // Start OCR and image upload in parallel
   const imagePath = `receipts/${businessId}/${Date.now()}.jpg`;
@@ -584,6 +806,14 @@ export async function processReceiptImage(
     };
   });
 
+  const historicalPriceHints = await resolveHistoricalPriceHintsForCorrection({
+    businessId,
+    receiptId: receipt.id,
+    supplierId: supplierId ?? null,
+    googlePlaceId: supplierGooglePlaceId,
+    lines: tabScannerParsedLines,
+  });
+
   const correction = await runReceiptPostOcrCorrection({
     businessId,
     receiptId: receipt.id,
@@ -591,11 +821,19 @@ export async function processReceiptImage(
     googlePlaceId: supplierGooglePlaceId,
     source: "tabscanner",
     lines: tabScannerParsedLines,
+    historical_price_hints: historicalPriceHints,
     totals: {
       subtotal: ts.subTotal,
       tax: ts.tax,
       total: ts.total,
       currency: ts.currency,
+      tax_lines: ts.tax != null ? [{ label: "Tax", amount: ts.tax }] : undefined,
+      ...(supplierProvinceHint
+        ? {
+            province_hint: supplierProvinceHint,
+            province_hint_source: "google_places" as const,
+          }
+        : {}),
     },
   });
 
@@ -618,6 +856,9 @@ export async function processReceiptImage(
         unit: line.unit,
         line_cost: line.line_cost,
         unit_cost: line.unit_cost,
+        plu_code: line.plu_code ?? null,
+        produce_match: line.produce_match ?? null,
+        organic_flag: line.organic_flag ?? null,
         matched_item_id: resolved.matched_item_id,
         confidence: resolved.confidence,
         status: resolved.status,

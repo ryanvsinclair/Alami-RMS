@@ -28,6 +28,16 @@ function parseTrailingAmountFromText(text) {
   return roundCurrency(numeric);
 }
 
+function detectTaxLabelFromLine(text) {
+  if (/\bH\.?\s*S\.?\s*T\b/i.test(text)) return "HST";
+  if (/\bQST\b/i.test(text)) return "QST";
+  if (/\bTVQ\b/i.test(text)) return "TVQ";
+  if (/\bGST\b/i.test(text)) return "GST";
+  if (/\bTPS\b/i.test(text)) return "TPS";
+  if (/^(?:sales\s+)?tax\b/i.test(text)) return "Tax";
+  return null;
+}
+
 function extractPrintedTotalsFromRawText(rawText) {
   let subtotal = null;
   let tax = null;
@@ -46,7 +56,8 @@ function extractPrintedTotalsFromRawText(rawText) {
       continue;
     }
 
-    if (/^(?:sales\s+)?tax\b/i.test(normalized) || /^(?:gst|hst|pst|qst)\b/i.test(normalized)) {
+    const taxLabel = detectTaxLabelFromLine(normalized);
+    if (taxLabel) {
       const amount = parseTrailingAmountFromText(normalized);
       if (amount != null) tax = amount;
       continue;
@@ -89,6 +100,7 @@ function buildCorrectionInputFromFixture(fixture) {
     return {
       source: "tabscanner",
       lines: normalizeTabscannerFixtureLines(ts),
+      historical_price_hints: fixture.historical_price_hints ?? undefined,
       totals: {
         subtotal: ts.subTotal ?? null,
         tax: ts.tax ?? null,
@@ -102,6 +114,7 @@ function buildCorrectionInputFromFixture(fixture) {
     return {
       source: "parsed_text",
       lines: parseReceiptText(fixture.raw_text ?? ""),
+      historical_price_hints: fixture.historical_price_hints ?? undefined,
       totals: extractPrintedTotalsFromRawText(fixture.raw_text ?? ""),
     };
   }
@@ -175,6 +188,34 @@ function assertFixtureExpectations(fixture, coreResult) {
       assert.ok(
         line.parse_flags.includes(flag),
         `${fixture.id}: line ${expectedFlags.line_number} missing parse flag '${flag}'`
+      );
+    }
+  }
+
+  for (const expectedProduce of assertions.expected_produce_fields ?? []) {
+    const line = findLineResult(coreResult, expectedProduce.line_number);
+
+    if (Object.hasOwn(expectedProduce, "plu_code")) {
+      assert.equal(
+        line.line.plu_code ?? null,
+        expectedProduce.plu_code ?? null,
+        `${fixture.id}: line ${expectedProduce.line_number} produce plu_code mismatch`
+      );
+    }
+
+    if (Object.hasOwn(expectedProduce, "organic_flag")) {
+      assert.equal(
+        line.line.organic_flag ?? null,
+        expectedProduce.organic_flag ?? null,
+        `${fixture.id}: line ${expectedProduce.line_number} produce organic_flag mismatch`
+      );
+    }
+
+    if (Object.hasOwn(expectedProduce, "parsed_name")) {
+      assert.equal(
+        line.line.parsed_name ?? null,
+        expectedProduce.parsed_name ?? null,
+        `${fixture.id}: line ${expectedProduce.line_number} produce parsed_name mismatch`
       );
     }
   }

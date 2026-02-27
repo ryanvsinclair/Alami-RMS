@@ -1,0 +1,26 @@
+{
+  "id": "market-parsed-text-hst-dotted-label-missing-decimal-001",
+  "source": "parsed_text",
+  "store": {
+    "name": "Local Market",
+    "google_place_id": "test_market_place"
+  },
+  "raw_text": "FRESH SALSA 1299\nMULTIGRAIN BREAD 4.29\nSubtotal 17.28\nTax H.S.T. 2.25\nTotal 19.53",
+  "expected": {
+    "notes": [
+      "Dotted H.S.T. label should still be recognized as tax.",
+      "Integer-like line price should infer 12.99 and keep totals consistent."
+    ],
+    "assertions": {
+      "totals_status": "pass",
+      "totals_delta_to_total": 0,
+      "changed_line_numbers": [1],
+      "expected_line_costs": [
+        { "line_number": 1, "line_cost": 12.99 }
+      ],
+      "required_parse_flags": [
+        { "line_number": 1, "flags": ["decimal_inferred"] }
+      ]
+    }
+  }
+}

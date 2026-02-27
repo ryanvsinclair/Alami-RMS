@@ -1,9 +1,50 @@
 # Receipt Post-OCR Correction Plan
 
-Last updated: February 26, 2026 (draft / implementation-ready plan)
+Last updated: February 27, 2026 (draft / implementation-ready plan)
 
 ## Latest Update
 
+- **Phase 1 RC-10 continuation: historical hint quality gates + observability + fixture expansion** (February 27, 2026):
+  - Added quality gates to feature-layer historical hint derivation:
+    - minimum sample size required for hint generation (`>= 4`)
+    - recency lookback window for source samples (default `120` days)
+  - Expanded correction observability summary with historical-hint telemetry:
+    - hinted line count
+    - hint sample-size totals/max
+    - hinted lines applied count
+  - Expanded fixture corpus from `12` to `15` receipt scenarios with additional noisy/edge inputs:
+    - `market-parsed-text-hst-dotted-label-missing-decimal-001.json`
+    - `grocery-parsed-text-split-token-with-subtotal-tax-001.json`
+    - `bakery-tabscanner-history-low-sample-noop-001.json`
+  - Fixture harness tax-label parsing now includes dotted/variant labels (`H.S.T.`, `TPS`, `TVQ`) to better mirror workflow extraction.
+  - Validation:
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-core.test.mjs` -> PASS (10/10)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-fixtures.test.mjs` -> PASS (16/16)
+    - `npx tsc --noEmit --incremental false` -> PASS
+    - targeted `eslint` on touched correction/workflow/repository files -> PASS
+
+- **Phase 1 RC-10 slice started: historical price plausibility wired from feature layer into correction core** (February 27, 2026):
+  - Added line-level historical price hint support in `runReceiptCorrectionCore(...)` via `historical_price_hints` input.
+  - Added historical plausibility scoring adjustments and guarded aggressive-candidate acceptance when historical support is strong.
+  - Kept correction core pure: no DB access in domain layer; historical data is passed as input.
+  - Added feature-layer orchestration in `receipt-workflow.service.ts`:
+    - queries recent receipt line price samples scoped by business and supplier/place context when available
+    - computes median line/unit cost per parsed name
+    - injects per-line `historical_price_hints` into correction calls for both parsed-text and TabScanner flows
+  - Expanded regression coverage:
+    - new correction-core tests for history-guided selection and low-sample no-op behavior
+    - fixture harness support for optional `historical_price_hints`
+    - new fixture: `bakery-tabscanner-history-guided-decimal-001.json`
+  - Validation:
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-core.test.mjs` -> PASS (10/10)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-fixtures.test.mjs` -> PASS (13/13)
+    - `npx tsc --noEmit --incremental false` -> PASS
+    - targeted `eslint` on touched correction/workflow/repository files -> PASS
+
+- **Produce resolution layer added**: Section 8 documents the full produce normalization and organic handling strategy (9-prefix PLU stripping, organic keyword removal, `produce_items` Supabase lookup with language fallback). Phase 1.5 added to phased plan.
+- **`produce_items` table live in Supabase**: 4,479 rows (1,544 unique PLUs, EN/FR/ES), composite PK `(plu_code, language_code)`, GIN trigram indexes on `display_name`/`commodity`/`variety`. No organic column -- organic is a transactional attribute.
+- **`CorrectedReceiptLine` DTO extended**: added `plu_code`, `produce_match`, `organic_flag` fields.
+- **Phase 1.5 scaffold started in code**: domain produce normalization now runs in `runReceiptCorrectionCore(...)` (9-prefix PLU normalization + organic keyword stripping + produce candidate gating), with produce fields/flags/actions populated in corrected lines and covered by tests/fixtures.
 - Phase 0 foundation scaffolding has been implemented (feature-flagged pass-through + observability; no numeric corrections applied yet by default).
 - Phase 1 implementation has started with a first numeric-sanity slice in the domain correction core:
   - dual numeric candidate generation for integer-like and split numeric tokens (`949`, `14900`, `9 49`)
@@ -32,15 +73,13 @@ Start with **Phase 1 - Numeric sanity + dual interpretation**, using `shadow` mo
 
 Recommended next implementation order:
 
-1. Implement decimal enforcement and dual numeric interpretation in `src/domain/parsers/receipt-correction-core.ts`
-   - examples: `949 -> 9.49`, `9 49 -> 9.49` vs `949.00` (plausibility-ranked)
-2. Add high-confidence price plausibility checks + guarded auto-correction scoring
-   - use historical/store context signals where available, but keep fallback heuristics safe
-3. Add totals-consistency outlier re-check loop
-   - if `sum(lines) + tax != total`, identify likely outlier line and retry correction candidates
-4. Expand fixture corpus to 10-20 representative receipts before enabling `enforce`
-   - include missing decimals, extra digits, split numeric tokens, outlier totals, coupon/discount edge cases
-5. Keep production behavior risk-controlled
+1. Continue Phase 1 threshold tuning using newly wired historical price hints
+   - tune candidate-scoring weights/margins against fixture corpus and shadow metrics
+2. Expand fixture corpus further toward 18-20 representative receipts before enabling `enforce`
+   - include more discount-heavy, noisy, and mixed-tax label variants
+3. Continue hardening historical hint quality gates
+   - tune sample/recency thresholds and monitor hint coverage/hit-quality observability
+4. Keep production behavior risk-controlled
    - run in `shadow` first, inspect correction metrics/deltas, then promote safe rules to `enforce`
 
 Implementation guardrails (carry forward):
@@ -75,6 +114,8 @@ This plan improves:
 - dual numeric interpretation and plausibility selection
 - structured parsing/correction (not regex-only heuristics)
 - historical and store-context matching to reduce repeat errors
+- produce resolution via PLU normalization and `produce_items` Supabase table lookup
+- organic normalization (9-prefix legacy codes, keyword stripping) as a transactional attribute separate from produce identity
 
 ## Non-Goals (Explicit)
 
@@ -206,6 +247,7 @@ src/domain/parsers/
   receipt-structured-line-parser.ts       # token/numeric-cluster extraction (regex+structure hybrid)
   receipt-confidence.ts                   # line confidence scoring (parse confidence)
   receipt-store-patterns.ts               # store profile interpretation helpers (pure)
+  receipt-produce-normalization.ts        # PLU 9-prefix stripping, organic keyword removal, produce candidate detection (pure)
 ```
 
 Keep `src/domain/parsers/receipt.ts` as a compatibility facade initially, then gradually delegate to the new logic.
@@ -222,6 +264,7 @@ src/features/receiving/receipt/server/
   receipt-correction.repository.ts        # historical prices, prior lines, store profile reads/writes
   receipt-correction.service.ts           # post-OCR correction orchestration (TabScanner + raw text paths)
   receipt-parse-profile.service.ts        # store-specific profile learning/update logic
+  receipt-produce-lookup.service.ts       # produce_items Supabase queries (PLU lookup, fuzzy name search, language fallback)
 ```
 
 ## C. Workflow insertion points (critical)
@@ -273,9 +316,20 @@ type CorrectedReceiptLine = {
   line_cost: number | null;
   unit_cost: number | null;
 
+  // Produce resolution fields (populated by produce normalization layer)
+  plu_code: number | null;             // canonical PLU (9-prefix stripped if organic)
+  produce_match: {
+    display_name: string;
+    commodity: string;
+    variety: string | null;
+    language_code: string;
+    match_method: "plu" | "name_fuzzy";
+  } | null;
+  organic_flag: boolean;               // true if 9-prefix PLU or organic keyword detected
+
   parse_confidence_score: number;      // 0-1
   parse_confidence_band: "high" | "medium" | "low";
-  parse_flags: string[];               // e.g. decimal_inferred, outlier_price_corrected
+  parse_flags: string[];               // e.g. decimal_inferred, outlier_price_corrected, organic_keyword_stripped, plu_9prefix_normalized
   correction_actions: Array<{
     type: string;
     before: string | number | null;
@@ -571,6 +625,218 @@ Objective:
 - tax parsing errors are detected via mathematical reconciliation
 - zero-rated groceries are not falsely flagged
 
+## 8. Produce Resolution & Organic Normalization Layer
+
+### Purpose
+
+This layer ensures that produce items on receipts:
+
+- match correctly to canonical PLU identities via the `produce_items` Supabase table
+- are not broken by legacy 9-prefix organic PLU codes
+- are not misparsed due to organic adjectives in item names
+- resolve consistently across EN/FR/ES receipt languages
+- do not interfere with numeric correction or totals validation
+
+This step runs after numeric sanity / totals reconciliation and before inventory matching (`resolveReceiptLineMatch(...)`). It is deterministic and does not use probabilistic scoring.
+
+### Data source: `produce_items` table (Supabase)
+
+Canonical produce identity is stored in:
+
+```sql
+produce_items (
+  plu_code        integer   not null,
+  language_code   text      not null,
+  category        text      not null,
+  commodity       text      not null,
+  variety         text,
+  size_label      text,
+  scientific_name text,
+  display_name    text      not null,
+  primary key (plu_code, language_code)
+)
+```
+
+Properties:
+
+- 1,544 unique PLUs
+- EN / FR / ES language support (EN: 1,543, FR: 1,402, ES: 1,534)
+- Composite PK `(plu_code, language_code)`
+- GIN trigram indexes on `display_name`, `commodity`, `variety`
+- No `organic` column -- organic is a transactional attribute on the receipt line, not part of produce identity
+
+### Step A -- Legacy 9-prefix PLU normalization
+
+If a receipt line contains a PLU code where:
+
+- `plu_code` is 5 digits AND starts with `9`
+
+Then:
+
+- `base_plu = plu_code.substring(1)` (strip leading `9`)
+- `organic_flag = true`
+
+Example: `94131` -> base PLU `4131`, `organic_flag = true`
+
+All produce lookups use the `base_plu`. The original 5-digit code is never used for identity lookup.
+
+### Step B -- Organic keyword removal
+
+Before fuzzy name matching, normalize the receipt line text:
+
+1. Lowercase
+2. Remove accents (NFD + strip combining marks)
+3. Remove punctuation
+
+Then strip organic indicator tokens:
+
+| Language | Tokens to remove |
+|----------|-----------------|
+| English | `organic`, `org` |
+| French | `bio`, `biologique`, `organique` |
+| Spanish | `organico`, `orgánico`, `ecologico`, `ecológico`, `bio` |
+
+If any token was removed: `organic_flag = true`
+
+The cleaned name (with organic tokens removed) is used for produce lookup. This prevents "Organic Gala Apples" from failing to match "Gala Apples".
+
+### Step C -- Produce candidate detection
+
+Determine if a receipt line is likely produce by:
+
+- Presence of a PLU (4-digit numeric token on the line)
+- Or name matching `produce_items` `display_name` / `commodity` / `variety`
+- And absence of known packaged SKU patterns (barcodes, long numeric codes)
+
+Use structured token + numeric cluster detection, not regex-only.
+
+### Produce lookup strategy (Supabase integration)
+
+**Priority 1 -- PLU match (deterministic, high confidence)**
+
+If `base_plu` exists:
+
+```sql
+SELECT * FROM produce_items
+WHERE plu_code = :base_plu AND language_code = :preferred_language
+```
+
+If not found in preferred language, fallback to English:
+
+```sql
+SELECT * FROM produce_items
+WHERE plu_code = :base_plu AND language_code = 'EN'
+```
+
+**Priority 2 -- Name match (fuzzy, medium confidence)**
+
+If no PLU is available, perform normalized name search against `display_name`, `commodity`, `variety` using:
+
+- `ILIKE` for exact substring matches
+- Trigram similarity (`%` operator with `pg_trgm`) for fuzzy matches (recommended)
+
+Language-aware preference based on store province:
+
+- Ontario -> `EN`
+- Quebec -> `FR`
+- Fallback -> `EN`
+
+If no match in preferred language, fallback to `EN` row. Never fail resolution due to language mismatch.
+
+### Province-aware produce language preference
+
+Determine language preference via (same hierarchy as tax interpretation):
+
+1. Google Places province (primary)
+2. Tax structure signals (secondary)
+3. Address fallback (last resort)
+
+Language selection:
+
+- Ontario -> English
+- Quebec -> French
+- Else -> English
+
+### Organic handling model
+
+Organic is stored as a transactional attribute on the receipt line:
+
+- `organic_flag: boolean` (on `CorrectedReceiptLine`)
+
+It is **not** part of produce identity. Produce identity is determined solely by `plu_code`.
+
+Matching must always occur against `base_plu` (9-prefix stripped) and cleaned name (organic keywords removed). Organic must never alter the produce identity lookup.
+
+### Confidence behavior
+
+| Outcome | Confidence |
+|---------|-----------|
+| PLU match succeeds | `high` |
+| Name fuzzy match | `medium` |
+| No match | fallback to inventory matching layer |
+
+Produce parse confidence is separate from inventory match confidence (consistent with existing design principle).
+
+### Why this layer exists
+
+Without this step:
+
+- `94131` would not match PLU `4131`
+- "Organic Gala Apples" would fail fuzzy matching against "Gala Apples"
+- Multilingual receipts (FR/ES) would degrade produce match quality
+- Organic adjectives would break trigram similarity scoring
+
+This layer ensures:
+
+- Stable canonical identity resolution via `produce_items`
+- Organic does not interfere with matching
+- Multilingual produce works cleanly (FR missing ~141 PLUs -> EN fallback)
+- No duplication of organic variants in the database
+
+### Non-goals of this layer
+
+This layer does NOT:
+
+- Infer organic probabilistically (e.g. from price)
+- Create separate organic PLU entries in `produce_items`
+- Modify tax behavior
+- Modify inventory matching confidence
+- Replace the correction engine or `resolveReceiptLineMatch(...)`
+- Modify numeric correction results or totals reconciliation
+
+It only normalizes produce identity for safe matching and attaches `organic_flag` as a separate attribute.
+
+### Architectural summary
+
+- **Produce** = canonical identity via `produce_items` table
+- **Organic** = transactional attribute on receipt line (`organic_flag`)
+- **PLU 9-prefix** = legacy normalization rule (strip -> lookup base PLU)
+- **Language** = store-context preference with EN fallback
+- **Lookup** = deterministic-first (PLU), fuzzy-second (name trigram)
+
+### Pipeline execution order
+
+```text
+OCR / TabScanner
+    |
+Numeric Sanity
+    |
+Totals Reconciliation
+    |
+Produce Organic Normalization     <-- this layer
+    |
+Produce Lookup (Supabase)         <-- this layer
+    |
+resolveReceiptLineMatch(...)
+```
+
+Produce resolution must:
+
+- Not modify numeric correction results
+- Not modify totals reconciliation
+- Only normalize PLU and name for matching
+- Attach `organic_flag` separately
+
 ## Data Model Plan (Prisma)
 
 ## A. Minimal viable schema changes (recommended)
@@ -584,6 +850,8 @@ Add fields so parse confidence/corrections are not overloaded into match confide
 - `parse_flags` `Json?`
 - `parse_corrections` `Json?` (applied correction actions)
 - `source_sku` `String?` (normalized parsed SKU/product code if detected)
+- `plu_code` `Int?` (canonical PLU from produce resolution, 9-prefix stripped)
+- `organic_flag` `Boolean?` (true if 9-prefix PLU or organic keyword detected)
 
 Why:
 
@@ -602,6 +870,17 @@ Continue using `parsed_data` JSON for receipt-level correction summary:
 - correction counts
 
 This avoids extra tables for receipt-level correction metrics in MVP.
+
+### 3. `ProduceItem` table (already created)
+
+The `produce_items` table is already live in Supabase with the `ProduceItem` model in `prisma/schema.prisma`:
+
+- Composite PK `(plu_code, language_code)`
+- GIN trigram indexes on `display_name`, `commodity`, `variety` (via `pg_trgm`)
+- 4,479 rows seeded (1,544 unique PLUs across EN/FR/ES)
+- No `organic` column -- organic is determined at receipt parse time, not stored in produce identity
+
+This table is read-only from the application's perspective. Updates come from the IFPS PLU CSV pipeline (`scripts/normalize-plu-csv.mjs` -> `scripts/seed-produce-items.mjs`).
 
 ## B. Store-specific pattern memory persistence (new table recommended)
 
@@ -742,6 +1021,9 @@ Add parser/correction metrics (similar to existing receipt match metrics) in `re
 - detected tax labels count (`HST`, `GST`, `QST`, `TPS`, `TVQ`)
 - lines flagged low parse confidence
 - zero-tax grocery receipts accepted vs flagged
+- produce lines resolved by PLU vs fuzzy name vs unmatched
+- organic flags set (9-prefix vs keyword detection)
+- produce language fallback rate (preferred miss -> EN hit)
 - auto-correction acceptance rate (if user later confirms/edits)
 
 This is essential for tuning the last 5%.
@@ -761,6 +1043,11 @@ Add fixture-driven tests for:
 - price plausibility scoring
 - confidence scoring
 - section/header/footer classification
+- PLU 9-prefix normalization (`94131` -> `4131`, `organic_flag = true`)
+- organic keyword removal (EN: `organic`/`org`, FR: `bio`/`biologique`/`organique`, ES: `organico`/`ecologico`/`bio`)
+- produce PLU lookup with language fallback (preferred -> EN)
+- fuzzy name matching with organic adjectives removed
+- produce candidate detection (PLU presence vs packaged SKU exclusion)
 
 Recommended test style:
 
@@ -779,6 +1066,9 @@ Create a curated fixture corpus of real/anonymized receipts:
 - Quebec GST+QST / TPS+TVQ receipts (dual-tax lines)
 - zero-rated grocery receipts (`subtotal == total`, no tax line)
 - mixed taxable + zero-rated baskets
+- produce-heavy receipts with PLU codes (4-digit and 5-digit organic 9-prefix)
+- receipts with organic keyword produce lines ("Organic Gala Apples", "Pommes Bio", "Manzanas Organico")
+- French-language produce receipts (Quebec grocery stores)
 
 For each fixture store:
 
@@ -786,6 +1076,7 @@ For each fixture store:
 - expected corrected line items
 - expected totals consistency outcome
 - expected tax interpretation outcome (province/tax structure/validation status)
+- expected produce resolution outcome (PLU match, organic flag, language used)
 
 This is the fastest way to improve accuracy safely.
 
@@ -807,6 +1098,9 @@ Test:
 - zero-rated grocery receipts with no tax line (`subtotal == total`)
 - multi-line names
 - repeated store receipts improving over time
+- produce with PLU codes (including 5-digit organic 9-prefix codes)
+- "Organic Gala Apples" matching to "Gala Apples" after keyword strip
+- French produce receipts resolving via `produce_items` FR rows with EN fallback
 
 ## Phased Implementation Plan (Detailed)
 
@@ -860,12 +1154,82 @@ Progress notes (2026-02-26):
 - Expanded correction summary/metrics observability with parse-confidence band counts and parse-flag/correction-action type breakdowns (useful for `shadow` tuning)
 - Added targeted `node:test` coverage for `runReceiptCorrectionCore(...)` (missing decimal, split-token recovery, totals outlier re-check scenarios)
 - Added fixture-driven regression tests that execute the receipt-correction fixture corpus end-to-end against the correction core
+- Implemented an initial tax interpretation scaffold in the correction core:
+  - province/tax-structure inference (`ON`/`QC`, label and address signals)
+  - Ontario HST and Quebec GST+QST/TPS+TVQ math checks
+  - zero-tax (`subtotal == total`) candidate handling to avoid false-positive tax warnings
+  - tax interpretation summary fields surfaced in correction output/summary
 - Remaining:
   - tune thresholds/heuristics against expanded fixture corpus
-  - add/store historical plausibility signals in feature-layer orchestration
-  - implement province determination hierarchy (Google Places -> tax labels -> address fallback) for tax interpretation
-  - add Ontario/Quebec tax-structure validation + zero-rated grocery handling into correction/totals reconciliation flow
+  - continue tuning thresholds now that historical plausibility signals are wired in feature-layer orchestration
+  - harden province determination hierarchy with explicit Google Places place-details province resolution (currently uses stored supplier formatted-address signal when available)
+  - add dedicated tax-focused fixtures (ON/QC + mismatch/incomplete structures) with machine-checkable `tax_interpretation` assertions
   - harden raw-text totals extraction for more label/format variants (discount-heavy and noisy OCR cases)
+
+Progress notes (2026-02-27):
+
+- Added feature-layer historical plausibility wiring:
+  - new receipt repository query for recent line-price samples scoped by business and supplier/place context
+  - workflow-layer median price hint derivation and line-level hint injection into correction core for both receipt paths
+- Added correction-core support for `historical_price_hints` and history-aware candidate scoring/selection guardrails.
+- Added fixture-harness support + history-guided fixture and targeted core tests.
+- Added historical hint quality gates + observability expansion:
+  - minimum sample size gate for hint generation (`>= 4`)
+  - sample recency lookback window (120 days)
+  - historical hint coverage/sample-size metrics in correction summary + periodic workflow metrics logs
+- Expanded fixture corpus to 15 scenarios (history low-sample gate + noisy dotted-tax label + split-token-with-totals coverage).
+- Remaining in Phase 1:
+  - tune scoring thresholds/margins with expanded shadow metrics and larger fixture corpus
+  - expand fixture corpus to 18-20 scenarios
+  - add richer tax-focused fixtures and raw-text totals robustness hardening
+
+## Phase 1.5 - Produce resolution & organic normalization
+
+Status: `[~]`
+
+Deliverables:
+
+- Implement `receipt-produce-normalization.ts` in domain layer (pure logic):
+  - 9-prefix PLU stripping
+  - organic keyword removal (EN/FR/ES token lists)
+  - produce candidate detection (PLU presence / name matching / packaged SKU exclusion)
+- Implement `receipt-produce-lookup.service.ts` in feature server layer:
+  - PLU lookup against `produce_items` with language fallback
+  - Fuzzy name search via trigram similarity with language preference
+  - Province-aware language selection (Ontario -> EN, Quebec -> FR)
+- Wire produce normalization into correction pipeline (after totals reconciliation, before `resolveReceiptLineMatch`)
+- Populate `CorrectedReceiptLine.plu_code`, `produce_match`, `organic_flag` fields
+- Add parse flags: `organic_keyword_stripped`, `plu_9prefix_normalized`
+- Unit tests for:
+  - 9-prefix stripping (`94131` -> `4131` + organic)
+  - organic keyword removal across EN/FR/ES
+  - PLU lookup with language fallback
+  - fuzzy name matching with organic adjective interference removed
+- Add produce-focused receipt fixtures (PLU lines, organic items, FR/ES produce names)
+
+Dependencies:
+
+- `produce_items` table already created and seeded (4,479 rows, trigram indexes live)
+- Province determination from Phase 1 tax interpretation (reuse same hierarchy)
+
+Progress notes (2026-02-27):
+
+- Implemented a first domain-only produce normalization scaffold:
+  - new pure module `src/domain/parsers/receipt-produce-normalization.ts`
+  - 9-prefix PLU normalization (`94131` -> `4131`) with `plu_9prefix_normalized` flag/action
+  - organic keyword stripping (EN/FR/ES token set) with `organic_keyword_stripped` flag/action
+  - conservative produce candidate gating (PLU/high-signal name hints, packaged-SKU exclusion)
+- Wired produce normalization into `runReceiptCorrectionCore(...)` after numeric/totals selection:
+  - populates corrected line fields (`plu_code`, `organic_flag`, pass-through `produce_match`)
+  - includes produce corrections in line-level `correction_actions`
+- Added test coverage:
+  - targeted `node:test` cases in `src/domain/parsers/receipt-correction-core.test.mjs`
+  - fixture-harness support for produce assertions + produce fixture in `test/fixtures/receipt-correction/*`
+- Remaining:
+  - implement `receipt-produce-lookup.service.ts` (PLU + fuzzy name lookup against `produce_items`)
+  - add province-aware language preference + EN fallback in feature-layer lookup orchestration
+  - persist produce metadata (`plu_code`, `organic_flag`) on `ReceiptLineItem` once schema slice is approved
+  - add broader multilingual produce fixtures and lookup validation cases
 
 ## Phase 2 - Line-level parse confidence and UI flags
 
