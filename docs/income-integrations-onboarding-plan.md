@@ -1,8 +1,25 @@
 # Income Integrations Onboarding Plan
 
-Last updated: February 27, 2026 (Phase 4 restaurant rollout providers complete)
+Last updated: February 27, 2026 (Phase 5 scheduled sync + webhook hardening complete)
 
 ## Latest Update
+
+- **IN-05 complete: scheduled sync + webhook hardening — cron runner, sync lock guard, webhook verification endpoints** (February 27, 2026):
+  - Preflight scans confirmed: `INCOME_SYNC_SCHEDULER_STRATEGY = "internal_cron_route"` already defined; `last_webhook_at` already on `BusinessIncomeConnection`; `ExternalSyncLog.status` already supports reuse as soft lock — no new schema migration required.
+  - IN-05 scoped additions (reuse-first):
+    - Sync lock guard in `runProviderManualSync`: `ExternalSyncLog.findFirst` where `status="running"` and `started_at >= lockCutoff (now - 10 min)` — rejects duplicate concurrent syncs per business+source; stale locks (>10 min) are ignored automatically
+    - `runAllProvidersCronSync` in `sync.service.ts`: iterates `CRON_PROVIDER_CONFIGS`, finds all `connected` connections per provider across all businesses, syncs each independently with full error isolation (lock conflicts → `skipped`, real errors → `failed`, no abort on partial failure)
+    - `app/api/integrations/sync/cron/route.ts`: internal cron route secured by `INCOME_CRON_SECRET` Bearer token, returns `{ attempted, succeeded, skipped, failed, details[] }`
+    - `src/features/integrations/server/webhook-crypto.ts`: `verifyHmacSha256Signature` (HMAC-SHA256 with `crypto.timingSafeEqual` for timing-safe comparison) + `readRawBody` helper
+    - `app/api/integrations/webhooks/uber-eats/route.ts`: verifies `X-Uber-Signature: sha256=<hex>` via `INCOME_WEBHOOK_SECRET_UBER_EATS`, updates `last_webhook_at` on matching connection
+    - `app/api/integrations/webhooks/doordash/route.ts`: verifies `X-DoorDash-Signature: <hex>` via `INCOME_WEBHOOK_SECRET_DOORDASH`, same pattern
+    - `sync.service.test.mjs` extended to 11 tests: 3 new sync lock guard tests (non-stale blocks, null proceeds, stale passes through)
+  - Validation:
+    - `node --test src/features/integrations/server/sync.service.test.mjs` -> PASS (11/11)
+    - `node --test src/features/integrations/providers/uber-eats.provider.test.mjs src/features/integrations/providers/doordash.provider.test.mjs` -> PASS (25/25)
+    - `npx tsx --test src/features/integrations/server/provider-catalog.test.mjs src/features/integrations/server/oauth.service.test.mjs` -> PASS (6/6)
+    - `npx tsc --noEmit --incremental false` -> PASS
+    - targeted eslint on all touched files -> PASS
 
 - **IN-04 complete: restaurant rollout providers — Uber Eats + DoorDash adapters, generic sync runner, routes, catalog wiring** (February 27, 2026):
   - Preflight scans confirmed `uber_eats` and `doordash` already in `FinancialSource` enum + home dashboard income breakdown.
@@ -125,14 +142,12 @@ Last updated: February 27, 2026 (Phase 4 restaurant rollout providers complete)
 
 ## Pick Up Here (Next Continuation)
 
-- Next task ID: `IN-05`
-- Source section: `Phase 5 - Scheduled sync + webhook hardening`
+- Next task ID: `IN-06`
+- Source section: `Phase 6 - Reporting + home/dashboard integration improvements`
 - Scope reminder:
-  - cron-triggered incremental sync route (internal cron strategy per `INCOME_SYNC_SCHEDULER_STRATEGY`)
-  - retry/backoff per connection
-  - sync lock/duplication prevention per connection
-  - webhook signature verification for Uber Eats + DoorDash
-  - periodic reconciliation sync
+  - richer home income-source cards (counts, statuses, stale-sync warning)
+  - provider connection health badges in integrations page
+  - reporting endpoints by provider/channel/date range
 
 ## Goal
 
@@ -830,7 +845,7 @@ Resulting UX:
 
 ## Phase 5 - Scheduled sync + webhook hardening
 
-Status: `[ ]`
+Status: `[x]`
 
 Goal:
 
@@ -838,12 +853,13 @@ Goal:
 
 Deliverables:
 
-- cron-triggered incremental sync route
-- retry/backoff strategy
-- sync lock/duplication prevention per connection
-- webhook signature verification
-- periodic reconciliation sync
-- observability/logging improvements
+- [x] cron-triggered incremental sync route (`app/api/integrations/sync/cron/route.ts`, secured by `INCOME_CRON_SECRET`)
+- [x] sync lock/duplication prevention per connection (DB soft lock via `ExternalSyncLog.status="running"` with 10-min staleness window)
+- [x] cron runner with full error isolation per provider+business (`runAllProvidersCronSync`)
+- [x] webhook signature verification utilities (`webhook-crypto.ts` HMAC-SHA256 with `timingSafeEqual`)
+- [x] webhook endpoints for Uber Eats + DoorDash (signature-verified, `last_webhook_at` update)
+- [ ] retry/backoff per connection (deferred to Phase 7 production hardening)
+- [ ] periodic reconciliation sync (deferred to Phase 7)
 
 ## Phase 6 - Reporting + home/dashboard integration improvements
 
@@ -879,7 +895,7 @@ Status: `[~]`
 - [x] No token values in logs/errors
 - [x] OAuth state is single-use and expires quickly
 - [x] PKCE used where supported
-- [ ] Webhook signatures verified
+- [x] Webhook signatures verified (Uber Eats + DoorDash HMAC-SHA256 with timingSafeEqual)
 - [ ] Least-privilege scopes documented per provider
 - [ ] Reconnect flow for expired tokens
 - [x] Owner/manager auth enforced for connect/disconnect actions

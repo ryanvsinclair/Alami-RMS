@@ -177,10 +177,10 @@ Use the `Canonical Order Checklist` statuses as the source of truth.
 Current snapshot (2026-02-27):
 
 - Total checklist items: `38`
-- `[x]` complete: `16`
+- `[x]` complete: `17`
 - `[~]` in progress: `0`
-- Strict completion: `42.11%`
-- Weighted progress: `42.11%`
+- Strict completion: `44.74%`
+- Weighted progress: `44.74%`
 
 Update rule after each slice:
 
@@ -301,7 +301,7 @@ Status legend:
 - [x] IN-02 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 2 provider-agnostic OAuth core.
 - [x] IN-03 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 3 first provider pilot end-to-end (connect -> token storage -> sync -> dashboard projection).
 - [x] IN-04 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 4 restaurant-provider rollout (Uber Eats + DoorDash + POS set chosen by product/engineering).
-- [ ] IN-05 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 5 scheduled sync + webhook hardening.
+- [x] IN-05 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 5 scheduled sync + webhook hardening.
 - [ ] IN-06 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 6 reporting/home income-layer improvements.
 - [ ] IN-07 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 7 production hardening + security/compliance checklist completion.
 - [ ] IN-08 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then mark income integrations plan complete with changelog + overview sync.
@@ -334,12 +334,12 @@ Status legend:
 
 ## Last Left Off Here (Update This Block First)
 
-- Current task ID: `IN-05`
-- Current task: `Income integrations Phase 5 scheduled sync + webhook hardening`
+- Current task ID: `IN-06`
+- Current task: `Income integrations Phase 6 reporting + home income-layer improvements`
 - Status: `READY`
 - Last updated: `2026-02-27`
 - Primary source plan section:
-  - `docs/income-integrations-onboarding-plan.md` -> `Phase 5`
+  - `docs/income-integrations-onboarding-plan.md` -> `Phase 6`
 
 ## Documentation Sync Checklist (Run Every Session)
 
@@ -351,6 +351,30 @@ Status legend:
 - [ ] `docs/codebase-overview.md` updated if behavior/architecture/canonical path descriptions changed.
 
 ## Latest Job Summary (Append New Entries At Top)
+
+### 2026-02-27 - IN-05 complete: scheduled sync + webhook hardening — cron runner, sync lock guard, webhook verification endpoints
+- Suggested Commit Title: `feat(in-05): add scheduled sync cron runner, sync lock guard, and webhook verification endpoints`
+- Completed:
+  - Ran IN-05 preflight scans:
+    - Confirmed `INCOME_SYNC_SCHEDULER_STRATEGY = "internal_cron_route"` already defined in shared contracts
+    - Confirmed `BusinessIncomeConnection.last_webhook_at` already exists in schema — no new migration needed
+    - Confirmed `ExternalSyncLog.status = "running"` can be reused as DB soft lock — reuse-first principle applied
+  - IN-05 scoped additions:
+    - Sync lock guard in `runProviderManualSync`: `ExternalSyncLog.findFirst` where `status="running"` and `started_at >= (now - 10min)` — scoped per `business_id + source`; stale (>10 min) locks auto-ignored by Prisma `gte` filter
+    - `runAllProvidersCronSync`: iterates `CRON_PROVIDER_CONFIGS` (godaddy_pos, uber_eats, doordash), finds all `connected` connections, syncs each independently — lock conflicts → `skipped`, real errors → `failed`, no abort
+    - `app/api/integrations/sync/cron/route.ts`: `INCOME_CRON_SECRET` Bearer auth, calls `runAllProvidersCronSync`, returns `{ attempted, succeeded, skipped, failed, details[] }`
+    - `src/features/integrations/server/webhook-crypto.ts`: `verifyHmacSha256Signature` (HMAC-SHA256, `crypto.timingSafeEqual`) + `readRawBody`
+    - `app/api/integrations/webhooks/uber-eats/route.ts`: `X-Uber-Signature: sha256=<hex>` verification via `INCOME_WEBHOOK_SECRET_UBER_EATS`, `last_webhook_at` update
+    - `app/api/integrations/webhooks/doordash/route.ts`: `X-DoorDash-Signature: <hex>` verification via `INCOME_WEBHOOK_SECRET_DOORDASH`
+    - `sync.service.test.mjs` extended to 11 tests: 3 new sync lock guard tests (non-stale blocks, null proceeds, stale passes through); fixed `input.now` fallback to `nowOverride` in testable fn
+  - Validation gates all pass:
+    - `node --test src/features/integrations/server/sync.service.test.mjs` -> PASS 11/11
+    - `node --test src/features/integrations/providers/uber-eats.provider.test.mjs src/features/integrations/providers/doordash.provider.test.mjs` -> PASS 25/25
+    - `npx tsx --test ...provider-catalog.test.mjs ...oauth.service.test.mjs` -> PASS 6/6
+    - `npx tsc --noEmit --incremental false` -> PASS
+    - targeted eslint on all touched files -> PASS
+  - Completion: 17/38 = 44.74%
+- Next: `IN-06` (`docs/income-integrations-onboarding-plan.md` Phase 6 — reporting + home/dashboard improvements)
 
 ### 2026-02-27 - IN-04 complete: restaurant rollout providers (Uber Eats + DoorDash) — adapters, generic sync runner, routes, catalog wiring
 - Completed:

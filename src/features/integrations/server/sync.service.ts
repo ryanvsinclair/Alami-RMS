@@ -12,6 +12,13 @@ import {
 } from "./connections.repository";
 import type { IncomeProvider, FinancialSource } from "@/lib/generated/prisma/client";
 
+// ---------------------------------------------------------------------------
+// Sync lock constants
+// ---------------------------------------------------------------------------
+
+/** Max age (ms) of a "running" ExternalSyncLog before we consider it stale and allow a new sync. */
+const SYNC_LOCK_STALE_AFTER_MS = 10 * 60 * 1000; // 10 minutes
+
 export interface ManualSyncInput {
   businessId: string;
   trigger?: "manual" | "scheduled" | "initial";
@@ -76,6 +83,27 @@ async function runProviderManualSync(params: {
   }
 
   const now = new Date();
+
+  // ---------------------------------------------------------------------------
+  // Sync lock guard: reject if a non-stale "running" log already exists for
+  // this business+source to prevent duplicate concurrent syncs.
+  // ---------------------------------------------------------------------------
+  const lockCutoff = new Date(now.getTime() - SYNC_LOCK_STALE_AFTER_MS);
+  const inflightLog = await prisma.externalSyncLog.findFirst({
+    where: {
+      business_id: businessId,
+      source: financialSource,
+      status: "running",
+      started_at: { gte: lockCutoff },
+    },
+    orderBy: { started_at: "desc" },
+  });
+  if (inflightLog) {
+    throw new Error(
+      `${sourceName} sync is already in progress (started ${inflightLog.started_at.toISOString()}). Try again in a few minutes.`
+    );
+  }
+
   const periodStart =
     connection.last_sync_at ?? subtractDays(now, INCOME_SYNC_DEFAULT_HISTORICAL_DAYS);
   const periodEnd = now;
@@ -240,4 +268,121 @@ export async function runDoorDashManualSync(
     financialSource: "doordash",
     fetchEvents: fetchDoorDashIncomeEvents,
   });
+}
+
+// ---------------------------------------------------------------------------
+// Cron runner — incremental sync for all connected providers across all businesses
+// ---------------------------------------------------------------------------
+
+interface CronProviderConfig {
+  providerId: IncomeProvider;
+  financialSource: FinancialSource;
+  sourceName: string;
+  fetchEvents: (opts: { accessToken: string; since: Date; until: Date }) => Promise<NormalizedProviderEvent[]>;
+}
+
+const CRON_PROVIDER_CONFIGS: CronProviderConfig[] = [
+  {
+    providerId: "godaddy_pos",
+    financialSource: "godaddy_pos",
+    sourceName: "GoDaddy POS",
+    fetchEvents: fetchGoDaddyPilotIncomeEvents,
+  },
+  {
+    providerId: "uber_eats",
+    financialSource: "uber_eats",
+    sourceName: "Uber Eats",
+    fetchEvents: fetchUberEatsIncomeEvents,
+  },
+  {
+    providerId: "doordash",
+    financialSource: "doordash",
+    sourceName: "DoorDash",
+    fetchEvents: fetchDoorDashIncomeEvents,
+  },
+];
+
+export interface CronSyncResult {
+  attempted: number;
+  succeeded: number;
+  skipped: number;
+  failed: number;
+  details: Array<{
+    businessId: string;
+    providerId: string;
+    status: "success" | "skipped" | "failed";
+    recordsFetched?: number;
+    error?: string;
+  }>;
+}
+
+/**
+ * Runs incremental sync for all connected providers across all businesses.
+ * Intended to be triggered by an internal cron route (INCOME_SYNC_SCHEDULER_STRATEGY = "internal_cron_route").
+ *
+ * Each provider+business sync is attempted independently — failures are captured
+ * in the result without stopping other syncs.
+ */
+export async function runAllProvidersCronSync(): Promise<CronSyncResult> {
+  const result: CronSyncResult = {
+    attempted: 0,
+    succeeded: 0,
+    skipped: 0,
+    failed: 0,
+    details: [],
+  };
+
+  for (const config of CRON_PROVIDER_CONFIGS) {
+    // Find all connected connections for this provider across all businesses
+    const connections = await prisma.businessIncomeConnection.findMany({
+      where: {
+        provider_id: config.providerId,
+        status: "connected",
+        access_token_encrypted: { not: null },
+      },
+      select: { business_id: true, id: true },
+    });
+
+    for (const conn of connections) {
+      result.attempted++;
+      try {
+        const syncResult = await runProviderManualSync({
+          businessId: conn.business_id,
+          providerId: config.providerId,
+          sourceName: config.sourceName,
+          financialSource: config.financialSource,
+          fetchEvents: config.fetchEvents,
+        });
+        result.succeeded++;
+        result.details.push({
+          businessId: conn.business_id,
+          providerId: config.providerId,
+          status: "success",
+          recordsFetched: syncResult.recordsFetched,
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        // Sync-in-progress lock errors are "skipped", not failures
+        if (message.includes("already in progress")) {
+          result.skipped++;
+          result.details.push({
+            businessId: conn.business_id,
+            providerId: config.providerId,
+            status: "skipped",
+            error: message,
+          });
+        } else {
+          result.failed++;
+          result.details.push({
+            businessId: conn.business_id,
+            providerId: config.providerId,
+            status: "failed",
+            error: message,
+          });
+        }
+      }
+    }
+  }
+
+  return result;
 }

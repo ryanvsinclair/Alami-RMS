@@ -57,7 +57,7 @@ High-level completion:
 What remains outside plan completion:
 - Manual integrated smoke testing across core flows (user-run / final QA pass).
 - Receipt post-OCR correction plan is complete through Phase 6 closeout (`RC-19`), with non-blocking follow-ups tracked separately.
-- Income integrations onboarding plan Phase 4 is complete (Uber Eats + DoorDash provider adapters, generic sync runner, manual sync routes, catalog wiring for all 3 restaurant providers); scheduled sync + webhook hardening (Phase 5) is next.
+- Income integrations onboarding plan Phase 5 is complete (scheduled cron sync runner, sync lock guard, webhook verification endpoints for Uber Eats + DoorDash); reporting/home improvements (Phase 6) is next.
 - Unified Intake regrouping refactor is planned but not yet implemented (see `docs/unified-inventory-intake-refactor-plan.md`).
 - Operational Calendar/Schedule refactor is planned and sequencing-locked behind completion of all current plans (see `docs/operational-calendar-schedule-plan.md`).
 
@@ -265,8 +265,19 @@ Route wrappers:
 - `app/api/integrations/sync/uber-eats/manual/route.ts`
 - `app/api/integrations/sync/doordash/manual/route.ts`
 
-Current limitation:
-- Manual sync only; scheduled/cron sync and webhook endpoints are Phase 5.
+Scheduled sync + webhooks (Phase 5 complete):
+- `runAllProvidersCronSync` in `sync.service.ts`: cron runner across all providers + businesses with error isolation
+- `app/api/integrations/sync/cron/route.ts`: `INCOME_CRON_SECRET`-secured cron endpoint
+- Sync lock guard in `runProviderManualSync`: DB soft lock via `ExternalSyncLog` (10-min staleness window, scoped per business+source)
+- `src/features/integrations/server/webhook-crypto.ts`: HMAC-SHA256 signature verification with `timingSafeEqual`
+- `app/api/integrations/webhooks/uber-eats/route.ts`: `X-Uber-Signature` verification + `last_webhook_at` update
+- `app/api/integrations/webhooks/doordash/route.ts`: `X-DoorDash-Signature` verification + `last_webhook_at` update
+
+Canonical paths (additional Phase 5):
+- `src/features/integrations/server/webhook-crypto.ts`
+- `app/api/integrations/sync/cron/route.ts`
+- `app/api/integrations/webhooks/uber-eats/route.ts`
+- `app/api/integrations/webhooks/doordash/route.ts`
 
 ### Receiving (4 ingestion paths)
 

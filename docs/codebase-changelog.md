@@ -20,6 +20,34 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-27 - IN-05 complete: scheduled sync + webhook hardening (cron runner, sync lock guard, webhook verification)
+- Suggested Commit Title: `feat(in-05): add scheduled sync cron runner, sync lock guard, and webhook verification endpoints`
+- Scope:
+  - Income integrations Phase 5 (`IN-05`) scheduled sync + webhook hardening.
+- Preflight evidence (reuse/refactor-first):
+  - `INCOME_SYNC_SCHEDULER_STRATEGY = "internal_cron_route"` already defined in `src/features/integrations/shared/index.ts` — no new constant required
+  - `BusinessIncomeConnection.last_webhook_at` already in schema — no new column needed
+  - `ExternalSyncLog.status` already supports `"running"` — reused as DB soft lock, no migration required
+  - Re-verified latest migration: `prisma/migrations/20260228013000_income_event_pilot/migration.sql` — no schema change required for IN-05
+- Changes:
+  - `src/features/integrations/server/sync.service.ts`:
+    - Added `SYNC_LOCK_STALE_AFTER_MS = 10 * 60 * 1000` constant
+    - Added sync lock guard in `runProviderManualSync` (rejects non-stale concurrent syncs per business+source)
+    - Added `CRON_PROVIDER_CONFIGS` array (godaddy_pos, uber_eats, doordash)
+    - Added `runAllProvidersCronSync`: iterates all providers+connections, syncs independently, distinguishes `skipped`/`failed`
+    - Added `CronSyncResult` interface
+  - `app/api/integrations/sync/cron/route.ts` (NEW): `INCOME_CRON_SECRET` Bearer auth → calls `runAllProvidersCronSync`
+  - `src/features/integrations/server/webhook-crypto.ts` (NEW): `verifyHmacSha256Signature` (HMAC-SHA256 + `timingSafeEqual`) + `readRawBody`
+  - `app/api/integrations/webhooks/uber-eats/route.ts` (NEW): `X-Uber-Signature: sha256=<hex>` verification, `last_webhook_at` update
+  - `app/api/integrations/webhooks/doordash/route.ts` (NEW): `X-DoorDash-Signature: <hex>` verification, `last_webhook_at` update
+  - `src/features/integrations/server/sync.service.test.mjs`: extended to 11 tests (3 new sync lock guard tests); fixed `input.now` fallback in testable fn
+- Validation:
+  - `node --test src/features/integrations/server/sync.service.test.mjs` -> PASS 11/11
+  - `node --test src/features/integrations/providers/uber-eats.provider.test.mjs src/features/integrations/providers/doordash.provider.test.mjs` -> PASS 25/25
+  - `npx tsx --test src/features/integrations/server/provider-catalog.test.mjs src/features/integrations/server/oauth.service.test.mjs` -> PASS 6/6
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `npx eslint` targeted on all touched IN-05 files -> PASS
+
 ### 2026-02-27 - IN-04 complete: restaurant provider rollout (Uber Eats + DoorDash adapters + generic sync runner)
 - Suggested Commit Title: `feat(in-04): add Uber Eats + DoorDash provider adapters and generalize sync runner`
 - Scope:
