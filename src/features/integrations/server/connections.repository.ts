@@ -113,3 +113,17 @@ export async function markIncomeConnectionError(params: {
     },
   });
 }
+
+export async function markIncomeConnectionExpired(params: {
+  connectionId: string;
+  errorMessage?: string | null;
+}) {
+  return prisma.businessIncomeConnection.update({
+    where: { id: params.connectionId },
+    data: {
+      status: "expired",
+      last_error_code: "token_expired",
+      last_error_message: params.errorMessage ?? "Access token has expired. Please reconnect.",
+    },
+  });
+}

@@ -43,6 +43,7 @@ async function runProviderManualSyncTestable(input, deps) {
     findConnection,
     markSyncSuccess,
     markConnectionError,
+    markConnectionExpired,
     decryptSecret,
     fetchEvents,
     now: nowOverride,
@@ -61,6 +62,17 @@ async function runProviderManualSyncTestable(input, deps) {
 
   const now = nowOverride ?? input.now ?? new Date();
   const financialSource = input.financialSource ?? "godaddy_pos";
+
+  // Token expiry guard (IN-07)
+  if (connection.token_expires_at && connection.token_expires_at <= now) {
+    if (markConnectionExpired) {
+      await markConnectionExpired({
+        connectionId: connection.id,
+        errorMessage: `Access token expired at ${connection.token_expires_at.toISOString()}. Please reconnect.`,
+      });
+    }
+    throw new Error(`Provider access token has expired. Please reconnect via the Integrations page.`);
+  }
 
   // Sync lock check (IN-05)
   const lockCutoff = new Date(now.getTime() - SYNC_LOCK_STALE_AFTER_MS);
@@ -203,6 +215,7 @@ function makeConnection(overrides = {}) {
     status: "connected",
     access_token_encrypted: "enc:access-token",
     last_sync_at: null,
+    token_expires_at: null,
     ...overrides,
   };
 }
@@ -562,6 +575,85 @@ test("sync lock: stale lock (>10 min) is filtered out by Prisma gte clause and d
 
   // staleStart (15min) < lockCutoff (10min) → findFirst returns null → no block
   assert.ok(staleStart < lockCutoff, "stale log should predate the lock cutoff");
+  assert.equal(result.recordsFetched, 0);
+  assert.equal(syncSuccessCalled, true);
+});
+
+// ---------------------------------------------------------------------------
+// IN-07: Token expiry guard tests
+// ---------------------------------------------------------------------------
+
+test("token expiry guard: throws and marks connection expired when token_expires_at is in the past", async () => {
+  const now = new Date("2026-02-27T23:00:00.000Z");
+  const expiredAt = new Date(now.getTime() - 60 * 60 * 1000); // 1 hour ago
+  let expiredCalled = false;
+
+  await assert.rejects(
+    () =>
+      runProviderManualSyncTestable(
+        { businessId: "biz_1", now },
+        {
+          prisma: makePrismaStub(),
+          findConnection: async () =>
+            makeConnection({ token_expires_at: expiredAt }),
+          markSyncSuccess: async () => {},
+          markConnectionError: async () => {},
+          markConnectionExpired: async () => {
+            expiredCalled = true;
+          },
+          decryptSecret: (v) => v,
+          fetchEvents: async () => [],
+        }
+      ),
+    /expired/
+  );
+
+  assert.equal(expiredCalled, true, "markConnectionExpired should have been called");
+});
+
+test("token expiry guard: proceeds normally when token_expires_at is null (no expiry set)", async () => {
+  const now = new Date("2026-02-27T23:00:00.000Z");
+  let syncSuccessCalled = false;
+
+  const result = await runProviderManualSyncTestable(
+    { businessId: "biz_1", now },
+    {
+      prisma: makePrismaStub(),
+      findConnection: async () => makeConnection({ token_expires_at: null }),
+      markSyncSuccess: async () => {
+        syncSuccessCalled = true;
+      },
+      markConnectionError: async () => {},
+      markConnectionExpired: async () => {},
+      decryptSecret: (v) => v.replace(/^enc:/, ""),
+      fetchEvents: async () => [],
+    }
+  );
+
+  assert.equal(result.recordsFetched, 0);
+  assert.equal(syncSuccessCalled, true);
+});
+
+test("token expiry guard: proceeds normally when token_expires_at is in the future", async () => {
+  const now = new Date("2026-02-27T23:00:00.000Z");
+  const futureExpiry = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour from now
+  let syncSuccessCalled = false;
+
+  const result = await runProviderManualSyncTestable(
+    { businessId: "biz_1", now },
+    {
+      prisma: makePrismaStub(),
+      findConnection: async () => makeConnection({ token_expires_at: futureExpiry }),
+      markSyncSuccess: async () => {
+        syncSuccessCalled = true;
+      },
+      markConnectionError: async () => {},
+      markConnectionExpired: async () => {},
+      decryptSecret: (v) => v.replace(/^enc:/, ""),
+      fetchEvents: async () => [],
+    }
+  );
+
   assert.equal(result.recordsFetched, 0);
   assert.equal(syncSuccessCalled, true);
 });

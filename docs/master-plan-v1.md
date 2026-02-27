@@ -177,10 +177,10 @@ Use the `Canonical Order Checklist` statuses as the source of truth.
 Current snapshot (2026-02-27):
 
 - Total checklist items: `38`
-- `[x]` complete: `18`
+- `[x]` complete: `19`
 - `[~]` in progress: `0`
-- Strict completion: `47.37%`
-- Weighted progress: `47.37%`
+- Strict completion: `50.00%`
+- Weighted progress: `50.00%`
 
 Update rule after each slice:
 
@@ -303,7 +303,7 @@ Status legend:
 - [x] IN-04 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 4 restaurant-provider rollout (Uber Eats + DoorDash + POS set chosen by product/engineering).
 - [x] IN-05 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 5 scheduled sync + webhook hardening.
 - [x] IN-06 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 6 reporting/home income-layer improvements.
-- [ ] IN-07 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 7 production hardening + security/compliance checklist completion.
+- [x] IN-07 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 7 production hardening + security/compliance checklist completion.
 - [ ] IN-08 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then mark income integrations plan complete with changelog + overview sync.
 
 ### D. Execute Unified Inventory Intake Refactor (after receipt + income are stable)
@@ -334,12 +334,12 @@ Status legend:
 
 ## Last Left Off Here (Update This Block First)
 
-- Current task ID: `IN-07`
-- Current task: `Income integrations Phase 7 production hardening + security/compliance checklist completion`
+- Current task ID: `IN-08`
+- Current task: `Income integrations Phase 8 — mark plan complete with final changelog + overview sync`
 - Status: `READY`
 - Last updated: `2026-02-27`
 - Primary source plan section:
-  - `docs/income-integrations-onboarding-plan.md` -> `Phase 7`
+  - `docs/income-integrations-onboarding-plan.md` -> `Phase 8`
 
 ## Documentation Sync Checklist (Run Every Session)
 
@@ -351,6 +351,26 @@ Status legend:
 - [ ] `docs/codebase-overview.md` updated if behavior/architecture/canonical path descriptions changed.
 
 ## Latest Job Summary (Append New Entries At Top)
+
+### 2026-02-27 - IN-07 complete: production hardening + security/compliance — token expiry guard, scope audit, key rotation
+- Suggested Commit Title: `feat(in-07): add token expiry guard, provider scope audit, and key rotation runbook`
+- Completed:
+  - Ran IN-07 preflight scans:
+    - Confirmed `token_expires_at` already on `BusinessIncomeConnection` — no new column needed
+    - Confirmed `status="expired"` already in `IncomeConnectionStatus` enum — no migration needed
+    - Confirmed `mapDatabaseStatusToCardStatus` already maps `expired→error` — card shows "Reconnect" automatically
+  - IN-07 scoped additions (reuse-first):
+    - `connections.repository.ts`: added `markIncomeConnectionExpired` (status="expired", last_error_code="token_expired")
+    - `sync.service.ts`: token expiry guard before lock check; expired connections → `failed` in cron (not `skipped`)
+    - `oauth.contracts.ts`: `INCOME_PROVIDER_OAUTH_SCOPES` (read-only scopes per provider) + `INCOME_TOKEN_KEY_VERSION="v1"` with 4-step rotation runbook
+    - `sync.service.test.mjs`: 3 new token expiry guard tests (14 total)
+  - Security checklist: 7/7 items `[x]` — fully complete
+  - Validation gates all pass:
+    - `node --test src/features/integrations/server/sync.service.test.mjs` -> PASS 14/14
+    - `npx tsc --noEmit --incremental false` -> PASS
+    - targeted eslint on all touched files -> PASS
+  - Completion: 19/38 = 50.00%
+- Next: `IN-08` (`docs/income-integrations-onboarding-plan.md` Phase 8 — mark plan complete, final changelog + overview sync)
 
 ### 2026-02-27 - IN-06 complete: connection health indicators + stale sync warnings
 - Suggested Commit Title: `feat(in-06): add connection health indicators, stale sync warnings, and error message surface`

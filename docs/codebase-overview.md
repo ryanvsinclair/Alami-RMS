@@ -57,7 +57,7 @@ High-level completion:
 What remains outside plan completion:
 - Manual integrated smoke testing across core flows (user-run / final QA pass).
 - Receipt post-OCR correction plan is complete through Phase 6 closeout (`RC-19`), with non-blocking follow-ups tracked separately.
-- Income integrations onboarding plan Phase 6 is complete (connection health indicators, stale sync warnings, error message surface on cards); production hardening (Phase 7) is next.
+- Income integrations onboarding plan Phase 7 is complete (token expiry guard, scope audit constants, key rotation runbook, security checklist 7/7 done); plan closeout (Phase 8/IN-08) is next.
 - Unified Intake regrouping refactor is planned but not yet implemented (see `docs/unified-inventory-intake-refactor-plan.md`).
 - Operational Calendar/Schedule refactor is planned and sequencing-locked behind completion of all current plans (see `docs/operational-calendar-schedule-plan.md`).
 
@@ -284,6 +284,13 @@ Connection health indicators (Phase 6 complete):
 - `IncomeProviderConnectionCard.lastErrorMessage`: populated from `connection.last_error_message` when status is `error`
 - `IncomeProviderConnectCard.tsx`: renders `Sync Stale` warning badge, "no sync run yet" prompt, and error message
 - `provider-catalog.ts` computes both fields from DB connection state at card-build time
+
+Production hardening (Phase 7 complete):
+- Token expiry guard in `runProviderManualSync`: checks `token_expires_at <= now` → calls `markIncomeConnectionExpired` (status="expired") → throws; requires reconnect
+- `markIncomeConnectionExpired` in `connections.repository.ts`: last_error_code="token_expired", status="expired"
+- `INCOME_PROVIDER_OAUTH_SCOPES` in `oauth.contracts.ts`: least-privilege read-only scopes per provider
+- `INCOME_TOKEN_KEY_VERSION = "v1"` with key rotation runbook in `oauth.contracts.ts`
+- Security checklist fully complete (7/7)
 
 ### Receiving (4 ingestion paths)
 

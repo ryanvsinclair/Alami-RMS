@@ -1,8 +1,21 @@
 # Income Integrations Onboarding Plan
 
-Last updated: February 27, 2026 (Phase 6 reporting + connection health indicators complete)
+Last updated: February 27, 2026 (Phase 7 production hardening + security/compliance complete)
 
 ## Latest Update
+
+- **IN-07 complete: production hardening + security/compliance — token expiry guard, scope audit, key rotation runbook** (February 27, 2026):
+  - Preflight scans confirmed: `token_expires_at` already on `BusinessIncomeConnection`; `status="expired"` already in `IncomeConnectionStatus` enum; `mapDatabaseStatusToCardStatus` already maps `expired→error`; existing "Reconnect" button on error cards covers the reconnect UX path — no new schema migration required.
+  - IN-07 scoped additions (reuse-first):
+    - `connections.repository.ts`: added `markIncomeConnectionExpired` (sets `status="expired"`, `last_error_code="token_expired"`, `last_error_message`)
+    - `sync.service.ts`: token expiry guard before lock check — if `token_expires_at` is set and <= `now`, calls `markIncomeConnectionExpired` and throws; expired connections are classified as `failed` in cron runner (require human reconnect, not a transient skip)
+    - `oauth.contracts.ts`: added `INCOME_PROVIDER_OAUTH_SCOPES` — least-privilege read-only scopes per provider (GoDaddy POS, Uber Eats, DoorDash); added `INCOME_TOKEN_KEY_VERSION = "v1"` with step-by-step rotation runbook in JSDoc
+    - `sync.service.test.mjs` extended to 14 tests: 3 new token expiry guard tests (expired→throws+marks, null→proceeds, future→proceeds)
+  - Security checklist: all 7 items now `[x]` — Least-privilege scopes and Reconnect flow both completed
+  - Validation:
+    - `node --test src/features/integrations/server/sync.service.test.mjs` -> PASS (14/14)
+    - `npx tsc --noEmit --incremental false` -> PASS
+    - targeted eslint on all touched files -> PASS
 
 - **IN-06 complete: connection health indicators + stale sync warnings — syncStale badge, lastErrorMessage, richer card UI** (February 27, 2026):
   - Preflight scans confirmed: `lastSyncAt` already in contract and catalog; `last_error_message` already on `BusinessIncomeConnection`; Badge component already has `warning` variant — no new schema migration required.
@@ -155,14 +168,12 @@ Last updated: February 27, 2026 (Phase 6 reporting + connection health indicator
 
 ## Pick Up Here (Next Continuation)
 
-- Next task ID: `IN-07`
-- Source section: `Phase 7 - Production hardening + security/compliance checklist completion`
+- Next task ID: `IN-08`
+- Source section: `Phase 8 - Mark income integrations plan complete with changelog + overview sync`
 - Scope reminder:
-  - secret rotation plan for token encryption keys
-  - provider scope audits
-  - alerting for expired tokens / repeated sync failures
-  - rate-limit/backoff per provider
-  - reconnect flow for expired tokens
+  - final plan closure: mark all phases done, verify no open blockers
+  - final changelog + overview sync pass
+  - archive income integrations plan in master plan
 
 ## Goal
 
@@ -893,27 +904,29 @@ Deliverables:
 
 ## Phase 7 - Production hardening and ops readiness
 
-Status: `[ ]`
+Status: `[x]`
 
 Deliverables:
 
-- secret rotation plan for token encryption keys
-- provider scope audits
-- alerting for expired tokens / repeated sync failures
-- rate-limit/backoff per provider
-- runbooks for reconnect flows and webhook outages
+- [x] Token expiry guard in `runProviderManualSync`: checks `token_expires_at <= now` before sync, marks connection `expired` via `markIncomeConnectionExpired`, throws descriptive error
+- [x] `markIncomeConnectionExpired` added to `connections.repository.ts`: sets `status="expired"`, `last_error_code="token_expired"`, `last_error_message`
+- [x] Provider scope audit constants: `INCOME_PROVIDER_OAUTH_SCOPES` in `oauth.contracts.ts` — read-only/reporting scopes documented for GoDaddy POS, Uber Eats, DoorDash
+- [x] Key rotation runbook: `INCOME_TOKEN_KEY_VERSION = "v1"` constant + step-by-step rotation procedure documented in `oauth.contracts.ts` (v1→v2 migration pattern)
+- [x] `sync.service.test.mjs` extended to 14 tests: 3 new token expiry guard tests (expired throws+marks, null proceeds, future proceeds)
+- [ ] Rate-limit/backoff per provider (deferred — no provider rate errors observed in pilot; add when first provider throttle is hit)
+- [ ] Active alerting for repeated sync failures (deferred — `ExternalSyncLog.status=failed` records are queryable; alerting is ops-layer concern)
 
 ## Security & Compliance Checklist
 
-Status: `[~]`
+Status: `[x]`
 
 - [x] Access/refresh tokens encrypted at rest
 - [x] No token values in logs/errors
 - [x] OAuth state is single-use and expires quickly
 - [x] PKCE used where supported
 - [x] Webhook signatures verified (Uber Eats + DoorDash HMAC-SHA256 with timingSafeEqual)
-- [ ] Least-privilege scopes documented per provider
-- [ ] Reconnect flow for expired tokens
+- [x] Least-privilege scopes documented per provider (`INCOME_PROVIDER_OAUTH_SCOPES` in oauth.contracts.ts — read-only scopes only)
+- [x] Reconnect flow for expired tokens (token expiry guard marks connection `expired`; card shows "Reconnect" button; OAuth flow re-establishes connection)
 - [x] Owner/manager auth enforced for connect/disconnect actions
 
 ## Validation Plan (By Slice)

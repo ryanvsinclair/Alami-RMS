@@ -20,6 +20,35 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-27 - IN-07 complete: production hardening + security/compliance (token expiry, scope audit, key rotation)
+- Suggested Commit Title: `feat(in-07): add token expiry guard, provider scope audit, and key rotation runbook`
+- Scope:
+  - Income integrations Phase 7 (`IN-07`) production hardening + security/compliance checklist completion.
+- Preflight evidence (reuse/refactor-first):
+  - `token_expires_at` already on `BusinessIncomeConnection` — no new column required
+  - `status="expired"` already in `IncomeConnectionStatus` enum — no migration required
+  - `mapDatabaseStatusToCardStatus` already maps `expired→error` — card UI works without changes
+  - "Reconnect" button already shown for error/expired cards — no new UI needed for reconnect path
+- Changes:
+  - `src/features/integrations/server/connections.repository.ts`:
+    - Added `markIncomeConnectionExpired`: sets `status="expired"`, `last_error_code="token_expired"`, `last_error_message`
+  - `src/features/integrations/server/sync.service.ts`:
+    - Added token expiry guard in `runProviderManualSync`: checks `token_expires_at <= now` before lock guard
+    - Calls `markIncomeConnectionExpired` and throws descriptive error on expiry
+    - Expired connections fall through to `failed` (not `skipped`) in cron runner — requires human reconnect
+  - `src/features/integrations/shared/oauth.contracts.ts`:
+    - Added `INCOME_PROVIDER_OAUTH_SCOPES`: least-privilege read-only scopes per provider (GoDaddy POS, Uber Eats, DoorDash)
+    - Added `INCOME_TOKEN_KEY_VERSION = "v1"` with 4-step key rotation runbook in JSDoc
+  - `src/features/integrations/server/sync.service.test.mjs`:
+    - Added `token_expires_at: null` to `makeConnection` default
+    - Added `markConnectionExpired` to `runProviderManualSyncTestable` dependency struct + expiry check
+    - Added 3 new token expiry guard tests (expired throws+marks, null proceeds, future proceeds) → 14 total
+- Security checklist: all 7 items `[x]` — fully complete
+- Validation:
+  - `node --test src/features/integrations/server/sync.service.test.mjs` -> PASS 14/14
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `npx eslint` targeted on all touched IN-07 files -> PASS
+
 ### 2026-02-27 - IN-06 complete: connection health indicators + stale sync warnings
 - Suggested Commit Title: `feat(in-06): add connection health indicators, stale sync warnings, and error message surface`
 - Scope:

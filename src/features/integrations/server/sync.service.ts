@@ -8,6 +8,7 @@ import { decryptIncomeSecret } from "./oauth-crypto";
 import {
   findIncomeConnectionByProvider,
   markIncomeConnectionError,
+  markIncomeConnectionExpired,
   markIncomeConnectionSyncSuccess,
 } from "./connections.repository";
 import type { IncomeProvider, FinancialSource } from "@/lib/generated/prisma/client";
@@ -83,6 +84,18 @@ async function runProviderManualSync(params: {
   }
 
   const now = new Date();
+
+  // ---------------------------------------------------------------------------
+  // Token expiry guard: if token_expires_at is set and has passed, mark the
+  // connection as expired (requires reconnect) and abort sync cleanly.
+  // ---------------------------------------------------------------------------
+  if (connection.token_expires_at && connection.token_expires_at <= now) {
+    await markIncomeConnectionExpired({
+      connectionId: connection.id,
+      errorMessage: `Access token expired at ${connection.token_expires_at.toISOString()}. Please reconnect.`,
+    });
+    throw new Error(`${sourceName} access token has expired. Please reconnect via the Integrations page.`);
+  }
 
   // ---------------------------------------------------------------------------
   // Sync lock guard: reject if a non-stale "running" log already exists for
