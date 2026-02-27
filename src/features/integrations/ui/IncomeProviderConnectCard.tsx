@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { IncomeProviderConnectionCard } from "@/features/integrations/shared";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
@@ -51,11 +52,20 @@ export function IncomeProviderConnectCard({
       </div>
 
       <div className="flex items-center justify-between gap-3">
-        <Button variant="secondary" disabled={!card.connectEnabled}>
-          {card.connectLabel}
-        </Button>
+        {card.connectEnabled && card.connectHref ? (
+          <Link
+            href={card.connectHref}
+            className="inline-flex h-12 items-center justify-center rounded-2xl border border-border bg-card px-4 text-sm font-semibold text-foreground transition-colors hover:border-foreground/20 hover:bg-foreground/[0.04]"
+          >
+            {card.connectLabel}
+          </Link>
+        ) : (
+          <Button variant="secondary" disabled>
+            {card.connectLabel}
+          </Button>
+        )}
         {showComingSoonNote && !card.connectEnabled && (
-          <p className="text-xs text-muted">OAuth activation starts in IN-02.</p>
+          <p className="text-xs text-muted">Set provider OAuth env vars to activate this connector.</p>
         )}
       </div>
     </Card>

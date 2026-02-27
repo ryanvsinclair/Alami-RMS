@@ -1,8 +1,37 @@
 # Income Integrations Onboarding Plan
 
-Last updated: February 27, 2026 (Phase 1 onboarding/catalog shell complete)
+Last updated: February 27, 2026 (Phase 2 OAuth core infrastructure complete)
 
 ## Latest Update
+
+- **IN-02 complete: provider-agnostic OAuth core infrastructure shipped** (February 27, 2026):
+  - Added schema-backed OAuth core persistence:
+    - `IncomeProvider` enum
+    - `IncomeConnectionStatus` enum
+    - `BusinessIncomeConnection` model
+    - `IncomeOAuthState` model
+    - migration: `prisma/migrations/20260228010000_income_oauth_core_infrastructure/migration.sql`
+  - Added OAuth core repositories/services:
+    - `src/features/integrations/server/connections.repository.ts`
+    - `src/features/integrations/server/oauth-state.repository.ts`
+    - `src/features/integrations/server/oauth-crypto.ts`
+    - `src/features/integrations/server/oauth.service.ts`
+  - Added provider-agnostic OAuth adapter registry:
+    - `src/features/integrations/providers/registry.ts`
+    - uses env-driven OAuth endpoint/client config per provider (`INCOME_OAUTH_<PROVIDER>_*`)
+  - Added API routes for OAuth start/callback orchestration:
+    - `app/api/integrations/oauth/[provider]/start/route.ts`
+    - `app/api/integrations/oauth/[provider]/callback/route.ts`
+    - owner/manager role enforcement is active for connect/callback handling
+  - Updated provider cards to expose live OAuth start links when provider env config is present:
+    - `connectEnabled/connectHref` are now dynamic in provider-card view models
+    - cards remain disabled with setup guidance when env config is missing
+  - Validation:
+    - `npx prisma generate` -> PASS
+    - `npx prisma validate` -> PASS
+    - `npx tsx --test src/features/integrations/server/provider-catalog.test.mjs src/features/integrations/server/oauth.service.test.mjs` -> PASS (6/6)
+    - `npx tsc --noEmit --incremental false` -> PASS
+    - targeted `eslint` on touched OAuth/integration files -> PASS
 
 - **IN-01 complete: provider catalog + onboarding UI shell shipped (no OAuth)** (February 27, 2026):
   - Implemented provider-catalog filtering/sorting service and shared connection contracts:
@@ -54,11 +83,11 @@ Last updated: February 27, 2026 (Phase 1 onboarding/catalog shell complete)
 
 ## Pick Up Here (Next Continuation)
 
-- Next task ID: `IN-02`
-- Source section: `Phase 2 - OAuth core infrastructure (provider-agnostic)`
+- Next task ID: `IN-03`
+- Source section: `Phase 3 - First provider pilot end-to-end (recommended: GoDaddy POS)`
 - Scope reminder:
-  - implement secure OAuth start/callback base and token-state persistence path
-  - wire provider adapters to OAuth framework without adding multi-provider sync breadth yet
+  - implement first live provider path end-to-end (connect -> token storage -> sync)
+  - keep rollout scoped to one provider before multi-provider expansion
 
 ## Goal
 
@@ -86,7 +115,7 @@ This plan also fits the current state of the repo:
 - `INDUSTRY_PRESETS` already drives defaults (`lib/config/presets.ts`)
 - `FinancialTransaction` and `ExternalSyncLog` already exist in Prisma
 - basic provider stubs exist in `lib/modules/integrations/*`
-- onboarding and integrations UI shell now exists (OAuth still pending)
+- onboarding/integrations UI shell and provider-agnostic OAuth core now exist (provider pilot sync still pending)
 
 ## Product Requirements (Target UX)
 
@@ -682,7 +711,7 @@ Notes:
 
 ## Phase 2 - OAuth core infrastructure (provider-agnostic)
 
-Status: `[ ]`
+Status: `[x]`
 
 Goal:
 
@@ -690,12 +719,12 @@ Goal:
 
 Deliverables:
 
-- `BusinessIncomeConnection` + `IncomeOAuthState` models
-- token encryption utilities
-- provider auth URL builders
-- callback exchange orchestration
-- generic connection status updates
-- reconnect/error handling
+- [x] `BusinessIncomeConnection` + `IncomeOAuthState` models
+- [x] token encryption utilities
+- [x] provider auth URL builders
+- [x] callback exchange orchestration
+- [x] generic connection status updates
+- [x] reconnect/error handling
 
 Important:
 
@@ -791,14 +820,14 @@ Deliverables:
 
 Status: `[~]`
 
-- [ ] Access/refresh tokens encrypted at rest
-- [ ] No token values in logs/errors
-- [ ] OAuth state is single-use and expires quickly
-- [ ] PKCE used where supported
+- [x] Access/refresh tokens encrypted at rest
+- [x] No token values in logs/errors
+- [x] OAuth state is single-use and expires quickly
+- [x] PKCE used where supported
 - [ ] Webhook signatures verified
 - [ ] Least-privilege scopes documented per provider
 - [ ] Reconnect flow for expired tokens
-- [ ] Owner/manager auth enforced for connect/disconnect actions
+- [x] Owner/manager auth enforced for connect/disconnect actions
 
 ## Validation Plan (By Slice)
 

@@ -16,4 +16,5 @@ export interface IncomeProviderConnectionCard {
   status: IncomeConnectionStatus;
   connectLabel: string;
   connectEnabled: boolean;
+  connectHref: string | null;
 }

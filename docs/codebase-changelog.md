@@ -20,6 +20,76 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-27 - IN-02 complete: provider-agnostic OAuth core infrastructure
+- Suggested Commit Title: `feat(in-02): implement income OAuth core models, services, and routes`
+- Scope:
+  - Income integrations onboarding Phase 2 (`IN-02`) provider-agnostic OAuth core implementation.
+- Preflight evidence (reuse/refactor-first + DB/Prisma integrity):
+  - Reviewed IN-02 source-plan/master-plan scope markers:
+    - `docs/income-integrations-onboarding-plan.md`
+    - `docs/master-plan-v1.md`
+  - Ran scoped scans before implementation:
+    - `rg -n "## Phase 2|OAuth core infrastructure|BusinessIncomeConnection|IncomeOAuthState|token encryption|callback|PKCE|state" docs/income-integrations-onboarding-plan.md docs/master-plan-v1.md`
+    - `rg -n "oauth|pkce|IncomeOAuthState|BusinessIncomeConnection|INCOME_TOKEN_ENCRYPTION_KEY|integrations/oauth|webhooks" src app lib prisma`
+  - Re-verified schema authority before DB mutation:
+    - `prisma/schema.prisma`
+    - latest migration before slice: `prisma/migrations/20260227230000_receipt_parse_profile_memory/migration.sql`
+- What changed:
+  - Added Prisma enums/models for OAuth core persistence:
+    - `IncomeProvider`
+    - `IncomeConnectionStatus`
+    - `BusinessIncomeConnection`
+    - `IncomeOAuthState`
+  - Added migration:
+    - `prisma/migrations/20260228010000_income_oauth_core_infrastructure/migration.sql`
+  - Added feature server OAuth infrastructure:
+    - token crypto (`oauth-crypto.ts`)
+    - state repository (`oauth-state.repository.ts`)
+    - connection repository (`connections.repository.ts`)
+    - provider-agnostic OAuth orchestration service (`oauth.service.ts`)
+  - Added provider-agnostic OAuth adapter registry:
+    - `src/features/integrations/providers/registry.ts`
+    - env-driven provider configuration and generic OAuth2 token exchange flow
+  - Added OAuth API routes:
+    - `app/api/integrations/oauth/[provider]/start/route.ts`
+    - `app/api/integrations/oauth/[provider]/callback/route.ts`
+    - owner/manager role enforcement via tenant role guard
+  - Updated provider card contracts/service/UI to emit connect links for env-configured providers (`connectHref`, `connectEnabled`).
+  - Added targeted tests:
+    - `src/features/integrations/server/oauth.service.test.mjs`
+    - expanded `src/features/integrations/server/provider-catalog.test.mjs`
+  - Updated source/master plan status and continuation pointer to `IN-03`.
+- Files changed:
+  - `prisma/schema.prisma`
+  - `prisma/migrations/20260228010000_income_oauth_core_infrastructure/migration.sql`
+  - `src/features/integrations/providers/registry.ts`
+  - `src/features/integrations/server/connections.repository.ts`
+  - `src/features/integrations/server/oauth-state.repository.ts`
+  - `src/features/integrations/server/oauth-crypto.ts`
+  - `src/features/integrations/server/oauth.service.ts`
+  - `src/features/integrations/server/oauth.service.test.mjs`
+  - `src/features/integrations/server/provider-catalog.ts`
+  - `src/features/integrations/server/provider-catalog.test.mjs`
+  - `src/features/integrations/server/index.ts`
+  - `src/features/integrations/shared/income-connections.contracts.ts`
+  - `src/features/integrations/ui/IncomeProviderConnectCard.tsx`
+  - `app/api/integrations/oauth/[provider]/start/route.ts`
+  - `app/api/integrations/oauth/[provider]/callback/route.ts`
+  - `app/onboarding/income-sources/page.tsx`
+  - `app/(dashboard)/integrations/page.tsx`
+  - `docs/income-integrations-onboarding-plan.md`
+  - `docs/master-plan-v1.md`
+  - `docs/codebase-overview.md`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - `npx prisma generate` -> PASS
+  - `npx prisma validate` -> PASS
+  - `npx tsx --test src/features/integrations/server/provider-catalog.test.mjs src/features/integrations/server/oauth.service.test.mjs` -> PASS (6/6)
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `npx eslint app/api/integrations/oauth/[provider]/start/route.ts app/api/integrations/oauth/[provider]/callback/route.ts app/(dashboard)/integrations/page.tsx app/onboarding/income-sources/page.tsx src/features/integrations/providers/registry.ts src/features/integrations/server/connections.repository.ts src/features/integrations/server/oauth-state.repository.ts src/features/integrations/server/oauth-crypto.ts src/features/integrations/server/oauth.service.ts src/features/integrations/server/oauth.service.test.mjs src/features/integrations/server/provider-catalog.ts src/features/integrations/server/provider-catalog.test.mjs src/features/integrations/shared/income-connections.contracts.ts src/features/integrations/ui/IncomeProviderConnectCard.tsx prisma/schema.prisma --quiet` -> PASS
+- Notes:
+  - IN-02 is complete; canonical next task is `IN-03` (first provider pilot end-to-end).
+
 ### 2026-02-27 - IN-01 complete: provider catalog + onboarding/integrations UI shell (no OAuth)
 - Suggested Commit Title: `feat(in-01): ship income provider catalog and onboarding UI shell`
 - Scope:

@@ -177,10 +177,10 @@ Use the `Canonical Order Checklist` statuses as the source of truth.
 Current snapshot (2026-02-27):
 
 - Total checklist items: `38`
-- `[x]` complete: `13`
+- `[x]` complete: `14`
 - `[~]` in progress: `0`
-- Strict completion: `34.21%`
-- Weighted progress: `34.21%`
+- Strict completion: `36.84%`
+- Weighted progress: `36.84%`
 
 Update rule after each slice:
 
@@ -199,7 +199,7 @@ Update rule after each slice:
 | `docs/inventoryintakeplan.phase0-audit.md` | Historical prerequisite audit | Completed (deprecated) | Superseded by `inventoryintakeplan.md`. |
 | `docs/inventoryintakeplan.progress-handoff.md` | Historical handoff | Historical snapshot | Superseded by later work in `inventoryintakeplan.md`. |
 | `docs/receipt-post-ocr-correction-plan.md` | Active feature plan | Complete (`[x]` through RC-19) | Plan closed with non-blocking follow-ups tracked separately. |
-| `docs/income-integrations-onboarding-plan.md` | Active feature plan | In progress (`[x]` phases 0-1, `[ ]` phases 2-7) | Onboarding/catalog UI shell shipped; OAuth/sync implementation pending. |
+| `docs/income-integrations-onboarding-plan.md` | Active feature plan | In progress (`[x]` phases 0-2, `[ ]` phases 3-7) | OAuth core infrastructure shipped; first provider pilot/sync phases pending. |
 | `docs/unified-inventory-intake-refactor-plan.md` | Active refactor plan | Planning-only, not implemented | Depends on preserving behavior while regrouping IA/session model. |
 | `docs/operational-calendar-schedule-plan.md` | Active feature plan | Planning-only, sequencing-locked | Explicitly blocked until other active plans are complete. |
 | `docs/codebase-overview.md` | Architecture reference | Active (living document) | Must stay aligned with implementation reality. |
@@ -235,17 +235,17 @@ Remaining high-impact work:
 ### 2) `docs/income-integrations-onboarding-plan.md` (in progress)
 
 Latest Update section review:
-- Phase 0 (`IN-00`) decisions/contracts remain finalized.
-- Phase 1 (`IN-01`) onboarding/catalog shell is now implemented:
-  - provider catalog filtering/sorting service is in place
-  - signup industry selection upgraded to card/radio UI while preserving `industry_type`
-  - onboarding route (`/onboarding/income-sources`) and dashboard integrations route (`/integrations`) now render provider connection cards with statuses
-  - integration nav entry is module-gated and visible for enabled businesses
-  - OAuth connect actions remain disabled/coming-soon by design for this phase
+- Phase 0 (`IN-00`) and Phase 1 (`IN-01`) remain complete.
+- Phase 2 (`IN-02`) OAuth core infrastructure is now implemented:
+  - Prisma models/migration for `BusinessIncomeConnection` and `IncomeOAuthState`
+  - token encryption utility and OAuth state hashing/PKCE orchestration
+  - provider-agnostic OAuth adapter registry with env-driven provider configuration
+  - OAuth start/callback API routes with owner/manager role enforcement
+  - provider cards now expose connect links for env-configured providers
 
 Remaining work snapshot:
-- Phases 2-7 remain `[ ]` and pending implementation.
-- Next required implementation slice is `IN-02` (provider-agnostic OAuth core infrastructure).
+- Phases 3-7 remain `[ ]` and pending implementation.
+- Next required implementation slice is `IN-03` (first provider pilot end-to-end).
 
 ### 3) `docs/unified-inventory-intake-refactor-plan.md` (planning-only)
 
@@ -298,7 +298,7 @@ Status legend:
 
 - [x] IN-00 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then finalize Phase 0 design/schema contracts and security model decisions.
 - [x] IN-01 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then ship Phase 1 provider catalog + onboarding UI (no OAuth yet).
-- [ ] IN-02 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 2 provider-agnostic OAuth core.
+- [x] IN-02 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 2 provider-agnostic OAuth core.
 - [ ] IN-03 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 3 first provider pilot end-to-end (connect -> token storage -> sync -> dashboard projection).
 - [ ] IN-04 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 4 restaurant-provider rollout (Uber Eats + DoorDash + POS set chosen by product/engineering).
 - [ ] IN-05 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 5 scheduled sync + webhook hardening.
@@ -334,12 +334,12 @@ Status legend:
 
 ## Last Left Off Here (Update This Block First)
 
-- Current task ID: `IN-02`
-- Current task: `Income integrations Phase 2 provider-agnostic OAuth core`
+- Current task ID: `IN-03`
+- Current task: `Income integrations Phase 3 first provider pilot end-to-end`
 - Status: `READY`
 - Last updated: `2026-02-27`
 - Primary source plan section:
-  - `docs/income-integrations-onboarding-plan.md` -> `Phase 2`
+  - `docs/income-integrations-onboarding-plan.md` -> `Phase 3`
 
 ## Documentation Sync Checklist (Run Every Session)
 
@@ -351,6 +351,39 @@ Status legend:
 - [ ] `docs/codebase-overview.md` updated if behavior/architecture/canonical path descriptions changed.
 
 ## Latest Job Summary (Append New Entries At Top)
+
+### 2026-02-27 - IN-02 complete: provider-agnostic OAuth core infrastructure (schema + services + routes)
+- Completed:
+  - Ran IN-02 preflight scans for existing OAuth/integration scope:
+    - `rg -n "## Phase 2|OAuth core infrastructure|BusinessIncomeConnection|IncomeOAuthState|token encryption|callback|PKCE|state" docs/income-integrations-onboarding-plan.md docs/master-plan-v1.md`
+    - `rg -n "oauth|pkce|IncomeOAuthState|BusinessIncomeConnection|INCOME_TOKEN_ENCRYPTION_KEY|integrations/oauth|webhooks" src app lib prisma`
+  - Re-verified DB/Prisma contract inputs before schema change:
+    - `prisma/schema.prisma`
+    - latest migration before slice: `prisma/migrations/20260227230000_receipt_parse_profile_memory/migration.sql`
+  - Implemented Phase 2 schema + migration:
+    - added enums `IncomeProvider`, `IncomeConnectionStatus`
+    - added models `BusinessIncomeConnection`, `IncomeOAuthState`
+    - added migration `20260228010000_income_oauth_core_infrastructure`
+  - Implemented provider-agnostic OAuth core:
+    - env-driven OAuth adapter registry (`src/features/integrations/providers/registry.ts`)
+    - state repository + connection repository + AES-256-GCM token crypto
+    - OAuth start/callback orchestration service with hashed one-time state + PKCE
+    - API routes:
+      - `app/api/integrations/oauth/[provider]/start/route.ts`
+      - `app/api/integrations/oauth/[provider]/callback/route.ts`
+    - owner/manager role enforcement in connect/callback entrypoints
+  - Updated provider cards to emit connect links when provider OAuth env config is present.
+  - Completed validation gates:
+    - `npx prisma generate` -> PASS
+    - `npx prisma validate` -> PASS
+    - `npx tsx --test src/features/integrations/server/provider-catalog.test.mjs src/features/integrations/server/oauth.service.test.mjs` -> PASS (6/6)
+    - `npx tsc --noEmit --incremental false` -> PASS
+    - targeted `eslint` on touched OAuth/integration files -> PASS
+  - Updated source/master plans, completion percentages, overview, and changelog for IN-02 completion.
+- Remaining:
+  - Start `IN-03` provider pilot (first live provider connect -> sync -> dashboard projection path).
+- Next:
+  - `IN-03` in `docs/income-integrations-onboarding-plan.md`
 
 ### 2026-02-27 - IN-01 complete: provider catalog and onboarding/integrations UI shell (no OAuth)
 - Completed:

@@ -111,6 +111,24 @@ enum FinancialSource {
   manual
 }
 
+enum IncomeProvider {
+  godaddy_pos
+  uber_eats
+  doordash
+  square
+  stripe
+  toast
+  skip_the_dishes
+}
+
+enum IncomeConnectionStatus {
+  pending
+  connected
+  expired
+  error
+  disconnected
+}
+
 enum SyncStatus {
   running
   success
@@ -547,6 +565,58 @@ model ExternalSyncLog {
   @@map("external_sync_logs")
 }
 
+model BusinessIncomeConnection {
+  id                     String                 @id @default(uuid())
+  business_id            String
+  provider_id            IncomeProvider
+  provider_type          String?
+  display_name           String?
+  external_account_id    String?
+  external_location_id   String?
+  status                 IncomeConnectionStatus @default(pending)
+  access_token_encrypted String?
+  refresh_token_encrypted String?
+  token_expires_at       DateTime?
+  scopes                 Json?
+  sync_cursor            Json?
+  last_sync_at           DateTime?
+  last_full_sync_at      DateTime?
+  last_webhook_at        DateTime?
+  last_error_code        String?
+  last_error_message     String?
+  metadata               Json?
+  created_at             DateTime               @default(now())
+  updated_at             DateTime               @updatedAt
+
+  business Business @relation(fields: [business_id], references: [id], onDelete: Cascade)
+
+  @@unique([business_id, provider_id])
+  @@index([business_id, status])
+  @@index([provider_id, status])
+  @@map("business_income_connections")
+}
+
+model IncomeOAuthState {
+  id                    String         @id @default(uuid())
+  business_id           String
+  user_id               String
+  provider_id           IncomeProvider
+  state_hash            String         @unique
+  pkce_verifier_encrypted String?
+  redirect_uri          String
+  expires_at            DateTime
+  used_at               DateTime?
+  metadata              Json?
+  created_at            DateTime       @default(now())
+
+  business Business @relation(fields: [business_id], references: [id], onDelete: Cascade)
+
+  @@index([business_id, provider_id])
+  @@index([user_id])
+  @@index([expires_at])
+  @@map("income_oauth_states")
+}
+
 model Contact {
   id          String   @id @default(uuid())
   business_id String
@@ -627,6 +697,8 @@ model Business {
   item_price_history ItemPriceHistory[]
   financial_transactions FinancialTransaction[]
   external_sync_logs ExternalSyncLog[]
+  income_connections BusinessIncomeConnection[]
+  income_oauth_states IncomeOAuthState[]
   contacts       Contact[]
 
   @@map("businesses")

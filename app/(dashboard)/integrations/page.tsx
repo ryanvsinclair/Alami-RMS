@@ -4,7 +4,9 @@ import { IncomeConnectionsPageClient } from "@/features/integrations/ui";
 
 export default async function IntegrationsPage() {
   const { business } = await requireBusinessMembership();
-  const cards = listIncomeProviderConnectionCards(business.industry_type);
+  const cards = listIncomeProviderConnectionCards(business.industry_type, {
+    returnToPath: "/integrations",
+  });
 
   return (
     <IncomeConnectionsPageClient

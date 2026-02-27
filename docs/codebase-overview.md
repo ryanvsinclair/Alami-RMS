@@ -57,7 +57,7 @@ High-level completion:
 What remains outside plan completion:
 - Manual integrated smoke testing across core flows (user-run / final QA pass).
 - Receipt post-OCR correction plan is complete through Phase 6 closeout (`RC-19`), with non-blocking follow-ups tracked separately.
-- Income integrations onboarding plan Phase 1 is complete (provider catalog + onboarding/integrations UI shell); OAuth/sync implementation starts in Phase 2.
+- Income integrations onboarding plan Phase 2 is complete (provider catalog/UI shell + OAuth core infrastructure); first provider sync pilot work starts in Phase 3.
 - Unified Intake regrouping refactor is planned but not yet implemented (see `docs/unified-inventory-intake-refactor-plan.md`).
 - Operational Calendar/Schedule refactor is planned and sequencing-locked behind completion of all current plans (see `docs/operational-calendar-schedule-plan.md`).
 
@@ -223,7 +223,7 @@ Wrappers:
 - `app/page.tsx` (route composition/state wiring)
 - `app/actions/core/financial.ts` (`getDashboardSummary` wrapper delegates to feature server)
 
-### Income integrations onboarding shell (Phase 1 complete)
+### Income integrations onboarding shell + OAuth core (Phase 2 complete)
 
 Implemented capabilities:
 - Industry-aware provider catalog and recommendation ordering for onboarding/integrations views
@@ -231,10 +231,20 @@ Implemented capabilities:
 - Dashboard integrations route (`/integrations`) with connection status shell
 - Signup industry selection upgraded from `<select>` to card/radio UI while preserving submitted `industry_type`
 - Bottom navigation now exposes an `Integrations` tab when the `integrations` module is enabled
+- Provider-agnostic OAuth core is active via API routes:
+  - `/api/integrations/oauth/[provider]/start`
+  - `/api/integrations/oauth/[provider]/callback`
+- OAuth state hashing + one-time state consumption + PKCE + token encryption are implemented in feature server services
+- Connect buttons can route to OAuth start for providers with configured `INCOME_OAUTH_<PROVIDER>_*` env vars
 
 Canonical paths:
 - `src/features/integrations/shared/*`
 - `src/features/integrations/server/provider-catalog.ts`
+- `src/features/integrations/server/oauth.service.ts`
+- `src/features/integrations/server/oauth-state.repository.ts`
+- `src/features/integrations/server/connections.repository.ts`
+- `src/features/integrations/server/oauth-crypto.ts`
+- `src/features/integrations/providers/registry.ts`
 - `src/features/integrations/ui/*`
 
 Route wrappers:
@@ -242,7 +252,7 @@ Route wrappers:
 - `app/(dashboard)/integrations/*`
 
 Current limitation:
-- OAuth/token exchange and real connection persistence are not active yet (planned for Phase 2+).
+- First live provider sync/projection path is not active yet (planned for Phase 3 pilot).
 
 ### Receiving (4 ingestion paths)
 
