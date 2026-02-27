@@ -177,10 +177,11 @@ Use the `Canonical Order Checklist` statuses as the source of truth.
 Current snapshot (2026-02-27):
 
 - Total checklist items: `38`
-- `[x]` complete: `19`
+- `[x]` complete: `20`
 - `[~]` in progress: `0`
-- Strict completion: `50.00%`
-- Weighted progress: `50.00%`
+- Strict completion: `52.63%`
+- Weighted progress: `52.63%`
+- **Income Integrations Plan (IN-00 through IN-08): COMPLETE**
 
 Update rule after each slice:
 
@@ -304,7 +305,7 @@ Status legend:
 - [x] IN-05 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 5 scheduled sync + webhook hardening.
 - [x] IN-06 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 6 reporting/home income-layer improvements.
 - [x] IN-07 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 7 production hardening + security/compliance checklist completion.
-- [ ] IN-08 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then mark income integrations plan complete with changelog + overview sync.
+- [x] IN-08 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then mark income integrations plan complete with changelog + overview sync.
 
 ### D. Execute Unified Inventory Intake Refactor (after receipt + income are stable)
 
@@ -334,12 +335,13 @@ Status legend:
 
 ## Last Left Off Here (Update This Block First)
 
-- Current task ID: `IN-08`
-- Current task: `Income integrations Phase 8 — mark plan complete with final changelog + overview sync`
+- Current task ID: `UI-00`
+- Current task: `Unified Inventory Intake Refactor — Phase 0 vocabulary/contracts finalization`
 - Status: `READY`
 - Last updated: `2026-02-27`
 - Primary source plan section:
-  - `docs/income-integrations-onboarding-plan.md` -> `Phase 8`
+  - `docs/unified-inventory-intake-refactor-plan.md` -> `Phase 0`
+- Note: Income Integrations plan (IN-00 through IN-08) is **COMPLETE**. Sequencing gate for UI-00 was: receipt + income plans both stable — both are now complete.
 
 ## Documentation Sync Checklist (Run Every Session)
 
@@ -351,6 +353,20 @@ Status legend:
 - [ ] `docs/codebase-overview.md` updated if behavior/architecture/canonical path descriptions changed.
 
 ## Latest Job Summary (Append New Entries At Top)
+
+### 2026-02-27 - IN-08 complete: INCOME INTEGRATIONS PLAN CLOSED — all phases 0-8 done
+- Suggested Commit Title: `chore(in-08): close income integrations plan — all phases complete`
+- Completed:
+  - Verified all phase statuses: Phase 0-7 all `[x]`, Security checklist 7/7 `[x]`
+  - Added Phase 8 closure section to source plan with deferred items tracked
+  - Updated `Pick Up Here` in source plan: PLAN COMPLETE → next is UI-00
+  - Updated master plan: IN-08 `[x]`, Left Off Here → UI-00
+  - Updated master plan snapshot: 20/38 = 52.63%
+  - Updated codebase-overview.md and codebase-changelog.md
+  - No new code changes — documentation closure only
+  - Deferred (non-blocking): rate-limit/backoff, active alerting, reporting endpoints, reconciliation sync
+  - Completion: 20/38 = 52.63%
+- Next: `UI-00` (`docs/unified-inventory-intake-refactor-plan.md` Phase 0 — vocabulary/contracts)
 
 ### 2026-02-27 - IN-07 complete: production hardening + security/compliance — token expiry guard, scope audit, key rotation
 - Suggested Commit Title: `feat(in-07): add token expiry guard, provider scope audit, and key rotation runbook`

@@ -1,8 +1,15 @@
 # Income Integrations Onboarding Plan
 
-Last updated: February 27, 2026 (Phase 7 production hardening + security/compliance complete)
+Last updated: February 27, 2026 (**PLAN COMPLETE** — all phases 0-8 done)
 
 ## Latest Update
+
+- **IN-08 complete: plan closure — all 8 phases verified complete, security checklist 7/7, docs fully synced** (February 27, 2026):
+  - All phase statuses verified `[x]`: Phase 0 (design), 1 (catalog/UI), 2 (OAuth core), 3 (GoDaddy pilot), 4 (restaurant rollout), 5 (cron/webhooks), 6 (health indicators), 7 (production hardening), 8 (closure).
+  - Security checklist: 7/7 `[x]` — all items complete.
+  - Deferred (non-blocking, tracked above): rate-limit/backoff, active alerting, reporting endpoints, reconciliation sync.
+  - Master plan: IN-08 `[x]`, advancing to UI-00 (Unified Inventory Intake Refactor).
+  - No new code changes — documentation closure only.
 
 - **IN-07 complete: production hardening + security/compliance — token expiry guard, scope audit, key rotation runbook** (February 27, 2026):
   - Preflight scans confirmed: `token_expires_at` already on `BusinessIncomeConnection`; `status="expired"` already in `IncomeConnectionStatus` enum; `mapDatabaseStatusToCardStatus` already maps `expired→error`; existing "Reconnect" button on error cards covers the reconnect UX path — no new schema migration required.
@@ -168,12 +175,10 @@ Last updated: February 27, 2026 (Phase 7 production hardening + security/complia
 
 ## Pick Up Here (Next Continuation)
 
-- Next task ID: `IN-08`
-- Source section: `Phase 8 - Mark income integrations plan complete with changelog + overview sync`
-- Scope reminder:
-  - final plan closure: mark all phases done, verify no open blockers
-  - final changelog + overview sync pass
-  - archive income integrations plan in master plan
+- **PLAN COMPLETE** — all income integrations phases (IN-00 through IN-08) are done.
+- Next task ID in master plan: `UI-00`
+- Source plan: `docs/unified-inventory-intake-refactor-plan.md` (Phase 0 — vocabulary/contracts finalization)
+- Note: UI-00 is sequencing-locked after receipt + income plans are stable; both are now complete.
 
 ## Goal
 
@@ -928,6 +933,28 @@ Status: `[x]`
 - [x] Least-privilege scopes documented per provider (`INCOME_PROVIDER_OAUTH_SCOPES` in oauth.contracts.ts — read-only scopes only)
 - [x] Reconnect flow for expired tokens (token expiry guard marks connection `expired`; card shows "Reconnect" button; OAuth flow re-establishes connection)
 - [x] Owner/manager auth enforced for connect/disconnect actions
+
+## Phase 8 - Plan closure (IN-08)
+
+Status: `[x]`
+
+Goal:
+
+- Formally close the income integrations plan, verify all phases complete, and sync all documentation.
+
+Deliverables:
+
+- [x] Verified all phases (0-7) have `Status: [x]`
+- [x] Security checklist 7/7 `[x]`
+- [x] `Pick Up Here` pointer advanced to `IN-08` → now advancing master plan to next plan (UI-00)
+- [x] `Latest Update`, `codebase-changelog.md`, `codebase-overview.md`, and `master-plan-v1.md` fully synced
+- [x] Plan marked `COMPLETE` in master-plan-v1.md (IN-08 `[x]`)
+
+Open items / deferred (non-blocking):
+- Rate-limit/backoff per provider (add when first throttle error observed)
+- Active alerting for sync failures (ops-layer concern; `ExternalSyncLog` table queryable)
+- Reporting endpoints by provider/channel/date range (post-MVP analytics)
+- Retry/backoff + periodic reconciliation sync
 
 ## Validation Plan (By Slice)
 

@@ -57,7 +57,7 @@ High-level completion:
 What remains outside plan completion:
 - Manual integrated smoke testing across core flows (user-run / final QA pass).
 - Receipt post-OCR correction plan is complete through Phase 6 closeout (`RC-19`), with non-blocking follow-ups tracked separately.
-- Income integrations onboarding plan Phase 7 is complete (token expiry guard, scope audit constants, key rotation runbook, security checklist 7/7 done); plan closeout (Phase 8/IN-08) is next.
+- **Income Integrations Onboarding Plan: COMPLETE** (all phases IN-00 through IN-08, security checklist 7/7). Next in sequence: UI-00 (Unified Inventory Intake Refactor — sequencing gate now clear).
 - Unified Intake regrouping refactor is planned but not yet implemented (see `docs/unified-inventory-intake-refactor-plan.md`).
 - Operational Calendar/Schedule refactor is planned and sequencing-locked behind completion of all current plans (see `docs/operational-calendar-schedule-plan.md`).
 

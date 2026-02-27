@@ -20,6 +20,14 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-27 - IN-08: INCOME INTEGRATIONS PLAN COMPLETE — all phases 0-8 closed
+- Suggested Commit Title: `chore(in-08): close income integrations plan — all phases complete`
+- Scope: Documentation closure for Income Integrations Onboarding Plan (IN-08).
+- No code changes in this commit.
+- Plan status: all phases verified `[x]`, security checklist 7/7, deferred items tracked.
+- Master plan: 20/38 = 52.63%; Left Off Here → UI-00.
+- Next: `docs/unified-inventory-intake-refactor-plan.md` Phase 0 (UI-00).
+
 ### 2026-02-27 - IN-07 complete: production hardening + security/compliance (token expiry, scope audit, key rotation)
 - Suggested Commit Title: `feat(in-07): add token expiry guard, provider scope audit, and key rotation runbook`
 - Scope:
