@@ -288,6 +288,11 @@ Implemented capabilities:
 - Receipt review UI now surfaces parse-confidence indicators separately from match confidence (per-line parse badges, parse-band summary counts, inline parse flags for medium/low confidence lines)
 - Store-specific parse-profile memory is active via `ReceiptParseProfile` (dedicated table): correction summaries now accumulate province/tax/parse signals per store profile key (`place:<google_place_id>` preferred, fallback `supplier:<supplier_id>`)
 - Profile priors are now consumed in receipt workflows when Google Place province hints are unavailable, and line-review `confirmed`/`skipped` actions feed profile stats for continuous store adaptation
+- Raw-text receipt parsing now uses a hybrid section-aware parser (`src/domain/parsers/receipt.ts`) instead of regex-only extraction:
+  - line section classification (items vs tax/subtotal/total/footer/meta)
+  - multi-line wrapped item merge support
+  - numeric cluster extraction (`qty x unit_price line_total`) and safer trailing amount parsing
+  - province-hinted tax summary skipping and optional profile-guided SKU token position hints
 - Receipt-correction fixture corpus is expanded to 20 runnable scenarios, including discount-heavy parsed-text and historical-threshold boundary coverage
 - Idempotent receipt commit behavior in inventory ledger path
 - Receipt auto-resolution observability (process-local summaries)

@@ -58,3 +58,58 @@ test("parseReceiptText skips subtotal/total label variants and French tax labels
   assert.equal(lines[0].line_cost, 6.99);
   assert.equal(lines[1].line_cost, 2.99);
 });
+
+test("parseReceiptText merges wrapped item descriptions with next-line numeric clusters", () => {
+  const lines = parseReceiptText(
+    [
+      "ORGANIC AVOCADO HASS",
+      "2 x 3.49 6.98",
+      "Sub Total 6.98",
+      "HST 0.91",
+      "Total 7.89",
+    ].join("\n")
+  );
+
+  assert.equal(lines.length, 1);
+  assert.equal(lines[0].parsed_name, "ORGANIC AVOCADO HASS");
+  assert.equal(lines[0].quantity, 2);
+  assert.equal(lines[0].line_cost, 6.98);
+  assert.equal(lines[0].unit_cost, 3.49);
+});
+
+test("parseReceiptText strips SKU prefix with store-profile hint and parses qty x unit-price clusters", () => {
+  const lines = parseReceiptText("4011 BANANAS 2 x 1.49 2.98", {
+    skuPositionHint: "prefix",
+  });
+
+  assert.equal(lines.length, 1);
+  assert.equal(lines[0].parsed_name, "BANANAS");
+  assert.equal(lines[0].quantity, 2);
+  assert.equal(lines[0].line_cost, 2.98);
+  assert.equal(lines[0].unit_cost, 1.49);
+});
+
+test("parseReceiptText uses province hint to classify generic tax lines as non-item summary lines", () => {
+  const lines = parseReceiptText(
+    [
+      "CROISSANT 3.49",
+      "Tax 13% 0.45",
+      "Total 3.94",
+    ].join("\n"),
+    { provinceHint: "ON" }
+  );
+
+  assert.equal(lines.length, 1);
+  assert.equal(lines[0].parsed_name, "CROISSANT");
+  assert.equal(lines[0].line_cost, 3.49);
+});
+
+test("parseReceiptText honors store-profile SKU suffix hint for suffix-coded item rows", () => {
+  const lines = parseReceiptText("ALMOND MILK 00041234 4.99", {
+    skuPositionHint: "suffix",
+  });
+
+  assert.equal(lines.length, 1);
+  assert.equal(lines[0].parsed_name, "ALMOND MILK");
+  assert.equal(lines[0].line_cost, 4.99);
+});

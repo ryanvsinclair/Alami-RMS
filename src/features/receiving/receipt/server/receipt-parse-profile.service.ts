@@ -8,9 +8,12 @@ import {
 const RECEIPT_PARSE_PROFILE_VERSION = 1;
 const MIN_PROVINCE_PRIOR_SAMPLE_SIZE = 2;
 const MIN_PROVINCE_PRIOR_DOMINANCE_RATIO = 0.6;
+const MIN_SKU_POSITION_PRIOR_SAMPLE_SIZE = 2;
+const MIN_SKU_POSITION_PRIOR_DOMINANCE_RATIO = 0.6;
 
 type CountMap = Record<string, number>;
 type ReviewFeedbackStatus = "confirmed" | "skipped";
+export type ReceiptParseProfileSkuPositionHint = "prefix" | "suffix";
 
 type ReceiptParseProfileSignals = {
   source_counts: CountMap;
@@ -67,6 +70,7 @@ export type ReceiptParseProfileContext = {
 export type ReceiptParseProfilePrior = {
   profileKey: string | null;
   provinceHint: ReceiptCorrectionProvinceCode | null;
+  skuPositionHint: ReceiptParseProfileSkuPositionHint | null;
 };
 
 const defaultRepository: ReceiptParseProfileRepository = {
@@ -221,13 +225,32 @@ export function deriveProvinceHintFromProfileSignals(
   return dominant;
 }
 
+export function deriveSkuPositionHintFromProfileSignals(
+  signals: unknown,
+): ReceiptParseProfileSkuPositionHint | null {
+  const parseFlagCounts = normalizeSignals(signals).parse_flag_counts;
+  const prefixCount = parseFlagCounts.sku_token_prefix_removed ?? 0;
+  const suffixCount = parseFlagCounts.sku_token_suffix_removed ?? 0;
+  const total = prefixCount + suffixCount;
+  if (total < MIN_SKU_POSITION_PRIOR_SAMPLE_SIZE) return null;
+
+  const dominant = prefixCount >= suffixCount ? "prefix" : "suffix";
+  const dominantCount = dominant === "prefix" ? prefixCount : suffixCount;
+  const dominanceRatio = dominantCount / total;
+  if (dominanceRatio < MIN_SKU_POSITION_PRIOR_DOMINANCE_RATIO) {
+    return null;
+  }
+
+  return dominant;
+}
+
 export async function resolveReceiptParseProfilePrior(
   context: ReceiptParseProfileContext,
   repository: ReceiptParseProfileRepository = defaultRepository,
 ): Promise<ReceiptParseProfilePrior> {
   const profileKey = buildReceiptParseProfileKey(context);
   if (!profileKey) {
-    return { profileKey: null, provinceHint: null };
+    return { profileKey: null, provinceHint: null, skuPositionHint: null };
   }
 
   const existing = await repository.findByKey({
@@ -235,12 +258,13 @@ export async function resolveReceiptParseProfilePrior(
     profileKey,
   });
   if (!existing) {
-    return { profileKey, provinceHint: null };
+    return { profileKey, provinceHint: null, skuPositionHint: null };
   }
 
   return {
     profileKey,
     provinceHint: deriveProvinceHintFromProfileSignals(existing.signals),
+    skuPositionHint: deriveSkuPositionHintFromProfileSignals(existing.signals),
   };
 }
 

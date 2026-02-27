@@ -824,8 +824,6 @@ export async function parseAndMatchReceipt(
     throw new Error("No raw text available for parsing");
   }
 
-  // Parse raw OCR text into structured line items
-  const parsedLines = parseReceiptText(receipt.raw_text);
   const rawTextTotals = extractRawReceiptTotals(receipt.raw_text);
   const supplierProvinceHint = await resolveProvinceHintFromGooglePlaceContext({
     googlePlaceId: receipt.supplier?.google_place_id ?? null,
@@ -843,6 +841,12 @@ export async function parseAndMatchReceipt(
       : parseProfilePrior.provinceHint != null
         ? ("manual" as const)
         : null;
+
+  // Parse raw OCR text into structured line items using safe store-profile priors.
+  const parsedLines = parseReceiptText(receipt.raw_text, {
+    provinceHint: provinceHintForCorrection ?? undefined,
+    skuPositionHint: parseProfilePrior.skuPositionHint ?? undefined,
+  });
   const historicalPriceHints = await resolveHistoricalPriceHintsForCorrection({
     businessId,
     receiptId,

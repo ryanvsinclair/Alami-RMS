@@ -9,6 +9,9 @@ const buildReceiptParseProfileKey =
 const deriveProvinceHintFromProfileSignals =
   parseProfileModule.deriveProvinceHintFromProfileSignals ??
   parseProfileModule.default?.deriveProvinceHintFromProfileSignals;
+const deriveSkuPositionHintFromProfileSignals =
+  parseProfileModule.deriveSkuPositionHintFromProfileSignals ??
+  parseProfileModule.default?.deriveSkuPositionHintFromProfileSignals;
 const resolveReceiptParseProfilePrior =
   parseProfileModule.resolveReceiptParseProfilePrior ??
   parseProfileModule.default?.resolveReceiptParseProfilePrior;
@@ -22,6 +25,7 @@ const recordReceiptParseProfileLineReviewFeedback =
 if (
   typeof buildReceiptParseProfileKey !== "function" ||
   typeof deriveProvinceHintFromProfileSignals !== "function" ||
+  typeof deriveSkuPositionHintFromProfileSignals !== "function" ||
   typeof resolveReceiptParseProfilePrior !== "function" ||
   typeof recordReceiptParseProfileFromCorrection !== "function" ||
   typeof recordReceiptParseProfileLineReviewFeedback !== "function"
@@ -119,6 +123,24 @@ test("deriveProvinceHintFromProfileSignals requires dominance and minimum sample
   assert.equal(noDominance, null);
 });
 
+test("deriveSkuPositionHintFromProfileSignals requires dominance and minimum sample size", () => {
+  const dominantPrefix = deriveSkuPositionHintFromProfileSignals({
+    parse_flag_counts: {
+      sku_token_prefix_removed: 3,
+      sku_token_suffix_removed: 1,
+    },
+  });
+  assert.equal(dominantPrefix, "prefix");
+
+  const noDominance = deriveSkuPositionHintFromProfileSignals({
+    parse_flag_counts: {
+      sku_token_prefix_removed: 1,
+      sku_token_suffix_removed: 1,
+    },
+  });
+  assert.equal(noDominance, null);
+});
+
 test("recordReceiptParseProfileFromCorrection accumulates signals and powers profile priors", async () => {
   const repository = createInMemoryRepository();
   const baseSummary = createCorrectionSummary();
@@ -163,6 +185,7 @@ test("recordReceiptParseProfileFromCorrection accumulates signals and powers pro
     repository,
   );
   assert.equal(prior.provinceHint, "ON");
+  assert.equal(prior.skuPositionHint, null);
   assert.equal(repository.current?.signals?.tax_label_counts?.HST, 3);
   assert.equal(repository.current?.stats?.receipts_observed, 2);
 });

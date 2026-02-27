@@ -20,6 +20,60 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-27 - RC-16 complete: hybrid raw-text parser upgrades + profile-prior parser hints
+- Suggested Commit Title: `feat(rc-16): ship hybrid receipt parser with section detection and profile-guided hints`
+- Scope:
+  - Receipt correction Phase 4 (`RC-16`) structured parser upgrade for raw-text ingestion and safe store-prior parser interpretation.
+- Preflight evidence (reuse/refactor-first + DB/Prisma integrity):
+  - Reviewed source-plan RC-16 scope and pickup marker:
+    - `docs/receipt-post-ocr-correction-plan.md` (`Pick Up Here`, `Phase 4 - Structured parsing upgrade`)
+  - Ran scoped scans before implementation:
+    - `rg -n "Phase 4 - Structured parsing upgrade|RC-16|section detection|multi-line item|numeric cluster|tax-line extraction" docs/receipt-post-ocr-correction-plan.md`
+    - `rg -n "section|summary|footer|tax line|multi-line|numeric cluster|parseReceiptText|HST|GST|QST|TPS|TVQ" src/domain/parsers src/features/receiving/receipt test/fixtures/receipt-correction`
+    - `rg --files src/domain/parsers src/features/receiving/receipt | rg "receipt"`
+  - Reused existing parser/workflow/profile files:
+    - `src/domain/parsers/receipt.ts`
+    - `src/features/receiving/receipt/server/receipt-workflow.service.ts`
+    - `src/features/receiving/receipt/server/receipt-parse-profile.service.ts`
+  - No schema/migration changes required for RC-16.
+- What changed:
+  - Upgraded `parseReceiptText(...)` into a hybrid pass:
+    - line section detection (item vs summary/tax/footer/meta/promo/payment)
+    - stronger tax-line label detection (`HST`/`GST`/`QST`/`TPS`/`TVQ` and generic `Tax xx%`)
+    - numeric cluster parsing for `qty x unit_price line_total`
+    - safer terminal amount parsing that avoids over-capturing numeric clusters
+    - two-line merge support for wrapped item descriptions with conservative guards
+    - optional parser options (`provinceHint`, `skuPositionHint`) for safe store-prior interpretation
+  - Added PLU-safe SKU stripping behavior:
+    - default parser flow avoids stripping 4/5-digit produce PLUs
+    - profile-guided hints can still strip prefix/suffix SKU tokens when dominant store patterns exist
+  - Extended store-profile prior derivation:
+    - added `skuPositionHint` dominance derivation in `receipt-parse-profile.service.ts`
+  - Wired raw-text receipt workflow to pass profile/supplier parser hints into `parseReceiptText(...)`.
+  - Expanded parser/profile tests and updated two Walmart parsed-text fixtures where header-noise lines are now skipped by section classification.
+- Files changed:
+  - `src/domain/parsers/receipt.ts`
+  - `src/domain/parsers/receipt.test.mjs`
+  - `src/features/receiving/receipt/server/receipt-workflow.service.ts`
+  - `src/features/receiving/receipt/server/receipt-parse-profile.service.ts`
+  - `src/features/receiving/receipt/server/receipt-parse-profile.service.test.mjs`
+  - `test/fixtures/receipt-correction/walmart-parsed-text-discount-heavy-tax13-split-token-001.json`
+  - `test/fixtures/receipt-correction/walmart-parsed-text-split-numeric-token-001.json`
+  - `docs/receipt-post-ocr-correction-plan.md`
+  - `docs/master-plan-v1.md`
+  - `docs/codebase-overview.md`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - `node --test --experimental-transform-types src/domain/parsers/receipt.test.mjs` -> PASS (7/7; expected Node experimental/module-type warnings)
+  - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-core.test.mjs` -> PASS (14/14; expected Node experimental/module-type warnings)
+  - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-fixtures.test.mjs` -> PASS (27/27; expected Node experimental/module-type warnings)
+  - `npx tsx --test src/features/receiving/receipt/server/receipt-parse-profile.service.test.mjs` -> PASS (5/5)
+  - `npx tsx --test src/features/receiving/receipt/server/receipt-produce-lookup.service.test.mjs` -> PASS (3/3)
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `npx eslint src/domain/parsers/receipt.ts src/domain/parsers/receipt.test.mjs src/features/receiving/receipt/server/receipt-workflow.service.ts src/features/receiving/receipt/server/receipt-parse-profile.service.ts src/features/receiving/receipt/server/receipt-parse-profile.service.test.mjs --quiet` -> PASS
+- Notes:
+  - RC-16 marked complete; canonical next task is `RC-17`.
+
 ### 2026-02-27 - RC-15 complete: add dedicated store parse-profile memory and workflow learning hooks
 - Suggested Commit Title: `feat(rc-15): add receipt parse profile memory table and profile-prior orchestration`
 - Scope:

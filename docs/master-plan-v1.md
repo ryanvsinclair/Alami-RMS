@@ -177,10 +177,10 @@ Use the `Canonical Order Checklist` statuses as the source of truth.
 Current snapshot (2026-02-27):
 
 - Total checklist items: `38`
-- `[x]` complete: `7`
+- `[x]` complete: `8`
 - `[~]` in progress: `0`
-- Strict completion: `18.42%`
-- Weighted progress: `18.42%`
+- Strict completion: `21.05%`
+- Weighted progress: `21.05%`
 
 Update rule after each slice:
 
@@ -226,10 +226,10 @@ Latest Update section review:
 - Produce normalization layer was added (9-prefix PLU normalization, organic keyword stripping, produce candidate gating).
 - `CorrectedReceiptLine` now includes `plu_code`, `produce_match`, `organic_flag`.
 - Phase 0 foundation is implemented; RC-10 closeout completed threshold tuning + fixture expansion to 20 scenarios.
-- Phase 1.5 schema-backed persistence is implemented for minimal produce metadata (`plu_code`, `organic_flag` on `ReceiptLineItem`); multilingual hardening and Phase 2+ remain.
+- Phase 1.5 schema-backed persistence is implemented for minimal produce metadata (`plu_code`, `organic_flag` on `ReceiptLineItem`), and RC-16 hybrid parser upgrades are complete.
 
 Remaining high-impact work:
-- Execute Phases 4-6 (hybrid parser, feedback loop, rollout hardening).
+- Execute Phases 5-6 (historical feedback loop, rollout hardening).
 
 ### 2) `docs/income-integrations-onboarding-plan.md` (not started)
 
@@ -282,7 +282,7 @@ Status legend:
 - [x] RC-13 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then resolve persistence decision for parse/produce metadata and implement approved schema-light or schema-backed path.
 - [x] RC-14 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 2 parse confidence persistence + receipt review UI indicators.
 - [x] RC-15 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 3 store-specific parse profile memory.
-- [ ] RC-16 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 4 hybrid structured parser upgrades.
+- [x] RC-16 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 4 hybrid structured parser upgrades.
 - [ ] RC-17 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 5 historical feedback loop integration.
 - [ ] RC-18 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 6 rollout hardening (threshold tuning, versioning, diagnostics, safe enforce promotion).
 - [ ] RC-19 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then close receipt plan with validation evidence and final status updates.
@@ -327,12 +327,12 @@ Status legend:
 
 ## Last Left Off Here (Update This Block First)
 
-- Current task ID: `RC-16`
-- Current task: `Phase 4 hybrid structured parser upgrades`
+- Current task ID: `RC-17`
+- Current task: `Phase 5 historical feedback loop integration`
 - Status: `READY`
 - Last updated: `2026-02-27`
 - Primary source plan section:
-  - `docs/receipt-post-ocr-correction-plan.md` -> `Phase 4 - Structured parsing upgrade (hybrid parser)`
+  - `docs/receipt-post-ocr-correction-plan.md` -> `Phase 5 - Historical matching feedback loop`
 
 ## Documentation Sync Checklist (Run Every Session)
 
@@ -344,6 +344,34 @@ Status legend:
 - [ ] `docs/codebase-overview.md` updated if behavior/architecture/canonical path descriptions changed.
 
 ## Latest Job Summary (Append New Entries At Top)
+
+### 2026-02-27 - RC-16 complete: hybrid raw-text parser upgrades + parser prior consumption from store profile
+- Completed:
+  - Ran RC-16 preflight scans across source-plan + parser/workflow code paths and reused canonical parser + workflow files:
+    - `rg -n "Phase 4 - Structured parsing upgrade|RC-16|section detection|multi-line item|numeric cluster|tax-line extraction" docs/receipt-post-ocr-correction-plan.md`
+    - `rg -n "section|summary|footer|tax line|multi-line|numeric cluster|parseReceiptText|HST|GST|QST|TPS|TVQ" src/domain/parsers src/features/receiving/receipt test/fixtures/receipt-correction`
+    - `rg --files src/domain/parsers src/features/receiving/receipt | rg "receipt"`
+  - Reused and upgraded `src/domain/parsers/receipt.ts` rather than creating parallel parser files:
+    - added section classification for item vs summary/tax/footer lines
+    - added numeric-cluster parsing (`qty x unit_price line_total`) and safer terminal amount extraction
+    - added two-line wrapped-description merge support
+    - added optional parser hints (`provinceHint`, `skuPositionHint`) with PLU-safe SKU stripping defaults
+  - Consumed store-profile priors in raw-text workflow parser invocation:
+    - `parseAndMatchReceipt(...)` now passes `provinceHint`/`skuPositionHint` to parser
+  - Extended profile-prior derivation with optional SKU-position hint dominance logic (`prefix` vs `suffix`).
+  - Expanded parser + profile tests and updated affected parsed-text Walmart fixtures where header noise is now skipped.
+  - Completed validation gates:
+    - `node --test --experimental-transform-types src/domain/parsers/receipt.test.mjs` -> PASS (7/7)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-core.test.mjs` -> PASS (14/14)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-fixtures.test.mjs` -> PASS (27/27)
+    - `npx tsx --test src/features/receiving/receipt/server/receipt-parse-profile.service.test.mjs` -> PASS (5/5)
+    - `npx tsx --test src/features/receiving/receipt/server/receipt-produce-lookup.service.test.mjs` -> PASS (3/3)
+    - `npx tsc --noEmit --incremental false` -> PASS
+    - targeted `eslint` on touched parser/workflow/profile files -> PASS
+- Remaining:
+  - Start `RC-17` (Phase 5 historical feedback loop integration).
+- Next:
+  - `RC-17` in `docs/receipt-post-ocr-correction-plan.md`
 
 ### 2026-02-27 - RC-15 complete: dedicated parse-profile memory table + profile-prior read/write and review-feedback learning
 - Completed:

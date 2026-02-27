@@ -14,13 +14,13 @@
     "assertions": {
       "totals_status": "pass",
       "totals_delta_to_total": 0,
-      "changed_line_numbers": [2],
+      "changed_line_numbers": [1],
       "expected_line_costs": [
-        { "line_number": 2, "line_cost": 6.99 }
+        { "line_number": 1, "line_cost": 6.99 }
       ],
       "required_parse_flags": [
         {
-          "line_number": 2,
+          "line_number": 1,
           "flags": ["split_numeric_token_detected", "dual_numeric_interpretation_considered"]
         }
       ],

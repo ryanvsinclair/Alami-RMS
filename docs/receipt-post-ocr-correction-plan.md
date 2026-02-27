@@ -4,6 +4,31 @@ Last updated: February 27, 2026 (draft / implementation-ready plan)
 
 ## Latest Update
 
+- **Phase 4 RC-16 complete: hybrid raw-text parser upgrade shipped (section detection + multi-line merge + numeric clusters + profile-guided SKU hints)** (February 27, 2026):
+  - Upgraded `src/domain/parsers/receipt.ts` from regex-only extraction to a hybrid parser pass with:
+    - section classification (`item` vs `tax`/`subtotal`/`total`/`promo`/`payment`/`meta`)
+    - stronger tax-line detection/classification (`HST`/`GST`/`QST`/`TPS`/`TVQ` + generic `Tax xx%` with province-aware interpretation)
+    - numeric-cluster extraction (`qty x unit_price line_total` patterns) with safer trailing-amount parsing
+    - two-line merge support for wrapped item descriptions when next line contains priced numeric clusters
+    - conservative SKU token stripping with profile-position hints and PLU-safe defaults (avoid stripping 4/5-digit produce PLUs without explicit hint)
+  - Extended parser contracts:
+    - new `ParseReceiptTextOptions` supports `provinceHint` + `skuPositionHint` for safe store-prior-driven interpretation
+  - Consumed store profile priors in raw-text receipt workflow:
+    - `parseAndMatchReceipt(...)` now passes `provinceHint` and `skuPositionHint` from resolved profile/supplier priors into `parseReceiptText(...)`
+  - Extended profile-prior derivation:
+    - `receipt-parse-profile.service.ts` now derives optional `skuPositionHint` from profile parse-flag dominance (`sku_token_prefix_removed` vs `sku_token_suffix_removed`)
+  - Added/updated coverage:
+    - parser unit tests expanded for multi-line merges, cluster parsing, province-hinted tax summary skipping, and suffix/prefix SKU hint behavior
+    - fixture corpus updated for hybrid-parser line-number behavior where store-header noise is now skipped in parsed-text Walmart fixtures
+  - Validation:
+    - `node --test --experimental-transform-types src/domain/parsers/receipt.test.mjs` -> PASS (7/7)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-core.test.mjs` -> PASS (14/14)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-fixtures.test.mjs` -> PASS (27/27)
+    - `npx tsx --test src/features/receiving/receipt/server/receipt-parse-profile.service.test.mjs` -> PASS (5/5)
+    - `npx tsx --test src/features/receiving/receipt/server/receipt-produce-lookup.service.test.mjs` -> PASS (3/3)
+    - `npx tsc --noEmit --incremental false` -> PASS
+    - targeted `eslint` on touched parser/workflow/profile files -> PASS
+
 - **Phase 3 RC-15 complete: dedicated `ReceiptParseProfile` memory + province/tax signal mirroring enabled** (February 27, 2026):
   - Resolved RC-15 contract decisions from product direction:
     - Open Decision 2 -> selected **dedicated `ReceiptParseProfile` table** (Option A)
@@ -240,18 +265,18 @@ Last updated: February 27, 2026 (draft / implementation-ready plan)
 
 ## Pick Up Here (Next Continuation)
 
-Continue with **Phase 4 (RC-16): hybrid structured parser upgrades**.
+Continue with **Phase 5 (RC-17): historical matching feedback loop**.
 
 Recommended next implementation order:
 
-1. Add hybrid section detection and line-shape classification
-   - distinguish item rows from summary/tax/footer noise with stronger structural heuristics
-2. Improve multi-line item handling and numeric-cluster extraction
-   - reduce regex-only dependence in `src/domain/parsers/receipt.ts`
-3. Consume store-profile priors where safe for parser interpretation
-   - keep pure parsing logic in domain, profile retrieval/orchestration in feature server layer
-4. Add focused fixture/test coverage for new structured parser behavior
-   - especially HST/GST/QST/TPS/TVQ summary-section and multi-line edge cases
+1. Implement store + SKU historical priors for correction scoring
+   - capture repeat line-level outcomes keyed by store context and normalized item cues
+2. Add fuzzy-name + price-proximity prior retrieval in feature layer
+   - keep scoring logic in correction core pure; inject priors as input
+3. Wire optional learning from receipt review confirmations/edits
+   - ensure feedback updates remain non-fatal and tenant-safe
+4. Expand fixture/test coverage for history-guided selection stability
+   - include low-sample no-op, conflicting-history, and store-context isolation cases
 
 Implementation guardrails (carry forward):
 
@@ -1413,7 +1438,7 @@ Progress notes (2026-02-27):
   - wired line-item persistence of `plu_code` and `organic_flag` in `receipt.repository.ts`
 - Remaining:
   - add broader multilingual produce fixtures and lookup validation cases
-  - continue with RC-16 hybrid structured parser upgrades
+  - continue with RC-17 historical matching feedback-loop integration
 
 ## Phase 2 - Line-level parse confidence and UI flags
 
@@ -1459,7 +1484,7 @@ Progress notes (2026-02-27):
 
 ## Phase 4 - Structured parsing upgrade (hybrid parser)
 
-Status: `[ ]`
+Status: `[x]`
 
 Deliverables:
 
@@ -1472,6 +1497,13 @@ Deliverables:
 Goal:
 
 - reduce dependence on brittle regex-only parsing in `src/domain/parsers/receipt.ts`
+
+Progress notes (2026-02-27):
+
+- Upgraded `parseReceiptText(...)` with a hybrid parser pass: section classification, numeric-cluster extraction, safer trailing amount parsing, and two-line merge handling for wrapped item descriptions.
+- Added province-aware generic tax-line classification and parsing options (`provinceHint`, `skuPositionHint`) so parser interpretation can safely consume store-profile priors.
+- Updated raw-text receipt workflow orchestration to pass supplier/profile priors into parser invocation.
+- Added SKU-position prior derivation support in profile service and expanded parser/profile tests + fixture corpus expectations.
 
 ## Phase 5 - Historical matching feedback loop
 
