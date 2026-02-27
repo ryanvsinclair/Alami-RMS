@@ -1,7 +1,7 @@
-"use client";
+﻿"use client";
 
 /**
- * Operational Calendar — master calendar shell (OC-02/OC-03).
+ * Operational Calendar â€” master calendar shell (OC-02/OC-03).
  *
  * Renders the primary Schedule surface with:
  *  - Day / Week / Month view toggle (Week is the default per plan)
@@ -11,7 +11,7 @@
  *  - Empty event grid placeholder (populated in OC-04+ with real data)
  *  - "New Event" CTA stub (full creation flow in later phases)
  *
- * No DB queries or server actions in this component — pure UI shell.
+ * No DB queries or server actions in this component â€” pure UI shell.
  * All data fetching wired in OC-04 (Phase 3) once the event schema is defined.
  */
 
@@ -27,6 +27,7 @@ import {
   type CalendarProviderSyncCard,
   type CalendarSourceHealthSummary,
   type CalendarOperationalSuggestion,
+  type CalendarOpsHealthSummary,
   deriveCalendarSourceHealth,
 } from "@/features/schedule/shared";
 
@@ -68,7 +69,7 @@ export default function ScheduleClient() {
     new Set(CALENDAR_EVENT_SOURCES)
   );
 
-  // Industry-aware emphasis label — pick the first emphasized event type as context hint.
+  // Industry-aware emphasis label â€” pick the first emphasized event type as context hint.
   const emphasisTypes = CALENDAR_EVENT_EMPHASIS_BY_INDUSTRY[industryType] ??
     CALENDAR_EVENT_EMPHASIS_BY_INDUSTRY["general"];
 
@@ -85,10 +86,11 @@ export default function ScheduleClient() {
     });
   }
 
-  // Phase shell: no providers connected yet — empty card list.
+  // Phase shell: no providers connected yet â€” empty card list.
   // Real provider sync cards wired in OC-04 via server data layer.
   const providerSyncCards: CalendarProviderSyncCard[] = [];
   const operationalSuggestions: CalendarOperationalSuggestion[] = [];
+  const opsSummary: CalendarOpsHealthSummary | null = null;
 
   return (
     <div className="flex flex-col h-full">
@@ -99,7 +101,7 @@ export default function ScheduleClient() {
         <div>
           <h1 className="text-lg font-semibold text-foreground">Schedule</h1>
           <p className="text-xs text-muted capitalize">
-            {emphasisTypes.slice(0, 2).map((t) => t.replace(/_/g, " ")).join(" · ")}
+            {emphasisTypes.slice(0, 2).map((t) => t.replace(/_/g, " ")).join(" Â· ")}
           </p>
         </div>
         <button
@@ -165,14 +167,15 @@ export default function ScheduleClient() {
       </div>
 
       {/* ------------------------------------------------------------------ */}
-      {/* Source health bar — provider sync status summary (OC-03)           */}
+      {/* Source health bar â€” provider sync status summary (OC-03)           */}
       {/* ------------------------------------------------------------------ */}
       <SourceHealthBar providerCards={providerSyncCards} />
 
       <OperationalSuggestionsRail suggestions={operationalSuggestions} />
+      <OpsDiagnosticsBar summary={opsSummary} />
 
       {/* ------------------------------------------------------------------ */}
-      {/* Calendar grid area — shell / populated in OC-04+                   */}
+      {/* Calendar grid area â€” shell / populated in OC-04+                   */}
       {/* ------------------------------------------------------------------ */}
       <div className="flex-1 px-4 pb-4">
         <CalendarGridShell viewMode={viewMode} />
@@ -182,14 +185,14 @@ export default function ScheduleClient() {
 }
 
 // ---------------------------------------------------------------------------
-// SourceHealthBar — shows connected provider count and any sync errors.
+// SourceHealthBar â€” shows connected provider count and any sync errors.
 // Phase shell: when no providers are connected, shows a quiet "no sources"
 // prompt. Populated with real sync cards in OC-04.
 // ---------------------------------------------------------------------------
 
 function SourceHealthBar({ providerCards }: { providerCards: CalendarProviderSyncCard[] }) {
   if (providerCards.length === 0) {
-    // No providers connected — show a quiet callout.
+    // No providers connected â€” show a quiet callout.
     return (
       <div className="mx-4 mb-3 flex items-center gap-2 rounded-2xl border border-border/40 px-3 py-2">
         <span className="w-2 h-2 rounded-full bg-muted/40 shrink-0" />
@@ -267,8 +270,32 @@ function OperationalSuggestionsRail({
     </div>
   );
 }
+function OpsDiagnosticsBar({
+  summary,
+}: {
+  summary: CalendarOpsHealthSummary | null;
+}) {
+  if (!summary) {
+    return (
+      <div className="mx-4 mb-3 rounded-2xl border border-border/40 px-3 py-2">
+        <p className="text-xs text-muted/70">
+          Ops diagnostics become visible as provider-sync metrics and conflict telemetry are collected.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-4 mb-3 rounded-2xl border border-border/40 px-3 py-2">
+      <p className="text-xs text-foreground font-semibold">Ops Diagnostics</p>
+      <p className="text-[11px] text-muted/80 mt-1">
+        Sync reliability {(summary.syncReliabilityRate * 100).toFixed(1)}% - Duplicate suppression {(summary.duplicateSuppressionRate * 100).toFixed(1)}% - Overlap conflicts {(summary.overlapConflictRate * 100).toFixed(1)}%
+      </p>
+    </div>
+  );
+}
 // ---------------------------------------------------------------------------
-// Calendar grid shell — renders time slots for the current view mode.
+// Calendar grid shell â€” renders time slots for the current view mode.
 // Real event rendering wired in OC-04 once server data layer is available.
 // ---------------------------------------------------------------------------
 
@@ -341,7 +368,7 @@ function WeekGridShell({ today }: { today: Date }) {
                 key={i}
                 className={`relative min-h-[320px] ${isToday ? "bg-foreground/[0.03]" : ""}`}
               >
-                {/* Empty slot — events rendered here in OC-04 */}
+                {/* Empty slot â€” events rendered here in OC-04 */}
               </div>
             );
           })}
@@ -360,7 +387,7 @@ function WeekGridShell({ today }: { today: Date }) {
 // ---------------------------------------------------------------------------
 
 function DayColumnShell({ today }: { today: Date }) {
-  const HOURS = Array.from({ length: 14 }, (_, i) => i + 7); // 7am–8pm
+  const HOURS = Array.from({ length: 14 }, (_, i) => i + 7); // 7amâ€“8pm
 
   return (
     <div className="flex flex-col gap-2 h-full">
@@ -463,5 +490,6 @@ function MonthGridShell({ today }: { today: Date }) {
     </div>
   );
 }
+
 
 

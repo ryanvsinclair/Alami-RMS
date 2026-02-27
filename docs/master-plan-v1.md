@@ -182,14 +182,14 @@ Use the `Canonical Order Checklist` statuses as the source of truth.
 Current snapshot (2026-02-27):
 
 - Total checklist items: `38`
-- `[x]` complete: `35`
+- `[x]` complete: `36`
 - `[~]` in progress: `0`
-- Strict completion: `92.11%`
-- Weighted progress: `92.11%`
+- Strict completion: `94.74%`
+- Weighted progress: `94.74%`
 - **Income Integrations Plan (IN-00 through IN-08): COMPLETE**
 - **Unified Inventory Intake Refactor Plan (UI-00 through UI-06): COMPLETE**
 - **QA-00/QA-01: COMPLETE â€” all manual smoke passed; migration FK bug found and fixed**
-- **OC-00/OC-01/OC-02/OC-03/OC-04/OC-05: COMPLETE — activation, calendar shell, provider sync foundation, scheduling connectors, and cross-feature suggestion layer shipped**
+- **OC-00/OC-01/OC-02/OC-03/OC-04/OC-05/OC-06: COMPLETE — activation, shell, provider sync, suggestion layer, and ops hardening shipped**
 
 Update rule after each slice:
 
@@ -347,18 +347,18 @@ Status legend:
 - [x] OC-03 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 2 provider-sync foundation.
 - [x] OC-04 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 3 scheduling-platform expansion.
 - [x] OC-05 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 4 cross-feature suggestion layer.
-- [ ] OC-06 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 5 hardening/metrics/ops readiness.
+- [x] OC-06 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 5 hardening/metrics/ops readiness.
 - [ ] OC-07 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then mark operational calendar plan complete and archive this master plan into v2 (if needed).
 
 ## Last Left Off Here (Update This Block First)
 
-- Current task ID: `OC-06`
-- Current task: `Implement Phase 5 hardening/metrics/ops readiness - sync reliability, duplicate suppression accuracy, load/performance, permission/audit hardening`
+- Current task ID: `OC-07`
+- Current task: `Close operational calendar plan, synchronize docs/status, and finalize master-plan closure path`
 - Status: `READY`
 - Last updated: `2026-02-27`
 - Primary source plan section:
   - `docs/operational-calendar-schedule-plan.md` -> `### Phase 5 - Hardening and operational metrics`
-- Note: OC-05 (Phase 4) COMPLETE. Cross-feature suggestion contracts, derivation service, tests, and schedule suggestion rail shell are now active. OC-06 focuses on reliability/metrics hardening.
+- Note: OC-06 (Phase 5) COMPLETE. Sync reliability metrics, duplicate suppression diagnostics, load guardrails, and permission/audit hardening utilities are now in place. OC-07 performs plan closure and canonical tracker sync.
 
 ## Documentation Sync Checklist (Run Every Session)
 
@@ -370,6 +370,32 @@ Status legend:
 - [ ] `docs/codebase-overview.md` updated if behavior/architecture/canonical path descriptions changed.
 
 ## Latest Job Summary (Append New Entries At Top)
+
+### 2026-02-27 - OC-06 complete: Phase 5 hardening and ops readiness - reliability metrics, load guard, permission/audit hardening
+
+- Suggested Commit Title: `feat(oc-06): add schedule ops hardening metrics, load guard, and permission/audit utilities`
+- Preflight:
+  - Reviewed source-plan section `docs/operational-calendar-schedule-plan.md` -> `### Phase 5 - Hardening and operational metrics`.
+  - Reuse-first scans:
+    - `rg -n "sync reliability|duplicate suppression|accuracy|performance|permission|audit|ops|metrics|stale|lock" src/features/schedule src/features/integrations src/server docs`
+    - `rg --files src/features/schedule | rg "metrics|ops|audit|permission|policy|perf|performance"`
+  - Reused schedule sync-status/event contracts and prior OC-04/OC-05 service boundaries; no duplicate event model or schema fields introduced.
+  - DB/Prisma preflight (no schema change required):
+    - `prisma/schema.prisma`
+    - latest migration `prisma/migrations/20260228013000_income_event_pilot/migration.sql`
+- Deliverables:
+  - `src/features/schedule/shared/schedule-ops.contracts.ts` (NEW): ops health, render-cap, permission/audit contracts.
+  - `src/features/schedule/server/schedule-ops.service.ts` (NEW): sync reliability + duplicate/overlap metrics derivation, deterministic load guard, permission evaluation, and audit entry builder.
+  - `src/features/schedule/server/schedule-ops.service.test.ts` (NEW): targeted ops-hardening tests (5 tests).
+  - `src/features/schedule/shared/index.ts` (UPDATED): exports ops contracts.
+  - `src/features/schedule/server/index.ts` (UPDATED): exports ops service APIs.
+  - `src/features/schedule/ui/ScheduleClient.tsx` (UPDATED): adds `OpsDiagnosticsBar` shell with empty-state-safe messaging.
+- Validation:
+  - `npx tsx --test src/features/schedule/server/scheduling-sync.service.test.ts src/features/schedule/server/schedule-suggestion.service.test.ts src/features/schedule/server/schedule-ops.service.test.ts` -> PASS (15/15)
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - targeted `eslint` on touched schedule ops/shared/server/ui files -> PASS
+- Completion: 36/38 = 94.74%
+- Next: OC-07 (plan closure and canonical tracker finalization)
 
 ### 2026-02-27 - OC-05 complete: Phase 4 cross-feature suggestion layer - delivery/intake, booking/inventory, job/material-gap signals
 
@@ -1310,6 +1336,9 @@ Status legend:
 - Blockers/risks:
 - Next task ID:
 ```
+
+
+
 
 
 

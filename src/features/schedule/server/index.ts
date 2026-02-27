@@ -22,3 +22,15 @@ export { runSchedulingProviderSyncPreview } from "./scheduling-sync.service";
 export type { DeriveScheduleSuggestionsInput } from "./schedule-suggestion.service";
 
 export { deriveScheduleOperationalSuggestions } from "./schedule-suggestion.service";
+
+export type {
+  DeriveScheduleOpsHealthInput,
+  EvaluateCalendarPermissionInput,
+} from "./schedule-ops.service";
+
+export {
+  deriveScheduleOpsHealthSummary,
+  applyCalendarLoadGuard,
+  evaluateCalendarPermission,
+  buildCalendarAuditEntry,
+} from "./schedule-ops.service";

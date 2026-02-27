@@ -20,6 +20,34 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-27 - OC-06: Phase 5 hardening and ops readiness - reliability metrics, load guard, permission/audit utilities
+
+- Suggested Commit Title: `feat(oc-06): add schedule ops hardening metrics, load guard, and permission/audit utilities`
+- Scope: Operational Calendar Phase 5 - sync reliability metrics, duplicate suppression accuracy surfaces, load/performance tuning guardrails, and permission/audit hardening.
+- Preflight evidence:
+  - Source plan section reviewed: `docs/operational-calendar-schedule-plan.md` -> `### Phase 5 - Hardening and operational metrics`
+  - Reuse-first scans:
+    - `rg -n "sync reliability|duplicate suppression|accuracy|performance|permission|audit|ops|metrics|stale|lock" src/features/schedule src/features/integrations src/server docs`
+    - `rg --files src/features/schedule | rg "metrics|ops|audit|permission|policy|perf|performance"`
+  - Reused existing schedule sync/event contracts and OC-04/OC-05 service boundaries; no duplicate event schema or migrations introduced.
+  - DB/Prisma integrity preflight (no schema change): reviewed `prisma/schema.prisma` and latest migration `prisma/migrations/20260228013000_income_event_pilot/migration.sql`.
+- New files:
+  - `src/features/schedule/shared/schedule-ops.contracts.ts`: ops summary/load-cap/permission/audit contracts.
+  - `src/features/schedule/server/schedule-ops.service.ts`: ops hardening service (`deriveScheduleOpsHealthSummary`, `applyCalendarLoadGuard`, `evaluateCalendarPermission`, `buildCalendarAuditEntry`).
+  - `src/features/schedule/server/schedule-ops.service.test.ts`: targeted ops hardening tests (5).
+- Updated files:
+  - `src/features/schedule/shared/index.ts`: exports ops contracts.
+  - `src/features/schedule/server/index.ts`: exports ops service APIs.
+  - `src/features/schedule/ui/ScheduleClient.tsx`: adds `OpsDiagnosticsBar` shell.
+  - `docs/operational-calendar-schedule-plan.md`: Pick Up Here advanced to OC-07; Latest Update entry added for OC-06 completion.
+  - `docs/master-plan-v1.md`: OC-06 marked `[x]`; completion updated to 36/38 (94.74%); left-off moved to OC-07; OC-06 job summary appended.
+  - `docs/codebase-overview.md`: Operational Calendar status/capabilities updated for Phase 5 hardening.
+- Validation:
+  - `npx tsx --test src/features/schedule/server/scheduling-sync.service.test.ts src/features/schedule/server/schedule-suggestion.service.test.ts src/features/schedule/server/schedule-ops.service.test.ts` -> PASS (15/15)
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `npx eslint src/features/schedule/shared/index.ts src/features/schedule/shared/schedule-ops.contracts.ts src/features/schedule/server/index.ts src/features/schedule/server/schedule-ops.service.ts src/features/schedule/server/schedule-ops.service.test.ts src/features/schedule/ui/ScheduleClient.tsx --max-warnings=0` -> PASS
+- Master plan: OC-06 `[x]`; completion 36/38 = 94.74%; next OC-07.
+
 ### 2026-02-27 - OC-05: Phase 4 cross-feature suggestion engine - delivery/intake, booking/inventory, job/material-gap signals
 
 - Suggested Commit Title: `feat(oc-05): add cross-feature schedule suggestion contracts, derivation service, and rail shell`
@@ -2149,6 +2177,8 @@ Entry format (recommended):
 - Notes:
   - <caveats / follow-up / accepted exceptions>
 ```
+
+
 
 
 

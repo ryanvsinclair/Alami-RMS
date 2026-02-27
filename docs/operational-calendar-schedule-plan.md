@@ -17,10 +17,37 @@ Implementation is now unblocked. Next task: **OC-01** (Phase 0 activation/baseli
 
 ## Pick Up Here
 
-- Current task: **OC-06** - Phase 5 hardening and operational metrics
+- Current task: **OC-07** - Plan closure and archive transition
 - Status: READY
 
 ## Latest Update
+
+### 2026-02-27 - OC-06 complete: Phase 5 hardening and operational metrics - reliability, load guard, permission/audit hardening
+
+- Preflight:
+  - Confirmed no existing schedule ops-hardening layer was present:
+    - `rg -n "sync reliability|duplicate suppression|accuracy|performance|permission|audit|ops|metrics|stale|lock" src/features/schedule src/features/integrations src/server docs`
+    - `rg --files src/features/schedule | rg "metrics|ops|audit|permission|policy|perf|performance"`
+  - Reused existing sync status and schedule contracts (`schedule-sync.contracts.ts`, `schedule.contracts.ts`) and integration lock/health patterns as references.
+  - DB preflight re-verified against canonical sources (no schema change required):
+    - `prisma/schema.prisma`
+    - latest migration `prisma/migrations/20260228013000_income_event_pilot/migration.sql`
+- Deliverables:
+  - `src/features/schedule/shared/schedule-ops.contracts.ts` (NEW): ops health summary contracts, view-mode render caps, permission/audit vocabulary, and audit entry DTO.
+  - `src/features/schedule/server/schedule-ops.service.ts` (NEW): operations hardening service with:
+    - sync/duplicate/overlap metrics derivation (`deriveScheduleOpsHealthSummary`)
+    - deterministic view-mode load guard (`applyCalendarLoadGuard`)
+    - role/source-aware permission evaluation (`evaluateCalendarPermission`)
+    - audit entry builder (`buildCalendarAuditEntry`)
+  - `src/features/schedule/server/schedule-ops.service.test.ts` (NEW): targeted hardening/metrics tests (5 tests).
+  - `src/features/schedule/shared/index.ts` (UPDATED): exports ops contracts.
+  - `src/features/schedule/server/index.ts` (UPDATED): exports ops hardening APIs.
+  - `src/features/schedule/ui/ScheduleClient.tsx` (UPDATED): adds `OpsDiagnosticsBar` shell with empty-state-safe messaging.
+- Validation:
+  - `npx tsx --test src/features/schedule/server/scheduling-sync.service.test.ts src/features/schedule/server/schedule-suggestion.service.test.ts src/features/schedule/server/schedule-ops.service.test.ts` -> PASS (15/15)
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - targeted `eslint` on touched schedule ops/shared/server/ui files -> PASS
+- Next: OC-07 (plan closure and archive transition)
 
 ### 2026-02-27 - OC-05 complete: Phase 4 cross-feature suggestion engine - delivery/intake, booking/inventory, and job/material-gap signals
 

@@ -92,3 +92,21 @@ export {
   CALENDAR_SUGGESTION_SEVERITIES,
   CALENDAR_SUGGESTED_ACTIONS,
 } from "./schedule-suggestions.contracts";
+
+// Ops hardening contracts (OC-06)
+export type {
+  CalendarOpsHealthSummary,
+  CalendarLoadGuardResult,
+  CalendarAuditAction,
+  CalendarAuditOutcome,
+  CalendarActorRole,
+  CalendarPermissionDecision,
+  CalendarAuditEntry,
+} from "./schedule-ops.contracts";
+
+export {
+  CALENDAR_EVENT_RENDER_CAP_BY_VIEW,
+  CALENDAR_AUDIT_ACTIONS,
+  CALENDAR_AUDIT_OUTCOMES,
+  CALENDAR_ACTOR_ROLES,
+} from "./schedule-ops.contracts";
