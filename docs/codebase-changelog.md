@@ -20,6 +20,33 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-27 - UI-03: capability gating service + IntakeHubClient refactor
+- Suggested Commit Title: `feat(ui-03): add capability gating service and wire to IntakeHubClient`
+- Scope: Phase 3 capability-driven UX gating for the Unified Inventory Intake Refactor plan.
+- Preflight evidence (reuse/refactor-first):
+  - No prior capability-gating logic outside `intake.contracts.ts` — clean slate for service
+  - `IntakeHubClient.tsx` had hardcoded `INTENT_REQUIRED_MODULE` constant — identified for replacement
+  - Phase 3 scope: pure functions only, no schema, no DB, no service rewrites
+- Changes:
+  - `src/features/intake/shared/intake-capability.service.ts` (NEW):
+    - `ALWAYS_AVAILABLE_CAPABILITIES`: `Set{manual_entry}` — always on
+    - `INDUSTRY_CAPABILITIES`: per-industry additive capability rules (5 industries)
+    - `MODULE_GATED_CAPABILITIES`: `{supplier_sync: "integrations"}`
+    - `resolveIntakeCapabilities(industryType, enabledModules)`: derives full capability set; null=unconstrained
+    - `isIntentVisible(intent, capabilities)`: true if ≥1 required capability is active
+    - `resolveVisibleIntents(industryType, enabledModules)`: industry ordering + visibility in one call
+  - `src/features/intake/shared/index.ts`: barrel updated to re-export capability service
+  - `src/features/intake/ui/IntakeHubClient.tsx`: removed hardcoded `INTENT_REQUIRED_MODULE`; delegates to `resolveVisibleIntents()`
+  - `src/features/intake/shared/intake-capability.service.test.mjs` (NEW): 17 unit tests, 5 suites
+  - `docs/unified-inventory-intake-refactor-plan.md`: UI-03 Latest Update; Pick Up Here → UI-04
+  - `docs/master-plan-v1.md`: UI-03 `[x]`, left-off → UI-04, completion 24/38 = 63.16%
+  - `docs/codebase-overview.md`: capability service added to canonical paths; current status updated
+- No schema migration required; no existing service/behavior changes
+- Validation:
+  - `node --test src/features/intake/shared/intake-capability.service.test.mjs` → PASS 17/17
+  - `npx tsc --noEmit --incremental false` → PASS
+  - `npx eslint` targeted on `src/features/intake/` → PASS
+
 ### 2026-02-27 - UI-02: intake session orchestration adapter layer
 - Suggested Commit Title: `feat(ui-02): add intake session orchestration adapter layer`
 - Scope: Phase 2 session orchestration unification for the Unified Inventory Intake Refactor plan.

@@ -1,15 +1,19 @@
 "use client";
 
 /**
- * Unified Inventory Intake Hub — UI-01 Phase 1.
+ * Unified Inventory Intake Hub — UI-01/UI-03.
  *
  * Intent-first landing surface for all inventory intake workflows.
- * Renders ordered intent cards based on industry type and enabled modules.
+ * Renders ordered intent cards based on capability-driven visibility
+ * resolved from industry type and enabled modules (UI-03).
+ *
+ * Visibility gating delegates to resolveVisibleIntents() — no hardcoded
+ * per-intent module checks in this component.
  *
  * Routing (compatibility wrappers — existing routes preserved):
- *   live_purchase  →  /shopping  (existing Shopping flow)
- *   bulk_intake    →  /receive   (existing Receive flow)
- *   supplier_sync  →  /integrations  (existing Integrations flow; conditional on module)
+ *   live_purchase  →  /shopping       (existing Shopping flow)
+ *   bulk_intake    →  /receive        (existing Receive flow)
+ *   supplier_sync  →  /integrations   (capability-gated via service)
  *
  * No behavior changes to existing flows.
  * All existing /shopping and /receive routes remain fully operational.
@@ -20,7 +24,7 @@ import { useBusinessConfig } from "@/shared/config/business-context";
 import {
   INTAKE_INTENT_LABELS,
   INTAKE_INTENT_DESCRIPTIONS,
-  INTAKE_INTENT_ORDER_BY_INDUSTRY,
+  resolveVisibleIntents,
   type IntakeIntent,
 } from "@/features/intake/shared";
 
@@ -32,11 +36,6 @@ const INTENT_HREF: Record<IntakeIntent, string> = {
   live_purchase: "/shopping",
   bulk_intake: "/receive",
   supplier_sync: "/integrations",
-};
-
-// Module gate: supplier_sync is only shown when the integrations module is active.
-const INTENT_REQUIRED_MODULE: Partial<Record<IntakeIntent, string>> = {
-  supplier_sync: "integrations",
 };
 
 // ---------------------------------------------------------------------------
@@ -75,15 +74,10 @@ const INTENT_COLOR: Record<IntakeIntent, string> = {
 export default function IntakeHubClient() {
   const router = useRouter();
   const { industryType, enabledModules } = useBusinessConfig();
-  const moduleSet = enabledModules ? new Set(enabledModules) : null;
 
-  // Derive industry-ordered intent list, filtering by module availability.
-  const orderedIntents = INTAKE_INTENT_ORDER_BY_INDUSTRY[industryType].filter((intent) => {
-    const requiredModule = INTENT_REQUIRED_MODULE[intent];
-    if (!requiredModule) return true;
-    if (!moduleSet) return false;
-    return moduleSet.has(requiredModule);
-  });
+  // UI-03: capability-gate driven visibility — delegates to resolveVisibleIntents()
+  // rather than hardcoded per-intent module checks.
+  const visibleIntents = resolveVisibleIntents(industryType, enabledModules);
 
   return (
     <div className="p-4 space-y-3">
@@ -91,7 +85,7 @@ export default function IntakeHubClient() {
         Choose how you want to record inventory.
       </p>
 
-      {orderedIntents.map((intent) => (
+      {visibleIntents.map((intent) => (
         <button
           key={intent}
           type="button"

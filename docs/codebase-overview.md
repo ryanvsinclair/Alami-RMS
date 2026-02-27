@@ -58,8 +58,8 @@ What remains outside plan completion:
 - Manual integrated smoke testing across core flows (user-run / final QA pass).
 - Receipt post-OCR correction plan is complete through Phase 6 closeout (`RC-19`), with non-blocking follow-ups tracked separately.
 - **Income Integrations Onboarding Plan: COMPLETE** (all phases IN-00 through IN-08, security checklist 7/7).
-- **UI-02 complete**: Intake session orchestration adapter layer shipped (`intake-session.contracts.ts`). Maps `ShoppingSessionStatus` and `ReceiptStatus` to canonical `IntakeSessionStatus`. Phase 3 next.
-- Unified Intake regrouping refactor Phases 0–2 done; Phases 3–5 remain (see `docs/unified-inventory-intake-refactor-plan.md`).
+- **UI-03 complete**: Capability gating service shipped (`intake-capability.service.ts`). `resolveVisibleIntents()` now drives `IntakeHubClient` intent visibility — no hardcoded per-intent module checks. Phase 4 next.
+- Unified Intake regrouping refactor Phases 0–3 done; Phases 4–5 remain (see `docs/unified-inventory-intake-refactor-plan.md`).
 - Operational Calendar/Schedule refactor is planned and sequencing-locked behind completion of all current plans (see `docs/operational-calendar-schedule-plan.md`).
 
 ## Stack
@@ -223,7 +223,8 @@ Implemented capabilities:
 Canonical paths:
 - `src/features/intake/shared/intake.contracts.ts` (vocabulary, intent model, session lifecycle, capabilities)
 - `src/features/intake/shared/intake-session.contracts.ts` (session orchestration adapter: status mappings, `IntakeSessionSummary` DTO, route builder)
-- `src/features/intake/ui/IntakeHubClient.tsx` (Hub UI component)
+- `src/features/intake/shared/intake-capability.service.ts` (capability gating: `resolveIntakeCapabilities`, `isIntentVisible`, `resolveVisibleIntents`)
+- `src/features/intake/ui/IntakeHubClient.tsx` (Hub UI component — uses `resolveVisibleIntents()`)
 - `app/(dashboard)/intake/page.tsx` (route wrapper)
 
 Migration posture:

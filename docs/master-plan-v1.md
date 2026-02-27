@@ -177,12 +177,12 @@ Use the `Canonical Order Checklist` statuses as the source of truth.
 Current snapshot (2026-02-27):
 
 - Total checklist items: `38`
-- `[x]` complete: `23`
+- `[x]` complete: `24`
 - `[~]` in progress: `0`
-- Strict completion: `60.53%`
-- Weighted progress: `60.53%`
+- Strict completion: `63.16%`
+- Weighted progress: `63.16%`
 - **Income Integrations Plan (IN-00 through IN-08): COMPLETE**
-- **UI-02 complete: intake session orchestration adapter layer shipped**
+- **UI-03 complete: capability gating service — resolveVisibleIntents() drives Hub visibility**
 
 Update rule after each slice:
 
@@ -313,7 +313,7 @@ Status legend:
 - [x] UI-00 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then finalize Phase 0 vocabulary/contracts in code/docs.
 - [x] UI-01 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then add Phase 1 Inventory Intake Hub shell (intent-first entry).
 - [x] UI-02 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then unify Phase 2 session orchestration to intake lifecycle.
-- [ ] UI-03 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 3 capability gating (industry-aware visibility/ordering).
+- [x] UI-03 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 3 capability gating (industry-aware visibility/ordering).
 - [ ] UI-04 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 4 navigation consolidation with compatibility routes/wrappers retained.
 - [ ] UI-05 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then execute Phase 5 cleanup/deprecation after adoption checks, with rollback safety.
 - [ ] UI-06 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then mark unified intake plan complete with changelog + overview sync.
@@ -336,13 +336,13 @@ Status legend:
 
 ## Last Left Off Here (Update This Block First)
 
-- Current task ID: `UI-03`
-- Current task: `Unified Inventory Intake Refactor — Phase 3 capability gating (industry-aware visibility/ordering)`
+- Current task ID: `UI-04`
+- Current task: `Unified Inventory Intake Refactor — Phase 4 navigation consolidation (compatibility routes/wrappers retained)`
 - Status: `READY`
 - Last updated: `2026-02-27`
 - Primary source plan section:
-  - `docs/unified-inventory-intake-refactor-plan.md` -> `Phase 3`
-- Note: UI-02 (Phase 2 session adapter layer) is **COMPLETE**. `intake-session.contracts.ts` adapter + 18 tests shipped; tsc/eslint clean.
+  - `docs/unified-inventory-intake-refactor-plan.md` -> `Phase 4`
+- Note: UI-03 (Phase 3 capability gating) is **COMPLETE**. `intake-capability.service.ts` + 17 tests shipped; Hub updated to `resolveVisibleIntents()`; tsc/eslint clean.
 
 ## Documentation Sync Checklist (Run Every Session)
 
@@ -354,6 +354,32 @@ Status legend:
 - [ ] `docs/codebase-overview.md` updated if behavior/architecture/canonical path descriptions changed.
 
 ## Latest Job Summary (Append New Entries At Top)
+
+### 2026-02-27 - UI-03 complete: capability gating service
+- Suggested Commit Title: `feat(ui-03): add capability gating service and wire to IntakeHubClient`
+- Completed:
+  - Ran UI-03 preflight scans:
+    - `grep -rn "IntakeCapability|INTAKE_CAPABILITIES|capability.*gat" src/ app/` → no prior capability-gating logic outside contracts
+    - `IntakeHubClient.tsx` used hardcoded `INTENT_REQUIRED_MODULE` constant — identified as the code to replace
+    - Phase 3 scope: pure functions only; no schema, no DB, no service rewrites
+  - UI-03 scoped additions:
+    - `src/features/intake/shared/intake-capability.service.ts`:
+      - `ALWAYS_AVAILABLE_CAPABILITIES`: `{manual_entry}` — universally active
+      - `INDUSTRY_CAPABILITIES`: per-industry additive capability sets (5 industries)
+      - `MODULE_GATED_CAPABILITIES`: `{supplier_sync: "integrations"}`
+      - `resolveIntakeCapabilities(industryType, enabledModules)`: full resolution with null=unconstrained
+      - `isIntentVisible(intent, capabilities)`: true if any required cap is active
+      - `resolveVisibleIntents(industryType, enabledModules)`: combines ordering + visibility
+    - `src/features/intake/shared/index.ts`: barrel updated to re-export capability service
+    - `src/features/intake/ui/IntakeHubClient.tsx`: removed `INTENT_REQUIRED_MODULE`; delegates to `resolveVisibleIntents()`
+    - `src/features/intake/shared/intake-capability.service.test.mjs`: 17 unit tests (5 suites)
+  - No schema migration; no existing service/behavior changes
+  - Validation gates all pass:
+    - `node --test src/features/intake/shared/intake-capability.service.test.mjs` → PASS 17/17
+    - `npx tsc --noEmit --incremental false` → PASS
+    - `npx eslint` targeted on touched files → PASS
+  - Completion: 24/38 = 63.16%
+- Next: `UI-04` (`docs/unified-inventory-intake-refactor-plan.md` Phase 4 — navigation consolidation)
 
 ### 2026-02-27 - UI-02 complete: intake session orchestration adapter layer
 - Suggested Commit Title: `feat(ui-02): add intake session orchestration adapter layer`

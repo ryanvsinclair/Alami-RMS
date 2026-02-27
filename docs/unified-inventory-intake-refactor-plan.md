@@ -1,9 +1,26 @@
 # Unified Inventory Intake Refactor Plan
 
 Last updated: February 27, 2026
-Status: Phase 2 complete; Phase 3 next
+Status: Phase 3 complete; Phase 4 next
 
 ## Latest Update
+
+### 2026-02-27 — UI-03 complete: Phase 3 capability gating service
+
+- Created `src/features/intake/shared/intake-capability.service.ts`:
+  - `resolveIntakeCapabilities(industryType, enabledModules)`: derives active `IntakeCapability` set
+    - Always-available: `manual_entry`
+    - Industry-specific: per-industry capability rules (restaurant gets `produce_entry`, salon gets `invoice_entry`, etc.)
+    - Module-gated: `supplier_sync` capability requires `integrations` module
+  - `isIntentVisible(intent, capabilities)`: returns `true` if any of the intent's required capabilities are active
+  - `resolveVisibleIntents(industryType, enabledModules)`: combines ordering + visibility into single entry point
+- Refactored `src/features/intake/ui/IntakeHubClient.tsx`:
+  - Removed hardcoded `INTENT_REQUIRED_MODULE` check
+  - Now delegates to `resolveVisibleIntents()` — single capability-gate call, no per-intent forks
+- Updated `src/features/intake/shared/index.ts` to re-export new service
+- Added `src/features/intake/shared/intake-capability.service.test.mjs`: 17 unit tests (5 suites) all pass
+- No schema migration required; no existing service changes
+- Validation: `node --test ...intake-capability.service.test.mjs` → PASS 17/17; `npx tsc` → PASS; `npx eslint` → PASS
 
 ### 2026-02-27 — UI-02 complete: Phase 2 session orchestration adapter layer
 
@@ -51,7 +68,7 @@ Status: Phase 2 complete; Phase 3 next
 
 ## Pick Up Here
 
-- Next task: **UI-03** — Phase 3 capability gating (industry-aware visibility/ordering)
+- Next task: **UI-04** — Phase 4 navigation consolidation (with compatibility routes/wrappers retained)
 
 ## Purpose
 
