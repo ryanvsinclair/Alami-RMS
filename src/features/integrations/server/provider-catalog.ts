@@ -4,6 +4,7 @@ import {
   INCOME_MVP_PROVIDER_SEQUENCE,
   INCOME_POST_MVP_PROVIDER_SEQUENCE,
   PROVIDER_RECOMMENDATIONS_BY_INDUSTRY,
+  SYNC_STALE_THRESHOLD_MS,
   isRecommendedForIndustry,
   listIncomeProvidersForIndustry,
   type IncomeProviderId,
@@ -64,6 +65,8 @@ export function listIncomeProviderConnectionCards(
       status: "not_connected",
       connectionId: null,
       lastSyncAt: null,
+      syncStale: false,
+      lastErrorMessage: null,
       connectLabel: oauthConfigured ? "Connect" : "Connect (Setup needed)",
       connectEnabled: oauthConfigured,
       connectHref: oauthConfigured
@@ -115,17 +118,28 @@ export async function listIncomeProviderConnectionCardsForBusiness(input: {
   const byProvider = new Map(connections.map((connection) => [connection.provider_id, connection]));
   const returnToPath = input.returnToPath ?? "/integrations";
 
+  const now = Date.now();
+
   return cards.map((card) => {
     const connection = byProvider.get(card.provider.id);
     if (!connection) return card;
 
     const isConnected = connection.status === "connected";
     const syncEnabled = isConnected && SYNC_ENABLED_PROVIDERS.has(connection.provider_id);
+    const lastSyncAt = connection.last_sync_at ? connection.last_sync_at.toISOString() : null;
+
+    // Stale sync: connected but never synced, or last sync was >24h ago
+    const syncStale = isConnected && (
+      !connection.last_sync_at ||
+      now - connection.last_sync_at.getTime() > SYNC_STALE_THRESHOLD_MS
+    );
 
     return {
       ...card,
       connectionId: connection.id,
-      lastSyncAt: connection.last_sync_at ? connection.last_sync_at.toISOString() : null,
+      lastSyncAt,
+      syncStale,
+      lastErrorMessage: connection.last_error_message ?? null,
       status: mapDatabaseStatusToCardStatus(connection.status),
       connectLabel: card.connectEnabled ? "Reconnect" : "Reconnect (Setup needed)",
       syncEnabled,

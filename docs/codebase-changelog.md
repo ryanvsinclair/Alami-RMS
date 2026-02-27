@@ -20,6 +20,35 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-27 - IN-06 complete: connection health indicators + stale sync warnings
+- Suggested Commit Title: `feat(in-06): add connection health indicators, stale sync warnings, and error message surface`
+- Scope:
+  - Income integrations Phase 6 (`IN-06`) reporting + connection health improvements.
+- Preflight evidence (reuse/refactor-first):
+  - `lastSyncAt` already in `IncomeProviderConnectionCard` and populated by catalog — needed only staleness logic
+  - `last_error_message` already on `BusinessIncomeConnection` model — no new column required
+  - `Badge` component already has `warning` variant — reused directly
+  - No schema migration required
+- Changes:
+  - `src/features/integrations/shared/income-connections.contracts.ts`:
+    - Added `SYNC_STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000` constant
+    - Added `syncStale: boolean` field (connected but no sync or >24h ago)
+    - Added `lastErrorMessage: string | null` field
+  - `src/features/integrations/server/provider-catalog.ts`:
+    - Imported `SYNC_STALE_THRESHOLD_MS` from shared
+    - Static default cards: `syncStale: false, lastErrorMessage: null`
+    - Business cards: computed `syncStale` + populated `lastErrorMessage` from `connection.last_error_message`
+  - `src/features/integrations/ui/IncomeProviderConnectCard.tsx`:
+    - Added `Sync Stale` warning badge (`Badge variant="warning"`) when `card.syncStale=true`
+    - Added "Connected but no sync has run yet" prompt for connected+stale+never-synced case
+    - Added error message display when `status="error"` and `lastErrorMessage` is set
+  - `src/features/integrations/server/provider-catalog.test.mjs`:
+    - Added `syncStale=false` and `lastErrorMessage=null` assertions for unconnected cards
+- Validation:
+  - `npx tsx --test src/features/integrations/server/provider-catalog.test.mjs src/features/integrations/server/oauth.service.test.mjs` -> PASS 6/6
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `npx eslint` targeted on all touched IN-06 files -> PASS
+
 ### 2026-02-27 - IN-05 complete: scheduled sync + webhook hardening (cron runner, sync lock guard, webhook verification)
 - Suggested Commit Title: `feat(in-05): add scheduled sync cron runner, sync lock guard, and webhook verification endpoints`
 - Scope:

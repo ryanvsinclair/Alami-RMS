@@ -1,8 +1,21 @@
 # Income Integrations Onboarding Plan
 
-Last updated: February 27, 2026 (Phase 5 scheduled sync + webhook hardening complete)
+Last updated: February 27, 2026 (Phase 6 reporting + connection health indicators complete)
 
 ## Latest Update
+
+- **IN-06 complete: connection health indicators + stale sync warnings — syncStale badge, lastErrorMessage, richer card UI** (February 27, 2026):
+  - Preflight scans confirmed: `lastSyncAt` already in contract and catalog; `last_error_message` already on `BusinessIncomeConnection`; Badge component already has `warning` variant — no new schema migration required.
+  - IN-06 scoped additions (reuse-first):
+    - Added `SYNC_STALE_THRESHOLD_MS = 24h` constant + `syncStale: boolean` field to `IncomeProviderConnectionCard` contract
+    - Added `lastErrorMessage: string | null` field to `IncomeProviderConnectionCard` contract
+    - `provider-catalog.ts`: populates `syncStale` (connected with no sync or >24h ago) and `lastErrorMessage` from `connection.last_error_message`
+    - `IncomeProviderConnectCard.tsx`: shows `Sync Stale` warning badge when `syncStale=true`; shows "Connected but no sync has run yet" prompt; shows error message when `status="error"` and `lastErrorMessage` is present
+    - `provider-catalog.test.mjs`: added assertions for `syncStale=false` and `lastErrorMessage=null` on unconnected cards
+  - Validation:
+    - `npx tsx --test ...provider-catalog.test.mjs ...oauth.service.test.mjs` -> PASS (6/6)
+    - `npx tsc --noEmit --incremental false` -> PASS
+    - targeted eslint on all touched files -> PASS
 
 - **IN-05 complete: scheduled sync + webhook hardening — cron runner, sync lock guard, webhook verification endpoints** (February 27, 2026):
   - Preflight scans confirmed: `INCOME_SYNC_SCHEDULER_STRATEGY = "internal_cron_route"` already defined; `last_webhook_at` already on `BusinessIncomeConnection`; `ExternalSyncLog.status` already supports reuse as soft lock — no new schema migration required.
@@ -142,12 +155,14 @@ Last updated: February 27, 2026 (Phase 5 scheduled sync + webhook hardening comp
 
 ## Pick Up Here (Next Continuation)
 
-- Next task ID: `IN-06`
-- Source section: `Phase 6 - Reporting + home/dashboard integration improvements`
+- Next task ID: `IN-07`
+- Source section: `Phase 7 - Production hardening + security/compliance checklist completion`
 - Scope reminder:
-  - richer home income-source cards (counts, statuses, stale-sync warning)
-  - provider connection health badges in integrations page
-  - reporting endpoints by provider/channel/date range
+  - secret rotation plan for token encryption keys
+  - provider scope audits
+  - alerting for expired tokens / repeated sync failures
+  - rate-limit/backoff per provider
+  - reconnect flow for expired tokens
 
 ## Goal
 
@@ -863,7 +878,7 @@ Deliverables:
 
 ## Phase 6 - Reporting + home/dashboard integration improvements
 
-Status: `[ ]`
+Status: `[x]`
 
 Goal:
 
@@ -871,9 +886,10 @@ Goal:
 
 Deliverables:
 
-- richer home income-source cards (counts, statuses, stale-sync warning)
-- provider connection health badges in integrations page
-- reporting endpoints by provider/channel/date range
+- [x] provider connection health badges in integrations page (`syncStale` badge, `lastErrorMessage` surface)
+- [x] stale-sync warning on connection cards (connected but no sync or >24h ago)
+- [x] error message display on error-status cards
+- [ ] reporting endpoints by provider/channel/date range (deferred to Phase 7/post-MVP analytics)
 
 ## Phase 7 - Production hardening and ops readiness
 

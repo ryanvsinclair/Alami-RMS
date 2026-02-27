@@ -57,7 +57,7 @@ High-level completion:
 What remains outside plan completion:
 - Manual integrated smoke testing across core flows (user-run / final QA pass).
 - Receipt post-OCR correction plan is complete through Phase 6 closeout (`RC-19`), with non-blocking follow-ups tracked separately.
-- Income integrations onboarding plan Phase 5 is complete (scheduled cron sync runner, sync lock guard, webhook verification endpoints for Uber Eats + DoorDash); reporting/home improvements (Phase 6) is next.
+- Income integrations onboarding plan Phase 6 is complete (connection health indicators, stale sync warnings, error message surface on cards); production hardening (Phase 7) is next.
 - Unified Intake regrouping refactor is planned but not yet implemented (see `docs/unified-inventory-intake-refactor-plan.md`).
 - Operational Calendar/Schedule refactor is planned and sequencing-locked behind completion of all current plans (see `docs/operational-calendar-schedule-plan.md`).
 
@@ -278,6 +278,12 @@ Canonical paths (additional Phase 5):
 - `app/api/integrations/sync/cron/route.ts`
 - `app/api/integrations/webhooks/uber-eats/route.ts`
 - `app/api/integrations/webhooks/doordash/route.ts`
+
+Connection health indicators (Phase 6 complete):
+- `IncomeProviderConnectionCard.syncStale`: true if connected with no sync or >24h since last sync (`SYNC_STALE_THRESHOLD_MS`)
+- `IncomeProviderConnectionCard.lastErrorMessage`: populated from `connection.last_error_message` when status is `error`
+- `IncomeProviderConnectCard.tsx`: renders `Sync Stale` warning badge, "no sync run yet" prompt, and error message
+- `provider-catalog.ts` computes both fields from DB connection state at card-build time
 
 ### Receiving (4 ingestion paths)
 

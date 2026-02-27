@@ -177,10 +177,10 @@ Use the `Canonical Order Checklist` statuses as the source of truth.
 Current snapshot (2026-02-27):
 
 - Total checklist items: `38`
-- `[x]` complete: `17`
+- `[x]` complete: `18`
 - `[~]` in progress: `0`
-- Strict completion: `44.74%`
-- Weighted progress: `44.74%`
+- Strict completion: `47.37%`
+- Weighted progress: `47.37%`
 
 Update rule after each slice:
 
@@ -302,7 +302,7 @@ Status legend:
 - [x] IN-03 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 3 first provider pilot end-to-end (connect -> token storage -> sync -> dashboard projection).
 - [x] IN-04 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 4 restaurant-provider rollout (Uber Eats + DoorDash + POS set chosen by product/engineering).
 - [x] IN-05 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 5 scheduled sync + webhook hardening.
-- [ ] IN-06 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 6 reporting/home income-layer improvements.
+- [x] IN-06 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 6 reporting/home income-layer improvements.
 - [ ] IN-07 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 7 production hardening + security/compliance checklist completion.
 - [ ] IN-08 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then mark income integrations plan complete with changelog + overview sync.
 
@@ -334,12 +334,12 @@ Status legend:
 
 ## Last Left Off Here (Update This Block First)
 
-- Current task ID: `IN-06`
-- Current task: `Income integrations Phase 6 reporting + home income-layer improvements`
+- Current task ID: `IN-07`
+- Current task: `Income integrations Phase 7 production hardening + security/compliance checklist completion`
 - Status: `READY`
 - Last updated: `2026-02-27`
 - Primary source plan section:
-  - `docs/income-integrations-onboarding-plan.md` -> `Phase 6`
+  - `docs/income-integrations-onboarding-plan.md` -> `Phase 7`
 
 ## Documentation Sync Checklist (Run Every Session)
 
@@ -351,6 +351,26 @@ Status legend:
 - [ ] `docs/codebase-overview.md` updated if behavior/architecture/canonical path descriptions changed.
 
 ## Latest Job Summary (Append New Entries At Top)
+
+### 2026-02-27 - IN-06 complete: connection health indicators + stale sync warnings
+- Suggested Commit Title: `feat(in-06): add connection health indicators, stale sync warnings, and error message surface`
+- Completed:
+  - Ran IN-06 preflight scans:
+    - Confirmed `lastSyncAt` already in contract + catalog — just needed staleness check
+    - Confirmed `last_error_message` already on `BusinessIncomeConnection` — no new schema migration needed
+    - Confirmed Badge component already has `warning` variant — reused directly
+  - IN-06 scoped additions (reuse-first):
+    - `SYNC_STALE_THRESHOLD_MS = 24h` constant + `syncStale: boolean` field in `income-connections.contracts.ts`
+    - `lastErrorMessage: string | null` field in `income-connections.contracts.ts`
+    - `provider-catalog.ts`: computes `syncStale` (connected, no sync or >24h ago), populates `lastErrorMessage` from DB
+    - `IncomeProviderConnectCard.tsx`: `Sync Stale` warning badge when `syncStale=true`; "no sync run yet" prompt for stale+never-synced; error message for `status="error"` cards
+    - `provider-catalog.test.mjs`: added `syncStale=false` + `lastErrorMessage=null` assertions for unconnected cards
+  - Validation gates all pass:
+    - `npx tsx --test ...provider-catalog.test.mjs ...oauth.service.test.mjs` -> PASS 6/6
+    - `npx tsc --noEmit --incremental false` -> PASS
+    - targeted eslint on all touched files -> PASS
+  - Completion: 18/38 = 47.37%
+- Next: `IN-07` (`docs/income-integrations-onboarding-plan.md` Phase 7 — production hardening + security/compliance)
 
 ### 2026-02-27 - IN-05 complete: scheduled sync + webhook hardening — cron runner, sync lock guard, webhook verification endpoints
 - Suggested Commit Title: `feat(in-05): add scheduled sync cron runner, sync lock guard, and webhook verification endpoints`

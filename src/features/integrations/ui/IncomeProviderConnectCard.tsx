@@ -43,6 +43,9 @@ export function IncomeProviderConnectCard({
             ) : (
               <Badge variant="default">Optional</Badge>
             )}
+            {card.syncStale && (
+              <Badge variant="warning">Sync Stale</Badge>
+            )}
           </div>
           <p className="text-sm text-muted">
             Connect your {card.provider.name} account to sync income into dashboard layers.
@@ -53,6 +56,16 @@ export function IncomeProviderConnectCard({
               <span className="text-foreground">
                 {new Date(card.lastSyncAt).toLocaleString()}
               </span>
+            </p>
+          )}
+          {card.status === "connected" && card.syncStale && !card.lastSyncAt && (
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              Connected but no sync has run yet. Run a manual sync to initialize.
+            </p>
+          )}
+          {card.status === "error" && card.lastErrorMessage && (
+            <p className="text-xs text-red-600 dark:text-red-400">
+              Error: {card.lastErrorMessage}
             </p>
           )}
         </div>

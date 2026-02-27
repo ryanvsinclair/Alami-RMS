@@ -21,6 +21,8 @@ test("restaurant catalog prioritizes MVP rollout order", () => {
   assert.equal(cards[0].connectEnabled, false);
   assert.equal(cards[0].connectHref, null);
   assert.equal(cards[0].lastSyncAt, null, "unconnected cards should have lastSyncAt=null");
+  assert.equal(cards[0].syncStale, false, "unconnected cards should have syncStale=false");
+  assert.equal(cards[0].lastErrorMessage, null, "unconnected cards should have lastErrorMessage=null");
 });
 
 test("contractor catalog excludes restaurant-only delivery providers", () => {
