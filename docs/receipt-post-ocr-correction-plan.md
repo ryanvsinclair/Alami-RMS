@@ -4,6 +4,34 @@ Last updated: February 27, 2026 (draft / implementation-ready plan)
 
 ## Latest Update
 
+- **Phase 2 RC-14 complete: parse-confidence metadata persistence + receipt review UI indicators** (February 27, 2026):
+  - Added schema-backed parse metadata fields on `ReceiptLineItem`:
+    - `parse_confidence_score Decimal(4,3)?`
+    - `parse_confidence_band MatchConfidence?`
+    - `parse_flags Json?`
+    - `parse_corrections Json?`
+  - Added migration:
+    - `prisma/migrations/20260227203000_receipt_line_item_parse_metadata/migration.sql`
+  - Wired line-level parse metadata persistence from correction-core output in both receipt workflows:
+    - `parseAndMatchReceipt(...)` (raw parsed-text path)
+    - `processReceiptImage(...)` (TabScanner path)
+  - Kept confidence semantics separated:
+    - `ReceiptLineItem.confidence` remains inventory match confidence
+    - `ReceiptLineItem.parse_confidence_band` is parse-confidence only
+  - Updated receipt review UI indicators:
+    - line rows now show separate parse-confidence and match-confidence badges
+    - low/medium parse-confidence lines surface parse flags inline
+    - review summary badges now report parse-confidence high/medium/low counts
+  - Validation:
+    - `npx prisma generate` -> PASS
+    - `npx prisma validate` -> PASS
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-core.test.mjs` -> PASS (14/14)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-fixtures.test.mjs` -> PASS (27/27)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt.test.mjs` -> PASS (3/3)
+    - `npx tsx --test src/features/receiving/receipt/server/receipt-produce-lookup.service.test.mjs` -> PASS (3/3)
+    - `npx tsc --noEmit --incremental false` -> PASS
+    - targeted `eslint` on touched receipt workflow/repository/UI/shared-contract paths -> PASS
+
 - **Phase 1.5 RC-13 complete: schema-backed minimal produce metadata persistence** (February 27, 2026):
   - RC-13 persistence decision is resolved to **schema-backed**.
   - Added minimal nullable `ReceiptLineItem` columns (no over-modeling):
@@ -169,18 +197,18 @@ Last updated: February 27, 2026 (draft / implementation-ready plan)
 
 ## Pick Up Here (Next Continuation)
 
-Continue with **Phase 2 (RC-14): parse confidence persistence + receipt review UI indicators**.
+Continue with **Phase 3 (RC-15): store-specific parse profile memory**.
 
 Recommended next implementation order:
 
-1. Persist parse-confidence metadata in a schema-safe path
-   - keep inventory-match confidence semantics unchanged (`ReceiptLineItem.confidence` remains match confidence)
-2. Surface parse-confidence indicators in receipt review UI
-   - add clear low/medium/high parse-confidence visibility without conflating with match status
-3. Add focused validation for persistence + UI behavior
-   - verify parse metadata survives parse/reload cycles and renders correctly in review workflows
-4. Keep production behavior risk-controlled
-   - remain in `shadow` first, inspect correction metrics/deltas, then promote safe rules to `enforce`
+1. Implement `ReceiptParseProfile` persistence contract
+   - choose dedicated table vs supplier-scoped JSON contract and lock one canonical path
+2. Learn/store profile signals from receipt outcomes
+   - persist stable per-store parsing signals (tax labels, numeric shapes, section patterns)
+3. Consume profile priors in correction scoring inputs
+   - keep domain correction pure; apply profile retrieval/orchestration in feature server layer
+4. Add focused validation for profile learning/reuse behavior
+   - verify repeated-store receipts converge toward more stable parse-confidence outputs
 
 Implementation guardrails (carry forward):
 
@@ -1342,11 +1370,11 @@ Progress notes (2026-02-27):
   - wired line-item persistence of `plu_code` and `organic_flag` in `receipt.repository.ts`
 - Remaining:
   - add broader multilingual produce fixtures and lookup validation cases
-  - continue with RC-14 parse-confidence persistence and review UI indicators
+  - continue with RC-15 store-specific parse profile memory
 
 ## Phase 2 - Line-level parse confidence and UI flags
 
-Status: `[ ]`
+Status: `[x]`
 
 Deliverables:
 
@@ -1358,6 +1386,12 @@ Deliverables:
 Note:
 
 - Keep inventory match confidence UI distinct from parse confidence UI
+
+Progress notes (2026-02-27):
+
+- Added schema-backed line-level parse metadata columns on `ReceiptLineItem` (`parse_confidence_score`, `parse_confidence_band`, `parse_flags`, `parse_corrections`) plus migration `20260227203000_receipt_line_item_parse_metadata`.
+- Persisted correction-core parse metadata during line-item write in both receipt workflows (`parseAndMatchReceipt`, `processReceiptImage`).
+- Updated receipt review UI to render parse-confidence indicators separately from match confidence, with inline parse-flag visibility for medium/low parse-confidence lines.
 
 ## Phase 3 - Store-specific pattern memory
 

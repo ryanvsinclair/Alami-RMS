@@ -20,6 +20,64 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-27 - RC-14 complete: persist parse-confidence metadata + add separate parse-confidence review indicators
+- Suggested Commit Title: `feat(rc-14): persist receipt parse-confidence metadata and show parse indicators in review UI`
+- Scope:
+  - Receipt correction Phase 2 (`RC-14`) for line-level parse metadata persistence and receipt review UI parse-confidence indicators.
+- Preflight evidence (reuse/refactor-first + DB/Prisma integrity):
+  - Reviewed source-plan RC-14 scope and pickup marker:
+    - `docs/receipt-post-ocr-correction-plan.md` (`Pick Up Here`, `Phase 2 - Line-level parse confidence and UI flags`)
+  - Ran scoped scans before implementation:
+    - `rg -n "parse_confidence|parse_flags|parse_corrections|ReceiptLineItem|receipt review|ReceiptReceivePageClient|ReceiptLineItemRow" src app test docs prisma`
+    - `rg --files src app test | rg "receipt|receiving|review|correction|workflow|repository|contracts"`
+  - Reviewed canonical DB sources:
+    - `prisma/schema.prisma`
+    - latest migration before this slice: `prisma/migrations/20260227190000_receipt_line_item_produce_metadata/migration.sql`
+  - Reused existing write/read flow (`receipt-workflow.service.ts` + `receipt.repository.ts`) and existing receipt review components; no duplicate pipeline/files created.
+- What changed:
+  - Added schema-backed parse metadata fields on `ReceiptLineItem`:
+    - `parse_confidence_score Decimal(4,3)?`
+    - `parse_confidence_band MatchConfidence?`
+    - `parse_flags Json?`
+    - `parse_corrections Json?`
+  - Added migration:
+    - `prisma/migrations/20260227203000_receipt_line_item_parse_metadata/migration.sql`
+  - Persisted line-level parse metadata from correction-core output for both receipt workflows:
+    - `parseAndMatchReceipt(...)` (parsed-text path)
+    - `processReceiptImage(...)` (TabScanner path)
+  - Kept match and parse confidence semantics separate:
+    - `ReceiptLineItem.confidence` remains inventory-match confidence
+    - parse confidence stored in new parse fields only
+  - Updated receipt review UI:
+    - per-line parse-confidence badge added alongside existing match-confidence badge
+    - low/medium parse-confidence lines now show inline parse flags
+    - summary badges now show parse-confidence high/med/low counts
+  - Updated plan/overview/master docs to mark RC-14 complete and move canonical pointer to RC-15.
+- Files changed:
+  - `prisma/schema.prisma`
+  - `prisma/migrations/20260227203000_receipt_line_item_parse_metadata/migration.sql`
+  - `src/features/receiving/receipt/server/contracts.ts`
+  - `src/features/receiving/receipt/server/receipt.repository.ts`
+  - `src/features/receiving/receipt/server/receipt-workflow.service.ts`
+  - `src/features/receiving/shared/contracts.ts`
+  - `src/features/receiving/receipt/ui/ReceiptLineItemRow.tsx`
+  - `src/features/receiving/receipt/ui/ReceiptReceivePageClient.tsx`
+  - `docs/receipt-post-ocr-correction-plan.md`
+  - `docs/master-plan-v1.md`
+  - `docs/codebase-overview.md`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - `npx prisma generate` -> PASS
+  - `npx prisma validate` -> PASS
+  - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-core.test.mjs` -> PASS (14/14; expected Node experimental/module-type warnings)
+  - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-fixtures.test.mjs` -> PASS (27/27; expected Node experimental/module-type warnings)
+  - `node --test --experimental-transform-types src/domain/parsers/receipt.test.mjs` -> PASS (3/3; expected Node experimental/module-type warnings)
+  - `npx tsx --test src/features/receiving/receipt/server/receipt-produce-lookup.service.test.mjs` -> PASS (3/3)
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `npx eslint src/features/receiving/receipt/server/contracts.ts src/features/receiving/receipt/server/receipt.repository.ts src/features/receiving/receipt/server/receipt-workflow.service.ts src/features/receiving/receipt/ui/ReceiptLineItemRow.tsx src/features/receiving/receipt/ui/ReceiptReceivePageClient.tsx src/features/receiving/shared/contracts.ts --quiet` -> PASS
+- Notes:
+  - RC-14 completion keeps schema/contracts aligned with the non-overload rule: parse confidence is now persisted separately from match confidence.
+
 ### 2026-02-27 - RC-13 complete: schema-backed minimal produce metadata persistence (`ReceiptLineItem`)
 - Suggested Commit Title: `feat(rc-13): persist receipt line produce metadata with minimal nullable columns`
 - Scope:

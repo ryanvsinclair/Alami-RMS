@@ -162,6 +162,15 @@ export default function ReceiptReceivePageClient() {
     (li) => li.status === "confirmed" || li.status === "matched"
   ).length ?? 0;
   const totalCount = receipt?.line_items.length ?? 0;
+  const parseHighCount = receipt?.line_items.filter(
+    (li) => li.parse_confidence_band === "high"
+  ).length ?? 0;
+  const parseMediumCount = receipt?.line_items.filter(
+    (li) => li.parse_confidence_band === "medium"
+  ).length ?? 0;
+  const parseLowCount = receipt?.line_items.filter(
+    (li) => li.parse_confidence_band === "low" || li.parse_confidence_band === "none"
+  ).length ?? 0;
 
   function reset() {
     setStep("input");
@@ -265,9 +274,9 @@ export default function ReceiptReceivePageClient() {
               <p className="text-xs text-muted">{confirmedCount} matched</p>
             </div>
             <div className="flex gap-2">
-              <Badge variant="success">{receipt.line_items.filter((l) => l.confidence === "high").length} high</Badge>
-              <Badge variant="warning">{receipt.line_items.filter((l) => l.confidence === "medium").length} med</Badge>
-              <Badge variant="danger">{receipt.line_items.filter((l) => l.confidence === "low" || l.confidence === "none").length} low</Badge>
+              <Badge variant="success">{parseHighCount} parse high</Badge>
+              <Badge variant="warning">{parseMediumCount} parse med</Badge>
+              <Badge variant="danger">{parseLowCount} parse low</Badge>
             </div>
           </div>
 

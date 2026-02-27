@@ -210,6 +210,10 @@ export async function createLineItem(
     unit_cost: number | null;
     plu_code?: number | null;
     organic_flag?: boolean | null;
+    parse_confidence_score?: number | null;
+    parse_confidence_band?: MatchConfidence | null;
+    parse_flags?: string[] | null;
+    parse_corrections?: unknown[] | null;
     matched_item_id: string | null;
     confidence: MatchConfidence | null;
     status: LineItemStatus;
@@ -227,6 +231,10 @@ export async function createLineItem(
       unit_cost: line.unit_cost,
       plu_code: line.plu_code ?? null,
       organic_flag: line.organic_flag ?? null,
+      parse_confidence_score: line.parse_confidence_score ?? null,
+      parse_confidence_band: line.parse_confidence_band ?? null,
+      parse_flags: (line.parse_flags ?? []) as Prisma.InputJsonValue,
+      parse_corrections: (line.parse_corrections ?? []) as Prisma.InputJsonValue,
       matched_item_id: line.matched_item_id,
       confidence: line.confidence ?? undefined,
       status: line.status,

@@ -8,11 +8,24 @@ import type {
   ReceiveReceiptReviewLineItem,
 } from "@/features/receiving/shared/contracts";
 
-const confidenceBadge: Record<string, { variant: "success" | "warning" | "danger" | "default"; label: string }> = {
-  high: { variant: "success", label: "Auto" },
-  medium: { variant: "warning", label: "Suggest" },
-  low: { variant: "danger", label: "Low" },
-  none: { variant: "danger", label: "No match" },
+const matchConfidenceBadge: Record<
+  string,
+  { variant: "success" | "warning" | "danger" | "default"; label: string }
+> = {
+  high: { variant: "success", label: "Match high" },
+  medium: { variant: "warning", label: "Match med" },
+  low: { variant: "danger", label: "Match low" },
+  none: { variant: "default", label: "No match" },
+};
+
+const parseConfidenceBadge: Record<
+  string,
+  { variant: "success" | "warning" | "danger" | "default"; label: string }
+> = {
+  high: { variant: "success", label: "Parse high" },
+  medium: { variant: "warning", label: "Parse med" },
+  low: { variant: "danger", label: "Parse low" },
+  none: { variant: "default", label: "Parse n/a" },
 };
 
 export function ReceiptLineItemRow({
@@ -28,7 +41,9 @@ export function ReceiptLineItemRow({
 }) {
   const [showNotFound, setShowNotFound] = useState(false);
   const isResolved = lineItem.status === "confirmed" || lineItem.status === "skipped";
-  const badge = confidenceBadge[lineItem.confidence] ?? confidenceBadge.none;
+  const matchBadge = matchConfidenceBadge[lineItem.confidence] ?? matchConfidenceBadge.none;
+  const parseBand = lineItem.parse_confidence_band ?? "none";
+  const parseBadge = parseConfidenceBadge[parseBand] ?? parseConfidenceBadge.none;
 
   if (showNotFound) {
     return (
@@ -63,13 +78,23 @@ export function ReceiptLineItemRow({
             <p className="text-xs text-muted truncate">{lineItem.raw_text}</p>
           )}
         </div>
-        <Badge variant={badge.variant}>{badge.label}</Badge>
+        <div className="flex items-center gap-1 shrink-0">
+          <Badge variant={parseBadge.variant}>{parseBadge.label}</Badge>
+          <Badge variant={matchBadge.variant}>{matchBadge.label}</Badge>
+        </div>
       </div>
 
       <div className="flex items-center gap-3 text-sm text-muted">
         <span>Qty: {lineItem.quantity ?? "?"} {lineItem.unit ?? ""}</span>
         {lineItem.line_cost && <span>${Number(lineItem.line_cost).toFixed(2)}</span>}
       </div>
+      {(lineItem.parse_confidence_band === "low" || lineItem.parse_confidence_band === "medium") &&
+        lineItem.parse_flags &&
+        lineItem.parse_flags.length > 0 && (
+          <p className="text-xs text-amber-300/90 truncate">
+            Parse flags: {lineItem.parse_flags.slice(0, 3).join(", ")}
+          </p>
+        )}
 
       {!isResolved && (
         <div className="space-y-2 pt-1">

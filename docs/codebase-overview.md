@@ -284,6 +284,8 @@ Implemented capabilities:
 - Raw-text totals extraction now supports additional noisy label/amount variants (`Sub-Total`, `Total Due`, `Montant total`, spaced/comma-decimal amounts) for stronger tax/totals interpretation on parsed-text receipts
 - Service-layer produce lookup is now active post-core correction (`receipt-produce-lookup.service.ts`): PLU-first + fuzzy name matching against `produce_items`, with province-aware language order (`QC: FR -> EN`, default `EN`)
 - Schema-backed minimal produce persistence is active on `ReceiptLineItem` with nullable `plu_code` and `organic_flag` fields
+- Schema-backed parse metadata persistence is active on `ReceiptLineItem` (`parse_confidence_score`, `parse_confidence_band`, `parse_flags`, `parse_corrections`) so parse-confidence evidence survives parse/reload cycles
+- Receipt review UI now surfaces parse-confidence indicators separately from match confidence (per-line parse badges, parse-band summary counts, inline parse flags for medium/low confidence lines)
 - Receipt-correction fixture corpus is expanded to 20 runnable scenarios, including discount-heavy parsed-text and historical-threshold boundary coverage
 - Idempotent receipt commit behavior in inventory ledger path
 - Receipt auto-resolution observability (process-local summaries)

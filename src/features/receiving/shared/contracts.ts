@@ -15,6 +15,14 @@ export interface ReceiveMatchedItemRef {
   unit: string;
 }
 
+export interface ReceiveParseCorrectionAction {
+  type: string;
+  before: string | number | null;
+  after: string | number | null;
+  confidence: number;
+  reason: string;
+}
+
 export interface ReceiveReceiptReviewLineItem {
   id: string;
   line_number: number;
@@ -25,6 +33,10 @@ export interface ReceiveReceiptReviewLineItem {
   line_cost: number | string | null;
   unit_cost: number | string | null;
   confidence: string;
+  parse_confidence_score: number | string | null;
+  parse_confidence_band: string | null;
+  parse_flags: string[] | null;
+  parse_corrections: ReceiveParseCorrectionAction[] | null;
   status: string;
   matched_item: ReceiveMatchedItemRef | null;
 }
@@ -43,6 +55,10 @@ export interface ReceiveReceiptDetailLineItem {
   unit: string | null;
   line_cost: number | string | null;
   unit_cost: number | string | null;
+  parse_confidence_score: number | string | null;
+  parse_confidence_band: string | null;
+  parse_flags: string[] | null;
+  parse_corrections: ReceiveParseCorrectionAction[] | null;
   matched_item: ReceiveMatchedItemRef | null;
 }
 

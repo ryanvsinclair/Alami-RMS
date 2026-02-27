@@ -17,7 +17,10 @@ import { scanReceipt } from "@/server/integrations/receipts/tabscanner";
 import { uploadReceiptImage } from "@/server/storage/supabase/receipt-images";
 import type { ParsedDataSummary, ResolvedLineItem } from "./contracts";
 import { runReceiptPostOcrCorrection } from "./receipt-correction.service";
-import type { ReceiptPostOcrCorrectionSummary } from "./receipt-correction.contracts";
+import type {
+  ReceiptPostOcrCorrectionResult,
+  ReceiptPostOcrCorrectionSummary,
+} from "./receipt-correction.contracts";
 import {
   createReceiptRecord,
   updateReceiptStatus,
@@ -382,6 +385,44 @@ function buildMatchSummary(lines: ResolvedLineItem[]): Pick<
     suggested_count: lines.filter((l) => l.status === "suggested").length,
     unresolved_count: lines.filter((l) => l.status === "unresolved").length,
   };
+}
+
+type ReceiptLineParseMetadata = {
+  parse_confidence_score: number | null;
+  parse_confidence_band: ResolvedLineItem["parse_confidence_band"];
+  parse_flags: string[];
+  parse_corrections: NonNullable<ResolvedLineItem["parse_corrections"]>;
+};
+
+function buildParseMetadataByLineNumber(
+  correction: ReceiptPostOcrCorrectionResult,
+): Map<number, ReceiptLineParseMetadata> {
+  const metadataByLineNumber = new Map<number, ReceiptLineParseMetadata>();
+
+  for (const entry of correction.core.lines) {
+    metadataByLineNumber.set(entry.line.line_number, {
+      parse_confidence_score: entry.parse_confidence_score,
+      parse_confidence_band: entry.parse_confidence_band,
+      parse_flags: [...entry.parse_flags],
+      parse_corrections: [...entry.correction_actions],
+    });
+  }
+
+  return metadataByLineNumber;
+}
+
+function getLineParseMetadata(
+  metadataByLineNumber: Map<number, ReceiptLineParseMetadata>,
+  lineNumber: number,
+): ReceiptLineParseMetadata {
+  return (
+    metadataByLineNumber.get(lineNumber) ?? {
+      parse_confidence_score: null,
+      parse_confidence_band: "none",
+      parse_flags: [],
+      parse_corrections: [],
+    }
+  );
 }
 
 function normalizePriceSignalKey(text: string | null | undefined): string | null {
@@ -794,10 +835,12 @@ export async function parseAndMatchReceipt(
           }
         : undefined,
   });
+  const parseMetadataByLineNumber = buildParseMetadataByLineNumber(correction);
 
   // Match each line item against inventory
   const lineItemsWithMatches: ResolvedLineItem[] = await Promise.all(
     correction.lines.map(async (line) => {
+      const parseMetadata = getLineParseMetadata(parseMetadataByLineNumber, line.line_number);
       const resolved = await resolveReceiptLineMatch({
         rawText: line.raw_text,
         parsedName: line.parsed_name,
@@ -808,6 +851,10 @@ export async function parseAndMatchReceipt(
 
       return {
         ...line,
+        parse_confidence_score: parseMetadata.parse_confidence_score,
+        parse_confidence_band: parseMetadata.parse_confidence_band,
+        parse_flags: parseMetadata.parse_flags,
+        parse_corrections: parseMetadata.parse_corrections,
         matched_item_id: resolved.matched_item_id,
         confidence: resolved.confidence,
         status: resolved.status,
@@ -968,10 +1015,12 @@ export async function processReceiptImage(
         : {}),
     },
   });
+  const parseMetadataByLineNumber = buildParseMetadataByLineNumber(correction);
 
   // Create line items from corrected candidates and match against inventory
   const lineItemsWithMatches: ResolvedLineItem[] = await Promise.all(
     correction.lines.map(async (line) => {
+      const parseMetadata = getLineParseMetadata(parseMetadataByLineNumber, line.line_number);
       const resolved = await resolveReceiptLineMatch({
         rawText: line.raw_text,
         parsedName: line.parsed_name,
@@ -991,6 +1040,10 @@ export async function processReceiptImage(
         plu_code: line.plu_code ?? null,
         produce_match: line.produce_match ?? null,
         organic_flag: line.organic_flag ?? null,
+        parse_confidence_score: parseMetadata.parse_confidence_score,
+        parse_confidence_band: parseMetadata.parse_confidence_band,
+        parse_flags: parseMetadata.parse_flags,
+        parse_corrections: parseMetadata.parse_corrections,
         matched_item_id: resolved.matched_item_id,
         confidence: resolved.confidence,
         status: resolved.status,

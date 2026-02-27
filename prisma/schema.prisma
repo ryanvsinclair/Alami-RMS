@@ -359,6 +359,10 @@ model ReceiptLineItem {
   unit_cost       Decimal?        @db.Decimal(10, 2)
   plu_code        Int?
   organic_flag    Boolean?
+  parse_confidence_score Decimal? @db.Decimal(4, 3)
+  parse_confidence_band  MatchConfidence?
+  parse_flags            Json?
+  parse_corrections      Json?
   matched_item_id String?
   confidence      MatchConfidence @default(none)
   status          LineItemStatus  @default(unresolved)
