@@ -229,7 +229,7 @@ Latest Update section review:
 - Phase 1.5 schema-backed persistence is implemented for minimal produce metadata (`plu_code`, `organic_flag` on `ReceiptLineItem`); multilingual hardening and Phase 2+ remain.
 
 Remaining high-impact work:
-- Continue with RC-15 store-specific parse profile memory.
+- RC-15 is blocked pending store-profile persistence contract decisions.
 - Execute Phases 3-6 (store memory, hybrid parser, feedback loop, rollout hardening).
 
 ### 2) `docs/income-integrations-onboarding-plan.md` (not started)
@@ -282,7 +282,7 @@ Status legend:
 - [x] RC-12 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then complete Phase 1.5 service layer: implement `receipt-produce-lookup.service.ts` (PLU + fuzzy lookup with province/language preference + EN fallback).
 - [x] RC-13 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then resolve persistence decision for parse/produce metadata and implement approved schema-light or schema-backed path.
 - [x] RC-14 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 2 parse confidence persistence + receipt review UI indicators.
-- [ ] RC-15 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 3 store-specific parse profile memory.
+- [!] RC-15 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 3 store-specific parse profile memory.
 - [ ] RC-16 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 4 hybrid structured parser upgrades.
 - [ ] RC-17 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 5 historical feedback loop integration.
 - [ ] RC-18 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 6 rollout hardening (threshold tuning, versioning, diagnostics, safe enforce promotion).
@@ -330,14 +330,16 @@ Status legend:
 
 - Current task ID: `RC-15`
 - Current task: `Phase 3 store-specific parse profile memory`
-- Status: `READY (RC-14 complete; next canonical task not started yet)`
+- Status: `BLOCKED (persistence contract decision unresolved in source plan)`
 - Last updated: `2026-02-27`
 - Primary source plan section:
   - `docs/receipt-post-ocr-correction-plan.md` -> `Phase 3 - Store-specific pattern memory`
-- Completion condition for this marker:
-  - mark `RC-15` complete
-  - append a new entry to `## Latest Job Summary`
-  - move this marker to `RC-16`
+- Unblock requirement (exact):
+  - choose one RC-15 persistence contract:
+    - Option A: dedicated `ReceiptParseProfile` table
+    - Option B: `Supplier` JSON field
+  - decide whether interpreted province/tax-structure signals persist in `receipt.parsed_data` only or also in store profile memory
+  - after decisions are explicit, resume RC-15 implementation
 
 ## Documentation Sync Checklist (Run Every Session)
 
@@ -349,6 +351,28 @@ Status legend:
 - [ ] `docs/codebase-overview.md` updated if behavior/architecture/canonical path descriptions changed.
 
 ## Latest Job Summary (Append New Entries At Top)
+
+### 2026-02-27 - RC-15 blocked: store-profile persistence contract decision required
+- Completed:
+  - Ran RC-15 preflight scans across plan + codebase for existing implementation:
+    - `rg -n "Phase 3 - Store-specific pattern memory|ReceiptParseProfile|Open Decisions|dedicated table|Supplier JSON" docs/receipt-post-ocr-correction-plan.md docs/master-plan-v1.md prisma/schema.prisma`
+    - `rg -n "ReceiptParseProfile|parse profile|profile_key|store profile|signals|stats" src app test prisma`
+  - Re-verified DB/Prisma contract inputs before any schema work:
+    - `prisma/schema.prisma`
+    - latest migration `prisma/migrations/20260227203000_receipt_line_item_parse_metadata/migration.sql`
+  - Confirmed no existing `ReceiptParseProfile` schema/service implementation is present.
+- Blocker:
+  - Source plan keeps RC-15 persistence contract unresolved:
+    - `docs/receipt-post-ocr-correction-plan.md` -> Open Decision 2 (dedicated table vs supplier JSON)
+    - `docs/receipt-post-ocr-correction-plan.md` -> Open Decision 7 (tax/province signal persistence target)
+  - Autonomous contract requires halt on unresolved source-plan/product decisions.
+- Unblock requirement (exact):
+  - explicit decision for RC-15 persistence path:
+    - Option A: dedicated `ReceiptParseProfile` table
+    - Option B: `Supplier` JSON field
+  - explicit decision whether interpreted province/tax structure signals persist in `receipt.parsed_data` only or also in store profile memory.
+- Next:
+  - `RC-15` remains `[!]` until the two persistence decisions are provided.
 
 ### 2026-02-27 - RC-14 complete: parse-confidence metadata persisted and review UI indicators separated from match confidence
 - Completed:

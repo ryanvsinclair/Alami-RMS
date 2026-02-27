@@ -20,6 +20,33 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-27 - RC-15 blocked: unresolved store-profile persistence contract (table vs supplier JSON)
+- Suggested Commit Title: `chore(rc-15): mark store-profile persistence decision blocker and halt autonomous advance`
+- Scope:
+  - RC-15 preflight/blocker documentation update only (no runtime code changes).
+- Preflight evidence:
+  - Reviewed RC-15 source-plan scope and open decisions:
+    - `docs/receipt-post-ocr-correction-plan.md` (`Phase 3`, `Open Decisions` items 2 and 7)
+  - Ran targeted scans for existing profile-memory implementation:
+    - `rg -n "Phase 3 - Store-specific pattern memory|ReceiptParseProfile|Open Decisions|dedicated table|Supplier JSON" docs/receipt-post-ocr-correction-plan.md docs/master-plan-v1.md prisma/schema.prisma`
+    - `rg -n "ReceiptParseProfile|parse profile|profile_key|store profile|signals|stats" src app test prisma`
+  - Re-verified DB contract references:
+    - `prisma/schema.prisma`
+    - latest migration `prisma/migrations/20260227203000_receipt_line_item_parse_metadata/migration.sql`
+- What changed:
+  - Marked `RC-15` as `[!]` blocked in `docs/master-plan-v1.md`.
+  - Updated `Last Left Off Here` to blocked state with explicit unblock requirements.
+  - Added blocker entry to master plan `## Latest Job Summary`.
+  - Updated receipt source plan `Latest Update`, `Pick Up Here`, and `Phase 3` status to reflect blocker and halt condition.
+- Files changed:
+  - `docs/master-plan-v1.md`
+  - `docs/receipt-post-ocr-correction-plan.md`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - Documentation-only blocker update (no code validation commands run)
+- Notes:
+  - Autonomous execution halted per contract; no later checklist items were started.
+
 ### 2026-02-27 - RC-14 complete: persist parse-confidence metadata + add separate parse-confidence review indicators
 - Suggested Commit Title: `feat(rc-14): persist receipt parse-confidence metadata and show parse indicators in review UI`
 - Scope:

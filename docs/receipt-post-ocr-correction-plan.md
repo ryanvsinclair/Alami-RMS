@@ -4,6 +4,19 @@ Last updated: February 27, 2026 (draft / implementation-ready plan)
 
 ## Latest Update
 
+- **Phase 3 RC-15 blocked: store-profile persistence contract decision required before safe implementation** (February 27, 2026):
+  - RC-15 preflight confirmed no existing `ReceiptParseProfile` implementation in code or schema.
+  - Source plan still contains unresolved product/engineering decisions required to define RC-15 scope safely:
+    - Open Decision 2: dedicated `ReceiptParseProfile` table vs `Supplier` JSON field
+    - Open Decision 7: whether interpreted province/tax-structure signals persist in `receipt.parsed_data` only or also in `ReceiptParseProfile`
+  - Autonomous contract stop condition triggered (`source-plan dependency/product decision blocker`).
+  - Unblock requirement:
+    - provide explicit RC-15 persistence contract decision:
+      - Option A: dedicated `ReceiptParseProfile` table
+      - Option B: `Supplier` JSON field
+    - provide explicit decision on tax/province signal persistence target for store learning.
+  - No RC-15 implementation code was started.
+
 - **Phase 2 RC-14 complete: parse-confidence metadata persistence + receipt review UI indicators** (February 27, 2026):
   - Added schema-backed parse metadata fields on `ReceiptLineItem`:
     - `parse_confidence_score Decimal(4,3)?`
@@ -197,18 +210,16 @@ Last updated: February 27, 2026 (draft / implementation-ready plan)
 
 ## Pick Up Here (Next Continuation)
 
-Continue with **Phase 3 (RC-15): store-specific parse profile memory**.
+Blocked at **Phase 3 (RC-15): store-specific parse profile memory** pending explicit persistence-contract decisions.
 
 Recommended next implementation order:
 
-1. Implement `ReceiptParseProfile` persistence contract
-   - choose dedicated table vs supplier-scoped JSON contract and lock one canonical path
-2. Learn/store profile signals from receipt outcomes
-   - persist stable per-store parsing signals (tax labels, numeric shapes, section patterns)
-3. Consume profile priors in correction scoring inputs
-   - keep domain correction pure; apply profile retrieval/orchestration in feature server layer
-4. Add focused validation for profile learning/reuse behavior
-   - verify repeated-store receipts converge toward more stable parse-confidence outputs
+1. Resolve RC-15 persistence contract decision
+   - choose dedicated `ReceiptParseProfile` table vs supplier-scoped JSON field
+2. Resolve tax/province signal persistence target
+   - `receipt.parsed_data` only vs mirrored persistence into store profile memory
+3. After both decisions are explicit, implement RC-15 scope only
+   - profile persistence + learning + scoring input integration
 
 Implementation guardrails (carry forward):
 
@@ -1370,7 +1381,7 @@ Progress notes (2026-02-27):
   - wired line-item persistence of `plu_code` and `organic_flag` in `receipt.repository.ts`
 - Remaining:
   - add broader multilingual produce fixtures and lookup validation cases
-  - continue with RC-15 store-specific parse profile memory
+  - continue with RC-15 store-specific parse profile memory (currently blocked pending persistence-contract decisions)
 
 ## Phase 2 - Line-level parse confidence and UI flags
 
@@ -1395,7 +1406,7 @@ Progress notes (2026-02-27):
 
 ## Phase 3 - Store-specific pattern memory
 
-Status: `[ ]`
+Status: `[!]`
 
 Deliverables:
 
@@ -1406,6 +1417,12 @@ Deliverables:
 Expected impact:
 
 - strong compounding improvement for repeat merchants/stores
+
+Blocker (2026-02-27):
+
+- RC-15 cannot proceed safely until product/engineering explicitly choose:
+  - dedicated `ReceiptParseProfile` table vs `Supplier` JSON persistence
+  - whether interpreted province/tax structure signals persist in `receipt.parsed_data` only or also in store profile memory
 
 ## Phase 4 - Structured parsing upgrade (hybrid parser)
 
