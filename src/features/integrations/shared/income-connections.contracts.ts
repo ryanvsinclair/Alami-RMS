@@ -14,7 +14,10 @@ export interface IncomeProviderConnectionCard {
   industryType: IndustryType;
   recommended: boolean;
   status: IncomeConnectionStatus;
+  connectionId: string | null;
   connectLabel: string;
   connectEnabled: boolean;
   connectHref: string | null;
+  syncEnabled: boolean;
+  syncHref: string | null;
 }

@@ -52,18 +52,28 @@ export function IncomeProviderConnectCard({
       </div>
 
       <div className="flex items-center justify-between gap-3">
-        {card.connectEnabled && card.connectHref ? (
-          <Link
-            href={card.connectHref}
-            className="inline-flex h-12 items-center justify-center rounded-2xl border border-border bg-card px-4 text-sm font-semibold text-foreground transition-colors hover:border-foreground/20 hover:bg-foreground/[0.04]"
-          >
-            {card.connectLabel}
-          </Link>
-        ) : (
-          <Button variant="secondary" disabled>
-            {card.connectLabel}
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {card.connectEnabled && card.connectHref ? (
+            <Link
+              href={card.connectHref}
+              className="inline-flex h-12 items-center justify-center rounded-2xl border border-border bg-card px-4 text-sm font-semibold text-foreground transition-colors hover:border-foreground/20 hover:bg-foreground/[0.04]"
+            >
+              {card.connectLabel}
+            </Link>
+          ) : (
+            <Button variant="secondary" disabled>
+              {card.connectLabel}
+            </Button>
+          )}
+          {card.syncEnabled && card.syncHref && (
+            <Link
+              href={card.syncHref}
+              className="inline-flex h-12 items-center justify-center rounded-2xl bg-primary px-4 text-sm font-semibold text-white shadow-[0_6px_18px_rgba(0,127,255,0.28)] transition-colors hover:bg-primary-hover"
+            >
+              Run Sync
+            </Link>
+          )}
+        </div>
         {showComingSoonNote && !card.connectEnabled && (
           <p className="text-xs text-muted">Set provider OAuth env vars to activate this connector.</p>
         )}

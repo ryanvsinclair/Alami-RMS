@@ -57,6 +57,44 @@ export async function upsertIncomeConnection(input: UpsertIncomeConnectionInput)
   });
 }
 
+export async function findIncomeConnectionByProvider(params: {
+  businessId: string;
+  providerId: IncomeProvider;
+}) {
+  return prisma.businessIncomeConnection.findUnique({
+    where: {
+      business_id_provider_id: {
+        business_id: params.businessId,
+        provider_id: params.providerId,
+      },
+    },
+  });
+}
+
+export async function listIncomeConnectionsByBusiness(businessId: string) {
+  return prisma.businessIncomeConnection.findMany({
+    where: { business_id: businessId },
+    orderBy: { updated_at: "desc" },
+  });
+}
+
+export async function markIncomeConnectionSyncSuccess(params: {
+  connectionId: string;
+  syncedAt: Date;
+  fullSync: boolean;
+}) {
+  return prisma.businessIncomeConnection.update({
+    where: { id: params.connectionId },
+    data: {
+      status: "connected",
+      last_sync_at: params.syncedAt,
+      last_full_sync_at: params.fullSync ? params.syncedAt : undefined,
+      last_error_code: null,
+      last_error_message: null,
+    },
+  });
+}
+
 export async function markIncomeConnectionError(params: {
   businessId: string;
   providerId: IncomeProvider;

@@ -1,4 +1,4 @@
-import type { IndustryType } from "@/lib/generated/prisma/client";
+import type { IncomeConnectionStatus as DbIncomeConnectionStatus, IndustryType } from "@/lib/generated/prisma/client";
 import type { IncomeProviderConnectionCard } from "@/features/integrations/shared";
 import {
   INCOME_MVP_PROVIDER_SEQUENCE,
@@ -9,6 +9,7 @@ import {
   type IncomeProviderId,
 } from "@/features/integrations/shared";
 import { isIncomeProviderOAuthConfigured } from "@/features/integrations/providers/registry";
+import { listIncomeConnectionsByBusiness } from "./connections.repository";
 
 const rolloutOrder = new Map<IncomeProviderId, number>(
   [...INCOME_MVP_PROVIDER_SEQUENCE, ...INCOME_POST_MVP_PROVIDER_SEQUENCE].map((providerId, index) => [
@@ -61,10 +62,51 @@ export function listIncomeProviderConnectionCards(
       industryType,
       recommended: isRecommendedForIndustry(industryType, provider.id),
       status: "not_connected",
+      connectionId: null,
       connectLabel: oauthConfigured ? "Connect" : "Connect (Setup needed)",
       connectEnabled: oauthConfigured,
       connectHref: oauthConfigured
         ? `/api/integrations/oauth/${provider.id}/start?return_to=${encodeURIComponent(returnToPath)}`
+        : null,
+      syncEnabled: false,
+      syncHref: null,
+    };
+  });
+}
+
+function mapDatabaseStatusToCardStatus(status: DbIncomeConnectionStatus) {
+  if (status === "connected") return "connected";
+  if (status === "error" || status === "expired") return "error";
+  return "not_connected";
+}
+
+export async function listIncomeProviderConnectionCardsForBusiness(input: {
+  businessId: string;
+  industryType: IndustryType;
+  returnToPath?: string;
+}): Promise<IncomeProviderConnectionCard[]> {
+  const cards = listIncomeProviderConnectionCards(input.industryType, {
+    returnToPath: input.returnToPath,
+  });
+  const connections = await listIncomeConnectionsByBusiness(input.businessId);
+  const byProvider = new Map(connections.map((connection) => [connection.provider_id, connection]));
+  const returnToPath = input.returnToPath ?? "/integrations";
+
+  return cards.map((card) => {
+    const connection = byProvider.get(card.provider.id);
+    if (!connection) return card;
+
+    const syncEnabled =
+      connection.provider_id === "godaddy_pos" && connection.status === "connected";
+
+    return {
+      ...card,
+      connectionId: connection.id,
+      status: mapDatabaseStatusToCardStatus(connection.status),
+      connectLabel: card.connectEnabled ? "Reconnect" : "Reconnect (Setup needed)",
+      syncEnabled,
+      syncHref: syncEnabled
+        ? `/api/integrations/sync/godaddy-pos/manual?return_to=${encodeURIComponent(returnToPath)}`
         : null,
     };
   });
