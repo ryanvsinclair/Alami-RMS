@@ -286,6 +286,8 @@ Implemented capabilities:
 - Schema-backed minimal produce persistence is active on `ReceiptLineItem` with nullable `plu_code` and `organic_flag` fields
 - Schema-backed parse metadata persistence is active on `ReceiptLineItem` (`parse_confidence_score`, `parse_confidence_band`, `parse_flags`, `parse_corrections`) so parse-confidence evidence survives parse/reload cycles
 - Receipt review UI now surfaces parse-confidence indicators separately from match confidence (per-line parse badges, parse-band summary counts, inline parse flags for medium/low confidence lines)
+- Store-specific parse-profile memory is active via `ReceiptParseProfile` (dedicated table): correction summaries now accumulate province/tax/parse signals per store profile key (`place:<google_place_id>` preferred, fallback `supplier:<supplier_id>`)
+- Profile priors are now consumed in receipt workflows when Google Place province hints are unavailable, and line-review `confirmed`/`skipped` actions feed profile stats for continuous store adaptation
 - Receipt-correction fixture corpus is expanded to 20 runnable scenarios, including discount-heavy parsed-text and historical-threshold boundary coverage
 - Idempotent receipt commit behavior in inventory ledger path
 - Receipt auto-resolution observability (process-local summaries)
@@ -365,6 +367,7 @@ Receipt entities:
 - `Receipt`
 - `ReceiptLineItem`
 - `ReceiptItemAlias` (store-context alias mapping)
+- `ReceiptParseProfile` (store-specific parse/tax/province memory + priors)
 
 Shopping entities:
 - `ShoppingSession`

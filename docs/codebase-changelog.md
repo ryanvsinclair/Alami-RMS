@@ -20,6 +20,63 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-27 - RC-15 complete: add dedicated store parse-profile memory and workflow learning hooks
+- Suggested Commit Title: `feat(rc-15): add receipt parse profile memory table and profile-prior orchestration`
+- Scope:
+  - Receipt correction Phase 3 (`RC-15`) store-specific parse profile persistence and learning loop wiring.
+- Preflight evidence (reuse/refactor-first + DB/Prisma integrity):
+  - Reviewed source-plan RC-15 scope + open decisions:
+    - `docs/receipt-post-ocr-correction-plan.md` (`Phase 3`, `Open Decisions` items 2 and 7)
+  - Ran scoped scans before implementation:
+    - `rg -n "Phase 3 - Store-specific pattern memory|ReceiptParseProfile|Open Decisions|dedicated table|Supplier JSON" docs/receipt-post-ocr-correction-plan.md docs/master-plan-v1.md prisma/schema.prisma`
+    - `rg -n "ReceiptParseProfile|parse profile|profile_key|store profile|signals|stats" src app test prisma`
+  - Reviewed canonical DB sources:
+    - `prisma/schema.prisma`
+    - latest migration before this slice: `prisma/migrations/20260227203000_receipt_line_item_parse_metadata/migration.sql`
+  - Reused existing receipt workflow/repository/line-review paths and added only missing RC-15 profile-memory components.
+- What changed:
+  - Resolved RC-15 decisions explicitly:
+    - Open Decision 2 -> Option A (dedicated `ReceiptParseProfile` table)
+    - Open Decision 7 -> Option B (persist interpreted province/tax signals in both receipt summary and profile memory)
+  - Added Prisma model and migration:
+    - `ReceiptParseProfile` with unique (`business_id`, `profile_key`), supplier/place indexes, JSON `signals`/`stats`, and `last_seen_at`
+    - migration `prisma/migrations/20260227230000_receipt_parse_profile_memory/migration.sql`
+  - Added `receipt-parse-profile.service.ts`:
+    - deterministic profile keying (`place:<google_place_id>` fallback `supplier:<supplier_id>`)
+    - correction-summary signal/stat accumulation
+    - province prior derivation with minimum-sample and dominance gates
+    - line-review feedback counters for `confirmed`/`skipped`
+  - Wired profile prior read + safe profile persistence into both receipt workflows:
+    - `parseAndMatchReceipt(...)`
+    - `processReceiptImage(...)`
+  - Wired line-item review feedback updates in `updateLineItemMatch(...)`.
+  - Added targeted service tests for keying/prior/accumulation/review-feedback behavior.
+- Files changed:
+  - `prisma/schema.prisma`
+  - `prisma/migrations/20260227230000_receipt_parse_profile_memory/migration.sql`
+  - `src/features/receiving/receipt/server/receipt-parse-profile.service.ts`
+  - `src/features/receiving/receipt/server/receipt-parse-profile.service.test.mjs`
+  - `src/features/receiving/receipt/server/receipt.repository.ts`
+  - `src/features/receiving/receipt/server/receipt-workflow.service.ts`
+  - `src/features/receiving/receipt/server/line-item.service.ts`
+  - `src/features/receiving/receipt/server/index.ts`
+  - `docs/receipt-post-ocr-correction-plan.md`
+  - `docs/master-plan-v1.md`
+  - `docs/codebase-overview.md`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - `npx prisma generate` -> PASS
+  - `npx prisma validate` -> PASS
+  - `npx tsx --test src/features/receiving/receipt/server/receipt-parse-profile.service.test.mjs` -> PASS (4/4)
+  - `npx tsx --test src/features/receiving/receipt/server/receipt-produce-lookup.service.test.mjs` -> PASS (3/3)
+  - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-core.test.mjs` -> PASS (14/14; expected Node experimental/module-type warnings)
+  - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-fixtures.test.mjs` -> PASS (27/27; expected Node experimental/module-type warnings)
+  - `node --test --experimental-transform-types src/domain/parsers/receipt.test.mjs` -> PASS (3/3; expected Node experimental/module-type warnings)
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `npx eslint src/features/receiving/receipt/server/receipt.repository.ts src/features/receiving/receipt/server/receipt-workflow.service.ts src/features/receiving/receipt/server/line-item.service.ts src/features/receiving/receipt/server/receipt-parse-profile.service.ts src/features/receiving/receipt/server/receipt-parse-profile.service.test.mjs src/features/receiving/receipt/server/index.ts prisma/schema.prisma --quiet` -> PASS
+- Notes:
+  - RC-15 is unblocked/completed; canonical next task is `RC-16`.
+
 ### 2026-02-27 - RC-15 blocked: unresolved store-profile persistence contract (table vs supplier JSON)
 - Suggested Commit Title: `chore(rc-15): mark store-profile persistence decision blocker and halt autonomous advance`
 - Scope:

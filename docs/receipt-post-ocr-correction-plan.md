@@ -4,6 +4,36 @@ Last updated: February 27, 2026 (draft / implementation-ready plan)
 
 ## Latest Update
 
+- **Phase 3 RC-15 complete: dedicated `ReceiptParseProfile` memory + province/tax signal mirroring enabled** (February 27, 2026):
+  - Resolved RC-15 contract decisions from product direction:
+    - Open Decision 2 -> selected **dedicated `ReceiptParseProfile` table** (Option A)
+    - Open Decision 7 -> selected **persist interpreted province/tax signals in both `receipt.parsed_data` and `ReceiptParseProfile`** (Option B)
+  - Added new schema model:
+    - `ReceiptParseProfile` (`business_id`, optional `supplier_id`, optional `google_place_id`, `profile_key`, `signals`, `stats`, `version`, `last_seen_at`)
+  - Added migration:
+    - `prisma/migrations/20260227230000_receipt_parse_profile_memory/migration.sql`
+  - Implemented store-profile memory service:
+    - `src/features/receiving/receipt/server/receipt-parse-profile.service.ts`
+    - deterministic profile keying (`place:<google_place_id>` else `supplier:<supplier_id>`)
+    - correction-summary signal accumulation (source/province/tax structure/flags/labels/parse confidence/action counts)
+    - province prior derivation with minimum-sample and dominance gating
+  - Wired profile-memory orchestration in receipt workflows:
+    - read profile prior before correction in both `parseAndMatchReceipt(...)` and `processReceiptImage(...)`
+    - use profile-derived province prior only when Google place province hint is unavailable
+    - persist correction summary into `ReceiptParseProfile` after each parse/review write
+  - Added review-feedback learning hook:
+    - line-item confirm/skip updates now increment profile stats (`confirmed_line_edits`, `skipped_line_edits`)
+  - Validation:
+    - `npx prisma generate` -> PASS
+    - `npx prisma validate` -> PASS
+    - `npx tsx --test src/features/receiving/receipt/server/receipt-parse-profile.service.test.mjs` -> PASS (4/4)
+    - `npx tsx --test src/features/receiving/receipt/server/receipt-produce-lookup.service.test.mjs` -> PASS (3/3)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-core.test.mjs` -> PASS (14/14)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-fixtures.test.mjs` -> PASS (27/27)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt.test.mjs` -> PASS (3/3)
+    - `npx tsc --noEmit --incremental false` -> PASS
+    - targeted `eslint` on touched receipt profile/workflow/repository/schema paths -> PASS
+
 - **Phase 3 RC-15 blocked: store-profile persistence contract decision required before safe implementation** (February 27, 2026):
   - RC-15 preflight confirmed no existing `ReceiptParseProfile` implementation in code or schema.
   - Source plan still contains unresolved product/engineering decisions required to define RC-15 scope safely:
@@ -210,16 +240,18 @@ Last updated: February 27, 2026 (draft / implementation-ready plan)
 
 ## Pick Up Here (Next Continuation)
 
-Blocked at **Phase 3 (RC-15): store-specific parse profile memory** pending explicit persistence-contract decisions.
+Continue with **Phase 4 (RC-16): hybrid structured parser upgrades**.
 
 Recommended next implementation order:
 
-1. Resolve RC-15 persistence contract decision
-   - choose dedicated `ReceiptParseProfile` table vs supplier-scoped JSON field
-2. Resolve tax/province signal persistence target
-   - `receipt.parsed_data` only vs mirrored persistence into store profile memory
-3. After both decisions are explicit, implement RC-15 scope only
-   - profile persistence + learning + scoring input integration
+1. Add hybrid section detection and line-shape classification
+   - distinguish item rows from summary/tax/footer noise with stronger structural heuristics
+2. Improve multi-line item handling and numeric-cluster extraction
+   - reduce regex-only dependence in `src/domain/parsers/receipt.ts`
+3. Consume store-profile priors where safe for parser interpretation
+   - keep pure parsing logic in domain, profile retrieval/orchestration in feature server layer
+4. Add focused fixture/test coverage for new structured parser behavior
+   - especially HST/GST/QST/TPS/TVQ summary-section and multi-line edge cases
 
 Implementation guardrails (carry forward):
 
@@ -1381,7 +1413,7 @@ Progress notes (2026-02-27):
   - wired line-item persistence of `plu_code` and `organic_flag` in `receipt.repository.ts`
 - Remaining:
   - add broader multilingual produce fixtures and lookup validation cases
-  - continue with RC-15 store-specific parse profile memory (currently blocked pending persistence-contract decisions)
+  - continue with RC-16 hybrid structured parser upgrades
 
 ## Phase 2 - Line-level parse confidence and UI flags
 
@@ -1406,7 +1438,7 @@ Progress notes (2026-02-27):
 
 ## Phase 3 - Store-specific pattern memory
 
-Status: `[!]`
+Status: `[x]`
 
 Deliverables:
 
@@ -1418,11 +1450,12 @@ Expected impact:
 
 - strong compounding improvement for repeat merchants/stores
 
-Blocker (2026-02-27):
+Progress notes (2026-02-27):
 
-- RC-15 cannot proceed safely until product/engineering explicitly choose:
-  - dedicated `ReceiptParseProfile` table vs `Supplier` JSON persistence
-  - whether interpreted province/tax structure signals persist in `receipt.parsed_data` only or also in store profile memory
+- Resolved persistence contract to dedicated `ReceiptParseProfile` table (Option A).
+- Implemented schema/table + migration and feature-layer profile memory service (`receipt-parse-profile.service.ts`).
+- Persisted correction-derived province/tax/parse signals to profile memory while also keeping receipt-level correction summary in `receipt.parsed_data` (Option B).
+- Added profile-prior read path in both receipt workflows and review-feedback learning hooks on line confirm/skip actions.
 
 ## Phase 4 - Structured parsing upgrade (hybrid parser)
 
@@ -1497,12 +1530,14 @@ Enable by provider/store profile confidence:
 1. [Resolved 2026-02-27] Parse/produce metadata persistence path:
    - selected: schema-backed minimal `ReceiptLineItem` columns (`plu_code`, `organic_flag`, both nullable)
    - deferred: additional parse metadata columns remain out of scope for RC-13
-2. Should `ReceiptParseProfile` be a dedicated table or a `Supplier` JSON field initially?
+2. [Resolved 2026-02-27] `ReceiptParseProfile` persistence path:
+   - selected: dedicated `ReceiptParseProfile` table (Option A)
 3. What tolerance should total-consistency checks use (`0.01`, `0.02`, `0.05`)?
 4. Do discounts/coupons become first-class line types in phase 1 or phase 4?
 5. Do we surface parse-confidence UI immediately, or keep it internal until thresholds stabilize?
 6. What tax-validation tolerances should we use for Ontario HST and Quebec GST/QST (including rounding behavior)?
-7. Should interpreted province/tax structure signals be persisted in `receipt.parsed_data` only, or also in `ReceiptParseProfile` for store-learning?
+7. [Resolved 2026-02-27] Interpreted province/tax-structure signal persistence:
+   - selected: persist in both `receipt.parsed_data` and `ReceiptParseProfile` for store learning (Option B)
 
 ## Implementation Notes for Future Agent/Engineer
 

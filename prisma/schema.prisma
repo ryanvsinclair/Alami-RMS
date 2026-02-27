@@ -190,6 +190,7 @@ model Supplier {
   receipts          Receipt[]
   shopping_sessions ShoppingSession[]
   price_history     ItemPriceHistory[]
+  receipt_parse_profiles ReceiptParseProfile[]
   business          Business        @relation(fields: [business_id], references: [id], onDelete: Cascade)
 
   @@unique([business_id, name])
@@ -582,6 +583,29 @@ model ProduceItem {
   @@map("produce_items")
 }
 
+model ReceiptParseProfile {
+  id              String   @id @default(uuid())
+  business_id     String
+  supplier_id     String?
+  google_place_id String?
+  profile_key     String
+  signals         Json?
+  stats           Json?
+  version         Int      @default(1)
+  last_seen_at    DateTime @default(now())
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  business Business @relation(fields: [business_id], references: [id], onDelete: Cascade)
+  supplier Supplier? @relation(fields: [supplier_id], references: [id], onDelete: SetNull)
+
+  @@unique([business_id, profile_key])
+  @@index([business_id, last_seen_at(sort: Desc)])
+  @@index([supplier_id])
+  @@index([google_place_id])
+  @@map("receipt_parse_profiles")
+}
+
 model Business {
   id             String                 @id @default(uuid())
   name           String
@@ -597,6 +621,7 @@ model Business {
   item_barcodes  ItemBarcode[]
   receipt_item_aliases ReceiptItemAlias[]
   receipts       Receipt[]
+  receipt_parse_profiles ReceiptParseProfile[]
   inventory_transactions InventoryTransaction[]
   shopping_sessions ShoppingSession[]
   item_price_history ItemPriceHistory[]

@@ -18,6 +18,17 @@ export interface ReceiptHistoricalLinePriceSample {
   unit_cost: number | null;
 }
 
+export interface UpsertReceiptParseProfileInput {
+  businessId: string;
+  supplierId?: string | null;
+  googlePlaceId?: string | null;
+  profileKey: string;
+  signals: Prisma.InputJsonValue;
+  stats: Prisma.InputJsonValue;
+  version?: number;
+  lastSeenAt?: Date;
+}
+
 // ---- Single receipt queries -------------------------------------------
 
 export async function findReceiptById(receiptId: string, businessId: string) {
@@ -48,6 +59,20 @@ export async function findReceiptDetail(receiptId: string, businessId: string) {
     include: RECEIPT_DETAIL_INCLUDE,
   });
   return receipt ? serialize(receipt) : null;
+}
+
+export async function findReceiptParseProfileByKey(params: {
+  businessId: string;
+  profileKey: string;
+}) {
+  return prisma.receiptParseProfile.findUnique({
+    where: {
+      business_id_profile_key: {
+        business_id: params.businessId,
+        profile_key: params.profileKey,
+      },
+    },
+  });
 }
 
 // ---- List queries ----------------------------------------------------
@@ -186,6 +211,36 @@ export async function updateReceiptStatus(
   });
 }
 
+export async function upsertReceiptParseProfile(input: UpsertReceiptParseProfileInput) {
+  const lastSeenAt = input.lastSeenAt ?? new Date();
+  return prisma.receiptParseProfile.upsert({
+    where: {
+      business_id_profile_key: {
+        business_id: input.businessId,
+        profile_key: input.profileKey,
+      },
+    },
+    create: {
+      business_id: input.businessId,
+      supplier_id: input.supplierId ?? null,
+      google_place_id: input.googlePlaceId ?? null,
+      profile_key: input.profileKey,
+      signals: input.signals,
+      stats: input.stats,
+      version: input.version ?? 1,
+      last_seen_at: lastSeenAt,
+    },
+    update: {
+      supplier_id: input.supplierId ?? null,
+      google_place_id: input.googlePlaceId ?? null,
+      signals: input.signals,
+      stats: input.stats,
+      ...(input.version != null ? { version: input.version } : {}),
+      last_seen_at: lastSeenAt,
+    },
+  });
+}
+
 // ---- Line item mutations ---------------------------------------------
 
 export async function deleteLineItems(
@@ -252,6 +307,7 @@ export async function findLineItemWithReceipt(
       id: true,
       receipt: {
         select: {
+          supplier_id: true,
           supplier: {
             select: { google_place_id: true },
           },

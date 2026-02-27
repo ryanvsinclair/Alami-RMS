@@ -40,6 +40,12 @@ export {
   getReceiptPostOcrCorrectionMode,
   runReceiptPostOcrCorrection,
 } from "./receipt-correction.service";
+export {
+  buildReceiptParseProfileKey,
+  resolveReceiptParseProfilePrior,
+  recordReceiptParseProfileFromCorrection,
+  recordReceiptParseProfileLineReviewFeedback,
+} from "./receipt-parse-profile.service";
 
 // Line item services
 export { updateLineItemMatch } from "./line-item.service";

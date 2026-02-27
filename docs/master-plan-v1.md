@@ -177,10 +177,10 @@ Use the `Canonical Order Checklist` statuses as the source of truth.
 Current snapshot (2026-02-27):
 
 - Total checklist items: `38`
-- `[x]` complete: `6`
+- `[x]` complete: `7`
 - `[~]` in progress: `0`
-- Strict completion: `15.79%`
-- Weighted progress: `15.79%`
+- Strict completion: `18.42%`
+- Weighted progress: `18.42%`
 
 Update rule after each slice:
 
@@ -229,8 +229,7 @@ Latest Update section review:
 - Phase 1.5 schema-backed persistence is implemented for minimal produce metadata (`plu_code`, `organic_flag` on `ReceiptLineItem`); multilingual hardening and Phase 2+ remain.
 
 Remaining high-impact work:
-- RC-15 is blocked pending store-profile persistence contract decisions.
-- Execute Phases 3-6 (store memory, hybrid parser, feedback loop, rollout hardening).
+- Execute Phases 4-6 (hybrid parser, feedback loop, rollout hardening).
 
 ### 2) `docs/income-integrations-onboarding-plan.md` (not started)
 
@@ -282,7 +281,7 @@ Status legend:
 - [x] RC-12 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then complete Phase 1.5 service layer: implement `receipt-produce-lookup.service.ts` (PLU + fuzzy lookup with province/language preference + EN fallback).
 - [x] RC-13 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then resolve persistence decision for parse/produce metadata and implement approved schema-light or schema-backed path.
 - [x] RC-14 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 2 parse confidence persistence + receipt review UI indicators.
-- [!] RC-15 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 3 store-specific parse profile memory.
+- [x] RC-15 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 3 store-specific parse profile memory.
 - [ ] RC-16 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 4 hybrid structured parser upgrades.
 - [ ] RC-17 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 5 historical feedback loop integration.
 - [ ] RC-18 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 6 rollout hardening (threshold tuning, versioning, diagnostics, safe enforce promotion).
@@ -328,18 +327,12 @@ Status legend:
 
 ## Last Left Off Here (Update This Block First)
 
-- Current task ID: `RC-15`
-- Current task: `Phase 3 store-specific parse profile memory`
-- Status: `BLOCKED (persistence contract decision unresolved in source plan)`
+- Current task ID: `RC-16`
+- Current task: `Phase 4 hybrid structured parser upgrades`
+- Status: `READY`
 - Last updated: `2026-02-27`
 - Primary source plan section:
-  - `docs/receipt-post-ocr-correction-plan.md` -> `Phase 3 - Store-specific pattern memory`
-- Unblock requirement (exact):
-  - choose one RC-15 persistence contract:
-    - Option A: dedicated `ReceiptParseProfile` table
-    - Option B: `Supplier` JSON field
-  - decide whether interpreted province/tax-structure signals persist in `receipt.parsed_data` only or also in store profile memory
-  - after decisions are explicit, resume RC-15 implementation
+  - `docs/receipt-post-ocr-correction-plan.md` -> `Phase 4 - Structured parsing upgrade (hybrid parser)`
 
 ## Documentation Sync Checklist (Run Every Session)
 
@@ -351,6 +344,37 @@ Status legend:
 - [ ] `docs/codebase-overview.md` updated if behavior/architecture/canonical path descriptions changed.
 
 ## Latest Job Summary (Append New Entries At Top)
+
+### 2026-02-27 - RC-15 complete: dedicated parse-profile memory table + profile-prior read/write and review-feedback learning
+- Completed:
+  - Resolved RC-15 open decisions with explicit product direction:
+    - Open Decision 2 -> Option A (`ReceiptParseProfile` dedicated table)
+    - Open Decision 7 -> Option B (persist interpreted province/tax signals in both `receipt.parsed_data` and profile memory)
+  - Ran RC-15 preflight scans across plan + codebase and reused existing receipt workflow/repository paths:
+    - `rg -n "Phase 3 - Store-specific pattern memory|ReceiptParseProfile|Open Decisions|dedicated table|Supplier JSON" docs/receipt-post-ocr-correction-plan.md docs/master-plan-v1.md prisma/schema.prisma`
+    - `rg -n "ReceiptParseProfile|parse profile|profile_key|store profile|signals|stats" src app test prisma`
+  - Re-verified DB/Prisma contract inputs before schema edits:
+    - `prisma/schema.prisma`
+    - latest migration before slice: `prisma/migrations/20260227203000_receipt_line_item_parse_metadata/migration.sql`
+  - Implemented schema + migration + orchestration for profile memory:
+    - added `ReceiptParseProfile` model and `20260227230000_receipt_parse_profile_memory` migration
+    - added `receipt-parse-profile.service.ts` with deterministic keying, correction-summary signal/stat accumulation, and province-prior derivation gates
+    - wired prior resolution + safe persistence in both receipt workflows
+    - wired line-review confirm/skip feedback updates into profile stats
+  - Completed validation gates:
+    - `npx prisma generate` -> PASS
+    - `npx prisma validate` -> PASS
+    - `npx tsx --test src/features/receiving/receipt/server/receipt-parse-profile.service.test.mjs` -> PASS (4/4)
+    - `npx tsx --test src/features/receiving/receipt/server/receipt-produce-lookup.service.test.mjs` -> PASS (3/3)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-core.test.mjs` -> PASS (14/14)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-fixtures.test.mjs` -> PASS (27/27)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt.test.mjs` -> PASS (3/3)
+    - `npx tsc --noEmit --incremental false` -> PASS
+    - targeted `eslint` on touched receipt profile/workflow/repository/schema files -> PASS
+- Remaining:
+  - Start `RC-16` (Phase 4 hybrid structured parser upgrades).
+- Next:
+  - `RC-16` in `docs/receipt-post-ocr-correction-plan.md`
 
 ### 2026-02-27 - RC-15 blocked: store-profile persistence contract decision required
 - Completed:

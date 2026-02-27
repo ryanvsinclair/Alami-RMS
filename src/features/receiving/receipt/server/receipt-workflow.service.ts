@@ -22,6 +22,10 @@ import type {
   ReceiptPostOcrCorrectionSummary,
 } from "./receipt-correction.contracts";
 import {
+  resolveReceiptParseProfilePrior,
+  recordReceiptParseProfileFromCorrection,
+} from "./receipt-parse-profile.service";
+import {
   createReceiptRecord,
   updateReceiptStatus,
   deleteLineItems,
@@ -762,6 +766,26 @@ async function resolveAndWriteLineItems(
   });
 }
 
+async function persistReceiptParseProfileSafely(data: {
+  businessId: string;
+  supplierId?: string | null;
+  googlePlaceId?: string | null;
+  receiptId?: string;
+  summary: ReceiptPostOcrCorrectionSummary;
+}): Promise<void> {
+  try {
+    await recordReceiptParseProfileFromCorrection(data);
+  } catch (error) {
+    console.warn("[receipt-parse-profile] failed to persist profile summary", {
+      business_id: data.businessId,
+      supplier_id: data.supplierId ?? null,
+      google_place_id: data.googlePlaceId ?? null,
+      receipt_id: data.receiptId ?? null,
+      message: error instanceof Error ? error.message : "unknown_error",
+    });
+  }
+}
+
 // ---- Public API -------------------------------------------------------
 
 /**
@@ -807,6 +831,18 @@ export async function parseAndMatchReceipt(
     googlePlaceId: receipt.supplier?.google_place_id ?? null,
     formattedAddress: receipt.supplier?.formatted_address ?? null,
   });
+  const parseProfilePrior = await resolveReceiptParseProfilePrior({
+    businessId,
+    supplierId: receipt.supplier_id ?? null,
+    googlePlaceId: receipt.supplier?.google_place_id ?? null,
+  });
+  const provinceHintForCorrection = supplierProvinceHint ?? parseProfilePrior.provinceHint;
+  const provinceHintSourceForCorrection =
+    supplierProvinceHint != null
+      ? ("google_places" as const)
+      : parseProfilePrior.provinceHint != null
+        ? ("manual" as const)
+        : null;
   const historicalPriceHints = await resolveHistoricalPriceHintsForCorrection({
     businessId,
     receiptId,
@@ -823,13 +859,13 @@ export async function parseAndMatchReceipt(
     lines: parsedLines,
     historical_price_hints: historicalPriceHints,
     totals:
-      rawTextTotals || supplierProvinceHint
+      rawTextTotals || provinceHintForCorrection
         ? {
             ...(rawTextTotals ?? {}),
-            ...(supplierProvinceHint
+            ...(provinceHintForCorrection
               ? {
-                  province_hint: supplierProvinceHint,
-                  province_hint_source: "google_places" as const,
+                  province_hint: provinceHintForCorrection,
+                  province_hint_source: provinceHintSourceForCorrection,
                 }
               : {}),
           }
@@ -868,6 +904,13 @@ export async function parseAndMatchReceipt(
   };
 
   await resolveAndWriteLineItems(receiptId, lineItemsWithMatches, summary);
+  await persistReceiptParseProfileSafely({
+    businessId,
+    supplierId: receipt.supplier_id ?? null,
+    googlePlaceId: receipt.supplier?.google_place_id ?? null,
+    receiptId,
+    summary: correction.summary,
+  });
   recordReceiptCorrectionMetrics({
     source: "parsed_text",
     summary: correction.summary,
@@ -920,6 +963,18 @@ export async function processReceiptImage(
     googlePlaceId: supplierGooglePlaceId,
     formattedAddress: supplierPlaceContext?.formatted_address ?? null,
   });
+  const parseProfilePrior = await resolveReceiptParseProfilePrior({
+    businessId,
+    supplierId: supplierId ?? null,
+    googlePlaceId: supplierGooglePlaceId,
+  });
+  const provinceHintForCorrection = supplierProvinceHint ?? parseProfilePrior.provinceHint;
+  const provinceHintSourceForCorrection =
+    supplierProvinceHint != null
+      ? ("google_places" as const)
+      : parseProfilePrior.provinceHint != null
+        ? ("manual" as const)
+        : null;
 
   // Start OCR and image upload in parallel
   const imagePath = `receipts/${businessId}/${Date.now()}.jpg`;
@@ -1007,10 +1062,10 @@ export async function processReceiptImage(
       total: ts.total,
       currency: ts.currency,
       tax_lines: ts.tax != null ? [{ label: "Tax", amount: ts.tax }] : undefined,
-      ...(supplierProvinceHint
+      ...(provinceHintForCorrection
         ? {
-            province_hint: supplierProvinceHint,
-            province_hint_source: "google_places" as const,
+            province_hint: provinceHintForCorrection,
+            province_hint_source: provinceHintSourceForCorrection,
           }
         : {}),
     },
@@ -1059,6 +1114,13 @@ export async function processReceiptImage(
   };
 
   await resolveAndWriteLineItems(receipt.id, lineItemsWithMatches, summary);
+  await persistReceiptParseProfileSafely({
+    businessId,
+    supplierId: supplierId ?? null,
+    googlePlaceId: supplierGooglePlaceId,
+    receiptId: receipt.id,
+    summary: correction.summary,
+  });
   recordReceiptCorrectionMetrics({
     source: "tabscanner",
     summary: correction.summary,

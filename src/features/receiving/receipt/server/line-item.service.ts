@@ -7,6 +7,7 @@ import { prisma } from "@/server/db/prisma";
 import { learnAlias } from "@/domain/matching/engine";
 import { learnReceiptItemAlias } from "@/server/matching/receipt-line";
 import { serialize } from "@/domain/shared/serialize";
+import { recordReceiptParseProfileLineReviewFeedback } from "./receipt-parse-profile.service";
 import {
   findLineItemWithReceipt,
   updateLineItem,
@@ -75,6 +76,22 @@ export async function updateLineItemMatch(
         });
       }
     }
+  }
+
+  if (data.status === "confirmed" || data.status === "skipped") {
+    await recordReceiptParseProfileLineReviewFeedback({
+      businessId,
+      supplierId: lineExists.receipt?.supplier_id ?? null,
+      googlePlaceId: lineExists.receipt?.supplier?.google_place_id ?? null,
+      status: data.status,
+    }).catch((error) => {
+      console.warn("[receipt-parse-profile] failed to record line review feedback", {
+        business_id: businessId,
+        line_item_id: lineItemId,
+        status: data.status,
+        message: error instanceof Error ? error.message : "unknown_error",
+      });
+    });
   }
 
   return serialize(lineItem);
