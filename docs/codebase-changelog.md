@@ -20,7 +20,168 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-27 - OC-04: Phase 3 scheduling-platform expansion - connector registry, normalization contracts, conflict diagnostics
+
+- Suggested Commit Title: `feat(oc-04): add scheduling-platform connectors, normalization contracts, and conflict diagnostics`
+- Scope: Operational Calendar Phase 3 - appointment/reservation connector stubs, normalized mapping hardening, overlap/duplicate conflict handling.
+- Preflight evidence:
+  - Source plan section reviewed: `docs/operational-calendar-schedule-plan.md` -> `### Phase 3 - Scheduling-platform expansion`
+  - Reuse-first scans:
+    - `rg -n "connector|normalize|overlap|duplicate|dedupe|reservation|appointment" src app test docs`
+    - `rg -n "schedule|calendar|provider|sync|conflict|dedupe|duplicate|overlap" test src/features/schedule`
+  - Reused provider registry/normalization orchestration patterns from `src/features/integrations/providers/*` and `src/features/integrations/server/sync.service.ts`; no duplicate calendar implementation paths created.
+  - DB/Prisma integrity preflight (no schema change in this slice): reviewed `prisma/schema.prisma` and latest migration `prisma/migrations/20260228013000_income_event_pilot/migration.sql`.
+- New files:
+  - `src/features/schedule/shared/schedule-normalization.contracts.ts`: scheduling-platform provider ID subset; normalized scheduling event contract; duplicate/overlap reason vocabulary; conflict-resolution result contracts.
+  - `src/features/schedule/server/scheduling-connectors.ts`: scheduling connector registry (Square Appointments, Calendly, Mindbody, Fresha, Vagaro, OpenTable, Resy); env-driven fetch stubs; field-priority mapping, status normalization, fallback duration/timezone handling, deterministic fingerprint generation.
+  - `src/features/schedule/server/schedule-conflict.service.ts`: duplicate suppression pipeline (`provider_external_id` -> `linked_entity` -> `fingerprint`) plus overlap detection (`staff_overlap`, `resource_overlap`, `time_overlap`).
+  - `src/features/schedule/server/scheduling-sync.service.ts`: provider sync preview runner with fetched/normalized/dropped counts and conflict diagnostics.
+  - `src/features/schedule/server/index.ts`: schedule server export surface.
+  - `src/features/schedule/server/scheduling-sync.service.test.ts`: targeted OC-04 tests.
+- Updated files:
+  - `src/features/schedule/shared/index.ts`: exports OC-04 normalization/conflict contracts.
+  - `docs/operational-calendar-schedule-plan.md`: Pick Up Here advanced to OC-05; Latest Update entry added for OC-04 completion.
+  - `docs/master-plan-v1.md`: OC-04 marked `[x]`; Last Left Off moved to OC-05; completion updated to 34/38 (89.47%); OC-04 job summary appended.
+  - `docs/codebase-overview.md`: Operational Calendar status/capabilities and schedule canonical paths updated for OC-04.
+- Validation:
+  - `npx tsx --test src/features/schedule/server/scheduling-sync.service.test.ts` -> PASS (5/5)
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `npx eslint src/features/schedule/shared/index.ts src/features/schedule/shared/schedule-normalization.contracts.ts src/features/schedule/server/index.ts src/features/schedule/server/scheduling-connectors.ts src/features/schedule/server/schedule-conflict.service.ts src/features/schedule/server/scheduling-sync.service.ts src/features/schedule/server/scheduling-sync.service.test.ts --max-warnings=0` -> PASS
+- Master plan: OC-04 `[x]`; completion 34/38 = 89.47%; next OC-05.
+
+### 2026-02-27 - OC-03: Phase 2 provider-sync foundation — calendar provider catalog, sync health contracts, SourceHealthBar
+
+- Suggested Commit Title: `feat(oc-03): add calendar provider catalog, sync health contracts, and SourceHealthBar shell`
+- Scope: Operational Calendar Phase 2 — provider catalog, sync health model, SourceHealthBar UI.
+- Preflight evidence: no existing calendar provider or sync contracts — new files only; ScheduleClient updated to consume new shared exports.
+- New files:
+  - `src/features/schedule/shared/schedule-provider.contracts.ts`: 10-provider catalog across 3 types (general_calendar: Google Calendar, Outlook/M365, Apple ICS; booking_platform: Square Appointments, Calendly, Mindbody, Fresha, Vagaro; reservation_platform: OpenTable, Resy); `CalendarProviderDefinition` interface with auth method, supported event types, industry support, incremental sync + webhook capability flags; industry recommendation map; `listCalendarProvidersForIndustry`, `getCalendarProviderById`, `isCalendarProviderRecommendedForIndustry` helpers
+  - `src/features/schedule/shared/schedule-sync.contracts.ts`: `CalendarSyncStatus` — 6-value vocabulary; `CalendarProviderSyncCard` normalized presentation shape; `CalendarSourceHealthSummary` aggregated health with `healthy | degraded | error` overall; `deriveCalendarSourceHealth` client-side derivation utility; `CALENDAR_PROVIDER_ACCENT_COLORS` — unique Tailwind color per provider; `getProviderAccentColor` helper; stale threshold constant (24h)
+- Updated files:
+  - `src/features/schedule/shared/index.ts`: re-exports all new provider catalog and sync health types/constants/utilities
+  - `src/features/schedule/ui/ScheduleClient.tsx`: adds `SourceHealthBar` component — quiet "no sources" callout when empty; health status dot + connected count + per-provider accent dots when sync cards present; imports `deriveCalendarSourceHealth` from shared; doc header promoted to OC-02/OC-03; phase shell comment updated to point to OC-04
+- Validation: `npx tsc --noEmit --incremental false` → PASS; `npx eslint` on all 4 touched files → PASS (0 errors)
+- Master plan: OC-03 `[x]`; completion 33/38 = 86.84%
+
+### 2026-02-27 - OC-02: Phase 1 master calendar shell — ScheduleClient (Day/Week/Month + source filters)
+
+- Suggested Commit Title: `feat(oc-02): add ScheduleClient master calendar shell (Day/Week/Month, source filters, event grid)`
+- Scope: Operational Calendar Phase 1 — master calendar shell UI.
+- New files:
+  - `src/features/schedule/ui/ScheduleClient.tsx`: "use client" component — Day/Week/Month toggle (week default), Manual/Internal/Connected source visibility filters, industry-aware subtitle, New Event CTA stub, WeekGridShell / DayColumnShell / MonthGridShell with today highlight
+- Updated files:
+  - `app/(dashboard)/schedule/page.tsx`: replaced Phase 0 placeholder with `ScheduleClient` wrapper
+- Validation: `npx tsc --noEmit --incremental false` → PASS; `npx eslint` → PASS (0 errors)
+
+### 2026-02-27 - OC-01: Phase 0 activation/baseline — schedule contracts, route shell, nav finalized
+
+- Suggested Commit Title: `feat(oc-01): add schedule feature contracts, /schedule route shell, finalize nav order`
+- Scope: Operational Calendar Phase 0 — vocabulary contracts, route shell, nav canonical order.
+- Preflight evidence: no existing schedule/event/calendar code in src/ or app/ — greenfield.
+- New files:
+  - `src/features/schedule/shared/schedule.contracts.ts`: canonical event vocabulary (8 event types, source policy, editability rules, status vocab, view modes, CalendarEventSummary shape, industry emphasis map)
+  - `src/features/schedule/shared/index.ts`: public barrel export
+  - `app/(dashboard)/schedule/page.tsx`: Phase 0 route placeholder
+  - `app/(dashboard)/schedule/layout.tsx`: no-gate layout
+- Updated files:
+  - `components/nav/bottom-nav.tsx`: nav order → Home | Staff | Intake | Inventory | Schedule; Integrations removed from primary nav slots; `moduleId` field removed from NavItem type
+- Validation: `npx tsc --noEmit --incremental false` → PASS; `npx eslint` on all 5 files → PASS (0 errors)
+
+### 2026-02-27 - OC-00: execution gate confirmed — Operational Calendar plan unblocked
+
+- Suggested Commit Title: `chore(oc-00): confirm OC execution gate — all prerequisites met, plan unblocked`
+- Scope: OC-00 gate confirmation — no code changes; docs only.
+- Gate verification:
+  1. unified-inventory-intake-refactor-plan → COMPLETE
+  2. receipt-post-ocr-correction-plan → COMPLETE
+  3. income-integrations-onboarding-plan → COMPLETE
+  4. app-structure-refactor-agent-playbook → COMPLETE (smoke passed)
+  5. User confirmed OC as next initiative 2026-02-27
+- Preflight: no existing `/schedule` route, no nav entry, no prior event model — clean greenfield start.
+- `docs/operational-calendar-schedule-plan.md`: status → GATE OPEN; all gate items `[x]`; Pick Up Here → OC-01.
+- `docs/master-plan-v1.md`: OC-00 → `[x]`; completion → 30/38 = 78.95%; Left Off Here → OC-01.
+
+### 2026-02-27 - fix(migrations): UUID → TEXT correction for FK columns — all 5 pending migrations applied
+
+- Suggested Commit Title: `fix(migrations): correct UUID to TEXT for FK columns — apply all 5 pending migrations`
+- Scope: DB schema fix found during QA-00 manual smoke (shopping + receipt parse both failed).
+- Root cause: 3 of the 5 pending migrations (`20260227230000`, `20260228010000`, `20260228013000`) declared `id` and FK columns as `UUID`, but the project DB uses `TEXT` for all IDs (Supabase convention: `TEXT DEFAULT gen_random_uuid()`).
+- Files changed:
+  - `prisma/migrations/20260227230000_receipt_parse_profile_memory/migration.sql`: `UUID` → `TEXT` for `id`, `business_id`, `supplier_id`
+  - `prisma/migrations/20260228010000_income_oauth_core_infrastructure/migration.sql`: `UUID` → `TEXT` for `id`, `business_id` (both tables)
+  - `prisma/migrations/20260228013000_income_event_pilot/migration.sql`: `UUID` → `TEXT` for `id`, `business_id`, `connection_id`
+- Actions taken:
+  - `npx prisma migrate resolve --rolled-back 20260227230000_receipt_parse_profile_memory`
+  - `npx prisma migrate deploy` → all 3 remaining migrations applied successfully
+  - `npx prisma generate` → Prisma client regenerated
+  - `npx prisma validate` → schema valid
+  - `npx tsc --noEmit --incremental false` → PASS
+- DB state: all 20 migrations applied; schema up to date.
+
+### 2026-02-27 - QA-00/QA-01: automated QA gate pass — manual smoke checklist compiled
+
+- Suggested Commit Title: `chore(qa-00): run automated QA gates — all pass; manual smoke checklist ready for user`
+- Scope: QA gate execution — automated portion complete; manual smoke pending user run.
+- Automated tests run (all pass):
+  - `intake-capability.service.test.mjs` → 17/17
+  - `intake-session.contracts.test.mjs` → 18/18
+  - `sync.service.test.mjs` → 14/14
+  - `receipt-correction-core.test.mjs` → 14/14
+  - `receipt-correction-fixtures.test.mjs` → 27/27
+  - `receipt.test.mjs` → 7/7
+  - Receipt feature services (correction + historical hints + parse profile + produce lookup) → 13/13
+  - Integrations catalog + oauth → 6/6
+  - Uber Eats + DoorDash provider adapters → 25/25
+  - **Total: 141 tests — 0 failures**
+  - `npx tsc --noEmit --incremental false` → PASS
+- Manual smoke checklist (18 items across 3 source plans) compiled into `docs/master-plan-v1.md` → `## Last Left Off Here`.
+- No code changes this slice; QA-00/QA-01 marked `[~]` (pending user run).
+
+### 2026-02-27 - UI-05/UI-06: unified intake cleanup + plan closure
+
+- Suggested Commit Title: `chore(ui-05): clean up migration-era comments — unified intake refactor complete`
+- Scope: Phase 5 cleanup/deprecation + plan closure for the Unified Inventory Intake Refactor plan.
+- Preflight evidence (reuse/refactor-first):
+  - Scanned all intake/nav files for migration-era markers ("UI-0x Phase N", "compatibility wrappers", "extends ... compatibility map").
+  - Confirmed `/shopping` and `/receive` are full feature routes — plan non-goal: "no removal of existing capabilities" → routes preserved.
+  - All cleanup was comment/doc-only; no logic changes required.
+- Changes:
+  - `components/nav/bottom-nav.tsx`: removed "UI-04" transitional header; promoted nav entry comment to stable description.
+  - `src/features/intake/ui/IntakeHubClient.tsx`: removed "compatibility wrappers/layer" and "UI-01/UI-03" phase labels from header and inline comments; routing to `/shopping`+`/receive` is now the stable canonical design.
+  - `src/features/intake/shared/intake.contracts.ts`: removed "UI-00 Phase 0" and forward-looking "UI-01 through UI-06" phase reference.
+  - `src/features/intake/shared/intake-session.contracts.ts`: removed "UI-02 Phase 2" and design-constraint migration scaffolding; removed "extends UI-01 compatibility map" inline comment.
+  - `src/features/intake/shared/intake-capability.service.ts`: removed "UI-03 Phase 3" and "Phase 3 constraints" migration notes from header.
+  - `app/(dashboard)/intake/page.tsx`: removed "UI-01" label; promoted to stable doc comment.
+  - `docs/unified-inventory-intake-refactor-plan.md`: status → COMPLETE; Latest Update added for UI-05/UI-06; Pick Up Here → PLAN COMPLETE.
+  - `docs/master-plan-v1.md`: UI-05/UI-06 → `[x]`; completion → 27/38 = 71.05%; Left Off Here → QA-00.
+- No schema migration; no functional behavior changes; no routes removed.
+- Validation:
+  - `npx tsc --noEmit --incremental false` → PASS
+  - `npx eslint components/nav/bottom-nav.tsx src/features/intake/ui/IntakeHubClient.tsx src/features/intake/shared/intake.contracts.ts src/features/intake/shared/intake-session.contracts.ts src/features/intake/shared/intake-capability.service.ts app/(dashboard)/intake/page.tsx` → PASS
+
+### 2026-02-27 - UI-04: navigation consolidation and nav-bar cleanup
+
+- Suggested Commit Title: `feat(ui-04): consolidate shopping and receive navigation into Intake Hub`
+- Scope: Phase 4 navigation consolidation for the Unified Inventory Intake Refactor plan.
+- Preflight evidence (reuse/refactor-first):
+  - `bottom-nav.tsx` was the target for top-level navigation simplification.
+  - Phase 4 scope is nav-bar UX updates only; no functional route changes.
+- Changes:
+  - `components/nav/bottom-nav.tsx`:
+    - Removed standalone `/shopping` and `/receive` nav items. They are now accessed exclusively through the `/intake` Hub.
+    - Updated URL prefix detection so the `/intake` tab illuminates when the user enters any nested intake routes (`/intake`, `/shopping`, `/receive`).
+    - Cleaned up obsolete terms (`shoppingLabel`, `receiveLabel`) and module gates (`moduleId === "receipts|shopping"`) in the render block.
+    - Added compatibility header comments to document /shopping and /receive route persistence.
+  - `docs/unified-inventory-intake-refactor-plan.md`: UI-04 Latest Update added; Pick Up Here → UI-05
+  - `docs/master-plan-v1.md`: UI-04 `[x]`, left-off → UI-05, completion 25/38 = 65.79%
+  - `docs/codebase-overview.md`: updated Product Capabilities to reflect full Hub consolidation.
+- No schema migration required; no existing standalone page behavior broken.
+- Validation:
+  - `npx tsc --noEmit --incremental false` → PASS
+  - `npx eslint components/nav/bottom-nav.tsx` → PASS
+
 ### 2026-02-27 - UI-03: capability gating service + IntakeHubClient refactor
+
 - Suggested Commit Title: `feat(ui-03): add capability gating service and wire to IntakeHubClient`
 - Scope: Phase 3 capability-driven UX gating for the Unified Inventory Intake Refactor plan.
 - Preflight evidence (reuse/refactor-first):
@@ -48,6 +209,7 @@ Companion overview: `docs/codebase-overview.md`
   - `npx eslint` targeted on `src/features/intake/` → PASS
 
 ### 2026-02-27 - UI-02: intake session orchestration adapter layer
+
 - Suggested Commit Title: `feat(ui-02): add intake session orchestration adapter layer`
 - Scope: Phase 2 session orchestration unification for the Unified Inventory Intake Refactor plan.
 - Preflight evidence (reuse/refactor-first):
@@ -74,6 +236,7 @@ Companion overview: `docs/codebase-overview.md`
   - `npx eslint` targeted on `src/features/intake/shared/` → PASS
 
 ### 2026-02-27 - UI-01: Inventory Intake Hub shell — intent-first entry at /intake
+
 - Suggested Commit Title: `feat(ui-01): add Inventory Intake Hub shell with intent-first entry cards`
 - Scope: Phase 1 Intake Hub shell for the Unified Inventory Intake Refactor plan.
 - Preflight evidence (reuse/refactor-first):
@@ -102,6 +265,7 @@ Companion overview: `docs/codebase-overview.md`
   - `npx eslint` targeted on `src/features/intake/ui/`, `app/(dashboard)/intake/`, `components/nav/bottom-nav.tsx` → PASS
 
 ### 2026-02-27 - UI-00: Unified Inventory Intake Phase 0 vocabulary/contracts
+
 - Suggested Commit Title: `chore(ui-00): add intake vocabulary contracts — Phase 0 complete`
 - Scope: Phase 0 vocabulary and contracts for the Unified Inventory Intake Refactor plan.
 - Preflight evidence (reuse/refactor-first):
@@ -128,6 +292,7 @@ Companion overview: `docs/codebase-overview.md`
   - `npx eslint` targeted on `src/features/intake/shared/` → PASS
 
 ### 2026-02-27 - IN-08: INCOME INTEGRATIONS PLAN COMPLETE — all phases 0-8 closed
+
 - Suggested Commit Title: `chore(in-08): close income integrations plan — all phases complete`
 - Scope: Documentation closure for Income Integrations Onboarding Plan (IN-08).
 - No code changes in this commit.
@@ -136,6 +301,7 @@ Companion overview: `docs/codebase-overview.md`
 - Next: `docs/unified-inventory-intake-refactor-plan.md` Phase 0 (UI-00).
 
 ### 2026-02-27 - IN-07 complete: production hardening + security/compliance (token expiry, scope audit, key rotation)
+
 - Suggested Commit Title: `feat(in-07): add token expiry guard, provider scope audit, and key rotation runbook`
 - Scope:
   - Income integrations Phase 7 (`IN-07`) production hardening + security/compliance checklist completion.
@@ -165,6 +331,7 @@ Companion overview: `docs/codebase-overview.md`
   - `npx eslint` targeted on all touched IN-07 files -> PASS
 
 ### 2026-02-27 - IN-06 complete: connection health indicators + stale sync warnings
+
 - Suggested Commit Title: `feat(in-06): add connection health indicators, stale sync warnings, and error message surface`
 - Scope:
   - Income integrations Phase 6 (`IN-06`) reporting + connection health improvements.
@@ -194,6 +361,7 @@ Companion overview: `docs/codebase-overview.md`
   - `npx eslint` targeted on all touched IN-06 files -> PASS
 
 ### 2026-02-27 - IN-05 complete: scheduled sync + webhook hardening (cron runner, sync lock guard, webhook verification)
+
 - Suggested Commit Title: `feat(in-05): add scheduled sync cron runner, sync lock guard, and webhook verification endpoints`
 - Scope:
   - Income integrations Phase 5 (`IN-05`) scheduled sync + webhook hardening.
@@ -222,6 +390,7 @@ Companion overview: `docs/codebase-overview.md`
   - `npx eslint` targeted on all touched IN-05 files -> PASS
 
 ### 2026-02-27 - IN-04 complete: restaurant provider rollout (Uber Eats + DoorDash adapters + generic sync runner)
+
 - Suggested Commit Title: `feat(in-04): add Uber Eats + DoorDash provider adapters and generalize sync runner`
 - Scope:
   - Income integrations Phase 4 (`IN-04`) restaurant rollout providers implementation.
@@ -271,6 +440,7 @@ Companion overview: `docs/codebase-overview.md`
   - `docs/codebase-changelog.md`
 
 ### 2026-02-27 - IN-03 complete: GoDaddy POS pilot end-to-end sync validation + last_sync_at dashboard visibility
+
 - Suggested Commit Title: `feat(in-03): ship first provider pilot sync tests and last_sync_at card visibility`
 - Scope:
   - Income integrations onboarding Phase 3 (`IN-03`) first provider pilot end-to-end validation and dashboard visibility.
@@ -319,6 +489,7 @@ Companion overview: `docs/codebase-overview.md`
   - `docs/codebase-changelog.md`
 
 ### 2026-02-27 - IN-02 complete: provider-agnostic OAuth core infrastructure
+
 - Suggested Commit Title: `feat(in-02): implement income OAuth core models, services, and routes`
 - Scope:
   - Income integrations onboarding Phase 2 (`IN-02`) provider-agnostic OAuth core implementation.
@@ -389,6 +560,7 @@ Companion overview: `docs/codebase-overview.md`
   - IN-02 is complete; canonical next task is `IN-03` (first provider pilot end-to-end).
 
 ### 2026-02-27 - IN-01 complete: provider catalog + onboarding/integrations UI shell (no OAuth)
+
 - Suggested Commit Title: `feat(in-01): ship income provider catalog and onboarding UI shell`
 - Scope:
   - Income integrations onboarding Phase 1 (`IN-01`) provider-catalog + UI shell implementation only.
@@ -461,6 +633,7 @@ Companion overview: `docs/codebase-overview.md`
   - IN-01 is complete; canonical next task is `IN-02` (provider-agnostic OAuth core).
 
 ### 2026-02-27 - IN-00 complete: income integrations phase-0 decision lock and contract scaffolding
+
 - Suggested Commit Title: `chore(in-00): finalize income integration phase-0 contracts and decision lock`
 - Scope:
   - Income integrations onboarding Phase 0 (`IN-00`) design/schema/security contract finalization only.
@@ -518,6 +691,7 @@ Companion overview: `docs/codebase-overview.md`
   - IN-00 is complete; canonical next task is `IN-01` (provider catalog + onboarding UI shell, no OAuth yet).
 
 ### 2026-02-27 - RC-19 complete: receipt correction plan closeout and status synchronization
+
 - Suggested Commit Title: `chore(rc-19): close receipt correction plan with final validation evidence and doc sync`
 - Scope:
   - Receipt correction Phase 6 closeout (`RC-19`) documentation/finalization slice.
@@ -554,6 +728,7 @@ Companion overview: `docs/codebase-overview.md`
   - Receipt correction implementation plan is now closed; canonical next task is `IN-00`.
 
 ### 2026-02-27 - RC-18 complete: rollout hardening with enforce safety guardrails and diagnostics
+
 - Suggested Commit Title: `feat(rc-18): add receipt correction rollout guards and enforce fallback diagnostics`
 - Scope:
   - Receipt correction Phase 6 (`RC-18`) hardening/tuning for safe enforce promotion and diagnostics.
@@ -611,6 +786,7 @@ Companion overview: `docs/codebase-overview.md`
   - RC-18 marked complete; canonical next task is `RC-19` closeout.
 
 ### 2026-02-27 - RC-17 complete: historical feedback loop with outcome-aware priors and fuzzy fallback
+
 - Suggested Commit Title: `feat(rc-17): prioritize confirmed history priors with fuzzy fallback and price-proximity gating`
 - Scope:
   - Receipt correction Phase 5 (`RC-17`) historical feedback-loop integration for correction-scoring priors.
@@ -653,6 +829,7 @@ Companion overview: `docs/codebase-overview.md`
   - RC-17 marked complete; canonical next task is `RC-18`.
 
 ### 2026-02-27 - RC-16 complete: hybrid raw-text parser upgrades + profile-prior parser hints
+
 - Suggested Commit Title: `feat(rc-16): ship hybrid receipt parser with section detection and profile-guided hints`
 - Scope:
   - Receipt correction Phase 4 (`RC-16`) structured parser upgrade for raw-text ingestion and safe store-prior parser interpretation.
@@ -707,6 +884,7 @@ Companion overview: `docs/codebase-overview.md`
   - RC-16 marked complete; canonical next task is `RC-17`.
 
 ### 2026-02-27 - RC-15 complete: add dedicated store parse-profile memory and workflow learning hooks
+
 - Suggested Commit Title: `feat(rc-15): add receipt parse profile memory table and profile-prior orchestration`
 - Scope:
   - Receipt correction Phase 3 (`RC-15`) store-specific parse profile persistence and learning loop wiring.
@@ -764,6 +942,7 @@ Companion overview: `docs/codebase-overview.md`
   - RC-15 is unblocked/completed; canonical next task is `RC-16`.
 
 ### 2026-02-27 - RC-15 blocked: unresolved store-profile persistence contract (table vs supplier JSON)
+
 - Suggested Commit Title: `chore(rc-15): mark store-profile persistence decision blocker and halt autonomous advance`
 - Scope:
   - RC-15 preflight/blocker documentation update only (no runtime code changes).
@@ -791,6 +970,7 @@ Companion overview: `docs/codebase-overview.md`
   - Autonomous execution halted per contract; no later checklist items were started.
 
 ### 2026-02-27 - RC-14 complete: persist parse-confidence metadata + add separate parse-confidence review indicators
+
 - Suggested Commit Title: `feat(rc-14): persist receipt parse-confidence metadata and show parse indicators in review UI`
 - Scope:
   - Receipt correction Phase 2 (`RC-14`) for line-level parse metadata persistence and receipt review UI parse-confidence indicators.
@@ -849,6 +1029,7 @@ Companion overview: `docs/codebase-overview.md`
   - RC-14 completion keeps schema/contracts aligned with the non-overload rule: parse confidence is now persisted separately from match confidence.
 
 ### 2026-02-27 - RC-13 complete: schema-backed minimal produce metadata persistence (`ReceiptLineItem`)
+
 - Suggested Commit Title: `feat(rc-13): persist receipt line produce metadata with minimal nullable columns`
 - Scope:
   - Receipt correction Phase 1.5 persistence slice (`RC-13`) using schema-backed minimal storage.
@@ -889,6 +1070,7 @@ Companion overview: `docs/codebase-overview.md`
   - RC-13 is complete with minimal nullable schema-backed persistence only (no over-modeling, no new parse-confidence columns yet).
 
 ### 2026-02-27 - RC-13 blocked: parse/produce persistence path requires explicit approval
+
 - Suggested Commit Title: `chore(rc-13): mark persistence decision blocker and halt autonomous advance`
 - Scope:
   - RC-13 preflight/blocker documentation update only (no runtime code changes).
@@ -915,6 +1097,7 @@ Companion overview: `docs/codebase-overview.md`
   - Autonomous execution halted per contract; no later checklist items were started.
 
 ### 2026-02-27 - RC-12 complete: produce lookup service wired (PLU/fuzzy + province language preference + EN fallback)
+
 - Suggested Commit Title: `feat(rc-12): add produce lookup service with province-aware language fallback`
 - Scope:
   - Receipt correction Phase 1.5 service-layer completion (`RC-12`) for produce-item lookup enrichment after correction-core processing.
@@ -960,6 +1143,7 @@ Companion overview: `docs/codebase-overview.md`
   - `RC-12` marked complete; canonical next task is `RC-13`.
 
 ### 2026-02-27 - RC-11 complete: province hierarchy hardening + ON/QC tax assertion expansion + raw-text totals robustness
+
 - Suggested Commit Title: `feat(rc-11): harden province resolution hierarchy, tax assertions, and raw-text totals extraction`
 - Scope:
   - Receipt correction Phase 1 tax-hardening slice (`RC-11`) across workflow province resolution, tax-interpretation fixtures/assertions, and parsed-text totals extraction robustness.
@@ -1018,6 +1202,7 @@ Companion overview: `docs/codebase-overview.md`
   - `RC-11` marked complete in master plan; canonical next task is `RC-12`.
 
 ### 2026-02-27 - RC-10 closeout: workflow-aligned historical scoring threshold tuning + fixture corpus completion to 20 scenarios
+
 - Suggested Commit Title: `chore: RC-10 closeout: align historical scoring threshold with workflow gate and expand fixtures to 20`
 - Scope:
   - Receipt correction Phase 1 (`RC-10`) closeout for threshold tuning and fixture-corpus completion.
@@ -1060,6 +1245,7 @@ Companion overview: `docs/codebase-overview.md`
   - `RC-10` is now complete in the master checklist; canonical next task is `RC-11`.
 
 ### 2026-02-27 - Master plan autonomous execution contract hardened for low-supervision continuation
+
 - Suggested Commit Title: `chore(docs): harden master plan with autonomous execution contract and anti-drift gates`
 - Scope:
   - Documentation governance hardening to reduce manual supervision and enforce sequential task execution.
@@ -1082,6 +1268,7 @@ Companion overview: `docs/codebase-overview.md`
   - This is a process hardening slice; master-plan checklist completion percentages are unchanged by this update.
 
 ### 2026-02-27 - Changelog commit-title policy enforced across all entries and master-plan completion metrics section added
+
 - Suggested Commit Title: `chore(docs): enforce changelog commit-title line and add master-plan completion metrics section`
 - Scope:
   - Documentation process/governance update for consistent handoff metadata
@@ -1103,6 +1290,7 @@ Companion overview: `docs/codebase-overview.md`
   - Going forward, post-slice responses should include both the suggested commit title and current strict/weighted master-plan completion percentages.
 
 ### 2026-02-27 - RC-10 continuation: raw-text parser noise hardening + tax-assertion fixture expansion to 18 scenarios
+
 - Suggested Commit Title: `chore: RC-10 continuation: raw-text parser noise hardening + tax-assertion fixture expansion to 18 scenarios`
 - Scope:
   - Receipt correction Phase 1 (RC-10) continuation focused on raw-text pre-correction quality and fixture-driven tax validation coverage
@@ -1142,6 +1330,7 @@ Companion overview: `docs/codebase-overview.md`
   - RC-10 remains in progress; next closeout slice should add final 2 fixtures and complete threshold tuning review against shadow metrics.
 
 ### 2026-02-27 - RC-10 continuation: historical hint quality gates, observability expansion, and fixture corpus growth
+
 - Suggested Commit Title: `chore: RC-10 continuation: historical hint quality gates, observability expansion, and fixture corpus growth`
 - Scope:
   - Receipt correction Phase 1 (RC-10) threshold-hardening continuation after initial historical plausibility wiring
@@ -1183,6 +1372,7 @@ Companion overview: `docs/codebase-overview.md`
   - RC-10 remains in progress; fixture corpus now at 15 scenarios, with 18-20 target still pending before closeout.
 
 ### 2026-02-27 - RC-10 kickoff: historical price plausibility wiring for receipt correction + fixture/test expansion
+
 - Suggested Commit Title: `chore: RC-10 kickoff: historical price plausibility wiring for receipt correction + fixture/test expansion`
 - Scope:
   - Receipt post-OCR correction Phase 1 (RC-10) continuation focused on feature-layer historical plausibility signals and threshold-tuning scaffolding
@@ -1228,6 +1418,7 @@ Companion overview: `docs/codebase-overview.md`
   - RC-10 remains in progress; this slice implemented historical signal wiring and first fixture expansion, with threshold tuning and broader fixture growth still pending.
 
 ### 2026-02-27 - Master plan checklist hardened with mandatory per-step scoped implementation pre-checks
+
 - Suggested Commit Title: `chore: Master plan checklist hardened with mandatory per-step scoped implementation pre-checks`
 - Scope:
   - Documentation/process hardening to reduce duplicate code creation risk during ongoing plan execution
@@ -1245,6 +1436,7 @@ Companion overview: `docs/codebase-overview.md`
   - No runtime behavior, schema, or architecture implementation changed in this slice.
 
 ### 2026-02-27 - Created Master Plan v1 for canonical continuation order across remaining plans
+
 - Suggested Commit Title: `chore: Created Master Plan v1 for canonical continuation order across remaining plans`
 - Scope:
   - Documentation coordination and execution-order consolidation across all current plan docs
@@ -1271,6 +1463,7 @@ Companion overview: `docs/codebase-overview.md`
   - No runtime behavior or schema changes were made in this slice.
 
 ### 2026-02-27 - Added sequencing-locked Operational Calendar (Schedule tab) plan
+
 - Suggested Commit Title: `chore: Added sequencing-locked Operational Calendar (Schedule tab) plan`
 - Scope:
   - Product/system-design planning for a cross-industry Schedule tab as an Operational Calendar, with explicit start-order gating after all current active plans
@@ -1298,6 +1491,7 @@ Companion overview: `docs/codebase-overview.md`
   - This is planning-only; no feature behavior or architecture implementation changed in this slice.
 
 ### 2026-02-27 - Added unified Inventory Intake regrouping refactor plan (planning-only, no behavior changes)
+
 - Suggested Commit Title: `chore: Added unified Inventory Intake regrouping refactor plan (planning-only, no behavior changes)`
 - Scope:
   - Product-structure planning update to unify Shopping + Receive under an intent-first Intake model without changing feature behavior
@@ -1324,6 +1518,7 @@ Companion overview: `docs/codebase-overview.md`
   - Current implementation remains unchanged. This entry records product/system-design planning alignment only.
 
 ### 2026-02-27 - Receipt correction Phase 1.5 scaffold: produce normalization wired into core
+
 - Suggested Commit Title: `chore: Receipt correction Phase 1.5 scaffold: produce normalization wired into core`
 - Scope:
   - Initial code implementation slice for produce normalization/organic handling in the post-OCR correction pipeline
@@ -1368,6 +1563,7 @@ Companion overview: `docs/codebase-overview.md`
   - This slice is intentionally domain-first. `receipt-produce-lookup.service.ts` and DB persistence fields (`ReceiptLineItem.plu_code`, `organic_flag`) remain pending follow-up schema/service work.
 
 ### 2026-02-26 - Receipt correction Phase 1 tax scaffold implemented (ON/QC interpretation + validation signals)
+
 - Suggested Commit Title: `chore: Receipt correction Phase 1 tax scaffold implemented (ON/QC interpretation + validation signals)`
 - Scope:
   - Initial code implementation slice for province-aware tax interpretation in the post-OCR receipt correction pipeline
@@ -1408,6 +1604,7 @@ Companion overview: `docs/codebase-overview.md`
   - Google Places remains primary in policy, but this slice uses stored supplier `formatted_address` as the current place-context province signal (explicit place-details province fetch can be added in a follow-up hardening step).
 
 ### 2026-02-26 - Added Ontario/Quebec tax interpretation design guidance to receipt correction plan
+
 - Suggested Commit Title: `chore: Added Ontario/Quebec tax interpretation design guidance to receipt correction plan`
 - Scope:
   - Planning/docs update for improving receipt tax scanning/parsing and tax validation in the post-OCR correction pipeline
@@ -1431,6 +1628,7 @@ Companion overview: `docs/codebase-overview.md`
   - This is a planning/design addition only; no tax parsing behavior was implemented in code in this slice.
 
 ### 2026-02-26 - Expanded receipt correction fixture corpus to 10 scenarios and added fixture-driven regression tests
+
 - Suggested Commit Title: `chore: Expanded receipt correction fixture corpus to 10 scenarios and added fixture-driven regression tests`
 - Scope:
   - Phase 0/1 validation infrastructure for post-OCR receipt correction tuning
@@ -1469,6 +1667,7 @@ Companion overview: `docs/codebase-overview.md`
   - The fixture harness is pure/local and does not hit workflow/DB code, keeping threshold-tuning iterations fast.
 
 ### 2026-02-26 - Added unit tests for receipt correction core Phase 1 numeric/totals scenarios
+
 - Suggested Commit Title: `chore: Added unit tests for receipt correction core Phase 1 numeric/totals scenarios`
 - Scope:
   - Test coverage for the new Phase 1 post-OCR receipt correction core behavior
@@ -1491,6 +1690,7 @@ Companion overview: `docs/codebase-overview.md`
   - Tests are focused on pure correction-core behavior and avoid workflow/DB dependencies to keep iteration fast during threshold tuning.
 
 ### 2026-02-26 - Receipt correction observability expanded (confidence bands + flag/action breakdowns)
+
 - Suggested Commit Title: `chore: Receipt correction observability expanded (confidence bands + flag/action breakdowns)`
 - Scope:
   - Phase 1 tuning instrumentation for post-OCR receipt correction (`shadow`/`enforce` summary visibility)
@@ -1513,6 +1713,7 @@ Companion overview: `docs/codebase-overview.md`
   - These counts are primarily for `shadow` tuning and process-local metrics logs; no receipt line persistence schema changes were introduced in this slice.
 
 ### 2026-02-26 - Receipt post-OCR correction Phase 1 follow-up: raw-text totals extraction wired into correction stage
+
 - Suggested Commit Title: `chore: Receipt post-OCR correction Phase 1 follow-up: raw-text totals extraction wired into correction stage`
 - Scope:
   - Raw OCR text receipt workflow integration improvement for the shared post-OCR correction engine
@@ -1532,6 +1733,7 @@ Companion overview: `docs/codebase-overview.md`
   - Extractor is label-driven and intentionally conservative; unlabeled/noisy totals lines will still fall back to `not_evaluated`.
 
 ### 2026-02-26 - Receipt post-OCR correction Phase 1 slice started (numeric sanity + totals outlier retry, shadow safe)
+
 - Suggested Commit Title: `chore: Receipt post-OCR correction Phase 1 slice started (numeric sanity + totals outlier retry, shadow safe)`
 - Scope:
   - First behavior-changing implementation slice for the receipt post-OCR correction engine (Phase 1)
@@ -1558,6 +1760,7 @@ Companion overview: `docs/codebase-overview.md`
   - Fixture corpus expansion and threshold tuning remain pending Phase 1 follow-up work.
 
 ### 2026-02-26 - Split overview vs changelog docs and added receipt-plan handoff sections
+
 - Suggested Commit Title: `chore: Split overview vs changelog docs and added receipt-plan handoff sections`
 - Scope:
   - Documentation maintenance refactor to separate architecture overview from changelog history, plus a continuation handoff update for the receipt post-OCR correction plan
@@ -1578,6 +1781,7 @@ Companion overview: `docs/codebase-overview.md`
   - Historical changelog entries were preserved and moved intact to the new dedicated changelog file.
 
 ### 2026-02-26 - Receipt post-OCR correction Phase 0 scaffolding (feature-flagged pass-through + observability)
+
 - Suggested Commit Title: `chore: Receipt post-OCR correction Phase 0 scaffolding (feature-flagged pass-through + observability)`
 - Scope:
   - Initial implementation slice for the post-TabScanner receipt correction/reconciliation plan (foundation only; no parsing behavior changes yet)
@@ -1612,6 +1816,7 @@ Companion overview: `docs/codebase-overview.md`
   - This is an insertion/scaffolding slice only: no numeric auto-correction is applied yet, and line values remain unchanged by default (`RECEIPT_POST_OCR_CORRECTION_MODE=off`).
 
 ### 2026-02-26 - Added implementation plan for post-OCR receipt correction/reconciliation accuracy layer
+
 - Suggested Commit Title: `chore: Added implementation plan for post-OCR receipt correction/reconciliation accuracy layer`
 - Scope:
   - New planning document for improving post-TabScanner receipt parsing accuracy (numeric sanity, structural parsing, confidence scoring, store memory)
@@ -1639,6 +1844,7 @@ Companion overview: `docs/codebase-overview.md`
   - Plan is intentionally scoped to post-OCR receipt parsing/correction and excludes image-quality, barcode, and shopping-mode concerns.
 
 ### 2026-02-26 - Added implementation plan for business-type income integrations onboarding + OAuth/sync architecture
+
 - Suggested Commit Title: `chore: Added implementation plan for business-type income integrations onboarding + OAuth/sync architecture`
 - Scope:
   - New planning document for income-provider onboarding, OAuth connections, sync, and normalization rollout
@@ -1661,6 +1867,7 @@ Companion overview: `docs/codebase-overview.md`
   - Plan intentionally aligns with the current codebase state (existing `Business.industry_type`, `FinancialTransaction`, `ExternalSyncLog`, and home dashboard income layer refactor) to minimize migration risk.
 
 ### 2026-02-26 - Home dashboard layer feature extracted into `src/features/home/*` (playbook compliance)
+
 - Suggested Commit Title: `chore: Home dashboard layer feature extracted into src/features/home/* (playbook compliance)`
 - Scope:
   - Home dashboard interactive income/expense layer feature follow-up refactor for feature-module compliance
@@ -1690,6 +1897,7 @@ Companion overview: `docs/codebase-overview.md`
   - This refactor addresses the playbook compliance gap recorded in the prior home-dashboard changelog entry.
 
 ### 2026-02-26 - Home dashboard interactive income/expense layers + income source breakdown
+
 - Suggested Commit Title: `chore: Home dashboard interactive income/expense layers + income source breakdown`
 - Scope:
   - Home dashboard financial layers (income/expense split interaction) and dashboard summary data aggregation
@@ -1710,6 +1918,7 @@ Companion overview: `docs/codebase-overview.md`
   - Playbook compliance is partial: UI/server logic were implemented in route/action files (`app/page.tsx`, `app/actions/core/financial.ts`) instead of feature modules under `src/features/*`; follow-up extraction is recommended for strict compliance.
 
 Entry format (recommended):
+
 - Date
 - Scope
 - What changed
@@ -1718,6 +1927,7 @@ Entry format (recommended):
 - Notes / caveats
 
 ### 2026-02-26 - Global design language refresh (finance-style shell with green primary)
+
 - Suggested Commit Title: `chore: Global design language refresh (finance-style shell with green primary)`
 - Scope:
   - Cross-app visual language update (dark/light theme-aware) + homepage redesign
@@ -1738,6 +1948,7 @@ Entry format (recommended):
   - This pass focuses on shared surfaces + homepage; some feature pages still use local styling and may need follow-up polish to fully align with the new language.
 
 ### 2026-02-26 - Homepage UI cleanup (reduced glow and card density)
+
 - Suggested Commit Title: `chore: Homepage UI cleanup (reduced glow and card density)`
 - Scope:
   - Dashboard/home page visual simplification for cleaner presentation
@@ -1755,6 +1966,7 @@ Entry format (recommended):
   - No behavior/data-loading changes; this is a presentation-only cleanup.
 
 ### 2026-02-26 - Codebase overview promoted to architecture handbook + engineering guide + changelog
+
 - Suggested Commit Title: `chore: Codebase overview promoted to architecture handbook + engineering guide + changelog`
 - Scope:
   - Replaced the old MVP-style overview with a current-state architecture reference covering refactor outcomes, inventory intelligence features, feature placement rules, accepted exceptions, and changelog process.
@@ -1772,6 +1984,7 @@ Entry format (recommended):
   - This file is now expected to be updated after every meaningful change.
 
 ### 2026-02-26 - Fixed Inventory page client-bundle server import leak (`pg`/`dns` in browser build)
+
 - Suggested Commit Title: `chore: Fixed Inventory page client-bundle server import leak (pg/dns in browser build)`
 - Scope:
   - Inventory enrichment queue client hook/import boundaries
@@ -1794,6 +2007,7 @@ Entry format (recommended):
   - Root cause: `use-enrichment-dismissals.ts` imported `ENRICHMENT_SNOOZE_HOURS` from the inventory server barrel, which pulled Prisma/`pg` into the client bundle and caused the `dns` module resolution error in Next.js/Turbopack.
 
 ### 2026-02-26 - Refactor plan complete through Phase 8 (manual integrated smoke deferred)
+
 - Suggested Commit Title: `chore: Refactor plan complete through Phase 8 (manual integrated smoke deferred)`
 - Scope:
   - App structure refactor final closeout
@@ -1818,6 +2032,7 @@ Entry format (recommended):
   - Manual integrated smoke deferred to user/final QA pass.
 
 ### 2026-02-26 - Inventory Plan Phase D complete (enrichment queue)
+
 - Suggested Commit Title: `chore: Inventory Plan Phase D complete (enrichment queue)`
 - Scope:
   - Optional non-blocking "Fix Later" enrichment workflow
@@ -1840,6 +2055,7 @@ Entry format (recommended):
   - Server-side persistent enrichment task table intentionally deferred.
 
 ### 2026-02-26 - Inventory Plan Phase E complete (observability and hardening)
+
 - Suggested Commit Title: `chore: Inventory Plan Phase E complete (observability and hardening)`
 - Scope:
   - Resolver/web fallback hardening, metrics, retries, derived rates
@@ -1857,6 +2073,7 @@ Entry format (recommended):
   - Many metrics/retry mechanisms are process-local and reset on restart.
 
 ### 2026-02-26 - Inventory Plan Phases B/C complete; receipt aliasing and external barcode provider layering in production code
+
 - Suggested Commit Title: `chore: Inventory Plan Phases B/C complete; receipt aliasing and external barcode provider layering in production code`
 - Scope:
   - Barcode provider integrations and place-scoped receipt aliasing
@@ -1870,6 +2087,7 @@ Entry format (recommended):
   - `ReceiptItemAlias`
 
 ### 2026-02-25 to 2026-02-26 - Major architecture transition completed (historical backfill summary)
+
 - Suggested Commit Title: `chore: Major architecture transition completed (historical backfill summary)`
 - Scope:
   - Full route-thin, feature-first refactor and inventory intelligence rollout from plan docs
@@ -1887,6 +2105,7 @@ Entry format (recommended):
 
 ```md
 ### YYYY-MM-DD - <short change title>
+
 - Suggested Commit Title: `chore: <short change title>`
 - Scope:
   - <what area changed>
@@ -1902,3 +2121,6 @@ Entry format (recommended):
 - Notes:
   - <caveats / follow-up / accepted exceptions>
 ```
+
+
+

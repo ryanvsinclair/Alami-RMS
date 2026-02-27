@@ -114,18 +114,21 @@ Use this contract when the instruction is "continue from master plan" or equival
 6. Continue automatically to the next checklist task unless a stop condition is hit.
 
 Hard rules:
+
 - Only one task can be `[~]` at a time.
 - Never skip ahead of an earlier open task.
 - Never move from `[ ]` to `[x]` without validation evidence.
 - Never start a blocked task dependency chain.
 
 Stop conditions:
+
 - unresolved failing tests/lint/typecheck for the scoped task
 - source-plan dependency or product decision blocker
 - migration/data-risk blocker requiring explicit signoff
 - missing credentials/service access required to execute safely
 
 If stopped:
+
 - mark task `[!]` with blocker details in `## Latest Job Summary`
 - include exact unblock requirement
 - do not start later checklist items
@@ -135,6 +138,7 @@ If stopped:
 Before writing code for each task, the agent must confirm whether scoped implementation already exists.
 
 Required preflight actions:
+
 1. Read the relevant source plan section for the selected task ID.
 2. Run targeted codebase scans for existing scope:
    - `rg -n "<task keywords>" src app test docs`
@@ -143,6 +147,7 @@ Required preflight actions:
 4. Create new files only if required scope is truly missing.
 
 Required preflight evidence in job summary/changelog entry:
+
 - files reviewed for existing implementation
 - what was reused/refactored/moved/removed
 - why any new file was necessary
@@ -177,12 +182,14 @@ Use the `Canonical Order Checklist` statuses as the source of truth.
 Current snapshot (2026-02-27):
 
 - Total checklist items: `38`
-- `[x]` complete: `24`
+- `[x]` complete: `34`
 - `[~]` in progress: `0`
-- Strict completion: `63.16%`
-- Weighted progress: `63.16%`
+- Strict completion: `89.47%`
+- Weighted progress: `89.47%`
 - **Income Integrations Plan (IN-00 through IN-08): COMPLETE**
-- **UI-03 complete: capability gating service — resolveVisibleIntents() drives Hub visibility**
+- **Unified Inventory Intake Refactor Plan (UI-00 through UI-06): COMPLETE**
+- **QA-00/QA-01: COMPLETE — all manual smoke passed; migration FK bug found and fixed**
+- **OC-00/OC-01/OC-02/OC-03/OC-04: COMPLETE — activation, calendar shell, provider sync foundation, and scheduling-platform expansion shipped**
 
 Update rule after each slice:
 
@@ -193,24 +200,24 @@ Update rule after each slice:
 
 ## Documentation Inventory Reviewed (2026-02-27)
 
-| File | Classification | Status Snapshot | Notes |
-|---|---|---|---|
-| `docs/app-structure-refactor-agent-playbook.md` | Refactor execution plan | Complete (manual smoke deferred to user) | Phases 0-8 marked complete. |
-| `docs/combined-plan-coordination.md` | Cross-plan coordination | Complete (manual smoke deferred to user) | Historical coordination record. |
-| `docs/inventoryintakeplan.md` | Feature implementation plan | Complete (Phases 0/A/B/C/D/E complete) | Remaining items are user QA/manual smoke only. |
-| `docs/inventoryintakeplan.phase0-audit.md` | Historical prerequisite audit | Completed (deprecated) | Superseded by `inventoryintakeplan.md`. |
-| `docs/inventoryintakeplan.progress-handoff.md` | Historical handoff | Historical snapshot | Superseded by later work in `inventoryintakeplan.md`. |
-| `docs/receipt-post-ocr-correction-plan.md` | Active feature plan | Complete (`[x]` through RC-19) | Plan closed with non-blocking follow-ups tracked separately. |
-| `docs/income-integrations-onboarding-plan.md` | Active feature plan | In progress (`[x]` phases 0-2, `[ ]` phases 3-7) | OAuth core infrastructure shipped; first provider pilot/sync phases pending. |
-| `docs/unified-inventory-intake-refactor-plan.md` | Active refactor plan | Planning-only, not implemented | Depends on preserving behavior while regrouping IA/session model. |
-| `docs/operational-calendar-schedule-plan.md` | Active feature plan | Planning-only, sequencing-locked | Explicitly blocked until other active plans are complete. |
-| `docs/codebase-overview.md` | Architecture reference | Active (living document) | Must stay aligned with implementation reality. |
-| `docs/codebase-changelog.md` | Change history | Active (living document) | Append newest entries at top. |
-| `docs/initialprd.md` | Legacy product document | Reference only | Original problem framing. |
-| `ALAMI_OS_MIGRATION.md` | Legacy migration plan | Partial historical completion (Phase 1 complete; later phases pending) | Useful historical context, not current canonical execution plan. |
-| `README.md` | Project bootstrap README | Generic template | Not execution-planning material. |
-| `test/fixtures/receipt-correction/README.md` | Test fixture guidance | Active support doc | Relevant to receipt correction tuning/coverage. |
-| `skills/TabScanner/SKILLS.md` | Local skill reference | Reference | TabScanner integration best practices. |
+| File                                             | Classification                | Status Snapshot                                                        | Notes                                                                        |
+| ------------------------------------------------ | ----------------------------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `docs/app-structure-refactor-agent-playbook.md`  | Refactor execution plan       | Complete (manual smoke deferred to user)                               | Phases 0-8 marked complete.                                                  |
+| `docs/combined-plan-coordination.md`             | Cross-plan coordination       | Complete (manual smoke deferred to user)                               | Historical coordination record.                                              |
+| `docs/inventoryintakeplan.md`                    | Feature implementation plan   | Complete (Phases 0/A/B/C/D/E complete)                                 | Remaining items are user QA/manual smoke only.                               |
+| `docs/inventoryintakeplan.phase0-audit.md`       | Historical prerequisite audit | Completed (deprecated)                                                 | Superseded by `inventoryintakeplan.md`.                                      |
+| `docs/inventoryintakeplan.progress-handoff.md`   | Historical handoff            | Historical snapshot                                                    | Superseded by later work in `inventoryintakeplan.md`.                        |
+| `docs/receipt-post-ocr-correction-plan.md`       | Active feature plan           | Complete (`[x]` through RC-19)                                         | Plan closed with non-blocking follow-ups tracked separately.                 |
+| `docs/income-integrations-onboarding-plan.md`    | Active feature plan           | In progress (`[x]` phases 0-2, `[ ]` phases 3-7)                       | OAuth core infrastructure shipped; first provider pilot/sync phases pending. |
+| `docs/unified-inventory-intake-refactor-plan.md` | Active refactor plan          | Planning-only, not implemented                                         | Depends on preserving behavior while regrouping IA/session model.            |
+| `docs/operational-calendar-schedule-plan.md`     | Active feature plan           | Planning-only, sequencing-locked                                       | Explicitly blocked until other active plans are complete.                    |
+| `docs/codebase-overview.md`                      | Architecture reference        | Active (living document)                                               | Must stay aligned with implementation reality.                               |
+| `docs/codebase-changelog.md`                     | Change history                | Active (living document)                                               | Append newest entries at top.                                                |
+| `docs/initialprd.md`                             | Legacy product document       | Reference only                                                         | Original problem framing.                                                    |
+| `ALAMI_OS_MIGRATION.md`                          | Legacy migration plan         | Partial historical completion (Phase 1 complete; later phases pending) | Useful historical context, not current canonical execution plan.             |
+| `README.md`                                      | Project bootstrap README      | Generic template                                                       | Not execution-planning material.                                             |
+| `test/fixtures/receipt-correction/README.md`     | Test fixture guidance         | Active support doc                                                     | Relevant to receipt correction tuning/coverage.                              |
+| `skills/TabScanner/SKILLS.md`                    | Local skill reference         | Reference                                                              | TabScanner integration best practices.                                       |
 
 ## Completed Plan Ledger
 
@@ -226,17 +233,20 @@ Update rule after each slice:
 ### 1) `docs/receipt-post-ocr-correction-plan.md` (complete)
 
 Latest Update section review:
+
 - Produce normalization layer was added (9-prefix PLU normalization, organic keyword stripping, produce candidate gating).
 - `CorrectedReceiptLine` now includes `plu_code`, `produce_match`, `organic_flag`.
 - Phase 0 foundation is implemented; RC-10 closeout completed threshold tuning + fixture expansion to 20 scenarios.
 - Phase 1.5 schema-backed persistence is implemented for minimal produce metadata (`plu_code`, `organic_flag` on `ReceiptLineItem`), and RC-16/RC-17/RC-18/RC-19 parser + historical-loop + rollout-hardening + closeout synchronization are complete.
 
 Remaining high-impact work:
+
 - None in-plan; broader multilingual fixture breadth and optional backfill/admin tooling are documented as non-blocking follow-ups.
 
 ### 2) `docs/income-integrations-onboarding-plan.md` (in progress)
 
 Latest Update section review:
+
 - Phase 0 (`IN-00`) and Phase 1 (`IN-01`) remain complete.
 - Phase 2 (`IN-02`) OAuth core infrastructure is now implemented:
   - Prisma models/migration for `BusinessIncomeConnection` and `IncomeOAuthState`
@@ -246,24 +256,29 @@ Latest Update section review:
   - provider cards now expose connect links for env-configured providers
 
 Remaining work snapshot:
+
 - Phases 3-7 remain `[ ]` and pending implementation.
 - Next required implementation slice is `IN-03` (first provider pilot end-to-end).
 
 ### 3) `docs/unified-inventory-intake-refactor-plan.md` (planning-only)
 
 Latest Update section review:
+
 - No `Latest Update` section present.
 
 Remaining work snapshot:
+
 - Phase 0-5 migration strategy is defined, but implementation has not started.
 - Must preserve behavior and keep compatibility routes/wrappers during transition.
 
 ### 4) `docs/operational-calendar-schedule-plan.md` (planning-only, blocked)
 
 Latest Update section review:
+
 - No `Latest Update` section present.
 
 Remaining work snapshot:
+
 - Entire rollout is pending and explicitly blocked behind completion of:
   - unified intake regrouping implementation
   - receipt post-OCR correction implementation stabilization
@@ -273,6 +288,7 @@ Remaining work snapshot:
 ## Canonical Order Checklist (Single Best Continuation Path)
 
 Status legend:
+
 - `[ ]` not started
 - `[~]` in progress
 - `[x]` completed
@@ -314,35 +330,35 @@ Status legend:
 - [x] UI-01 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then add Phase 1 Inventory Intake Hub shell (intent-first entry).
 - [x] UI-02 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then unify Phase 2 session orchestration to intake lifecycle.
 - [x] UI-03 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 3 capability gating (industry-aware visibility/ordering).
-- [ ] UI-04 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 4 navigation consolidation with compatibility routes/wrappers retained.
-- [ ] UI-05 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then execute Phase 5 cleanup/deprecation after adoption checks, with rollback safety.
-- [ ] UI-06 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then mark unified intake plan complete with changelog + overview sync.
+- [x] UI-04 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 4 navigation consolidation with compatibility routes/wrappers retained.
+- [x] UI-05 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then execute Phase 5 cleanup/deprecation after adoption checks, with rollback safety.
+- [x] UI-06 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then mark unified intake plan complete with changelog + overview sync.
 
 ### E. Close Existing Deferred QA Gates Before Schedule Plan
 
-- [ ] QA-00 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then run deferred manual integrated smoke for refactor + inventory enrichment queue + active intake paths.
-- [ ] QA-01 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then confirm all manual QA follow-ups from completed plans are closed and documented.
+- [x] QA-00 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then run deferred manual integrated smoke for refactor + inventory enrichment queue + active intake paths.
+- [x] QA-01 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then confirm all manual QA follow-ups from completed plans are closed and documented.
 
 ### F. Start Operational Calendar Plan Only After Gates Pass
 
-- [ ] OC-00 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then confirm all start-gate prerequisites from `docs/operational-calendar-schedule-plan.md` in writing.
-- [ ] OC-01 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 0 activation/baseline.
-- [ ] OC-02 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 1 manual/internal operational calendar.
-- [ ] OC-03 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 2 provider-sync foundation.
-- [ ] OC-04 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 3 scheduling-platform expansion.
+- [x] OC-00 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then confirm all start-gate prerequisites from `docs/operational-calendar-schedule-plan.md` in writing.
+- [x] OC-01 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 0 activation/baseline.
+- [x] OC-02 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 1 manual/internal operational calendar.
+- [x] OC-03 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 2 provider-sync foundation.
+- [x] OC-04 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 3 scheduling-platform expansion.
 - [ ] OC-05 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 4 cross-feature suggestion layer.
 - [ ] OC-06 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 5 hardening/metrics/ops readiness.
 - [ ] OC-07 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then mark operational calendar plan complete and archive this master plan into v2 (if needed).
 
 ## Last Left Off Here (Update This Block First)
 
-- Current task ID: `UI-04`
-- Current task: `Unified Inventory Intake Refactor — Phase 4 navigation consolidation (compatibility routes/wrappers retained)`
+- Current task ID: `OC-05`
+- Current task: `Implement Phase 4 cross-feature suggestion layer - delivery/intake nudges, booking/inventory hints, job/material-gap warnings`
 - Status: `READY`
 - Last updated: `2026-02-27`
 - Primary source plan section:
-  - `docs/unified-inventory-intake-refactor-plan.md` -> `Phase 4`
-- Note: UI-03 (Phase 3 capability gating) is **COMPLETE**. `intake-capability.service.ts` + 17 tests shipped; Hub updated to `resolveVisibleIntents()`; tsc/eslint clean.
+  - `docs/operational-calendar-schedule-plan.md` -> `### Phase 4 - Cross-feature suggestion engine`
+- Note: OC-04 (Phase 3) COMPLETE. Scheduling-platform connector registry, normalization contracts, and duplicate/overlap conflict diagnostics shipped. OC-05 adds cross-feature suggestion signals.
 
 ## Documentation Sync Checklist (Run Every Session)
 
@@ -355,7 +371,192 @@ Status legend:
 
 ## Latest Job Summary (Append New Entries At Top)
 
+### 2026-02-27 - OC-04 complete: Phase 3 scheduling-platform expansion - connector registry, normalization hardening, duplicate/overlap conflict handling
+
+- Suggested Commit Title: `feat(oc-04): add scheduling-platform connectors, normalization contracts, and conflict diagnostics`
+- Preflight:
+  - Reviewed source-plan section `docs/operational-calendar-schedule-plan.md` -> `### Phase 3 - Scheduling-platform expansion`.
+  - Ran reuse-first scans to avoid duplicate implementations:
+    - `rg -n "connector|normalize|overlap|duplicate|dedupe|reservation|appointment" src app test docs`
+    - `rg -n "schedule|calendar|provider|sync|conflict|dedupe|duplicate|overlap" test src/features/schedule`
+  - Reused existing integration patterns from `src/features/integrations/providers/*` and `src/features/integrations/server/sync.service.ts`.
+  - DB/Prisma preflight (no schema change required):
+    - `prisma/schema.prisma`
+    - latest migration `prisma/migrations/20260228013000_income_event_pilot/migration.sql`
+- Deliverables:
+  - `src/features/schedule/shared/schedule-normalization.contracts.ts` (NEW): scheduling-platform provider IDs; normalized scheduling event contract; duplicate/overlap vocab; conflict-result contracts.
+  - `src/features/schedule/server/scheduling-connectors.ts` (NEW): scheduling connector registry for appointment/reservation platforms; env-driven fetch stubs; field-priority normalization; status/timezone/duration guardrails; deterministic fingerprints.
+  - `src/features/schedule/server/schedule-conflict.service.ts` (NEW): duplicate suppression order (`provider_external_id` -> `linked_entity` -> `fingerprint`) and overlap detection (`staff_overlap`, `resource_overlap`, `time_overlap`).
+  - `src/features/schedule/server/scheduling-sync.service.ts` (NEW): provider sync preview runner with fetched/normalized/dropped counts plus duplicate/overlap diagnostics.
+  - `src/features/schedule/server/index.ts` (NEW): canonical schedule server export surface.
+  - `src/features/schedule/shared/index.ts` (UPDATED): exports OC-04 normalization/conflict contracts.
+  - `src/features/schedule/server/scheduling-sync.service.test.ts` (NEW): targeted validation for normalization and conflict behavior.
+- Validation:
+  - `npx tsx --test src/features/schedule/server/scheduling-sync.service.test.ts` -> PASS (5/5)
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - targeted `eslint` on touched schedule server/shared files -> PASS
+- Completion: 34/38 = 89.47%
+- Next: OC-05 (Phase 4 - cross-feature suggestion layer)
+
+### 2026-02-27 - OC-03 complete: Phase 2 provider-sync foundation — provider catalog, sync health contracts, SourceHealthBar
+
+- Suggested Commit Title: `feat(oc-03): add calendar provider catalog, sync health contracts, and SourceHealthBar shell`
+- Preflight: no existing calendar provider or sync contracts — new files only; ScheduleClient updated to import new shared exports.
+- Deliverables:
+  - `src/features/schedule/shared/schedule-provider.contracts.ts` (NEW): calendar provider catalog with 10 providers (Google Calendar, Outlook/M365, Apple ICS, Square Appointments, Calendly, Mindbody, Fresha, Vagaro, OpenTable, Resy); provider types, auth methods, event-type capabilities, industry support, and industry recommendation map; `listCalendarProvidersForIndustry`, `isCalendarProviderRecommendedForIndustry`, `getCalendarProviderById` helpers
+  - `src/features/schedule/shared/schedule-sync.contracts.ts` (NEW): 6-status sync vocabulary (`not_connected`, `connected`, `syncing`, `stale`, `error`, `disconnected`); `CalendarProviderSyncCard` normalized presentation contract; `CalendarSourceHealthSummary` aggregated health shape; `deriveCalendarSourceHealth` client-side derivation utility; `CALENDAR_PROVIDER_ACCENT_COLORS` map with unique color per provider; `getProviderAccentColor` helper
+  - `src/features/schedule/shared/index.ts` (UPDATED): re-exports all new provider catalog and sync health types/constants/utilities
+  - `src/features/schedule/ui/ScheduleClient.tsx` (UPDATED): imports `CalendarProviderSyncCard`, `CalendarSourceHealthSummary`, `deriveCalendarSourceHealth` from shared; adds `SourceHealthBar` component — shows "no sources" quiet callout when empty, or health dot + connected count + error count + provider accent dots when cards are present; doc header promoted to OC-02/OC-03
+- Validation: `npx tsc --noEmit --incremental false` → PASS; `npx eslint` on all 4 touched files → PASS (0 errors)
+- Completion: 33/38 = 86.84%
+- Next: OC-04 (Phase 3 — scheduling-platform expansion: connectors, normalized mapping, duplicate handling)
+
+### 2026-02-27 - OC-02 complete: Phase 1 master calendar shell — ScheduleClient with view toggle + source filters
+
+- Suggested Commit Title: `feat(oc-02): add ScheduleClient master calendar shell (Day/Week/Month, source filters, event grid)`
+- Preflight: no existing calendar UI code — new files only.
+- Deliverables:
+  - `src/features/schedule/ui/ScheduleClient.tsx`: "use client" master calendar shell
+    - Day / Week / Month view toggle (week default per plan)
+    - Source visibility toggles (Manual, Internal, Connected) — at least one always visible
+    - Industry-aware section subtitle from `CALENDAR_EVENT_EMPHASIS_BY_INDUSTRY`
+    - "New Event" CTA button stub
+    - `WeekGridShell`: 7-day header with today highlight + columnar time grid
+    - `DayColumnShell`: hour rows (7am–8pm) with time labels
+    - `MonthGridShell`: full month date cell grid with today highlight
+    - Empty grid slots with "Events appear here..." guidance copy
+  - `app/(dashboard)/schedule/page.tsx`: updated from Phase 0 placeholder → wraps `ScheduleClient`
+- Validation: `npx tsc --noEmit --incremental false` → PASS; `npx eslint` → PASS (0 errors)
+- Completion: 32/38 = 84.21%
+- Next: OC-03 (Phase 2 — provider sync foundation: adapters, source health, dedupe)
+
+### 2026-02-27 - OC-01 complete: Phase 0 activation/baseline — contracts, route shell, nav finalized
+
+- Suggested Commit Title: `feat(oc-01): add schedule feature contracts, /schedule route shell, finalize nav order`
+- Preflight: no existing schedule/event/calendar code anywhere in src/ or app/ — greenfield confirmed.
+- Deliverables:
+  - `src/features/schedule/shared/schedule.contracts.ts`: CalendarEventType (8 types), CalendarEventSource, CalendarEventEditability, CalendarEventStatus, CalendarViewMode, CalendarEventSummary, DEFAULT_EDITABILITY_BY_SOURCE, CALENDAR_EVENT_EMPHASIS_BY_INDUSTRY (5 industries)
+  - `src/features/schedule/shared/index.ts`: barrel export for schedule shared vocabulary
+  - `app/(dashboard)/schedule/page.tsx`: Phase 0 route shell (placeholder; OC-02 builds full UI)
+  - `app/(dashboard)/schedule/layout.tsx`: no-gate layout (Schedule is core for all businesses)
+  - `components/nav/bottom-nav.tsx`: nav updated to final canonical order (Home | Staff | Intake | Inventory | Schedule); Integrations removed from primary nav; `moduleId` gating removed from NavItem type (all 5 slots are unconditional)
+- Validation: `npx tsc --noEmit --incremental false` → PASS; `npx eslint` on all 5 files → PASS (0 errors, 0 warnings)
+- Completion: 31/38 = 81.58%
+- Next: OC-02 (Phase 1 — master calendar shell with Day/Week/Month toggle + manual event stub)
+
+### 2026-02-27 - OC-00 complete: all 5 gate prerequisites confirmed — OC plan unblocked
+
+- Suggested Commit Title: `chore(oc-00): confirm OC execution gate — all prerequisites met, plan unblocked`
+- Gate confirmation (all 5 prerequisites):
+  1. unified-inventory-intake-refactor-plan → COMPLETE (UI-00–UI-06)
+  2. receipt-post-ocr-correction-plan → COMPLETE (Phases 0–6, RC-19)
+  3. income-integrations-onboarding-plan → COMPLETE (IN-00–IN-08)
+  4. app-structure-refactor-agent-playbook → COMPLETE (Phase 8; smoke passed QA-00)
+  5. Product/engineering explicit confirmation → received from user 2026-02-27
+- Preflight scan: no existing `/schedule` route, no `/schedule` nav entry, no prior event model code — greenfield start.
+- `docs/operational-calendar-schedule-plan.md` updated: status → GATE OPEN, gate checklist `[x]`, Pick Up Here → OC-01.
+- Completion: 30/38 = 78.95%
+- Next: OC-01 (Phase 0 — canonical event contracts + `/schedule` route + nav slot)
+
+### 2026-02-27 - QA-00/QA-01 COMPLETE: all manual smoke passed — gate closed, advancing to OC-00
+
+- Suggested Commit Title: `chore(qa-01): close QA gate — all smoke passed, OC-00 unlocked`
+- User confirmed: login ✓, dashboard ✓, barcode ✓, photo OCR ✓, receipt parse ✓ (after migration fix), shopping ✓ (after migration fix).
+- QA-00/QA-01 marked `[x]`. OC plan gate is now open.
+- Completion: 29/38 = 76.32%
+- Next: OC-00 (gate confirmation in writing)
+
+### 2026-02-27 - QA-00 blocker fixed: migration FK type mismatch (UUID → TEXT) — all 5 pending migrations now applied
+
+- Suggested Commit Title: `fix(migrations): correct UUID to TEXT for FK columns — apply all 5 pending migrations`
+- Root cause:
+  - 5 migrations had not been applied to the live DB (20260227190000 through 20260228013000).
+  - Migrations `20260227230000`, `20260228010000`, `20260228013000` declared FK columns as `UUID` but the DB uses `TEXT` (Supabase convention — all `id` columns are `TEXT DEFAULT gen_random_uuid()`).
+  - This caused `shoppingSession.findMany()` and `receiptParseProfile` queries to fail with "column (not available)" at runtime.
+- Fix:
+  - Corrected all three affected migration files: replaced `UUID` with `TEXT` for `id`, `business_id`, `supplier_id`, and `connection_id` columns.
+  - Resolved failed migration via `npx prisma migrate resolve --rolled-back`.
+  - Applied all 5 pending migrations via `npx prisma migrate deploy` → all applied successfully.
+  - Regenerated Prisma client: `npx prisma generate` → OK.
+  - `npx prisma validate` → schema valid.
+  - `npx tsc --noEmit --incremental false` → PASS.
+- DB integrity contract evidence:
+  - Schema files reviewed: `prisma/schema.prisma`, all 5 pending migration SQL files.
+  - Change reused existing schema columns; corrected type alignment only (TEXT not UUID).
+  - Naming aligns with canonical Prisma schema and all prior migrations.
+- Impact: shopping session flows and receipt parse/profile flows should now work in the running app.
+- Next: User re-runs manual smoke (shopping + receipt parse) to confirm fix.
+
+### 2026-02-27 - QA-00/QA-01 in progress: automated gates PASS — manual smoke checklist compiled for user
+
+- Suggested Commit Title: `chore(qa-00): run automated QA gates — all pass; manual smoke checklist ready for user`
+- Completed (automatable portion):
+  - Ran UI-05 preflight scan across completed plan docs to collect all deferred manual smoke items.
+  - Ran full automated test suite across all feature areas:
+    - `intake-capability.service.test.mjs` → PASS 17/17
+    - `intake-session.contracts.test.mjs` → PASS 18/18
+    - `sync.service.test.mjs` → PASS 14/14
+    - `receipt-correction-core.test.mjs` → PASS 14/14
+    - `receipt-correction-fixtures.test.mjs` → PASS 27/27
+    - `receipt.test.mjs` → PASS 7/7
+    - `receipt-correction.service.test.mjs` + `receipt-workflow.historical-hints.test.mjs` + `receipt-parse-profile.service.test.mjs` + `receipt-produce-lookup.service.test.mjs` → PASS 13/13
+    - `provider-catalog.test.mjs` + `oauth.service.test.mjs` → PASS 6/6
+    - `uber-eats.provider.test.mjs` + `doordash.provider.test.mjs` → PASS 25/25
+    - **Total automated: 141 tests — 0 failures**
+  - `npx tsc --noEmit --incremental false` → PASS
+  - Compiled consolidated manual smoke checklist (18 items) from 3 source plans into master plan `Last Left Off Here` block.
+- Pending (user must run):
+  - 18-item manual smoke checklist in `## Last Left Off Here` above.
+  - Once user confirms all manual smoke items pass → mark QA-00 + QA-01 `[x]` → auto-advance to OC-00.
+- Stop condition: manual smoke is a user-execution gate; cannot be completed by agent.
+- Completion: 27/38 strict = 71.05% | weighted = 73.68%
+- Next: User runs manual smoke checklist → confirms → agent marks QA-00/QA-01 `[x]` → OC-00
+
+### 2026-02-27 - UI-05/UI-06 complete: cleanup/deprecation + UNIFIED INTAKE PLAN CLOSED
+
+- Suggested Commit Title: `chore(ui-05): clean up migration-era comments — unified intake refactor complete`
+- Completed:
+  - Ran UI-05 preflight scans:
+    - Searched for "TODO\|FIXME\|DEPRECATED\|COMPAT\|transitional\|compatibility\|old.*nav\|old.*route" in intake/nav paths
+    - Confirmed `/shopping` and `/receive` are full feature routes — NOT stubs; plan rule "no capability removal" → routes stay
+    - Confirmed all migration-era phase labels ("UI-0x Phase N", "compatibility wrappers", "extends UI-01 compatibility map") were in comments only — no logic to change
+  - UI-05 scoped changes (comment promotion, no logic changes):
+    - `components/nav/bottom-nav.tsx`: removed "UI-04" transitional header; updated nav entry comment to stable language
+    - `src/features/intake/ui/IntakeHubClient.tsx`: removed "compatibility wrappers" and "UI-01/UI-03" from header; cleaned `INTENT_HREF` and component inline comments
+    - `src/features/intake/shared/intake.contracts.ts`: removed "UI-00 Phase 0" and future-phase forward reference from header
+    - `src/features/intake/shared/intake-session.contracts.ts`: removed "UI-02 Phase 2" and design-constraint migration notes; removed "extends UI-01 compatibility map" inline comment
+    - `src/features/intake/shared/intake-capability.service.ts`: removed "UI-03 Phase 3" and "Phase 3 constraints" migration scaffolding from header
+    - `app/(dashboard)/intake/page.tsx`: removed "UI-01" label from doc comment
+  - UI-06 scoped changes (documentation closure only):
+    - `docs/unified-inventory-intake-refactor-plan.md`: status → COMPLETE; Latest Update added; Pick Up Here → closed
+    - `docs/master-plan-v1.md`: UI-05/UI-06 → `[x]`; completion % updated; Left Off Here → QA-00
+    - `docs/codebase-changelog.md`: new entry appended at top
+    - `docs/codebase-overview.md`: intake refactor status updated
+  - Validation gates all pass:
+    - `npx tsc --noEmit --incremental false` → PASS
+    - `npx eslint` on all 6 touched files → PASS
+  - Completion: 27/38 = 71.05%
+- Next: `QA-00` (manual integrated smoke — refactor + intake paths)
+
+### 2026-02-27 - UI-04 complete: navigation consolidation
+
+- Suggested Commit Title: `feat(ui-04): consolidate shopping and receive navigation into Intake Hub`
+- Completed:
+  - Ran UI-04 preflight scans:
+    - Confirmed Phase 4 scope is native nav consolidation inside `bottom-nav.tsx` only.
+  - UI-04 scoped additions:
+    - `components/nav/bottom-nav.tsx`: Removed top-level `/shopping` and `/receive` entries (accessed exclusively via Hub now).
+    - Added `/intake` dynamic active-state to detect and highlight when user is inside any nested intake family route (`/shopping`, `/receive`).
+    - Cleaned up obsolete terms and unused checks that were orphaned by the removal.
+  - No schema migration; no existing standalone route functionality changed.
+  - Validation gates all pass:
+    - `npx tsc --noEmit --incremental false` → PASS
+    - `npx eslint components/nav/bottom-nav.tsx` → PASS
+  - Completion: 25/38 = 65.79%
+- Next: `UI-05` (`docs/unified-inventory-intake-refactor-plan.md` Phase 5 — cleanup and deprecation)
+
 ### 2026-02-27 - UI-03 complete: capability gating service
+
 - Suggested Commit Title: `feat(ui-03): add capability gating service and wire to IntakeHubClient`
 - Completed:
   - Ran UI-03 preflight scans:
@@ -382,6 +583,7 @@ Status legend:
 - Next: `UI-04` (`docs/unified-inventory-intake-refactor-plan.md` Phase 4 — navigation consolidation)
 
 ### 2026-02-27 - UI-02 complete: intake session orchestration adapter layer
+
 - Suggested Commit Title: `feat(ui-02): add intake session orchestration adapter layer`
 - Completed:
   - Ran UI-02 preflight scans:
@@ -408,6 +610,7 @@ Status legend:
 - Next: `UI-03` (`docs/unified-inventory-intake-refactor-plan.md` Phase 3 — capability gating)
 
 ### 2026-02-27 - UI-01 complete: Intake Hub shell live at /intake
+
 - Suggested Commit Title: `feat(ui-01): add Inventory Intake Hub shell with intent-first entry cards`
 - Completed:
   - Ran UI-01 preflight scans:
@@ -432,6 +635,7 @@ Status legend:
 - Next: `UI-02` (`docs/unified-inventory-intake-refactor-plan.md` Phase 2 — session orchestration unification)
 
 ### 2026-02-27 - UI-00 complete: Unified Inventory Intake Phase 0 vocabulary/contracts
+
 - Suggested Commit Title: `chore(ui-00): add intake vocabulary contracts — Phase 0 complete`
 - Completed:
   - Ran UI-00 preflight scans:
@@ -457,6 +661,7 @@ Status legend:
 - Next: `UI-01` (`docs/unified-inventory-intake-refactor-plan.md` Phase 1 — Intake Hub shell)
 
 ### 2026-02-27 - IN-08 complete: INCOME INTEGRATIONS PLAN CLOSED — all phases 0-8 done
+
 - Suggested Commit Title: `chore(in-08): close income integrations plan — all phases complete`
 - Completed:
   - Verified all phase statuses: Phase 0-7 all `[x]`, Security checklist 7/7 `[x]`
@@ -471,6 +676,7 @@ Status legend:
 - Next: `UI-00` (`docs/unified-inventory-intake-refactor-plan.md` Phase 0 — vocabulary/contracts)
 
 ### 2026-02-27 - IN-07 complete: production hardening + security/compliance — token expiry guard, scope audit, key rotation
+
 - Suggested Commit Title: `feat(in-07): add token expiry guard, provider scope audit, and key rotation runbook`
 - Completed:
   - Ran IN-07 preflight scans:
@@ -491,6 +697,7 @@ Status legend:
 - Next: `IN-08` (`docs/income-integrations-onboarding-plan.md` Phase 8 — mark plan complete, final changelog + overview sync)
 
 ### 2026-02-27 - IN-06 complete: connection health indicators + stale sync warnings
+
 - Suggested Commit Title: `feat(in-06): add connection health indicators, stale sync warnings, and error message surface`
 - Completed:
   - Ran IN-06 preflight scans:
@@ -511,6 +718,7 @@ Status legend:
 - Next: `IN-07` (`docs/income-integrations-onboarding-plan.md` Phase 7 — production hardening + security/compliance)
 
 ### 2026-02-27 - IN-05 complete: scheduled sync + webhook hardening — cron runner, sync lock guard, webhook verification endpoints
+
 - Suggested Commit Title: `feat(in-05): add scheduled sync cron runner, sync lock guard, and webhook verification endpoints`
 - Completed:
   - Ran IN-05 preflight scans:
@@ -535,6 +743,7 @@ Status legend:
 - Next: `IN-06` (`docs/income-integrations-onboarding-plan.md` Phase 6 — reporting + home/dashboard improvements)
 
 ### 2026-02-27 - IN-04 complete: restaurant rollout providers (Uber Eats + DoorDash) — adapters, generic sync runner, routes, catalog wiring
+
 - Completed:
   - Ran IN-04 preflight scans:
     - Confirmed `uber_eats` + `doordash` already in `FinancialSource` enum and home dashboard income breakdown
@@ -559,6 +768,7 @@ Status legend:
   - `IN-05` in `docs/income-integrations-onboarding-plan.md`
 
 ### 2026-02-27 - IN-03 complete: GoDaddy POS pilot end-to-end sync validation + last_sync_at dashboard visibility
+
 - Completed:
   - Ran IN-03 preflight scans for existing pilot implementation:
     - `find src/features/integrations -type f` -> confirmed full list of existing files
@@ -593,6 +803,7 @@ Status legend:
   - `IN-04` in `docs/income-integrations-onboarding-plan.md`
 
 ### 2026-02-27 - IN-02 complete: provider-agnostic OAuth core infrastructure (schema + services + routes)
+
 - Completed:
   - Ran IN-02 preflight scans for existing OAuth/integration scope:
     - `rg -n "## Phase 2|OAuth core infrastructure|BusinessIncomeConnection|IncomeOAuthState|token encryption|callback|PKCE|state" docs/income-integrations-onboarding-plan.md docs/master-plan-v1.md`
@@ -626,6 +837,7 @@ Status legend:
   - `IN-03` in `docs/income-integrations-onboarding-plan.md`
 
 ### 2026-02-27 - IN-01 complete: provider catalog and onboarding/integrations UI shell (no OAuth)
+
 - Completed:
   - Ran IN-01 scoped preflight scans and reused existing signup/auth/module patterns:
     - `rg -n "## Phase 1|Phase 1 - Provider catalog|onboarding|income-sources|Connect" docs/income-integrations-onboarding-plan.md`
@@ -655,6 +867,7 @@ Status legend:
   - `IN-02` in `docs/income-integrations-onboarding-plan.md`
 
 ### 2026-02-27 - IN-00 complete: income integrations phase-0 contracts and decision lock finalized
+
 - Completed:
   - Ran IN-00 preflight scans for existing scope and reusable integration paths:
     - `rg -n "Phase 0|provider catalog|BusinessIncomeConnection|IncomeOAuthState|IncomeEvent|token encryption|security checklist|Open Decisions" src app test docs`
@@ -686,6 +899,7 @@ Status legend:
   - `IN-01` in `docs/income-integrations-onboarding-plan.md`
 
 ### 2026-02-27 - RC-19 complete: receipt plan closeout synchronized with final validation evidence
+
 - Completed:
   - Ran RC-19 preflight scans for closeout scope across source plan + master plan + overview/changelog synchronization points.
   - Revalidated the stabilized receipt-correction stack for closeout evidence:
@@ -705,6 +919,7 @@ Status legend:
   - `IN-00` in `docs/income-integrations-onboarding-plan.md`
 
 ### 2026-02-27 - RC-18 complete: rollout hardening (safe enforce guardrails, diagnostics payloads, and guard metrics)
+
 - Completed:
   - Ran RC-18 preflight scans across phase scope and existing correction/workflow/profile paths:
     - `rg -n "Phase 6 - Hardening and rollout expansion|RC-18|threshold tuning|parser versioning|safe enforce|diagnostics|backfill" docs/receipt-post-ocr-correction-plan.md docs/master-plan-v1.md docs/codebase-overview.md`
@@ -731,6 +946,7 @@ Status legend:
   - `RC-19` in `docs/receipt-post-ocr-correction-plan.md`
 
 ### 2026-02-27 - RC-17 complete: outcome-aware historical feedback loop (confirmed/matched priors + fuzzy fallback + price proximity gate)
+
 - Completed:
   - Ran RC-17 preflight scans across source-plan + workflow/repository/parser integration paths:
     - `rg -n "Phase 5 - Historical matching feedback loop|RC-17|store + SKU memory|price proximity|learning from user edits" docs/receipt-post-ocr-correction-plan.md docs/master-plan-v1.md`
@@ -757,6 +973,7 @@ Status legend:
   - `RC-18` in `docs/receipt-post-ocr-correction-plan.md`
 
 ### 2026-02-27 - RC-16 complete: hybrid raw-text parser upgrades + parser prior consumption from store profile
+
 - Completed:
   - Ran RC-16 preflight scans across source-plan + parser/workflow code paths and reused canonical parser + workflow files:
     - `rg -n "Phase 4 - Structured parsing upgrade|RC-16|section detection|multi-line item|numeric cluster|tax-line extraction" docs/receipt-post-ocr-correction-plan.md`
@@ -785,6 +1002,7 @@ Status legend:
   - `RC-17` in `docs/receipt-post-ocr-correction-plan.md`
 
 ### 2026-02-27 - RC-15 complete: dedicated parse-profile memory table + profile-prior read/write and review-feedback learning
+
 - Completed:
   - Resolved RC-15 open decisions with explicit product direction:
     - Open Decision 2 -> Option A (`ReceiptParseProfile` dedicated table)
@@ -816,6 +1034,7 @@ Status legend:
   - `RC-16` in `docs/receipt-post-ocr-correction-plan.md`
 
 ### 2026-02-27 - RC-15 blocked: store-profile persistence contract decision required
+
 - Completed:
   - Ran RC-15 preflight scans across plan + codebase for existing implementation:
     - `rg -n "Phase 3 - Store-specific pattern memory|ReceiptParseProfile|Open Decisions|dedicated table|Supplier JSON" docs/receipt-post-ocr-correction-plan.md docs/master-plan-v1.md prisma/schema.prisma`
@@ -838,6 +1057,7 @@ Status legend:
   - `RC-15` remains `[!]` until the two persistence decisions are provided.
 
 ### 2026-02-27 - RC-14 complete: parse-confidence metadata persisted and review UI indicators separated from match confidence
+
 - Completed:
   - Ran RC-14 preflight scans across plan + codebase and reused existing receipt workflow/repository/review UI paths:
     - `docs/receipt-post-ocr-correction-plan.md` (Phase 2 + pickup section)
@@ -870,6 +1090,7 @@ Status legend:
   - `RC-15` in `docs/receipt-post-ocr-correction-plan.md`
 
 ### 2026-02-27 - RC-13 complete: schema-backed minimal produce metadata persistence on ReceiptLineItem
+
 - Completed:
   - RC-13 persistence decision resolved to schema-backed by explicit product direction.
   - Ran scoped preflight scans across plan + codebase and reused existing line-item write path:
@@ -895,6 +1116,7 @@ Status legend:
   - `RC-14` in `docs/receipt-post-ocr-correction-plan.md`
 
 ### 2026-02-27 - RC-13 blocked: parse/produce persistence path requires explicit approval
+
 - Completed:
   - Ran RC-13 preflight scans across plan + codebase to check for an already approved persistence path and existing implementation.
   - Re-reviewed DB contract inputs for potential schema impact:
@@ -914,6 +1136,7 @@ Status legend:
   - `RC-13` remains blocked until persistence-path approval is provided.
 
 ### 2026-02-27 - RC-12 complete: produce lookup service wired (PLU/fuzzy + province language preference + EN fallback)
+
 - Completed:
   - Ran scoped preflight scans (`rg -n` + `rg --files`) for produce lookup/service-layer paths; confirmed `receipt-produce-lookup.service.ts` did not exist and reused existing correction-core/workflow contracts instead of duplicating pipelines.
   - Verified DB/Prisma preflight for `produce_items` access:
@@ -939,6 +1162,7 @@ Status legend:
   - `RC-13` in `docs/receipt-post-ocr-correction-plan.md`
 
 ### 2026-02-27 - RC-11 complete: province hierarchy hardening + ON/QC tax assertion expansion + raw-text totals robustness
+
 - Completed:
   - Ran scoped preflight scans (`rg -n` and `rg --files`) across `src/app/test/docs` to identify existing tax/province/totals correction logic and reused existing correction-core/workflow/fixture harness paths.
   - Verified DB/Prisma integrity preflight for DB-touching workflow orchestration:
@@ -960,6 +1184,7 @@ Status legend:
   - `RC-12` in `docs/receipt-post-ocr-correction-plan.md`
 
 ### 2026-02-27 - RC-10 closeout: workflow-aligned threshold tuning + fixture corpus expanded to 20
+
 - Completed:
   - Tuned correction-core historical plausibility scoring to require `sample_size >= 4` before applying history-based score adjustments.
   - Added threshold-boundary correction-core tests (`sample_size: 3` no-op, `sample_size: 4` steer).
@@ -973,6 +1198,7 @@ Status legend:
   - `RC-11` in `docs/receipt-post-ocr-correction-plan.md`
 
 ### 2026-02-27 - Master plan hardened for autonomous step-by-step execution
+
 - Completed:
   - Added an `Autonomous Execution Contract` with deterministic task selection and auto-advance behavior.
   - Added explicit hard rules (single in-progress task, no skipping, no unvalidated completion).
@@ -983,6 +1209,7 @@ Status legend:
   - Continue `RC-10` under the new autonomous contract until completion criteria are met.
 
 ### 2026-02-27 - Process update: completion percentage block added
+
 - Completed:
   - Added a dedicated `Completion Percentage` section with strict and weighted formulas.
   - Added a per-slice update rule so percentages are recalculated every slice.
@@ -991,6 +1218,7 @@ Status legend:
   - Continue `RC-10` to 20 fixtures + threshold tuning closeout.
 
 ### 2026-02-27 - RC-10 continuation: parser noise hardening + tax assertion fixture expansion (18/20)
+
 - Completed:
   - Hardened raw-text parser skip filters for subtotal/total and dotted/Quebec tax-label summary lines.
   - Added machine-checkable `tax_interpretation` assertions in fixture harness.
@@ -1002,6 +1230,7 @@ Status legend:
   - `RC-10` in `docs/receipt-post-ocr-correction-plan.md`
 
 ### 2026-02-27 - RC-10 continuation: quality gates + observability + fixture corpus expansion
+
 - Completed:
   - Added historical hint quality gates (min sample size + recency lookback) in feature-layer hint derivation.
   - Added historical hint observability fields to correction summary/metrics aggregation.
@@ -1013,6 +1242,7 @@ Status legend:
   - `RC-10` in `docs/receipt-post-ocr-correction-plan.md`
 
 ### 2026-02-27 - RC-10 started: historical plausibility wiring + first fixture expansion
+
 - Completed:
   - Added feature-layer historical receipt-line price hint retrieval and median hint derivation.
   - Passed line-level historical hints into correction core for both parsed-text and TabScanner paths.
@@ -1025,6 +1255,7 @@ Status legend:
   - `RC-10` in `docs/receipt-post-ocr-correction-plan.md`
 
 ### 2026-02-27 - Added mandatory per-step pre-check anti-duplication disclaimer
+
 - Completed:
   - Updated every Canonical Order checklist item (MP/RC/IN/UI/QA/OC) to include a mandatory pre-check instruction.
   - The pre-check now explicitly requires reviewing current scoped implementation first and preferring reuse/refactor/remove/move over creating duplicate code/files.
@@ -1032,6 +1263,7 @@ Status legend:
   - `RC-10` in `docs/receipt-post-ocr-correction-plan.md`
 
 ### 2026-02-27 - Master Plan v1 created
+
 - Completed:
   - Reviewed all markdown docs currently in repository scope.
   - Classified completed vs non-completed plan docs.
@@ -1052,3 +1284,9 @@ Status legend:
 - Blockers/risks:
 - Next task ID:
 ```
+
+
+
+
+
+

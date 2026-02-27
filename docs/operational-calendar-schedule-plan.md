@@ -1,20 +1,87 @@
 # Operational Calendar (Schedule Tab) Plan
 
-Last updated: February 27, 2026 (draft / sequencing-locked, planning-only)
+Last updated: February 27, 2026
+Status: **GATE OPEN — OC-00 complete, implementation begins at OC-01**
 
 ## Execution Gate (Start Order Is Mandatory)
 
-This plan is **strictly blocked** until all prior plans are complete.
+**OC-00 gate confirmed 2026-02-27. All prerequisites met.**
 
-Start this plan only after:
+1. [x] `docs/unified-inventory-intake-refactor-plan.md` — COMPLETE (all phases UI-00 through UI-06).
+2. [x] `docs/receipt-post-ocr-correction-plan.md` — COMPLETE (all phases 0 through 6, RC-19 closeout done).
+3. [x] `docs/income-integrations-onboarding-plan.md` — COMPLETE (all phases IN-00 through IN-08).
+4. [x] `docs/app-structure-refactor-agent-playbook.md` — COMPLETE (Phase 8 closeout done; integrated smoke passed QA-00).
+5. [x] Product/engineering confirms this plan is the next active initiative — confirmed by user 2026-02-27.
 
-1. `docs/unified-inventory-intake-refactor-plan.md` is implemented (Shopping + Receive unified into Inventory Intake workflows).
-2. `docs/receipt-post-ocr-correction-plan.md` implementation phases are complete/stable for production use.
-3. `docs/income-integrations-onboarding-plan.md` core onboarding/integration path is complete enough for production rollout.
-4. `docs/app-structure-refactor-agent-playbook.md` closeout tasks are complete (including final integrated smoke expectations).
-5. Product/engineering explicitly confirms this plan is the next active initiative.
+Implementation is now unblocked. Next task: **OC-01** (Phase 0 activation/baseline).
 
-Until those are done, this document remains planning-only and **must not enter implementation**.
+## Pick Up Here
+
+- Current task: **OC-05** - Phase 4 cross-feature suggestion engine
+- Status: READY
+
+## Latest Update
+
+### 2026-02-27 - OC-04 complete: Phase 3 scheduling-platform expansion - connector stubs, normalization contracts, conflict handling
+
+- Preflight:
+  - Confirmed no existing schedule server/provider connector implementation existed to extend:
+    - `rg -n "connector|normalize|overlap|duplicate|dedupe|reservation|appointment" src app test docs`
+    - `rg -n "schedule|calendar|provider|sync|conflict|dedupe|duplicate|overlap" test src/features/schedule`
+  - Reused normalization + registry patterns from `src/features/integrations/providers/*` and `src/features/integrations/server/sync.service.ts` instead of introducing parallel orchestration.
+  - DB preflight re-verified against canonical sources (no schema change required):
+    - `prisma/schema.prisma`
+    - latest migration `prisma/migrations/20260228013000_income_event_pilot/migration.sql`
+- Deliverables:
+  - `src/features/schedule/shared/schedule-normalization.contracts.ts` (NEW): scheduling-platform provider subset (`square_appointments`, `calendly`, `mindbody`, `fresha`, `vagaro`, `opentable`, `resy`); normalized event contract; duplicate/overlap reason vocabulary; conflict-resolution result contracts.
+  - `src/features/schedule/server/scheduling-connectors.ts` (NEW): connector registry + env-driven fetch stubs for scheduling-platform providers; hardened field-priority mapping to canonical provider events; status normalization; fallback duration/timezone handling; deterministic event fingerprints.
+  - `src/features/schedule/server/schedule-conflict.service.ts` (NEW): duplicate suppression order (`provider_external_id` -> `linked_entity` -> `fingerprint`) and overlap conflict detection (`staff_overlap`, `resource_overlap`, `time_overlap`).
+  - `src/features/schedule/server/scheduling-sync.service.ts` (NEW): preview sync runner (`runSchedulingProviderSyncPreview`) that fetches/normalizes events and returns duplicate/overlap diagnostics.
+  - `src/features/schedule/server/index.ts` (NEW): schedule server API surface exports.
+  - `src/features/schedule/shared/index.ts` (UPDATED): exports normalization/conflict contracts for OC-04 consumers.
+  - `src/features/schedule/server/scheduling-sync.service.test.ts` (NEW): targeted tests for normalization, duplicate suppression, overlap detection, and sync-preview accounting.
+- Validation:
+  - `npx tsx --test src/features/schedule/server/scheduling-sync.service.test.ts` -> PASS (5/5)
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - targeted `eslint` on touched schedule server/shared files -> PASS
+- Next: OC-05 (Phase 4 - cross-feature suggestion engine)
+
+### 2026-02-27 — OC-03 complete: Phase 2 provider-sync foundation — catalog, health contracts, SourceHealthBar
+
+- Deliverables:
+  - `src/features/schedule/shared/schedule-provider.contracts.ts`: 10-provider catalog (Google Calendar, Outlook/M365, Apple ICS, Square Appointments, Calendly, Mindbody, Fresha, Vagaro, OpenTable, Resy); provider types (`general_calendar`, `booking_platform`, `reservation_platform`); auth methods; per-provider event-type capabilities and industry support map; `listCalendarProvidersForIndustry`, `getCalendarProviderById`, `isCalendarProviderRecommendedForIndustry` helpers
+  - `src/features/schedule/shared/schedule-sync.contracts.ts`: 6-value `CalendarSyncStatus` vocabulary; `CalendarProviderSyncCard` normalized presentation contract; `CalendarSourceHealthSummary` aggregated health shape with `healthy | degraded | error` indicator; `deriveCalendarSourceHealth` client-side utility; `CALENDAR_PROVIDER_ACCENT_COLORS` accent map (unique Tailwind color per provider); `getProviderAccentColor` helper
+  - `src/features/schedule/shared/index.ts`: updated to re-export all new provider catalog and sync health types
+  - `src/features/schedule/ui/ScheduleClient.tsx`: `SourceHealthBar` component added — shows quiet "no sources" callout when empty; shows health dot + connected count + error count + per-provider accent dots when sync cards are present
+- Validation: `npx tsc --noEmit --incremental false` → PASS; `npx eslint` on all 4 touched files → PASS
+- Next: OC-04 (Phase 3 — appointment/reservation connector stubs, event normalization layer, overlap detection)
+
+### 2026-02-27 — OC-02 complete: Phase 1 master calendar shell — ScheduleClient
+
+- Deliverables:
+  - `src/features/schedule/ui/ScheduleClient.tsx`: master calendar shell with Day/Week/Month toggle (week default), source visibility filters (Manual / Internal / Connected), industry-aware subtitle, "New Event" CTA stub, and three grid shells (WeekGridShell, DayColumnShell, MonthGridShell)
+  - `app/(dashboard)/schedule/page.tsx`: updated from Phase 0 placeholder to wrap `ScheduleClient`
+- Validation: `npx tsc --noEmit --incremental false` → PASS; `npx eslint` → PASS
+- Next: OC-03 (Phase 2 — provider sync foundation: adapters, source health indicators, dedupe)
+
+### 2026-02-27 — OC-01 complete: Phase 0 activation and baseline
+
+- Preflight: no existing schedule/event/calendar code — greenfield confirmed.
+- Deliverables:
+  - `src/features/schedule/shared/schedule.contracts.ts`: canonical event vocabulary (CalendarEventType × 8, CalendarEventSource, CalendarEventEditability, CalendarEventStatus, CalendarViewMode, CalendarEventSummary, DEFAULT_EDITABILITY_BY_SOURCE, CALENDAR_EVENT_EMPHASIS_BY_INDUSTRY)
+  - `src/features/schedule/shared/index.ts`: public API surface for schedule feature
+  - `app/(dashboard)/schedule/page.tsx`: route shell (Phase 0 placeholder; full UI in OC-02)
+  - `app/(dashboard)/schedule/layout.tsx`: route layout (no module gate — Schedule is a core feature)
+  - `components/nav/bottom-nav.tsx`: nav updated to final target order (Home | Staff | Intake | Inventory | Schedule); Integrations removed from primary nav slots
+- Validation: `npx tsc --noEmit --incremental false` → PASS; `npx eslint` on all 5 touched files → PASS
+- Next: OC-02 (Phase 1 — master calendar shell with Day/Week/Month toggle)
+
+### 2026-02-27 — OC-00 complete: execution gate confirmed, plan unblocked
+
+- All 5 gate prerequisites verified against live plan docs and codebase state.
+- No existing `/schedule` route, no nav entry — clean start confirmed.
+- No prior implementation to reuse/refactor/remove for Phase 0 — greenfield.
+- Next: OC-01 (Phase 0 — define canonical event contracts, align nav/route ownership, confirm activation baseline).
 
 ## What This Tab Is
 
@@ -287,4 +354,7 @@ No table/column design is specified in this plan.
 - No commitment to every listed integration in initial release.
 - No replacement of intake/matching/correction engines.
 - No forced migration that breaks existing workflows during rollout.
+
+
+
 

@@ -9,6 +9,7 @@ Primary Purpose: Current architecture reference, implementation summary, and fea
 This document is now the main day-to-day architecture and implementation guide for the current codebase.
 
 Use it to:
+
 - understand how the app is structured today
 - find canonical file locations for new work
 - understand what major features already exist
@@ -16,10 +17,12 @@ Use it to:
 - review recent changes in `docs/codebase-changelog.md`
 
 What this document is not:
+
 - It is not a substitute for the code.
 - It is not a migration file-by-file history (the detailed phase logs remain in the plan docs).
 
 Related historical/planning docs (still useful for deep history):
+
 - `docs/codebase-changelog.md` (chronological engineering changelog + validation record)
 - `docs/master-plan-v1.md` (canonical cross-plan execution order, completed/open ledger, and handoff checkpoint for remaining initiatives)
 - `docs/app-structure-refactor-agent-playbook.md` (refactor execution history and wrapper decisions)
@@ -28,13 +31,14 @@ Related historical/planning docs (still useful for deep history):
 - `docs/income-integrations-onboarding-plan.md` (business-type onboarding + income provider OAuth/sync rollout plan)
 - `docs/receipt-post-ocr-correction-plan.md` (post-TabScanner numeric/structural correction and reconciliation accuracy plan)
 - `docs/unified-inventory-intake-refactor-plan.md` (intent-first regrouping plan to unify Shopping + Receive under a single Inventory Intake Hub without changing core feature behavior)
-- `docs/operational-calendar-schedule-plan.md` (sequencing-locked plan for a cross-industry Operational Calendar schedule tab that starts only after current active plans are complete)
+- `docs/operational-calendar-schedule-plan.md` (Operational Calendar plan — ACTIVE; OC-04 Phase 3 complete, OC-05 next)
 
 ## Maintenance Rules (Required)
 
 After every meaningful code or docs change, update this overview and/or `docs/codebase-changelog.md` as required.
 
 Minimum required updates:
+
 1. Append a new entry at the top of `docs/codebase-changelog.md`.
 2. If file placement/canonical paths changed, update `## Architecture Map` and `## Feature Placement Rules`.
 3. If behavior changed, update the relevant feature section(s) under `## Product Capabilities` or `## Core Workflows`.
@@ -42,6 +46,7 @@ Minimum required updates:
 5. Record validation commands actually run (and failures/exceptions) in the changelog entry in `docs/codebase-changelog.md`.
 
 Changelog policy (`docs/codebase-changelog.md`):
+
 - Append new entries at the top (newest first).
 - Keep entries concise but concrete: what changed, which files, validation, caveats.
 - Do not delete historical entries; add corrections as new entries.
@@ -49,18 +54,19 @@ Changelog policy (`docs/codebase-changelog.md`):
 ## Current Status (As Of 2026-02-27)
 
 High-level completion:
+
 - App structure refactor plan: complete through Phase 8 (manual core-flow smoke deferred to user/integrated QA).
 - Inventory intake plan: complete through Phases 0, A, B, C, D, E.
 - Combined coordination plan: complete (manual integrated smoke remains a user QA task).
 - Master execution tracker: active in `docs/master-plan-v1.md` for canonical sequencing of all remaining non-completed plans.
 
 What remains outside plan completion:
+
 - Manual integrated smoke testing across core flows (user-run / final QA pass).
 - Receipt post-OCR correction plan is complete through Phase 6 closeout (`RC-19`), with non-blocking follow-ups tracked separately.
 - **Income Integrations Onboarding Plan: COMPLETE** (all phases IN-00 through IN-08, security checklist 7/7).
-- **UI-03 complete**: Capability gating service shipped (`intake-capability.service.ts`). `resolveVisibleIntents()` now drives `IntakeHubClient` intent visibility — no hardcoded per-intent module checks. Phase 4 next.
-- Unified Intake regrouping refactor Phases 0–3 done; Phases 4–5 remain (see `docs/unified-inventory-intake-refactor-plan.md`).
-- Operational Calendar/Schedule refactor is planned and sequencing-locked behind completion of all current plans (see `docs/operational-calendar-schedule-plan.md`).
+- **Unified Inventory Intake Refactor Plan: COMPLETE** (all phases UI-00 through UI-06). `/intake` is the canonical Hub entry; capability-gating via `resolveVisibleIntents()`; all migration-era scaffolding removed; `/shopping` and `/receive` remain as full feature routes under the Hub.
+- **Operational Calendar Plan: ACTIVE** — OC-04 Phase 3 complete; `/schedule` route live with calendar shell + provider health shell, and schedule server foundation for booking/reservation connectors, normalization, and duplicate/overlap conflict diagnostics. OC-05 (cross-feature suggestions) is next.
 
 ## Stack
 
@@ -72,6 +78,7 @@ What remains outside plan completion:
 - Playwright (E2E tooling)
 
 Key scripts (`package.json`):
+
 - `npm run dev`
 - `npm run build` (runs `prisma generate` first)
 - `npm run lint`
@@ -80,6 +87,7 @@ Key scripts (`package.json`):
 ## Path Aliases (Important)
 
 Configured in `tsconfig.json`:
+
 - `@/features/*` -> `src/features/*`
 - `@/domain/*` -> `src/domain/*`
 - `@/server/*` -> `src/server/*`
@@ -89,6 +97,7 @@ Configured in `tsconfig.json`:
 - `@/*` -> broad alias resolving to `./lib/*` and `./*`
 
 Rules for new code:
+
 - Prefer explicit aliases: `@/features`, `@/domain`, `@/server`, `@/shared`.
 - Treat `@/core/*` and `@/modules/*` as legacy/compatibility paths unless extending an existing legacy module intentionally.
 - Avoid relying on broad `@/*` when a more explicit alias exists.
@@ -98,28 +107,34 @@ Rules for new code:
 ### 1. App entrypoints (`app/`)
 
 Purpose:
+
 - Next.js routes and layouts
 - Server action entrypoints
 - Thin wrappers around canonical feature/server logic
 
 Patterns:
+
 - Route pages should be thin wrappers that render feature UI components.
 - Server actions should be thin wrappers that enforce auth/module guards and delegate to feature services.
 
 Examples:
+
 - `app/(dashboard)/inventory/page.tsx` -> thin wrapper to `src/features/inventory/ui/InventoryListPageClient.tsx`
 - `app/actions/core/inventory.ts` -> wrapper around `src/features/inventory/server/*`
 - `app/actions/modules/receipts.ts` -> wrapper around `src/features/receiving/receipt/server/*`
 
 Accepted exception:
+
 - `app/(dashboard)/shopping/page.tsx` is still a large route entrypoint (state/hooks/contracts extracted; most JSX remains local).
 
 ### 2. Feature modules (`src/features/`)
 
 Purpose:
+
 - Canonical location for feature-specific UI, services, repositories, integrations, and contracts
 
 Current feature folders:
+
 - `src/features/auth`
 - `src/features/contacts`
 - `src/features/finance`
@@ -129,10 +144,12 @@ Current feature folders:
 - `src/features/inventory`
 - `src/features/modules`
 - `src/features/receiving`
+- `src/features/schedule`
 - `src/features/shopping`
 - `src/features/staff`
 
 Typical internal split:
+
 - `ui/` client components and feature UI helpers
 - `server/` service/repository/query logic
 - `shared/` client-safe feature contracts/helpers used by both `ui/` and `server/` (optional, add when needed)
@@ -141,15 +158,18 @@ Typical internal split:
 ### 3. Domain logic (`src/domain/`)
 
 Purpose:
+
 - Pure logic and reusable domain utilities with no framework/runtime coupling
 
 Current areas:
+
 - `src/domain/barcode`
 - `src/domain/matching`
 - `src/domain/parsers`
 - `src/domain/shared`
 
 Examples:
+
 - barcode normalization
 - matching confidence/fuzzy logic
 - receipt/product/shelf-label parsing
@@ -158,9 +178,11 @@ Examples:
 ### 4. Server infrastructure (`src/server/`)
 
 Purpose:
+
 - Server-only infrastructure facades and integration access points
 
 Current areas:
+
 - `src/server/auth`
 - `src/server/db`
 - `src/server/integrations`
@@ -169,6 +191,7 @@ Current areas:
 - `src/server/storage`
 
 Examples:
+
 - Prisma facade
 - auth/tenant guards
 - Supabase storage helpers
@@ -178,9 +201,11 @@ Examples:
 ### 5. Shared UI/config/types (`src/shared/`)
 
 Purpose:
+
 - Shared components, UI primitives, config, types, and utilities consumed across features
 
 Current areas:
+
 - `src/shared/ui`
 - `src/shared/components/*` (nav, pwa, theme, receipts, flows)
 - `src/shared/config`
@@ -192,6 +217,7 @@ Current areas:
 Not all wrappers were removed in the refactor. Phase 8 documented a keep/defer matrix and intentionally left wrappers in place.
 
 Wrapper categories:
+
 - Keep (by design):
   - route entrypoints in `app/(dashboard)/**/page.tsx`
   - server action entrypoints in `app/actions/**`
@@ -201,6 +227,7 @@ Wrapper categories:
   - legacy compatibility wrappers in `lib/core/*` (especially parser/matching/barcode wrappers) still used by active callers/tests
 
 Important Phase 8 outcome:
+
 - Zero wrapper removals were performed.
 - Future wrapper removals require repo-wide import migration proof plus validation.
 
@@ -211,16 +238,18 @@ This is a multi-flow inventory/receiving/shopping system with barcode-first inte
 ### Inventory Intake Hub (UI-01 complete)
 
 Implemented capabilities:
+
 - `/intake` route with intent-first landing surface (`IntakeHubClient`)
 - Industry-aware intent card ordering via `INTAKE_INTENT_ORDER_BY_INDUSTRY` (from `src/features/intake/shared/`)
 - Three intent cards routing to existing flows:
   - **Live Purchase** → `/shopping` (existing Shopping flow, unchanged)
   - **Bulk Intake** → `/receive` (existing Receive flow, unchanged)
   - **Supplier Sync** → `/integrations` (module-gated; only shown when `integrations` module is enabled)
-- `Intake` nav entry in bottom nav (replaced standalone Receive entry; `/shopping` preserved during migration)
+- `Intake` nav entry in bottom nav (consolidated standalone `/receive` and `/shopping` tabs into the Hub proxy)
 - All existing routes fully operational (no behavior changes)
 
 Canonical paths:
+
 - `src/features/intake/shared/intake.contracts.ts` (vocabulary, intent model, session lifecycle, capabilities)
 - `src/features/intake/shared/intake-session.contracts.ts` (session orchestration adapter: status mappings, `IntakeSessionSummary` DTO, route builder)
 - `src/features/intake/shared/intake-capability.service.ts` (capability gating: `resolveIntakeCapabilities`, `isIntentVisible`, `resolveVisibleIntents`)
@@ -228,29 +257,58 @@ Canonical paths:
 - `app/(dashboard)/intake/page.tsx` (route wrapper)
 
 Migration posture:
+
 - `/shopping` and `/receive` routes preserved and fully functional
-- Navigation consolidation deferred to UI-04
+- Refactor complete (UI-00 through UI-06): navigation consolidated, migration-era comments removed, canonical stable state.
+
+### Operational Calendar (OC-04 complete)
+
+Implemented capabilities:
+
+- `/schedule` route provides Day/Week/Month master shell and source filters from OC-02.
+- Provider catalog + sync health shell (SourceHealthBar) from OC-03 is active.
+- Scheduling-platform server foundation is active for Phase 3 expansion:
+  - connector registry for appointment/reservation providers
+  - provider-event normalization contracts and guardrails
+  - deterministic duplicate suppression + overlap conflict diagnostics
+  - sync preview service surface for provider fetch/normalize/conflict reporting
+
+Canonical paths:
+
+- `src/features/schedule/shared/schedule.contracts.ts`
+- `src/features/schedule/shared/schedule-provider.contracts.ts`
+- `src/features/schedule/shared/schedule-sync.contracts.ts`
+- `src/features/schedule/shared/schedule-normalization.contracts.ts`
+- `src/features/schedule/server/scheduling-connectors.ts`
+- `src/features/schedule/server/schedule-conflict.service.ts`
+- `src/features/schedule/server/scheduling-sync.service.ts`
+- `src/features/schedule/ui/ScheduleClient.tsx`
+- `app/(dashboard)/schedule/page.tsx`
 
 ### Home dashboard financial layers (interactive)
 
 Implemented capabilities:
+
 - Layered home financial surfaces with separate income and expense/transactions sheets
 - Income-layer tap interaction collapses the transactions sheet to reveal income-source breakdown
 - Expense-focused transactions sheet (recent expense activity only)
 - Business-type-aware income source ordering (for example restaurant POS + delivery channels first)
 
 Canonical paths:
+
 - `src/features/home/ui/*`
 - `src/features/home/server/*`
 - `src/features/home/shared/*`
 
 Wrappers:
+
 - `app/page.tsx` (route composition/state wiring)
 - `app/actions/core/financial.ts` (`getDashboardSummary` wrapper delegates to feature server)
 
 ### Income integrations — Phase 4 complete (GoDaddy POS + Uber Eats + DoorDash live)
 
 Implemented capabilities:
+
 - Industry-aware provider catalog and recommendation ordering for onboarding/integrations views
 - Onboarding setup route (`/onboarding/income-sources`) with provider cards, status badges, and skip flow
 - Dashboard integrations route (`/integrations`) with connection status, last-sync timestamps, and sync buttons
@@ -270,6 +328,7 @@ Implemented capabilities:
 - Home dashboard income breakdown already consumes all three sources (`godaddy_pos`, `uber_eats`, `doordash`)
 
 Canonical paths:
+
 - `src/features/integrations/shared/*`
 - `src/features/integrations/server/provider-catalog.ts`
 - `src/features/integrations/server/oauth.service.ts`
@@ -284,6 +343,7 @@ Canonical paths:
 - `src/features/integrations/ui/*`
 
 Route wrappers:
+
 - `app/onboarding/*`
 - `app/(dashboard)/integrations/*`
 - `app/api/integrations/sync/godaddy-pos/manual/route.ts`
@@ -291,6 +351,7 @@ Route wrappers:
 - `app/api/integrations/sync/doordash/manual/route.ts`
 
 Scheduled sync + webhooks (Phase 5 complete):
+
 - `runAllProvidersCronSync` in `sync.service.ts`: cron runner across all providers + businesses with error isolation
 - `app/api/integrations/sync/cron/route.ts`: `INCOME_CRON_SECRET`-secured cron endpoint
 - Sync lock guard in `runProviderManualSync`: DB soft lock via `ExternalSyncLog` (10-min staleness window, scoped per business+source)
@@ -299,18 +360,21 @@ Scheduled sync + webhooks (Phase 5 complete):
 - `app/api/integrations/webhooks/doordash/route.ts`: `X-DoorDash-Signature` verification + `last_webhook_at` update
 
 Canonical paths (additional Phase 5):
+
 - `src/features/integrations/server/webhook-crypto.ts`
 - `app/api/integrations/sync/cron/route.ts`
 - `app/api/integrations/webhooks/uber-eats/route.ts`
 - `app/api/integrations/webhooks/doordash/route.ts`
 
 Connection health indicators (Phase 6 complete):
+
 - `IncomeProviderConnectionCard.syncStale`: true if connected with no sync or >24h since last sync (`SYNC_STALE_THRESHOLD_MS`)
 - `IncomeProviderConnectionCard.lastErrorMessage`: populated from `connection.last_error_message` when status is `error`
 - `IncomeProviderConnectCard.tsx`: renders `Sync Stale` warning badge, "no sync run yet" prompt, and error message
 - `provider-catalog.ts` computes both fields from DB connection state at card-build time
 
 Production hardening (Phase 7 complete):
+
 - Token expiry guard in `runProviderManualSync`: checks `token_expires_at <= now` → calls `markIncomeConnectionExpired` (status="expired") → throws; requires reconnect
 - `markIncomeConnectionExpired` in `connections.repository.ts`: last_error_code="token_expired", status="expired"
 - `INCOME_PROVIDER_OAUTH_SCOPES` in `oauth.contracts.ts`: least-privilege read-only scopes per provider
@@ -320,12 +384,14 @@ Production hardening (Phase 7 complete):
 ### Receiving (4 ingestion paths)
 
 Implemented paths:
+
 1. Barcode receive
 2. Photo receive (OCR + parsing + match assist)
 3. Manual receive
 4. Receipt parse/review/commit
 
 Current structure (canonical):
+
 - `src/features/receiving/barcode/*`
 - `src/features/receiving/photo/*`
 - `src/features/receiving/manual/*`
@@ -333,11 +399,13 @@ Current structure (canonical):
 - `src/features/receiving/shared/*`
 
 Route wrappers:
+
 - `app/(dashboard)/receive/*`
 
 ### Barcode resolution intelligence (Phases A/B/E complete)
 
 Implemented capabilities:
+
 - Layer 0 internal lookup/cache logic with global barcode catalog + resolution event recording
 - Layered external provider fallback chain:
   - Open Food Facts
@@ -351,6 +419,7 @@ Implemented capabilities:
 - Aggregate metrics and derived-rate summaries (process-local structured logs)
 
 Primary files:
+
 - `app/actions/core/barcode-resolver.ts`
 - `app/actions/core/barcode-resolver-core.ts`
 - `app/actions/core/barcode-resolver-cache.ts`
@@ -358,15 +427,18 @@ Primary files:
 - `app/actions/core/barcode-provider-adapters/*`
 
 Data model support:
+
 - `GlobalBarcodeCatalog`
 - `BarcodeResolutionEvent`
 
 Operational note:
+
 - Some hardening/metrics/retry state is process-local and resets on server restart.
 
 ### Receipt intelligence and store-context aliasing (Phase C complete)
 
 Implemented capabilities:
+
 - Place-scoped receipt aliasing (`google_place_id`)
 - Receipt line matching and alias learning
 - Receipt parse/review/commit lifecycle
@@ -400,14 +472,17 @@ Implemented capabilities:
 - Receipt auto-resolution observability (process-local summaries)
 
 Key model:
+
 - `ReceiptItemAlias` (store-context alias mapping)
 
 Canonical server paths:
+
 - `src/features/receiving/receipt/server/*`
 
 ### Shopping mode with Google Places context
 
 Implemented capabilities:
+
 - Shopping sessions tied to store/place context (`google_place_id`)
 - Quick-shop barcode loop
 - Receipt reconciliation / pairing
@@ -417,16 +492,19 @@ Implemented capabilities:
 - Web fallback hardening and observability
 
 Canonical paths:
+
 - `src/features/shopping/server/*`
 - `src/features/shopping/ui/*`
 - `src/features/shopping/integrations/*` (feature-facing facades)
 
 Important hotspot:
+
 - `lib/modules/shopping/web-fallback.ts` remains a major legacy implementation hotspot behind refactor facades.
 
 ### Inventory management and enrichment queue (Phase D complete)
 
 Implemented capabilities:
+
 - Inventory CRUD (items, barcodes, aliases)
 - Inventory list/detail pages
 - Derived non-blocking "Fix Later Queue" surfaced in Inventory UI
@@ -443,17 +521,20 @@ Implemented capabilities:
 - Queue observability stats in UI (candidate source breakdown, queue health)
 
 Canonical files (examples):
+
 - `src/features/inventory/server/inventory.repository.ts`
 - `src/features/inventory/server/inventory.service.ts`
 - `src/features/inventory/ui/InventoryListPageClient.tsx`
 - `src/features/inventory/ui/use-enrichment-dismissals.ts`
 
 Deferred by design:
+
 - Server-side persistent enrichment task table (future enhancement if localStorage dismissals become insufficient)
 
 ### Contacts and staff
 
 Refactor-complete feature extraction:
+
 - `src/features/contacts/*`
 - `src/features/staff/*`
 
@@ -462,6 +543,7 @@ Route/action wrappers remain in `app/(dashboard)` and `app/actions/core`.
 ## Data Model (Key Entities and Relationships)
 
 Core operational entities:
+
 - `Business`
 - `InventoryItem`
 - `ItemBarcode`
@@ -471,20 +553,24 @@ Core operational entities:
 - `Supplier` (includes `google_place_id`)
 
 Receipt entities:
+
 - `Receipt`
 - `ReceiptLineItem`
 - `ReceiptItemAlias` (store-context alias mapping)
 - `ReceiptParseProfile` (store-specific parse/tax/province memory + priors)
 
 Shopping entities:
+
 - `ShoppingSession`
 - `ShoppingSessionItem` (includes `resolution_audit`)
 
 Barcode intelligence entities:
+
 - `GlobalBarcodeCatalog`
 - `BarcodeResolutionEvent`
 
 Design principles currently enforced:
+
 - Tenant isolation remains primary (`business_id`-scoped operations)
 - Receipt/store aliases are place-scoped (not global product IDs)
 - Barcode knowledge is globally cached for metadata/provenance, not cross-tenant inventory ownership
@@ -495,6 +581,7 @@ Design principles currently enforced:
 ### 1. Barcode receive flow
 
 High-level flow:
+
 1. User scans barcode in receive UI
 2. Resolver normalizes barcode
 3. Internal lookup (tenant/global cache paths)
@@ -504,12 +591,14 @@ High-level flow:
 7. Metrics + cache/event persistence recorded
 
 Notes:
+
 - Unresolved lookups use backoff/cooldowns
 - Background retries may re-attempt external providers later (process-local)
 
 ### 2. Photo receive flow
 
 High-level flow:
+
 1. Upload/capture image
 2. OCR extraction
 3. Product text parsing / matching
@@ -520,6 +609,7 @@ High-level flow:
 ### 3. Manual receive flow
 
 High-level flow:
+
 1. User selects existing item or creates new item
 2. Quantity/cost metadata entered
 3. Transaction written
@@ -528,6 +618,7 @@ High-level flow:
 ### 4. Receipt parse/review/commit flow
 
 High-level flow:
+
 1. OCR/manual receipt text ingestion
 2. Parse into line items
 3. Derive optional historical line-price hints from recent receipt history for current parsed names (feature-layer orchestration)
@@ -540,12 +631,14 @@ High-level flow:
 10. Learn aliases from user confirmations
 
 Behavior invariants:
+
 - Commit remains idempotent
 - Commit is all-or-nothing
 
 ### 5. Shopping + post-receipt reconciliation flow
 
 High-level flow:
+
 1. Start shopping session with Google Places store context
 2. Scan item barcodes during shopping
 3. Resolve via barcode resolver (defer expensive web fallback during live scan loop)
@@ -558,6 +651,7 @@ High-level flow:
 ### 6. Inventory enrichment "Fix Later" queue
 
 High-level flow:
+
 1. Inventory server derives candidate tasks from multiple existing data sources
 2. UI displays prioritized queue (non-blocking)
 3. User applies local actions (complete/defer/snooze) via localStorage dismissals
@@ -571,6 +665,7 @@ Future engineers must follow these rules to preserve the refactor structure.
 ### Rule 1: Put code in the canonical layer first
 
 Choose placement by responsibility:
+
 - Route composition and page entrypoint only -> `app/(dashboard)/**/page.tsx`
 - Server action entrypoint / auth guard wrapper -> `app/actions/**`
 - Feature business logic / workflows -> `src/features/<feature>/server/*`
@@ -580,6 +675,7 @@ Choose placement by responsibility:
 - Server-only infra clients and adapters -> `src/server/*`
 
 Do not add new business logic to:
+
 - `app/(dashboard)/**/page.tsx` (except accepted legacy exception work, if you are intentionally touching it)
 - `app/actions/**` wrappers (unless action contract/auth/guard wiring must change)
 
@@ -592,12 +688,14 @@ Do not add new business logic to:
 ### Rule 3: Prefer explicit aliases
 
 Use:
+
 - `@/features/*`
 - `@/domain/*`
 - `@/server/*`
 - `@/shared/*`
 
 Avoid for new code:
+
 - `@/core/*` (legacy compatibility path)
 - `@/modules/*` (legacy compatibility path)
 - ambiguous `@/*` imports when an explicit alias exists
@@ -605,11 +703,13 @@ Avoid for new code:
 ### Rule 4: Do not remove wrappers casually
 
 Wrappers exist for one of three reasons:
+
 - required entrypoints (route/action wrappers)
 - canonical facades (`src/*` wrapper paths)
 - compatibility for legacy imports/tests (`lib/core/*` wrappers)
 
 Before removing any wrapper:
+
 1. Prove repo-wide imports no longer depend on it.
 2. Run validation.
 3. Update this document changelog + accepted exceptions if behavior/structure changes.
@@ -617,6 +717,7 @@ Before removing any wrapper:
 ### Rule 5: Keep refactor exceptions explicit
 
 If you cannot keep a route thin (for example `app/(dashboard)/shopping/page.tsx`), document it here under:
+
 - `Accepted Exceptions and Known Validation Gaps`
 - Changelog entry for that change
 
@@ -625,10 +726,12 @@ Do not leave undocumented structural deviations.
 ### Rule 6: Extend feature modules, do not create parallel implementations
 
 Before adding a new file:
+
 - search for existing repository/service/helper in the feature module
 - extend canonical files instead of duplicating logic in route pages/actions
 
 Examples:
+
 - Inventory enrichment work belongs in `src/features/inventory/server/*` and `src/features/inventory/ui/*`, not in `app/actions/core/inventory.ts` beyond wrapper wiring.
 - Receipt matching changes belong in `src/features/receiving/receipt/server/*` and `src/domain/matching/*` (if pure logic).
 - If both inventory UI and inventory server need the same queue types/constants, put them in a client-safe feature file such as `src/features/inventory/shared/*` (do not import `src/features/inventory/server` from client code).
@@ -648,6 +751,7 @@ Use this checklist when adding a new feature or major extension.
 ### B. Wire entrypoints last
 
 Order of implementation:
+
 1. Repository/query functions (if DB access needed)
 2. Service/workflow logic
 3. Feature UI
@@ -660,6 +764,7 @@ Order of implementation:
 Run targeted validation for touched files, plus broader checks when appropriate.
 
 Common commands:
+
 - `npx tsc --noEmit --incremental false`
 - `npm run lint` (document baseline failures if unchanged)
 - `node --test app/actions/core/barcode-resolver-cache.test.mjs`
@@ -668,6 +773,7 @@ Common commands:
 ### D. Documentation expectations (required)
 
 For every meaningful change:
+
 - Append a changelog entry in this file
 - Update relevant architecture/workflow sections here
 - If reactivating plan-style work, also update the relevant plan doc(s)
@@ -675,10 +781,12 @@ For every meaningful change:
 ## Accepted Exceptions and Known Validation Gaps
 
 Structural exceptions:
+
 - `app/(dashboard)/shopping/page.tsx` remains a large route entrypoint (state/hooks/contracts extracted, JSX mostly local). This is an accepted deviation.
 - Zero wrapper removals were performed during refactor Phase 8. Wrapper keep/defer matrix is documented; removals are deferred until repo-wide migrations justify them.
 
 Validation exceptions (documented baseline/current):
+
 - `npm run lint` has known failures not caused by the refactor closeout:
   - `app/page.tsx`
   - `components/theme/theme-toggle.tsx`
@@ -687,14 +795,17 @@ Validation exceptions (documented baseline/current):
 - `node --test app/actions/core/barcode-resolver-core.test.mjs` fails under direct Node execution because of a Node ESM extensionless import resolution issue (`barcode-resolver-core.ts` imports `app/actions/core/barcode-resolver-cache` without an extension specifier in this command context)
 
 Deferred QA:
+
 - Manual integrated smoke test across core flows is intentionally deferred to user/final QA pass.
 
 ## Operational Notes and Gotchas
 
 Prisma client regeneration in dev:
+
 - After schema changes and `prisma generate`, restart the Next.js dev server.
 - Reason: the in-memory Prisma client instance in the running server may be stale and not expose newly generated delegates/models.
 
 Process-local observability/retries:
+
 - Some queue/metrics/cooldown/retry state is in-memory and resets on server restart.
 - This is expected for current Phase E behavior unless/until persistent jobs/metrics are added.
