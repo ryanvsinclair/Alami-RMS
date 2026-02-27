@@ -20,6 +20,54 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-27 - IN-03 complete: GoDaddy POS pilot end-to-end sync validation + last_sync_at dashboard visibility
+- Suggested Commit Title: `feat(in-03): ship first provider pilot sync tests and last_sync_at card visibility`
+- Scope:
+  - Income integrations onboarding Phase 3 (`IN-03`) first provider pilot end-to-end validation and dashboard visibility.
+- Preflight evidence (reuse/refactor-first + DB/Prisma integrity):
+  - Reviewed IN-03 source-plan/master-plan scope markers:
+    - `docs/income-integrations-onboarding-plan.md`
+    - `docs/master-plan-v1.md`
+  - Ran scoped scans before implementation:
+    - `find src/features/integrations -type f` -> confirmed all existing integration files
+    - reviewed `sync.service.ts`, `godaddy-pos.provider.ts`, `connections.repository.ts`, `provider-catalog.ts`
+    - reviewed home dashboard server to confirm `FinancialTransaction.source = "godaddy_pos"` already consumed
+  - Re-verified schema authority before change (no migration needed):
+    - `prisma/schema.prisma`
+    - latest migration before slice: `prisma/migrations/20260228013000_income_event_pilot/migration.sql`
+- What changed:
+  - Added `sync.service.test.mjs` (8 pilot unit tests):
+    - missing connection / missing token error paths
+    - full sync 90-day historical window gate
+    - incremental sync `last_sync_at` date gate
+    - IncomeEvent upsert + FinancialTransaction projection shape assertions
+    - multiple event isolation correctness
+    - provider fetch error -> connection error + failed sync log marking
+    - zero events success path
+  - Fixed `sync.service.ts` JSON field type assertions (`Prisma.InputJsonValue` casts for `raw_payload` / `normalized_payload`) to satisfy tsc
+  - Added `lastSyncAt: string | null` to `IncomeProviderConnectionCard` contract
+  - Extended `listIncomeProviderConnectionCardsForBusiness` to populate `lastSyncAt` from `connection.last_sync_at`
+  - Updated `IncomeProviderConnectCard` UI to display "Last synced: ..." on connected cards with `lastSyncAt`
+  - Updated `IncomeSourceSetupStep` copy to reflect live pilot state (GoDaddy POS live)
+  - Extended `provider-catalog.test.mjs` with `lastSyncAt=null` assertion for unconnected cards
+- Validation gates:
+  - `node --test src/features/integrations/server/sync.service.test.mjs` -> PASS (8/8)
+  - `npx tsx --test src/features/integrations/server/provider-catalog.test.mjs src/features/integrations/server/oauth.service.test.mjs` -> PASS (6/6)
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - targeted `eslint` on touched integration files -> PASS (no output)
+- Files changed:
+  - `src/features/integrations/server/sync.service.ts`
+  - `src/features/integrations/server/sync.service.test.mjs` (new)
+  - `src/features/integrations/server/provider-catalog.ts`
+  - `src/features/integrations/server/provider-catalog.test.mjs`
+  - `src/features/integrations/shared/income-connections.contracts.ts`
+  - `src/features/integrations/ui/IncomeProviderConnectCard.tsx`
+  - `src/features/integrations/ui/IncomeSourceSetupStep.tsx`
+  - `docs/income-integrations-onboarding-plan.md`
+  - `docs/master-plan-v1.md`
+  - `docs/codebase-overview.md`
+  - `docs/codebase-changelog.md`
+
 ### 2026-02-27 - IN-02 complete: provider-agnostic OAuth core infrastructure
 - Suggested Commit Title: `feat(in-02): implement income OAuth core models, services, and routes`
 - Scope:

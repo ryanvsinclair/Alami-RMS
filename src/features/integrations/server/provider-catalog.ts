@@ -63,6 +63,7 @@ export function listIncomeProviderConnectionCards(
       recommended: isRecommendedForIndustry(industryType, provider.id),
       status: "not_connected",
       connectionId: null,
+      lastSyncAt: null,
       connectLabel: oauthConfigured ? "Connect" : "Connect (Setup needed)",
       connectEnabled: oauthConfigured,
       connectHref: oauthConfigured
@@ -102,6 +103,7 @@ export async function listIncomeProviderConnectionCardsForBusiness(input: {
     return {
       ...card,
       connectionId: connection.id,
+      lastSyncAt: connection.last_sync_at ? connection.last_sync_at.toISOString() : null,
       status: mapDatabaseStatusToCardStatus(connection.status),
       connectLabel: card.connectEnabled ? "Reconnect" : "Reconnect (Setup needed)",
       syncEnabled,

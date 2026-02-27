@@ -47,6 +47,14 @@ export function IncomeProviderConnectCard({
           <p className="text-sm text-muted">
             Connect your {card.provider.name} account to sync income into dashboard layers.
           </p>
+          {card.lastSyncAt && (
+            <p className="text-xs text-muted">
+              Last synced:{" "}
+              <span className="text-foreground">
+                {new Date(card.lastSyncAt).toLocaleString()}
+              </span>
+            </p>
+          )}
         </div>
         <ConnectionStatusBadge status={card.status} />
       </div>

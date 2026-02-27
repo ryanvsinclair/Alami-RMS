@@ -1,3 +1,4 @@
+import { Prisma } from "@/lib/generated/prisma/client";
 import { prisma } from "@/core/prisma";
 import { INCOME_SYNC_DEFAULT_HISTORICAL_DAYS } from "@/features/integrations/shared";
 import { fetchGoDaddyPilotIncomeEvents } from "@/features/integrations/providers/godaddy-pos.provider";
@@ -84,8 +85,8 @@ export async function runGoDaddyPosManualSync(
           currency: event.currency,
           occurred_at: event.occurredAt,
           payout_status: "unknown",
-          raw_payload: event.rawPayload,
-          normalized_payload: event.normalizedPayload,
+          raw_payload: event.rawPayload as Prisma.InputJsonValue,
+          normalized_payload: event.normalizedPayload as Prisma.InputJsonValue,
         },
         update: {
           gross_amount: event.grossAmount,
@@ -93,8 +94,8 @@ export async function runGoDaddyPosManualSync(
           net_amount: event.netAmount,
           currency: event.currency,
           occurred_at: event.occurredAt,
-          raw_payload: event.rawPayload,
-          normalized_payload: event.normalizedPayload,
+          raw_payload: event.rawPayload as Prisma.InputJsonValue,
+          normalized_payload: event.normalizedPayload as Prisma.InputJsonValue,
           updated_at_provider: now,
         },
       });

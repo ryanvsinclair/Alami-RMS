@@ -177,10 +177,10 @@ Use the `Canonical Order Checklist` statuses as the source of truth.
 Current snapshot (2026-02-27):
 
 - Total checklist items: `38`
-- `[x]` complete: `14`
+- `[x]` complete: `15`
 - `[~]` in progress: `0`
-- Strict completion: `36.84%`
-- Weighted progress: `36.84%`
+- Strict completion: `39.47%`
+- Weighted progress: `39.47%`
 
 Update rule after each slice:
 
@@ -299,7 +299,7 @@ Status legend:
 - [x] IN-00 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then finalize Phase 0 design/schema contracts and security model decisions.
 - [x] IN-01 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then ship Phase 1 provider catalog + onboarding UI (no OAuth yet).
 - [x] IN-02 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 2 provider-agnostic OAuth core.
-- [ ] IN-03 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 3 first provider pilot end-to-end (connect -> token storage -> sync -> dashboard projection).
+- [x] IN-03 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 3 first provider pilot end-to-end (connect -> token storage -> sync -> dashboard projection).
 - [ ] IN-04 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 4 restaurant-provider rollout (Uber Eats + DoorDash + POS set chosen by product/engineering).
 - [ ] IN-05 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 5 scheduled sync + webhook hardening.
 - [ ] IN-06 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 6 reporting/home income-layer improvements.
@@ -334,12 +334,12 @@ Status legend:
 
 ## Last Left Off Here (Update This Block First)
 
-- Current task ID: `IN-03`
-- Current task: `Income integrations Phase 3 first provider pilot end-to-end`
+- Current task ID: `IN-04`
+- Current task: `Income integrations Phase 4 restaurant rollout providers (Uber Eats + DoorDash + POS)`
 - Status: `READY`
 - Last updated: `2026-02-27`
 - Primary source plan section:
-  - `docs/income-integrations-onboarding-plan.md` -> `Phase 3`
+  - `docs/income-integrations-onboarding-plan.md` -> `Phase 4`
 
 ## Documentation Sync Checklist (Run Every Session)
 
@@ -351,6 +351,40 @@ Status legend:
 - [ ] `docs/codebase-overview.md` updated if behavior/architecture/canonical path descriptions changed.
 
 ## Latest Job Summary (Append New Entries At Top)
+
+### 2026-02-27 - IN-03 complete: GoDaddy POS pilot end-to-end sync validation + last_sync_at dashboard visibility
+- Completed:
+  - Ran IN-03 preflight scans for existing pilot implementation:
+    - `find src/features/integrations -type f` -> confirmed full list of existing files
+    - reviewed `sync.service.ts`, `godaddy-pos.provider.ts`, `connections.repository.ts`, `provider-catalog.ts`, dashboard home server
+    - confirmed full pilot path (connect -> token storage -> sync -> FinancialTransaction projection) was architecturally complete from prior slices
+  - Re-verified DB/Prisma contract inputs (no schema change required for IN-03):
+    - `prisma/schema.prisma` reviewed
+    - latest migration: `prisma/migrations/20260228013000_income_event_pilot/migration.sql`
+  - IN-03 scoped additions (reuse-first, no duplicate services):
+    - Added `src/features/integrations/server/sync.service.test.mjs` (8 tests):
+      - missing connection / missing token error paths
+      - full sync 90-day window gate
+      - incremental sync `last_sync_at` date gate
+      - IncomeEvent upsert + FinancialTransaction projection shape assertions
+      - multiple event isolation
+      - provider fetch error -> connection error + failed sync log
+      - zero events completes cleanly
+    - Fixed `sync.service.ts` JSON field type assertions (`Prisma.InputJsonValue`) for typecheck compliance
+    - Extended `IncomeProviderConnectionCard` contract: added `lastSyncAt: string | null`
+    - Extended `listIncomeProviderConnectionCardsForBusiness` to populate `lastSyncAt`
+    - Updated `IncomeProviderConnectCard` UI to display "Last synced: ..." on connected cards
+    - Updated `IncomeSourceSetupStep` copy to reflect pilot live state
+  - Completed validation gates:
+    - `node --test src/features/integrations/server/sync.service.test.mjs` -> PASS (8/8)
+    - `npx tsx --test src/features/integrations/server/provider-catalog.test.mjs src/features/integrations/server/oauth.service.test.mjs` -> PASS (6/6)
+    - `npx tsc --noEmit --incremental false` -> PASS
+    - targeted `eslint` on touched integration files -> PASS
+  - Updated source/master plans, completion percentages, overview, and changelog for IN-03 completion.
+- Remaining:
+  - Start `IN-04` (restaurant rollout providers: Uber Eats + DoorDash + additional POS).
+- Next:
+  - `IN-04` in `docs/income-integrations-onboarding-plan.md`
 
 ### 2026-02-27 - IN-02 complete: provider-agnostic OAuth core infrastructure (schema + services + routes)
 - Completed:

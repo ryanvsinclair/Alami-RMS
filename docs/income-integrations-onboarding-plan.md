@@ -1,8 +1,36 @@
 # Income Integrations Onboarding Plan
 
-Last updated: February 27, 2026 (Phase 2 OAuth core infrastructure complete)
+Last updated: February 27, 2026 (Phase 3 GoDaddy POS pilot end-to-end complete)
 
 ## Latest Update
+
+- **IN-03 complete: GoDaddy POS pilot end-to-end (sync service tests + last_sync_at dashboard projection visibility)** (February 27, 2026):
+  - Preflight scans confirmed the full pilot path was architecturally present in prior slices:
+    - `sync.service.ts` already implements `runGoDaddyPosManualSync` with `IncomeEvent` upsert + `FinancialTransaction` projection
+    - `godaddy-pos.provider.ts` already implements event fetch + normalization adapter
+    - `app/api/integrations/sync/godaddy-pos/manual/route.ts` already exposes manual sync endpoint
+    - `connections.repository.ts` already handles sync success/error marking
+    - home dashboard already queries `FinancialTransaction.source = "godaddy_pos"` for income layer
+  - IN-03 scoped additions (reuse-first, no duplicate services created):
+    - Added `sync.service.test.mjs` (8 tests): full pilot unit test coverage for sync business rules:
+      - missing connection throws
+      - missing access token throws
+      - full sync uses 90-day historical window
+      - incremental sync uses `last_sync_at` as since date
+      - event upserted as `IncomeEvent` and projected to `FinancialTransaction` with correct shape
+      - multiple events isolated correctly
+      - provider fetch error marks connection as error + writes failed sync log
+      - zero events completes successfully
+    - Extended `IncomeProviderConnectionCard` contract with `lastSyncAt: string | null`
+    - Extended provider catalog service to populate `lastSyncAt` from `connection.last_sync_at`
+    - Updated `IncomeProviderConnectCard` UI to display "Last synced: ..." when `lastSyncAt` is present
+    - Fixed `sync.service.ts` JSON field type assertions (`Prisma.InputJsonValue` cast) for typecheck compliance
+    - Updated `IncomeSourceSetupStep` copy to reflect IN-03 pilot live state (GoDaddy POS live)
+  - Validation:
+    - `node --test src/features/integrations/server/sync.service.test.mjs` -> PASS (8/8)
+    - `npx tsx --test src/features/integrations/server/provider-catalog.test.mjs src/features/integrations/server/oauth.service.test.mjs` -> PASS (6/6)
+    - `npx tsc --noEmit --incremental false` -> PASS
+    - targeted `eslint` on touched integration files -> PASS
 
 - **IN-02 complete: provider-agnostic OAuth core infrastructure shipped** (February 27, 2026):
   - Added schema-backed OAuth core persistence:
@@ -83,11 +111,13 @@ Last updated: February 27, 2026 (Phase 2 OAuth core infrastructure complete)
 
 ## Pick Up Here (Next Continuation)
 
-- Next task ID: `IN-03`
-- Source section: `Phase 3 - First provider pilot end-to-end (recommended: GoDaddy POS)`
+- Next task ID: `IN-04`
+- Source section: `Phase 4 - Restaurant rollout providers (Uber Eats + DoorDash + POS)`
 - Scope reminder:
-  - implement first live provider path end-to-end (connect -> token storage -> sync)
-  - keep rollout scoped to one provider before multi-provider expansion
+  - add provider adapters for target restaurant delivery/POS providers
+  - provider-specific payload mapping and fees handling
+  - webhook endpoints where provider supports them
+  - dashboard source ordering updates for new sources
 
 ## Goal
 
@@ -732,7 +762,7 @@ Important:
 
 ## Phase 3 - First provider pilot end-to-end (recommended: GoDaddy POS)
 
-Status: `[ ]`
+Status: `[x]`
 
 Goal:
 
@@ -740,12 +770,14 @@ Goal:
 
 Deliverables:
 
-- one provider OAuth adapter
-- one provider sync fetch adapter
-- normalization to `IncomeEvent`
-- projection to `FinancialTransaction`
-- manual sync action
-- `ExternalSyncLog` writes
+- [x] one provider OAuth adapter (`godaddy-pos.provider.ts` - fetch + normalization)
+- [x] one provider sync fetch adapter (`sync.service.ts` - `runGoDaddyPosManualSync`)
+- [x] normalization to `IncomeEvent` (upsert with idempotent `connection_id + external_id` key)
+- [x] projection to `FinancialTransaction` (upsert with `business_id + source + external_id` key)
+- [x] manual sync action (`app/api/integrations/sync/godaddy-pos/manual/route.ts`)
+- [x] `ExternalSyncLog` writes (running -> success/failed with records_fetched)
+- [x] pilot end-to-end test coverage (`sync.service.test.mjs`, 8 tests)
+- [x] `lastSyncAt` surfaced in connection card contract + UI
 
 Why pilot first:
 

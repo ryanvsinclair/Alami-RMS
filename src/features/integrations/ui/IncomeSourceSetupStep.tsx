@@ -28,8 +28,8 @@ export function IncomeSourceSetupStep({
       ))}
 
       <div className="rounded-3xl border border-border bg-card p-4 text-sm text-muted">
-        <p>Connections are not yet live in this phase.</p>
-        <p className="mt-1">Provider OAuth and token storage are shipped in IN-02 and beyond.</p>
+        <p>GoDaddy POS is live for connection and sync. Other providers are coming soon.</p>
+        <p className="mt-1">Set up OAuth env vars to activate additional connectors.</p>
       </div>
 
       <div className="flex items-center justify-between gap-3 rounded-3xl border border-border bg-card p-4">

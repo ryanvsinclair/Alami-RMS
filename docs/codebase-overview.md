@@ -57,7 +57,7 @@ High-level completion:
 What remains outside plan completion:
 - Manual integrated smoke testing across core flows (user-run / final QA pass).
 - Receipt post-OCR correction plan is complete through Phase 6 closeout (`RC-19`), with non-blocking follow-ups tracked separately.
-- Income integrations onboarding plan Phase 2 is complete (provider catalog/UI shell + OAuth core infrastructure); first provider sync pilot work starts in Phase 3.
+- Income integrations onboarding plan Phase 3 is complete (GoDaddy POS pilot end-to-end: connect -> token storage -> sync -> FinancialTransaction dashboard projection); restaurant provider rollout (Phase 4) is next.
 - Unified Intake regrouping refactor is planned but not yet implemented (see `docs/unified-inventory-intake-refactor-plan.md`).
 - Operational Calendar/Schedule refactor is planned and sequencing-locked behind completion of all current plans (see `docs/operational-calendar-schedule-plan.md`).
 
@@ -223,7 +223,7 @@ Wrappers:
 - `app/page.tsx` (route composition/state wiring)
 - `app/actions/core/financial.ts` (`getDashboardSummary` wrapper delegates to feature server)
 
-### Income integrations onboarding shell + OAuth core (Phase 2 complete)
+### Income integrations onboarding shell + OAuth core + GoDaddy POS pilot (Phase 3 complete)
 
 Implemented capabilities:
 - Industry-aware provider catalog and recommendation ordering for onboarding/integrations views
@@ -236,6 +236,13 @@ Implemented capabilities:
   - `/api/integrations/oauth/[provider]/callback`
 - OAuth state hashing + one-time state consumption + PKCE + token encryption are implemented in feature server services
 - Connect buttons can route to OAuth start for providers with configured `INCOME_OAUTH_<PROVIDER>_*` env vars
+- GoDaddy POS pilot sync is active end-to-end:
+  - `godaddy-pos.provider.ts` fetches + normalizes provider events
+  - `sync.service.ts#runGoDaddyPosManualSync` upserts `IncomeEvent` rows and projects to `FinancialTransaction` for dashboard compatibility
+  - Manual sync triggered via `GET /api/integrations/sync/godaddy-pos/manual`
+  - `ExternalSyncLog` records each sync run (running -> success/failed) with record counts
+  - `lastSyncAt` surfaced in connection card contract and UI for user visibility
+- Home dashboard income layer already consumes `FinancialTransaction.source = "godaddy_pos"` rows from sync projection
 
 Canonical paths:
 - `src/features/integrations/shared/*`
@@ -244,15 +251,18 @@ Canonical paths:
 - `src/features/integrations/server/oauth-state.repository.ts`
 - `src/features/integrations/server/connections.repository.ts`
 - `src/features/integrations/server/oauth-crypto.ts`
+- `src/features/integrations/server/sync.service.ts`
 - `src/features/integrations/providers/registry.ts`
+- `src/features/integrations/providers/godaddy-pos.provider.ts`
 - `src/features/integrations/ui/*`
 
 Route wrappers:
 - `app/onboarding/*`
 - `app/(dashboard)/integrations/*`
+- `app/api/integrations/sync/godaddy-pos/manual/route.ts`
 
 Current limitation:
-- First live provider sync/projection path is not active yet (planned for Phase 3 pilot).
+- Only GoDaddy POS has a live sync adapter; other providers (Uber Eats, DoorDash, etc.) are planned for Phase 4.
 
 ### Receiving (4 ingestion paths)
 
