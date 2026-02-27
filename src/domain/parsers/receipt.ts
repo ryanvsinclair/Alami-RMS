@@ -128,8 +128,8 @@ export function parseReceiptText(rawText: string): ParsedLineItem[] {
 
   // Filter out non-item lines
   const SKIP_PATTERNS = [
-    /^(?:sub\s*total|subtotal|grand\s*total|total)\b/i,
-    /^(?:sales\s+)?tax\b/i,
+    /^(?:(?:sub|sous)[\s-]*total|grand[\s-]*total|total(?:\s+(?:due|du|amount|a\s+payer))?|amount\s+due|balance\s+due|montant\s+(?:total|du))\b/i,
+    /^(?:(?:sales\s+)?tax(?:e)?|taxes)\b/i,
     /^(?:g\.?\s*s\.?\s*t|h\.?\s*s\.?\s*t|p\.?\s*s\.?\s*t|q\.?\s*s\.?\s*t|t\.?\s*p\.?\s*s|t\.?\s*v\.?\s*q)\b/i,
     /^change\b/i,
     /^cash/i,

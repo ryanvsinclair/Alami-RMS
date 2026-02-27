@@ -4,6 +4,47 @@ Last updated: February 27, 2026 (draft / implementation-ready plan)
 
 ## Latest Update
 
+- **Phase 1 RC-11 complete: province hierarchy hardening + ON/QC tax assertions + raw-text totals robustness** (February 27, 2026):
+  - Hardened province determination hierarchy in workflow orchestration:
+    - added Google Place Details province resolution (`address_components`/`formatted_address`) when `google_place_id` exists
+    - kept deterministic fallback to stored supplier address parsing when place-details resolution is unavailable
+    - added in-process cache for place-id -> province lookups to reduce repeated API fetches
+  - Expanded tax-focused ON/QC fixture assertions and regression coverage:
+    - added ON Google-hint-overrides-QC-labels mismatch fixture
+    - added ON GST-only warning fixture
+    - added QC HST-only warning fixture
+    - added QC TPS-only incomplete warning fixture
+    - added QC French-label comma-decimal pass fixture
+  - Hardened raw-text totals extraction for noisy/variant labels and amount formats:
+    - added support for `Sub-Total`, `Total Due`, `Montant total`, and `Taxe` label variants
+    - added robust trailing amount normalization for split numeric tokens (`9 98`) and comma-decimal inputs (`12,00`)
+    - kept totals/tax extraction logic aligned across workflow and fixture harness paths
+  - Validation:
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-core.test.mjs` -> PASS (14/14)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-fixtures.test.mjs` -> PASS (27/27)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt.test.mjs` -> PASS (3/3)
+    - `npx tsc --noEmit --incremental false` -> PASS
+    - targeted `eslint` on touched parser/correction/workflow/fixture docs files -> PASS
+
+- **Phase 1 RC-10 closeout: workflow-aligned historical scoring threshold tuning + fixture corpus expanded to 20 scenarios** (February 27, 2026):
+  - Tuned correction-core historical plausibility scoring to require workflow-aligned sample confidence before influencing candidate scores:
+    - historical score adjustments now require `sample_size >= 4` (alignment with workflow hint-generation gate)
+  - Added threshold-boundary core regression coverage:
+    - `sample_size: 3` no-steer expectation
+    - `sample_size: 4` steer expectation
+  - Expanded fixture corpus from `18` to `20` scenarios:
+    - `bakery-tabscanner-history-sample3-noop-001.json`
+    - `walmart-parsed-text-discount-heavy-tax13-split-token-001.json`
+  - New fixture coverage includes:
+    - sub-threshold historical hint no-op behavior
+    - discount-heavy parsed-text flow with split numeric token correction + generic `Tax 13%` label handling
+  - Validation:
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-core.test.mjs` -> PASS (12/12)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-fixtures.test.mjs` -> PASS (21/21)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt.test.mjs` -> PASS (2/2)
+    - `npx tsc --noEmit --incremental false` -> PASS
+    - targeted `eslint` on touched correction-core/tests/fixture docs -> PASS
+
 - **Phase 1 RC-10 continuation: raw-text parser noise hardening + tax assertion fixtures expanded to 18 scenarios** (February 27, 2026):
   - Hardened `parseReceiptText(...)` skip/noise filters to better suppress receipt-summary lines before correction:
     - `Sub Total`/`Subtotal`/`Grand Total` variants
@@ -87,16 +128,16 @@ Last updated: February 27, 2026 (draft / implementation-ready plan)
 
 ## Pick Up Here (Next Continuation)
 
-Start with **Phase 1 - Numeric sanity + dual interpretation**, using `shadow` mode first.
+Continue with **Phase 1.5 service layer (RC-12)**, using `shadow` mode first for lookup-driven enrichment.
 
 Recommended next implementation order:
 
-1. Continue Phase 1 threshold tuning using newly wired historical price hints
-   - tune candidate-scoring weights/margins against fixture corpus and shadow metrics
-2. Expand fixture corpus further toward 20 representative receipts before enabling `enforce`
-   - include more discount-heavy, noisy, and mixed-tax label variants
-3. Continue hardening historical hint quality gates
-   - tune sample/recency thresholds and monitor hint coverage/hit-quality observability
+1. Implement `receipt-produce-lookup.service.ts` for `produce_items` resolution
+   - support PLU exact lookup and fuzzy name lookup with deterministic scoring guards
+2. Add province-aware language preference with EN fallback
+   - Ontario -> EN preferred, Quebec -> FR preferred, fallback to EN when preferred language misses
+3. Wire produce lookup into correction workflow service path
+   - enrich corrected lines with lookup-backed `produce_match` while preserving domain purity boundaries
 4. Keep production behavior risk-controlled
    - run in `shadow` first, inspect correction metrics/deltas, then promote safe rules to `enforce`
 
@@ -1197,10 +1238,15 @@ Progress notes (2026-02-27):
   - historical hint coverage/sample-size metrics in correction summary + periodic workflow metrics logs
 - Expanded fixture corpus to 15 scenarios (history low-sample gate + noisy dotted-tax label + split-token-with-totals coverage).
 - Hardened raw-text parser skip behavior for subtotal/tax summary lines and expanded tax-focused fixture assertions/corpus to 18 scenarios.
+- Tuned correction-core historical plausibility scoring to require `sample_size >= 4` before applying historical score adjustments.
+- Added threshold-boundary core tests (`sample_size: 3` no-op and `sample_size: 4` steer) and expanded fixture corpus to 20 scenarios.
+- Completed RC-11 tax hardening slice:
+  - province hint resolution now prioritizes Google Place Details (with cached lookup + address fallback)
+  - added ON/QC mismatch/incomplete tax interpretation fixtures/assertions
+  - hardened raw-text totals extraction for hyphenated/french labels and spaced/comma-decimal numeric formats
 - Remaining in Phase 1:
-  - tune scoring thresholds/margins with expanded shadow metrics and larger fixture corpus
-  - expand fixture corpus to 20 scenarios
-  - add richer tax-focused fixtures and raw-text totals robustness hardening
+  - monitor `shadow` metrics for province/tax interpretation false-positive drift and tune tolerances if needed
+  - proceed to Phase 1.5 service-layer lookup completion (`RC-12`)
 
 ## Phase 1.5 - Produce resolution & organic normalization
 

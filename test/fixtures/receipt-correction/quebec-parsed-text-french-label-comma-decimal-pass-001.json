@@ -1,0 +1,25 @@
+{
+  "id": "quebec-parsed-text-french-label-comma-decimal-pass-001",
+  "source": "parsed_text",
+  "store": {
+    "name": "Quebec Epicerie",
+    "google_place_id": "test_qc_epicerie_place"
+  },
+  "raw_text": "FROMAGE 10.00\nPAIN 2.00\nSous-total 12,00\nTPS 0,60\nTVQ 1,20\nMontant total 13,80",
+  "expected": {
+    "notes": [
+      "French subtotal/total labels with comma decimals should still feed totals/tax interpretation correctly."
+    ],
+    "assertions": {
+      "totals_status": "pass",
+      "totals_delta_to_total": 0,
+      "changed_line_numbers": [],
+      "tax_interpretation": {
+        "status": "pass",
+        "province": "QC",
+        "province_source": "tax_labels",
+        "structure": "qc_gst_qst"
+      }
+    }
+  }
+}

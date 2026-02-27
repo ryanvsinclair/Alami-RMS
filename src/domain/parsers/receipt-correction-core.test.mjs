@@ -172,6 +172,60 @@ test("historical price hint with sample size below threshold does not affect can
   assert.equal(result.lines[0].line.line_cost, 149);
 });
 
+test("historical price hint below workflow-aligned threshold (sample size 3) does not steer candidate selection", () => {
+  const result = runReceiptCorrectionCore({
+    source: "tabscanner",
+    lines: [
+      makeLine({
+        line_number: 1,
+        raw_text: "AGED CHEDDAR 14900",
+        parsed_name: "AGED CHEDDAR",
+        line_cost: 14900,
+        unit_cost: 14900,
+      }),
+    ],
+    historical_price_hints: [
+      {
+        line_number: 1,
+        reference_line_cost: 14.95,
+        reference_unit_cost: 14.95,
+        sample_size: 3,
+        source: "receipt_line_history",
+      },
+    ],
+  });
+
+  assert.equal(result.lines[0].line.line_cost, 149);
+});
+
+test("historical price hint at workflow-aligned threshold (sample size 4) can steer decimal inference", () => {
+  const result = runReceiptCorrectionCore({
+    source: "tabscanner",
+    lines: [
+      makeLine({
+        line_number: 1,
+        raw_text: "AGED CHEDDAR 14900",
+        parsed_name: "AGED CHEDDAR",
+        line_cost: 14900,
+        unit_cost: 14900,
+      }),
+    ],
+    historical_price_hints: [
+      {
+        line_number: 1,
+        reference_line_cost: 14.95,
+        reference_unit_cost: 14.95,
+        sample_size: 4,
+        source: "receipt_line_history",
+      },
+    ],
+  });
+
+  const line = result.lines[0];
+  assert.equal(line.line.line_cost, 14.9);
+  assert.ok(line.parse_flags.includes("historical_price_signal_available"));
+});
+
 test("tax interpretation validates Ontario HST structure and math from google places province hint", () => {
   const result = runReceiptCorrectionCore({
     source: "parsed_text",
@@ -242,6 +296,78 @@ test("tax interpretation validates Quebec TPS/TVQ dual-tax structure and math", 
   assert.equal(result.tax_interpretation.amounts.tvq, 9.98);
   assert.equal(result.tax_interpretation.deltas.qc_gst, 0);
   assert.equal(result.tax_interpretation.deltas.qc_qst, 0);
+});
+
+test("tax interpretation prioritizes google places province hint when tax labels conflict", () => {
+  const result = runReceiptCorrectionCore({
+    source: "parsed_text",
+    lines: [
+      makeLine({
+        line_number: 1,
+        raw_text: "FROMAGE 10.00",
+        parsed_name: "FROMAGE",
+        line_cost: 10,
+        unit_cost: 10,
+      }),
+    ],
+    totals: {
+      subtotal: 10.0,
+      tax: 1.5,
+      total: 11.5,
+      province_hint: "ON",
+      province_hint_source: "google_places",
+      tax_lines: [
+        { label: "TPS", amount: 0.5 },
+        { label: "TVQ", amount: 1.0 },
+      ],
+      address_text: "123 Rue Test, Montreal QC H2X 1Y4",
+    },
+  });
+
+  assert.equal(result.tax_interpretation.province, "ON");
+  assert.equal(result.tax_interpretation.province_source, "google_places");
+  assert.equal(result.tax_interpretation.structure, "qc_gst_qst");
+  assert.equal(result.tax_interpretation.status, "warn");
+  assert.ok(
+    result.tax_interpretation.flags.includes("province_signal_conflict_tax_labels")
+  );
+  assert.ok(
+    result.tax_interpretation.flags.includes("province_signal_conflict_address_fallback")
+  );
+  assert.ok(result.tax_interpretation.flags.includes("tax_structure_unexpected_for_on"));
+});
+
+test("tax interpretation flags Quebec HST-only structure as mismatch/incomplete", () => {
+  const result = runReceiptCorrectionCore({
+    source: "parsed_text",
+    lines: [
+      makeLine({
+        line_number: 1,
+        raw_text: "FROMAGE 10.00",
+        parsed_name: "FROMAGE",
+        line_cost: 10,
+        unit_cost: 10,
+      }),
+    ],
+    totals: {
+      subtotal: 10.0,
+      tax: 1.3,
+      total: 11.3,
+      province_hint: "QC",
+      province_hint_source: "google_places",
+      tax_lines: [{ label: "HST", amount: 1.3 }],
+    },
+  });
+
+  assert.equal(result.tax_interpretation.province, "QC");
+  assert.equal(result.tax_interpretation.province_source, "google_places");
+  assert.equal(result.tax_interpretation.structure, "on_hst");
+  assert.equal(result.tax_interpretation.status, "warn");
+  assert.ok(result.tax_interpretation.flags.includes("hst_unexpected_for_qc"));
+  assert.ok(result.tax_interpretation.flags.includes("missing_qc_tax_components"));
+  assert.ok(
+    result.tax_interpretation.flags.includes("province_signal_conflict_tax_labels")
+  );
 });
 
 test("tax interpretation treats subtotal-equals-total with no tax lines as zero-tax candidate instead of warning", () => {

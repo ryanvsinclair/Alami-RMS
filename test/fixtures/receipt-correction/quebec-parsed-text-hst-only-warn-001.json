@@ -1,0 +1,37 @@
+{
+  "id": "quebec-parsed-text-hst-only-warn-001",
+  "source": "parsed_text",
+  "store": {
+    "name": "Quebec Market",
+    "google_place_id": "test_qc_market_place"
+  },
+  "raw_text": "FROMAGE 10.00\nSub Total 10.00\nHST 1.30\nTotal 11.30",
+  "correction_context": {
+    "totals": {
+      "province_hint": "QC",
+      "province_hint_source": "google_places"
+    }
+  },
+  "expected": {
+    "notes": [
+      "Google Places province hint should keep Quebec interpretation when labels look Ontario-style.",
+      "HST-only structure in Quebec should be warned as mismatch/incomplete."
+    ],
+    "assertions": {
+      "totals_status": "pass",
+      "totals_delta_to_total": 0,
+      "changed_line_numbers": [],
+      "tax_interpretation": {
+        "status": "warn",
+        "province": "QC",
+        "province_source": "google_places",
+        "structure": "on_hst",
+        "required_flags": [
+          "province_signal_conflict_tax_labels",
+          "hst_unexpected_for_qc",
+          "missing_qc_tax_components"
+        ]
+      }
+    }
+  }
+}

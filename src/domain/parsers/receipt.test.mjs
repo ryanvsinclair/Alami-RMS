@@ -39,3 +39,22 @@ test("parseReceiptText skips Quebec TPS/TVQ tax lines and grand total noise", ()
   assert.equal(lines[0].line_cost, 10.0);
   assert.equal(lines[1].line_cost, 2.0);
 });
+
+test("parseReceiptText skips subtotal/total label variants and French tax labels", () => {
+  const lines = parseReceiptText(
+    [
+      "POMMES 6.99",
+      "PAIN 2.99",
+      "Sub-Total : 9 98",
+      "Taxe 13 % 1 30",
+      "Total Due 11 28",
+      "Montant total 11,28",
+    ].join("\n")
+  );
+
+  assert.equal(lines.length, 2);
+  assert.equal(lines[0].parsed_name, "POMMES");
+  assert.equal(lines[1].parsed_name, "PAIN");
+  assert.equal(lines[0].line_cost, 6.99);
+  assert.equal(lines[1].line_cost, 2.99);
+});

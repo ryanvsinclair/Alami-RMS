@@ -1,0 +1,33 @@
+{
+  "id": "ontario-parsed-text-gst-only-warn-001",
+  "source": "parsed_text",
+  "store": {
+    "name": "Ontario Grocery",
+    "google_place_id": "test_on_grocery_place"
+  },
+  "raw_text": "APPLES 5.00\nBREAD 5.00\nSub Total 10.00\nGST 0.50\nTotal 10.50",
+  "correction_context": {
+    "totals": {
+      "province_hint": "ON",
+      "province_hint_source": "google_places"
+    }
+  },
+  "expected": {
+    "notes": [
+      "Google Places province hint should keep Ontario interpretation even when only GST is detected.",
+      "GST-only structure in Ontario should be warned as unexpected."
+    ],
+    "assertions": {
+      "totals_status": "pass",
+      "totals_delta_to_total": 0,
+      "changed_line_numbers": [],
+      "tax_interpretation": {
+        "status": "warn",
+        "province": "ON",
+        "province_source": "google_places",
+        "structure": "gst_only",
+        "required_flags": ["gst_only_unexpected_for_on"]
+      }
+    }
+  }
+}

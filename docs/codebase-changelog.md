@@ -14,12 +14,157 @@ Companion overview: `docs/codebase-overview.md`
 ## Changelog Usage
 
 - Append new entries at the top (newest first).
+- Every entry must include `- Suggested Commit Title: ...` directly under the entry heading.
 - Record validation commands actually run (and failures/exceptions) in each entry.
 - Do not delete historical entries; add corrections as new entries.
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-27 - RC-11 complete: province hierarchy hardening + ON/QC tax assertion expansion + raw-text totals robustness
+- Suggested Commit Title: `feat(rc-11): harden province resolution hierarchy, tax assertions, and raw-text totals extraction`
+- Scope:
+  - Receipt correction Phase 1 tax-hardening slice (`RC-11`) across workflow province resolution, tax-interpretation fixtures/assertions, and parsed-text totals extraction robustness.
+- Preflight evidence (reuse/refactor-first + DB/Prisma integrity):
+  - Reviewed source-plan scope in `docs/receipt-post-ocr-correction-plan.md` (`Pick Up Here` + Phase 1 progress notes).
+  - Ran scoped reuse/refactor scans:
+    - `rg -n "tax_interpretation|province|HST|TPS|TVQ|QST|Tax 13|subtotal|total due|grand total|google_place|place details" src app test docs`
+    - `rg --files src app test docs | rg "receipt|correction|tax|province|workflow|fixture"`
+  - Reviewed and extended existing implementation in:
+    - `src/features/receiving/receipt/server/receipt-workflow.service.ts`
+    - `src/domain/parsers/receipt.ts`
+    - `src/domain/parsers/receipt-correction-core.test.mjs`
+    - `src/domain/parsers/receipt-correction-fixtures.test.mjs`
+    - `src/domain/parsers/receipt.test.mjs`
+  - DB/Prisma integrity preflight completed before DB-touching workflow changes:
+    - reviewed `prisma/schema.prisma`
+    - reviewed latest migration `prisma/migrations/20260225223000_shopping_session_item_resolution_audit/migration.sql`
+    - no schema or migration changes required for RC-11.
+- What changed:
+  - Province hierarchy hardening:
+    - added Google Place Details province resolution using `google_place_id` (`address_components`/`formatted_address`)
+    - retained supplier-address fallback when place-details resolution is unavailable
+    - added process-local cache for repeated place-id province lookups
+  - Raw-text totals robustness hardening:
+    - expanded label handling to support `Sub-Total`/`Sous-total`, `Total Due`, `Montant total`, and `Taxe`
+    - added resilient trailing amount normalization for split tokens (`9 98`) and comma-decimal formats (`12,00`)
+  - Tax-assertion coverage expansion:
+    - added ON/QC fixture assertions for province-hint conflict behavior and incomplete/mismatch tax structures
+    - added French-label/comma-decimal parsed-text fixture pass case
+    - extended fixture harness totals-context injection for deterministic province-hint assertion scenarios
+- Files changed:
+  - `src/features/receiving/receipt/server/receipt-workflow.service.ts`
+  - `src/domain/parsers/receipt.ts`
+  - `src/domain/parsers/receipt-correction-fixtures.test.mjs`
+  - `src/domain/parsers/receipt-correction-core.test.mjs`
+  - `src/domain/parsers/receipt.test.mjs`
+  - `test/fixtures/receipt-correction/ontario-parsed-text-google-hint-overrides-qc-labels-001.json`
+  - `test/fixtures/receipt-correction/ontario-parsed-text-gst-only-warn-001.json`
+  - `test/fixtures/receipt-correction/ontario-parsed-text-subtotal-hyphen-total-due-split-tax-001.json`
+  - `test/fixtures/receipt-correction/quebec-parsed-text-french-label-comma-decimal-pass-001.json`
+  - `test/fixtures/receipt-correction/quebec-parsed-text-hst-only-warn-001.json`
+  - `test/fixtures/receipt-correction/quebec-parsed-text-tps-only-incomplete-warn-001.json`
+  - `test/fixtures/receipt-correction/walmart-parsed-text-discount-heavy-tax13-split-token-001.json`
+  - `test/fixtures/receipt-correction/README.md`
+  - `docs/receipt-post-ocr-correction-plan.md`
+  - `docs/master-plan-v1.md`
+  - `docs/codebase-overview.md`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-core.test.mjs` -> PASS (14/14; expected Node experimental/module-type warnings)
+  - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-fixtures.test.mjs` -> PASS (27/27; expected Node experimental/module-type warnings)
+  - `node --test --experimental-transform-types src/domain/parsers/receipt.test.mjs` -> PASS (3/3; expected Node experimental/module-type warnings)
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `npx eslint src/domain/parsers/receipt.ts src/domain/parsers/receipt.test.mjs src/domain/parsers/receipt-correction-core.ts src/domain/parsers/receipt-correction-core.test.mjs src/domain/parsers/receipt-correction-fixtures.test.mjs src/features/receiving/receipt/server/receipt-workflow.service.ts test/fixtures/receipt-correction/README.md --quiet` -> PASS
+- Notes:
+  - `RC-11` marked complete in master plan; canonical next task is `RC-12`.
+
+### 2026-02-27 - RC-10 closeout: workflow-aligned historical scoring threshold tuning + fixture corpus completion to 20 scenarios
+- Suggested Commit Title: `chore: RC-10 closeout: align historical scoring threshold with workflow gate and expand fixtures to 20`
+- Scope:
+  - Receipt correction Phase 1 (`RC-10`) closeout for threshold tuning and fixture-corpus completion.
+- Preflight evidence (reuse/refactor-first):
+  - Reviewed existing scoped implementation in:
+    - `docs/receipt-post-ocr-correction-plan.md` (`RC-10` remaining items and Phase 1 status)
+    - `src/domain/parsers/receipt-correction-core.ts` (candidate scoring + historical plausibility path)
+    - `src/domain/parsers/receipt-correction-core.test.mjs` (existing history-guided and low-sample tests)
+    - `src/domain/parsers/receipt-correction-fixtures.test.mjs` + `test/fixtures/receipt-correction/README.md` (fixture harness/assertion capabilities and current corpus size)
+  - Reused existing correction core + fixture harness; no duplicate pipeline/services were introduced.
+  - Added new fixture files only for uncovered scenarios required to close RC-10 (history sample-size boundary + discount-heavy generic-tax parsed-text case).
+- What changed:
+  - Tuned correction-core historical plausibility scoring gate:
+    - history-based score adjustment now requires `sample_size >= 4` in `historicalPlausibilityAdjustment(...)`, matching workflow hint-generation confidence expectations.
+  - Added threshold-boundary core tests:
+    - `sample_size: 3` no-steer behavior remains baseline (`149`)
+    - `sample_size: 4` can steer decimal inference (`14.9`)
+  - Expanded fixture corpus from 18 to 20 scenarios:
+    - `bakery-tabscanner-history-sample3-noop-001.json`
+    - `walmart-parsed-text-discount-heavy-tax13-split-token-001.json`
+  - Updated fixture documentation status to 20 scenarios and documented sample-size boundary guidance.
+  - Updated receipt plan/master plan/overview docs to mark RC-10 closeout and move canonical pickup to RC-11.
+- Files changed:
+  - `src/domain/parsers/receipt-correction-core.ts`
+  - `src/domain/parsers/receipt-correction-core.test.mjs`
+  - `test/fixtures/receipt-correction/bakery-tabscanner-history-sample3-noop-001.json`
+  - `test/fixtures/receipt-correction/walmart-parsed-text-discount-heavy-tax13-split-token-001.json`
+  - `test/fixtures/receipt-correction/README.md`
+  - `docs/receipt-post-ocr-correction-plan.md`
+  - `docs/master-plan-v1.md`
+  - `docs/codebase-overview.md`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-core.test.mjs` -> PASS (12/12; expected Node experimental/module-type warnings)
+  - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-fixtures.test.mjs` -> PASS (21/21; expected Node experimental/module-type warnings)
+  - `node --test --experimental-transform-types src/domain/parsers/receipt.test.mjs` -> PASS (2/2; expected Node experimental/module-type warnings)
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `npx eslint src/domain/parsers/receipt-correction-core.ts src/domain/parsers/receipt-correction-core.test.mjs src/domain/parsers/receipt-correction-fixtures.test.mjs test/fixtures/receipt-correction/README.md --quiet` -> PASS
+- Notes:
+  - `RC-10` is now complete in the master checklist; canonical next task is `RC-11`.
+
+### 2026-02-27 - Master plan autonomous execution contract hardened for low-supervision continuation
+- Suggested Commit Title: `chore(docs): harden master plan with autonomous execution contract and anti-drift gates`
+- Scope:
+  - Documentation governance hardening to reduce manual supervision and enforce sequential task execution.
+- What changed:
+  - Added `Autonomous Execution Contract` to `docs/master-plan-v1.md` with:
+    - deterministic active-task selection (`[~]` first, else first eligible `[ ]`)
+    - auto-advance behavior after successful completion
+    - strict no-skip and single-in-progress constraints
+  - Added explicit stop conditions and blocked-task protocol (`[!]`) so agents halt safely instead of drifting scope.
+  - Added `Scoped Preflight Gate` requiring reuse/refactor-first codebase scans before creating new files/code.
+  - Added `Validation Gate` and dependency order gates (`RC -> IN -> UI -> QA -> OC`).
+  - Added session checklist invariant: verify autonomous contract rules each slice.
+  - Added a new master-plan latest-job-summary entry documenting this governance slice.
+- Files changed:
+  - `docs/master-plan-v1.md`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - Documentation update only (no code validation commands run)
+- Notes:
+  - This is a process hardening slice; master-plan checklist completion percentages are unchanged by this update.
+
+### 2026-02-27 - Changelog commit-title policy enforced across all entries and master-plan completion metrics section added
+- Suggested Commit Title: `chore(docs): enforce changelog commit-title line and add master-plan completion metrics section`
+- Scope:
+  - Documentation process/governance update for consistent handoff metadata
+- What changed:
+  - Added `Suggested Commit Title` lines to all existing changelog entries so each slice includes a ready-to-use commit title.
+  - Added explicit changelog usage rule requiring `Suggested Commit Title` in every future entry.
+  - Added `Completion Percentage` section to `docs/master-plan-v1.md` with:
+    - strict completion formula
+    - weighted progress formula
+    - current snapshot values
+    - required per-slice update workflow
+  - Added completion-percentage update step to master-plan documentation checklist.
+- Files changed:
+  - `docs/codebase-changelog.md`
+  - `docs/master-plan-v1.md`
+- Validation run:
+  - Documentation update only (no code validation commands run)
+- Notes:
+  - Going forward, post-slice responses should include both the suggested commit title and current strict/weighted master-plan completion percentages.
+
 ### 2026-02-27 - RC-10 continuation: raw-text parser noise hardening + tax-assertion fixture expansion to 18 scenarios
+- Suggested Commit Title: `chore: RC-10 continuation: raw-text parser noise hardening + tax-assertion fixture expansion to 18 scenarios`
 - Scope:
   - Receipt correction Phase 1 (RC-10) continuation focused on raw-text pre-correction quality and fixture-driven tax validation coverage
 - What changed:
@@ -58,6 +203,7 @@ Companion overview: `docs/codebase-overview.md`
   - RC-10 remains in progress; next closeout slice should add final 2 fixtures and complete threshold tuning review against shadow metrics.
 
 ### 2026-02-27 - RC-10 continuation: historical hint quality gates, observability expansion, and fixture corpus growth
+- Suggested Commit Title: `chore: RC-10 continuation: historical hint quality gates, observability expansion, and fixture corpus growth`
 - Scope:
   - Receipt correction Phase 1 (RC-10) threshold-hardening continuation after initial historical plausibility wiring
 - What changed:
@@ -98,6 +244,7 @@ Companion overview: `docs/codebase-overview.md`
   - RC-10 remains in progress; fixture corpus now at 15 scenarios, with 18-20 target still pending before closeout.
 
 ### 2026-02-27 - RC-10 kickoff: historical price plausibility wiring for receipt correction + fixture/test expansion
+- Suggested Commit Title: `chore: RC-10 kickoff: historical price plausibility wiring for receipt correction + fixture/test expansion`
 - Scope:
   - Receipt post-OCR correction Phase 1 (RC-10) continuation focused on feature-layer historical plausibility signals and threshold-tuning scaffolding
 - What changed:
@@ -142,6 +289,7 @@ Companion overview: `docs/codebase-overview.md`
   - RC-10 remains in progress; this slice implemented historical signal wiring and first fixture expansion, with threshold tuning and broader fixture growth still pending.
 
 ### 2026-02-27 - Master plan checklist hardened with mandatory per-step scoped implementation pre-checks
+- Suggested Commit Title: `chore: Master plan checklist hardened with mandatory per-step scoped implementation pre-checks`
 - Scope:
   - Documentation/process hardening to reduce duplicate code creation risk during ongoing plan execution
 - What changed:
@@ -158,6 +306,7 @@ Companion overview: `docs/codebase-overview.md`
   - No runtime behavior, schema, or architecture implementation changed in this slice.
 
 ### 2026-02-27 - Created Master Plan v1 for canonical continuation order across remaining plans
+- Suggested Commit Title: `chore: Created Master Plan v1 for canonical continuation order across remaining plans`
 - Scope:
   - Documentation coordination and execution-order consolidation across all current plan docs
 - What changed:
@@ -183,6 +332,7 @@ Companion overview: `docs/codebase-overview.md`
   - No runtime behavior or schema changes were made in this slice.
 
 ### 2026-02-27 - Added sequencing-locked Operational Calendar (Schedule tab) plan
+- Suggested Commit Title: `chore: Added sequencing-locked Operational Calendar (Schedule tab) plan`
 - Scope:
   - Product/system-design planning for a cross-industry Schedule tab as an Operational Calendar, with explicit start-order gating after all current active plans
 - What changed:
@@ -209,6 +359,7 @@ Companion overview: `docs/codebase-overview.md`
   - This is planning-only; no feature behavior or architecture implementation changed in this slice.
 
 ### 2026-02-27 - Added unified Inventory Intake regrouping refactor plan (planning-only, no behavior changes)
+- Suggested Commit Title: `chore: Added unified Inventory Intake regrouping refactor plan (planning-only, no behavior changes)`
 - Scope:
   - Product-structure planning update to unify Shopping + Receive under an intent-first Intake model without changing feature behavior
 - What changed:
@@ -234,6 +385,7 @@ Companion overview: `docs/codebase-overview.md`
   - Current implementation remains unchanged. This entry records product/system-design planning alignment only.
 
 ### 2026-02-27 - Receipt correction Phase 1.5 scaffold: produce normalization wired into core
+- Suggested Commit Title: `chore: Receipt correction Phase 1.5 scaffold: produce normalization wired into core`
 - Scope:
   - Initial code implementation slice for produce normalization/organic handling in the post-OCR correction pipeline
 - What changed:
@@ -277,6 +429,7 @@ Companion overview: `docs/codebase-overview.md`
   - This slice is intentionally domain-first. `receipt-produce-lookup.service.ts` and DB persistence fields (`ReceiptLineItem.plu_code`, `organic_flag`) remain pending follow-up schema/service work.
 
 ### 2026-02-26 - Receipt correction Phase 1 tax scaffold implemented (ON/QC interpretation + validation signals)
+- Suggested Commit Title: `chore: Receipt correction Phase 1 tax scaffold implemented (ON/QC interpretation + validation signals)`
 - Scope:
   - Initial code implementation slice for province-aware tax interpretation in the post-OCR receipt correction pipeline
 - What changed:
@@ -316,6 +469,7 @@ Companion overview: `docs/codebase-overview.md`
   - Google Places remains primary in policy, but this slice uses stored supplier `formatted_address` as the current place-context province signal (explicit place-details province fetch can be added in a follow-up hardening step).
 
 ### 2026-02-26 - Added Ontario/Quebec tax interpretation design guidance to receipt correction plan
+- Suggested Commit Title: `chore: Added Ontario/Quebec tax interpretation design guidance to receipt correction plan`
 - Scope:
   - Planning/docs update for improving receipt tax scanning/parsing and tax validation in the post-OCR correction pipeline
 - What changed:
@@ -338,6 +492,7 @@ Companion overview: `docs/codebase-overview.md`
   - This is a planning/design addition only; no tax parsing behavior was implemented in code in this slice.
 
 ### 2026-02-26 - Expanded receipt correction fixture corpus to 10 scenarios and added fixture-driven regression tests
+- Suggested Commit Title: `chore: Expanded receipt correction fixture corpus to 10 scenarios and added fixture-driven regression tests`
 - Scope:
   - Phase 0/1 validation infrastructure for post-OCR receipt correction tuning
 - What changed:
@@ -375,6 +530,7 @@ Companion overview: `docs/codebase-overview.md`
   - The fixture harness is pure/local and does not hit workflow/DB code, keeping threshold-tuning iterations fast.
 
 ### 2026-02-26 - Added unit tests for receipt correction core Phase 1 numeric/totals scenarios
+- Suggested Commit Title: `chore: Added unit tests for receipt correction core Phase 1 numeric/totals scenarios`
 - Scope:
   - Test coverage for the new Phase 1 post-OCR receipt correction core behavior
 - What changed:
@@ -396,6 +552,7 @@ Companion overview: `docs/codebase-overview.md`
   - Tests are focused on pure correction-core behavior and avoid workflow/DB dependencies to keep iteration fast during threshold tuning.
 
 ### 2026-02-26 - Receipt correction observability expanded (confidence bands + flag/action breakdowns)
+- Suggested Commit Title: `chore: Receipt correction observability expanded (confidence bands + flag/action breakdowns)`
 - Scope:
   - Phase 1 tuning instrumentation for post-OCR receipt correction (`shadow`/`enforce` summary visibility)
 - What changed:
@@ -417,6 +574,7 @@ Companion overview: `docs/codebase-overview.md`
   - These counts are primarily for `shadow` tuning and process-local metrics logs; no receipt line persistence schema changes were introduced in this slice.
 
 ### 2026-02-26 - Receipt post-OCR correction Phase 1 follow-up: raw-text totals extraction wired into correction stage
+- Suggested Commit Title: `chore: Receipt post-OCR correction Phase 1 follow-up: raw-text totals extraction wired into correction stage`
 - Scope:
   - Raw OCR text receipt workflow integration improvement for the shared post-OCR correction engine
 - What changed:
@@ -435,6 +593,7 @@ Companion overview: `docs/codebase-overview.md`
   - Extractor is label-driven and intentionally conservative; unlabeled/noisy totals lines will still fall back to `not_evaluated`.
 
 ### 2026-02-26 - Receipt post-OCR correction Phase 1 slice started (numeric sanity + totals outlier retry, shadow safe)
+- Suggested Commit Title: `chore: Receipt post-OCR correction Phase 1 slice started (numeric sanity + totals outlier retry, shadow safe)`
 - Scope:
   - First behavior-changing implementation slice for the receipt post-OCR correction engine (Phase 1)
 - What changed:
@@ -460,6 +619,7 @@ Companion overview: `docs/codebase-overview.md`
   - Fixture corpus expansion and threshold tuning remain pending Phase 1 follow-up work.
 
 ### 2026-02-26 - Split overview vs changelog docs and added receipt-plan handoff sections
+- Suggested Commit Title: `chore: Split overview vs changelog docs and added receipt-plan handoff sections`
 - Scope:
   - Documentation maintenance refactor to separate architecture overview from changelog history, plus a continuation handoff update for the receipt post-OCR correction plan
 - What changed:
@@ -479,6 +639,7 @@ Companion overview: `docs/codebase-overview.md`
   - Historical changelog entries were preserved and moved intact to the new dedicated changelog file.
 
 ### 2026-02-26 - Receipt post-OCR correction Phase 0 scaffolding (feature-flagged pass-through + observability)
+- Suggested Commit Title: `chore: Receipt post-OCR correction Phase 0 scaffolding (feature-flagged pass-through + observability)`
 - Scope:
   - Initial implementation slice for the post-TabScanner receipt correction/reconciliation plan (foundation only; no parsing behavior changes yet)
 - What changed:
@@ -512,6 +673,7 @@ Companion overview: `docs/codebase-overview.md`
   - This is an insertion/scaffolding slice only: no numeric auto-correction is applied yet, and line values remain unchanged by default (`RECEIPT_POST_OCR_CORRECTION_MODE=off`).
 
 ### 2026-02-26 - Added implementation plan for post-OCR receipt correction/reconciliation accuracy layer
+- Suggested Commit Title: `chore: Added implementation plan for post-OCR receipt correction/reconciliation accuracy layer`
 - Scope:
   - New planning document for improving post-TabScanner receipt parsing accuracy (numeric sanity, structural parsing, confidence scoring, store memory)
 - What changed:
@@ -538,6 +700,7 @@ Companion overview: `docs/codebase-overview.md`
   - Plan is intentionally scoped to post-OCR receipt parsing/correction and excludes image-quality, barcode, and shopping-mode concerns.
 
 ### 2026-02-26 - Added implementation plan for business-type income integrations onboarding + OAuth/sync architecture
+- Suggested Commit Title: `chore: Added implementation plan for business-type income integrations onboarding + OAuth/sync architecture`
 - Scope:
   - New planning document for income-provider onboarding, OAuth connections, sync, and normalization rollout
 - What changed:
@@ -559,6 +722,7 @@ Companion overview: `docs/codebase-overview.md`
   - Plan intentionally aligns with the current codebase state (existing `Business.industry_type`, `FinancialTransaction`, `ExternalSyncLog`, and home dashboard income layer refactor) to minimize migration risk.
 
 ### 2026-02-26 - Home dashboard layer feature extracted into `src/features/home/*` (playbook compliance)
+- Suggested Commit Title: `chore: Home dashboard layer feature extracted into src/features/home/* (playbook compliance)`
 - Scope:
   - Home dashboard interactive income/expense layer feature follow-up refactor for feature-module compliance
 - What changed:
@@ -587,6 +751,7 @@ Companion overview: `docs/codebase-overview.md`
   - This refactor addresses the playbook compliance gap recorded in the prior home-dashboard changelog entry.
 
 ### 2026-02-26 - Home dashboard interactive income/expense layers + income source breakdown
+- Suggested Commit Title: `chore: Home dashboard interactive income/expense layers + income source breakdown`
 - Scope:
   - Home dashboard financial layers (income/expense split interaction) and dashboard summary data aggregation
 - What changed:
@@ -614,6 +779,7 @@ Entry format (recommended):
 - Notes / caveats
 
 ### 2026-02-26 - Global design language refresh (finance-style shell with green primary)
+- Suggested Commit Title: `chore: Global design language refresh (finance-style shell with green primary)`
 - Scope:
   - Cross-app visual language update (dark/light theme-aware) + homepage redesign
 - What changed:
@@ -633,6 +799,7 @@ Entry format (recommended):
   - This pass focuses on shared surfaces + homepage; some feature pages still use local styling and may need follow-up polish to fully align with the new language.
 
 ### 2026-02-26 - Homepage UI cleanup (reduced glow and card density)
+- Suggested Commit Title: `chore: Homepage UI cleanup (reduced glow and card density)`
 - Scope:
   - Dashboard/home page visual simplification for cleaner presentation
 - What changed:
@@ -649,6 +816,7 @@ Entry format (recommended):
   - No behavior/data-loading changes; this is a presentation-only cleanup.
 
 ### 2026-02-26 - Codebase overview promoted to architecture handbook + engineering guide + changelog
+- Suggested Commit Title: `chore: Codebase overview promoted to architecture handbook + engineering guide + changelog`
 - Scope:
   - Replaced the old MVP-style overview with a current-state architecture reference covering refactor outcomes, inventory intelligence features, feature placement rules, accepted exceptions, and changelog process.
 - What changed:
@@ -665,6 +833,7 @@ Entry format (recommended):
   - This file is now expected to be updated after every meaningful change.
 
 ### 2026-02-26 - Fixed Inventory page client-bundle server import leak (`pg`/`dns` in browser build)
+- Suggested Commit Title: `chore: Fixed Inventory page client-bundle server import leak (pg/dns in browser build)`
 - Scope:
   - Inventory enrichment queue client hook/import boundaries
 - What changed:
@@ -686,6 +855,7 @@ Entry format (recommended):
   - Root cause: `use-enrichment-dismissals.ts` imported `ENRICHMENT_SNOOZE_HOURS` from the inventory server barrel, which pulled Prisma/`pg` into the client bundle and caused the `dns` module resolution error in Next.js/Turbopack.
 
 ### 2026-02-26 - Refactor plan complete through Phase 8 (manual integrated smoke deferred)
+- Suggested Commit Title: `chore: Refactor plan complete through Phase 8 (manual integrated smoke deferred)`
 - Scope:
   - App structure refactor final closeout
 - What changed (summary from refactor playbook):
@@ -709,6 +879,7 @@ Entry format (recommended):
   - Manual integrated smoke deferred to user/final QA pass.
 
 ### 2026-02-26 - Inventory Plan Phase D complete (enrichment queue)
+- Suggested Commit Title: `chore: Inventory Plan Phase D complete (enrichment queue)`
 - Scope:
   - Optional non-blocking "Fix Later" enrichment workflow
 - What changed (summary from inventory plan):
@@ -730,6 +901,7 @@ Entry format (recommended):
   - Server-side persistent enrichment task table intentionally deferred.
 
 ### 2026-02-26 - Inventory Plan Phase E complete (observability and hardening)
+- Suggested Commit Title: `chore: Inventory Plan Phase E complete (observability and hardening)`
 - Scope:
   - Resolver/web fallback hardening, metrics, retries, derived rates
 - What changed (summary from inventory plan):
@@ -746,6 +918,7 @@ Entry format (recommended):
   - Many metrics/retry mechanisms are process-local and reset on restart.
 
 ### 2026-02-26 - Inventory Plan Phases B/C complete; receipt aliasing and external barcode provider layering in production code
+- Suggested Commit Title: `chore: Inventory Plan Phases B/C complete; receipt aliasing and external barcode provider layering in production code`
 - Scope:
   - Barcode provider integrations and place-scoped receipt aliasing
 - What changed (summary from inventory plan):
@@ -758,6 +931,7 @@ Entry format (recommended):
   - `ReceiptItemAlias`
 
 ### 2026-02-25 to 2026-02-26 - Major architecture transition completed (historical backfill summary)
+- Suggested Commit Title: `chore: Major architecture transition completed (historical backfill summary)`
 - Scope:
   - Full route-thin, feature-first refactor and inventory intelligence rollout from plan docs
 - What changed:
@@ -774,6 +948,7 @@ Entry format (recommended):
 
 ```md
 ### YYYY-MM-DD - <short change title>
+- Suggested Commit Title: `chore: <short change title>`
 - Scope:
   - <what area changed>
 - What changed:

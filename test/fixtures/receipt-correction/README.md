@@ -8,7 +8,7 @@ Purpose:
 Status:
 
 - Phase 0 scaffold (seed fixtures only)
-- expanded corpus in progress (currently 18 scenarios)
+- expanded corpus in progress (currently 20 scenarios)
 
 Recommended fixture contents:
 
@@ -18,6 +18,8 @@ Recommended fixture contents:
   - TabScanner structured result OR raw OCR text
 - optional correction context inputs:
   - `historical_price_hints[]` for line-level plausibility priors (line number + reference costs + sample size)
+  - `correction_context.totals` to inject deterministic totals hints for fixture-only scenarios
+    - useful for asserting province-hint precedence (`province_hint`, `province_hint_source`)
 - expected corrected lines
 - expected totals consistency outcome
 - notes describing the OCR/parsing failure mode being tested
@@ -38,12 +40,13 @@ Fixture harness notes:
 - TabScanner fixtures are normalized into parser-like line items using the same qty/unit-cost mapping used by the workflow service.
 - Parsed-text fixtures are run through `parseReceiptText(...)` first, then the correction core.
 - Parsed-text fixture totals (for totals checks) are inferred from labeled lines (`Subtotal`, `Tax`, `Total`) in the raw text when present.
+- Parsed-text fixture totals can be extended/overridden by optional `correction_context.totals` values.
 - Tax label detection in the fixture harness also recognizes dotted/variant labels (`H.S.T.`, `TPS`, `TVQ`, etc.) to mirror workflow extraction behavior.
 
 Historical-hint fixture guidance:
 
 - prefer `sample_size >= 4` for scenarios that should influence candidate selection
-- include low-sample (`sample_size: 1`) no-op scenarios to verify guardrails
+- include low-sample (`sample_size: 1` and `sample_size: 3`) no-op scenarios to verify guardrails
 - historical samples in workflow are currently scoped to recent receipt-line history (default lookback window: 120 days)
 
 Tax-focused fixture scenarios to add/maintain:

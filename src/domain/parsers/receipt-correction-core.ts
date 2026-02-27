@@ -127,6 +127,7 @@ const TAX_TOLERANCE = 0.05;
 const HIGH_CONFIDENCE_THRESHOLD = 0.92;
 const MEDIUM_CONFIDENCE_THRESHOLD = 0.75;
 const LOCAL_SELECTION_MARGIN = 0.12;
+const MIN_HISTORICAL_HINT_SAMPLE_SIZE_FOR_SCORING = 4;
 const MISSING_VALUE_INFERENCE_THRESHOLD = 0.82;
 const TOTALS_RECHECK_MIN_SCORE = 0.6;
 const TOTALS_RECHECK_MIN_IMPROVEMENT = 0.1;
@@ -573,7 +574,7 @@ function historicalPlausibilityAdjustment(data: {
   hint?: ReceiptCorrectionHistoricalPriceHint | null;
 }): number {
   const hint = data.hint;
-  if (!hint || hint.sample_size < 2) {
+  if (!hint || hint.sample_size < MIN_HISTORICAL_HINT_SAMPLE_SIZE_FOR_SCORING) {
     return 0;
   }
 

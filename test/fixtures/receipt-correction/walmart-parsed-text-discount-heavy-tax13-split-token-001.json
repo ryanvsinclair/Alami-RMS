@@ -1,0 +1,34 @@
+{
+  "id": "walmart-parsed-text-discount-heavy-tax13-split-token-001",
+  "source": "parsed_text",
+  "store": {
+    "name": "Walmart",
+    "google_place_id": "test_walmart_place"
+  },
+  "raw_text": "WALMART\nCOUPON SAVE 1.00\nAPPLE BAG 6 99\nDISCOUNT -1.00\nBREAD 2.99\nSub Total 9.98\nTax 13% 1.30\nTotal 11.28",
+  "expected": {
+    "notes": [
+      "Coupon and discount summary lines should be skipped by raw-text parser filters.",
+      "Split numeric token should be corrected while totals and generic tax-label extraction remain consistent."
+    ],
+    "assertions": {
+      "totals_status": "pass",
+      "totals_delta_to_total": 0,
+      "changed_line_numbers": [2],
+      "expected_line_costs": [
+        { "line_number": 2, "line_cost": 6.99 }
+      ],
+      "required_parse_flags": [
+        {
+          "line_number": 2,
+          "flags": ["split_numeric_token_detected", "dual_numeric_interpretation_considered"]
+        }
+      ],
+      "tax_interpretation": {
+        "status": "not_evaluated",
+        "province": null,
+        "structure": "generic_tax"
+      }
+    }
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "id": "ontario-parsed-text-google-hint-overrides-qc-labels-001",
+  "source": "parsed_text",
+  "store": {
+    "name": "Ontario Hybrid Label Store",
+    "google_place_id": "test_on_hybrid_label_place"
+  },
+  "raw_text": "CHEESE 10.00\nSub Total 10.00\nTPS 0.50\nTVQ 1.00\nTotal 11.50",
+  "correction_context": {
+    "totals": {
+      "province_hint": "ON",
+      "province_hint_source": "google_places"
+    }
+  },
+  "expected": {
+    "notes": [
+      "Google Places province hint should be prioritized over conflicting tax-label province inference."
+    ],
+    "assertions": {
+      "totals_status": "pass",
+      "totals_delta_to_total": 0,
+      "changed_line_numbers": [],
+      "tax_interpretation": {
+        "status": "warn",
+        "province": "ON",
+        "province_source": "google_places",
+        "structure": "qc_gst_qst",
+        "required_flags": [
+          "province_signal_conflict_tax_labels",
+          "tax_structure_unexpected_for_on"
+        ]
+      }
+    }
+  }
+}

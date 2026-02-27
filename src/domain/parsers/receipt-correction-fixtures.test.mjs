@@ -10,31 +10,61 @@ import { runReceiptCorrectionCore } from "./receipt-correction-core.ts";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const FIXTURE_DIR = path.resolve(__dirname, "../../../test/fixtures/receipt-correction");
+const SUBTOTAL_LABEL_PATTERN = /^(?:(?:sub|sous)[\s-]*total)\b/i;
+const TOTAL_LABEL_PATTERN =
+  /^(?:(?:grand[\s-]*)?total(?:\s+(?:due|du|amount|a\s+payer))?|amount\s+due|balance\s+due|montant\s+(?:total|du))\b/i;
 
 function roundCurrency(value) {
   return Math.round(value * 100) / 100;
 }
 
+function normalizeTrailingNumericToken(rawToken) {
+  if (!rawToken) return null;
+
+  const compactSpaces = rawToken
+    .replace(/[$€£]/g, "")
+    .trim()
+    .replace(/\s+/g, " ");
+  if (!compactSpaces) return null;
+
+  if (/^-?\d+\s+\d{2}$/.test(compactSpaces)) {
+    return compactSpaces.replace(/\s+/, ".");
+  }
+
+  let compact = compactSpaces.replace(/\s+/g, "");
+  if (/^-?\d{1,3}(?:\.\d{3})+,\d{1,2}$/.test(compact)) {
+    compact = compact.replace(/\./g, "").replace(",", ".");
+  } else if (/^-?\d{1,3}(?:,\d{3})+\.\d{1,2}$/.test(compact)) {
+    compact = compact.replace(/,/g, "");
+  } else if (/^-?\d+,\d{1,2}$/.test(compact)) {
+    compact = compact.replace(",", ".");
+  } else {
+    compact = compact.replace(/,(?=\d{3}(?:\D|$))/g, "");
+  }
+
+  if (!/^-?\d+(?:\.\d{1,2})?$/.test(compact)) return null;
+  return compact;
+}
+
 function parseTrailingAmountFromText(text) {
-  const match = text.match(/(-?\d[\d,]*)(?:\.(\d{1,2}))?\s*$/);
+  const match = text.match(/(-?\d(?:[\d,\s]*\d)?(?:[.,]\d{1,2})?)\s*$/);
   if (!match) return null;
 
-  const whole = (match[1] ?? "").replace(/,/g, "");
-  const fractional = match[2] ?? "";
-  const numeric = Number.parseFloat(
-    fractional.length > 0 ? `${whole}.${fractional}` : whole
-  );
+  const normalizedToken = normalizeTrailingNumericToken(match[1] ?? "");
+  if (!normalizedToken) return null;
+
+  const numeric = Number.parseFloat(normalizedToken);
   if (!Number.isFinite(numeric)) return null;
   return roundCurrency(numeric);
 }
 
 function detectTaxLabelFromLine(text) {
   if (/\bH\.?\s*S\.?\s*T\b/i.test(text)) return "HST";
-  if (/\bQST\b/i.test(text)) return "QST";
-  if (/\bTVQ\b/i.test(text)) return "TVQ";
-  if (/\bGST\b/i.test(text)) return "GST";
-  if (/\bTPS\b/i.test(text)) return "TPS";
-  if (/^(?:sales\s+)?tax\b/i.test(text)) return "Tax";
+  if (/\bQ\.?\s*S\.?\s*T\b/i.test(text)) return "QST";
+  if (/\bT\.?\s*V\.?\s*Q\b/i.test(text)) return "TVQ";
+  if (/\bG\.?\s*S\.?\s*T\b/i.test(text)) return "GST";
+  if (/\bT\.?\s*P\.?\s*S\b/i.test(text)) return "TPS";
+  if (/^(?:sales\s+)?tax(?:e)?\b/i.test(text)) return "Tax";
   return null;
 }
 
@@ -59,7 +89,7 @@ function extractPrintedTotalsFromRawText(rawText) {
 
   for (const line of lines) {
     const normalized = line.replace(/\s+/g, " ");
-    if (/^sub\s*total\b/i.test(normalized)) {
+    if (SUBTOTAL_LABEL_PATTERN.test(normalized)) {
       const amount = parseTrailingAmountFromText(normalized);
       if (amount != null) subtotal = amount;
       continue;
@@ -72,7 +102,7 @@ function extractPrintedTotalsFromRawText(rawText) {
       continue;
     }
 
-    if (/^(?:grand\s+)?total\b/i.test(normalized)) {
+    if (TOTAL_LABEL_PATTERN.test(normalized)) {
       const amount = parseTrailingAmountFromText(normalized);
       if (amount != null) total = amount;
       continue;
@@ -127,11 +157,16 @@ function buildCorrectionInputFromFixture(fixture) {
   }
 
   if (fixture.source === "parsed_text") {
+    const extractedTotals = extractPrintedTotalsFromRawText(fixture.raw_text ?? "") ?? {};
+    const contextTotals = fixture.correction_context?.totals ?? {};
     return {
       source: "parsed_text",
       lines: parseReceiptText(fixture.raw_text ?? ""),
       historical_price_hints: fixture.historical_price_hints ?? undefined,
-      totals: extractPrintedTotalsFromRawText(fixture.raw_text ?? ""),
+      totals: {
+        ...extractedTotals,
+        ...contextTotals,
+      },
     };
   }
 

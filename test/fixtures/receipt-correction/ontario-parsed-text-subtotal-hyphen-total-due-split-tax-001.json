@@ -1,0 +1,41 @@
+{
+  "id": "ontario-parsed-text-subtotal-hyphen-total-due-split-tax-001",
+  "source": "parsed_text",
+  "store": {
+    "name": "Ontario Discount Market",
+    "google_place_id": "test_on_discount_place"
+  },
+  "raw_text": "APPLE BAG 6 99\nBREAD 2.99\nSub-Total : 9 98\nTax 13 % 1 30\nTotal Due 11 28",
+  "correction_context": {
+    "totals": {
+      "province_hint": "ON",
+      "province_hint_source": "google_places"
+    }
+  },
+  "expected": {
+    "notes": [
+      "Raw-text totals extraction should parse hyphenated subtotal labels, spaced tax amounts, and total-due labels.",
+      "Split numeric line item should still be corrected and totals should reconcile."
+    ],
+    "assertions": {
+      "totals_status": "pass",
+      "totals_delta_to_total": 0,
+      "changed_line_numbers": [1],
+      "expected_line_costs": [
+        { "line_number": 1, "line_cost": 6.99 }
+      ],
+      "required_parse_flags": [
+        {
+          "line_number": 1,
+          "flags": ["split_numeric_token_detected", "dual_numeric_interpretation_considered"]
+        }
+      ],
+      "tax_interpretation": {
+        "status": "pass",
+        "province": "ON",
+        "province_source": "google_places",
+        "structure": "generic_tax"
+      }
+    }
+  }
+}

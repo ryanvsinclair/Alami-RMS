@@ -278,7 +278,11 @@ Implemented capabilities:
 - Receipt parse/review/commit lifecycle
 - Post-OCR correction now accepts line-level historical price plausibility hints derived from recent receipt line history (scoped by business and supplier/place when available)
 - Historical hint quality gates are active (minimum sample-size threshold + recent-history lookback window) with summary metrics for hint coverage/sample quality
+- Correction-core historical plausibility scoring now only applies history-based score adjustments when hint sample size is at least 4 (workflow-aligned confidence gate)
+- Province hint resolution now prioritizes Google Place Details lookups (when `google_place_id` is available) with supplier-address fallback, so tax interpretation uses stronger store-context geography signals
 - Raw-text receipt parser skip/noise filters now explicitly handle `Sub Total`/`Grand Total`, dotted tax labels (`H.S.T.`), and Quebec tax labels (`TPS`/`TVQ`) to reduce false line-item candidates before correction
+- Raw-text totals extraction now supports additional noisy label/amount variants (`Sub-Total`, `Total Due`, `Montant total`, spaced/comma-decimal amounts) for stronger tax/totals interpretation on parsed-text receipts
+- Receipt-correction fixture corpus is expanded to 20 runnable scenarios, including discount-heavy parsed-text and historical-threshold boundary coverage
 - Idempotent receipt commit behavior in inventory ledger path
 - Receipt auto-resolution observability (process-local summaries)
 

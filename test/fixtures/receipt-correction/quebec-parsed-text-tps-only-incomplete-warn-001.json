@@ -1,0 +1,32 @@
+{
+  "id": "quebec-parsed-text-tps-only-incomplete-warn-001",
+  "source": "parsed_text",
+  "store": {
+    "name": "Quebec Corner Store",
+    "google_place_id": "test_qc_corner_place"
+  },
+  "raw_text": "FROMAGE 20.00\nSub Total 20.00\nTPS 1.00\nTotal 21.00",
+  "correction_context": {
+    "totals": {
+      "province_hint": "QC",
+      "province_hint_source": "google_places"
+    }
+  },
+  "expected": {
+    "notes": [
+      "Quebec single-tax extraction should be warned as incomplete dual-tax structure."
+    ],
+    "assertions": {
+      "totals_status": "pass",
+      "totals_delta_to_total": 0,
+      "changed_line_numbers": [],
+      "tax_interpretation": {
+        "status": "warn",
+        "province": "QC",
+        "province_source": "google_places",
+        "structure": "gst_only",
+        "required_flags": ["missing_qc_tax_components"]
+      }
+    }
+  }
+}

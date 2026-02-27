@@ -35,6 +35,25 @@ const RECEIPT_CORRECTION_METRICS_LOG_EVERY_RECEIPTS = 10;
 const RECEIPT_CORRECTION_METRICS_LOG_INTERVAL_MS = 5 * 60 * 1000;
 const HISTORICAL_HINT_MIN_SAMPLE_SIZE = 4;
 const HISTORICAL_HINT_LOOKBACK_DAYS = 120;
+const GOOGLE_PLACE_DETAILS_FIELDS = "address_component,formatted_address";
+const SUBTOTAL_LABEL_PATTERN = /^(?:(?:sub|sous)[\s-]*total)\b/i;
+const TOTAL_LABEL_PATTERN =
+  /^(?:(?:grand[\s-]*)?total(?:\s+(?:due|du|amount|a\s+payer))?|amount\s+due|balance\s+due|montant\s+(?:total|du))\b/i;
+const GOOGLE_PLACE_PROVINCE_CACHE = new Map<string, ReceiptCorrectionProvinceCode | null>();
+
+interface GooglePlaceAddressComponent {
+  long_name?: string;
+  short_name?: string;
+  types?: string[];
+}
+
+interface GooglePlaceDetailsApiResponse {
+  status?: string;
+  result?: {
+    formatted_address?: string;
+    address_components?: GooglePlaceAddressComponent[];
+  };
+}
 
 type ReceiptMatchMetricsSource = "parsed_text" | "tabscanner";
 type ReceiptCorrectionMetricsSource = "parsed_text" | "tabscanner";
@@ -490,27 +509,140 @@ function extractProvinceCodeFromText(text: string | null | undefined): ReceiptCo
   return null;
 }
 
+function extractProvinceCodeFromAddressComponents(
+  addressComponents: GooglePlaceAddressComponent[] | undefined,
+): ReceiptCorrectionProvinceCode | null {
+  if (!addressComponents || addressComponents.length === 0) return null;
+
+  for (const component of addressComponents) {
+    if (!Array.isArray(component.types)) continue;
+    if (!component.types.includes("administrative_area_level_1")) continue;
+
+    const fromShortName = extractProvinceCodeFromText(component.short_name);
+    if (fromShortName) return fromShortName;
+
+    const fromLongName = extractProvinceCodeFromText(component.long_name);
+    if (fromLongName) return fromLongName;
+  }
+
+  return null;
+}
+
+function normalizeTrailingNumericToken(rawToken: string): string | null {
+  if (!rawToken) return null;
+
+  const compactSpaces = rawToken
+    .replace(/[$€£]/g, "")
+    .trim()
+    .replace(/\s+/g, " ");
+  if (!compactSpaces) return null;
+
+  // OCR often splits decimal values as `9 98`; normalize these first.
+  if (/^-?\d+\s+\d{2}$/.test(compactSpaces)) {
+    return compactSpaces.replace(/\s+/, ".");
+  }
+
+  let compact = compactSpaces.replace(/\s+/g, "");
+
+  // Support both Canadian/US (`1,234.56`) and EU-like (`1.234,56`) shapes.
+  if (/^-?\d{1,3}(?:\.\d{3})+,\d{1,2}$/.test(compact)) {
+    compact = compact.replace(/\./g, "").replace(",", ".");
+  } else if (/^-?\d{1,3}(?:,\d{3})+\.\d{1,2}$/.test(compact)) {
+    compact = compact.replace(/,/g, "");
+  } else if (/^-?\d+,\d{1,2}$/.test(compact)) {
+    compact = compact.replace(",", ".");
+  } else {
+    compact = compact.replace(/,(?=\d{3}(?:\D|$))/g, "");
+  }
+
+  if (!/^-?\d+(?:\.\d{1,2})?$/.test(compact)) {
+    return null;
+  }
+
+  return compact;
+}
+
 function parseTrailingAmountFromText(text: string): number | null {
-  const match = text.match(/(-?\d[\d,]*)(?:\.(\d{1,2}))?\s*$/);
+  const match = text.match(/(-?\d(?:[\d,\s]*\d)?(?:[.,]\d{1,2})?)\s*$/);
   if (!match) return null;
 
-  const whole = match[1]?.replace(/,/g, "");
-  const fractional = match[2] ?? "";
-  const numeric = Number.parseFloat(
-    fractional.length > 0 ? `${whole}.${fractional}` : whole,
-  );
+  const normalizedToken = normalizeTrailingNumericToken(match[1] ?? "");
+  if (!normalizedToken) return null;
+
+  const numeric = Number.parseFloat(normalizedToken);
   if (!Number.isFinite(numeric)) return null;
   return roundCurrency(numeric);
 }
 
 function detectTaxLabelFromLine(text: string): string | null {
   if (/\bH\.?\s*S\.?\s*T\b/i.test(text)) return "HST";
-  if (/\bQST\b/i.test(text)) return "QST";
-  if (/\bTVQ\b/i.test(text)) return "TVQ";
-  if (/\bGST\b/i.test(text)) return "GST";
-  if (/\bTPS\b/i.test(text)) return "TPS";
-  if (/^(?:sales\s+)?tax\b/i.test(text)) return "Tax";
+  if (/\bQ\.?\s*S\.?\s*T\b/i.test(text)) return "QST";
+  if (/\bT\.?\s*V\.?\s*Q\b/i.test(text)) return "TVQ";
+  if (/\bG\.?\s*S\.?\s*T\b/i.test(text)) return "GST";
+  if (/\bT\.?\s*P\.?\s*S\b/i.test(text)) return "TPS";
+  if (/^(?:sales\s+)?tax(?:e)?\b/i.test(text)) return "Tax";
   return null;
+}
+
+function resolveGoogleMapsPlacesApiKey(): string | null {
+  const candidate = (
+    process.env.GOOGLE_MAPS_API_KEY ??
+    process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ??
+    ""
+  ).trim();
+
+  return candidate.length > 0 ? candidate : null;
+}
+
+async function fetchProvinceCodeFromGooglePlaceDetails(
+  googlePlaceId: string,
+): Promise<ReceiptCorrectionProvinceCode | null> {
+  const apiKey = resolveGoogleMapsPlacesApiKey();
+  if (!apiKey) return null;
+
+  try {
+    const url = new URL("https://maps.googleapis.com/maps/api/place/details/json");
+    url.searchParams.set("place_id", googlePlaceId);
+    url.searchParams.set("fields", GOOGLE_PLACE_DETAILS_FIELDS);
+    url.searchParams.set("key", apiKey);
+
+    const response = await fetch(url.toString(), {
+      method: "GET",
+      headers: { Accept: "application/json" },
+    });
+    if (!response.ok) return null;
+
+    const payload = (await response.json()) as GooglePlaceDetailsApiResponse;
+    if (!payload || payload.status !== "OK" || !payload.result) return null;
+
+    const fromAddressComponents = extractProvinceCodeFromAddressComponents(
+      payload.result.address_components,
+    );
+    if (fromAddressComponents) return fromAddressComponents;
+
+    return extractProvinceCodeFromText(payload.result.formatted_address);
+  } catch {
+    return null;
+  }
+}
+
+async function resolveProvinceHintFromGooglePlaceContext(data: {
+  googlePlaceId?: string | null;
+  formattedAddress?: string | null;
+}): Promise<ReceiptCorrectionProvinceCode | null> {
+  const placeId = data.googlePlaceId?.trim();
+  if (!placeId) return null;
+
+  if (GOOGLE_PLACE_PROVINCE_CACHE.has(placeId)) {
+    return GOOGLE_PLACE_PROVINCE_CACHE.get(placeId) ?? null;
+  }
+
+  const province =
+    (await fetchProvinceCodeFromGooglePlaceDetails(placeId)) ??
+    extractProvinceCodeFromText(data.formattedAddress);
+
+  GOOGLE_PLACE_PROVINCE_CACHE.set(placeId, province);
+  return province;
 }
 
 function sumTaxLineAmounts(taxLines: ReceiptCorrectionTaxLineInput[]): number | null {
@@ -535,7 +667,7 @@ function extractRawReceiptTotals(rawText: string): ReceiptCorrectionTotalsInput 
   for (const line of lines) {
     const normalized = line.replace(/\s+/g, " ");
 
-    if (/^sub\s*total\b/i.test(normalized)) {
+    if (SUBTOTAL_LABEL_PATTERN.test(normalized)) {
       const amount = parseTrailingAmountFromText(normalized);
       if (amount != null) subtotal = amount;
       continue;
@@ -548,7 +680,7 @@ function extractRawReceiptTotals(rawText: string): ReceiptCorrectionTotalsInput 
       continue;
     }
 
-    if (/^(?:grand\s+)?total\b/i.test(normalized)) {
+    if (TOTAL_LABEL_PATTERN.test(normalized)) {
       const amount = parseTrailingAmountFromText(normalized);
       if (amount != null) total = amount;
       continue;
@@ -630,10 +762,10 @@ export async function parseAndMatchReceipt(
   // Parse raw OCR text into structured line items
   const parsedLines = parseReceiptText(receipt.raw_text);
   const rawTextTotals = extractRawReceiptTotals(receipt.raw_text);
-  const supplierProvinceHint =
-    receipt.supplier?.google_place_id && receipt.supplier?.formatted_address
-      ? extractProvinceCodeFromText(receipt.supplier.formatted_address)
-      : null;
+  const supplierProvinceHint = await resolveProvinceHintFromGooglePlaceContext({
+    googlePlaceId: receipt.supplier?.google_place_id ?? null,
+    formattedAddress: receipt.supplier?.formatted_address ?? null,
+  });
   const historicalPriceHints = await resolveHistoricalPriceHintsForCorrection({
     businessId,
     receiptId,
@@ -737,10 +869,10 @@ export async function processReceiptImage(
       )
     : null;
   const supplierGooglePlaceId = supplierPlaceContext?.google_place_id ?? null;
-  const supplierProvinceHint =
-    supplierPlaceContext?.google_place_id && supplierPlaceContext.formatted_address
-      ? extractProvinceCodeFromText(supplierPlaceContext.formatted_address)
-      : null;
+  const supplierProvinceHint = await resolveProvinceHintFromGooglePlaceContext({
+    googlePlaceId: supplierGooglePlaceId,
+    formattedAddress: supplierPlaceContext?.formatted_address ?? null,
+  });
 
   // Start OCR and image upload in parallel
   const imagePath = `receipts/${businessId}/${Date.now()}.jpg`;
