@@ -177,10 +177,10 @@ Use the `Canonical Order Checklist` statuses as the source of truth.
 Current snapshot (2026-02-27):
 
 - Total checklist items: `38`
-- `[x]` complete: `10`
+- `[x]` complete: `11`
 - `[~]` in progress: `0`
-- Strict completion: `26.32%`
-- Weighted progress: `26.32%`
+- Strict completion: `28.95%`
+- Weighted progress: `28.95%`
 
 Update rule after each slice:
 
@@ -217,19 +217,20 @@ Update rule after each slice:
 - [x] `docs/inventoryintakeplan.md` complete through Phases 0/A/B/C/D/E.
 - [x] `docs/inventoryintakeplan.phase0-audit.md` completed as prerequisite audit (historical/deprecated).
 - [x] `docs/inventoryintakeplan.progress-handoff.md` completed as historical handoff snapshot (superseded).
+- [x] `docs/receipt-post-ocr-correction-plan.md` complete through Phase 6 closeout (`RC-19`) with deferred non-blocking follow-ups documented.
 
 ## Non-Completed Plan Review
 
-### 1) `docs/receipt-post-ocr-correction-plan.md` (in progress)
+### 1) `docs/receipt-post-ocr-correction-plan.md` (complete)
 
 Latest Update section review:
 - Produce normalization layer was added (9-prefix PLU normalization, organic keyword stripping, produce candidate gating).
 - `CorrectedReceiptLine` now includes `plu_code`, `produce_match`, `organic_flag`.
 - Phase 0 foundation is implemented; RC-10 closeout completed threshold tuning + fixture expansion to 20 scenarios.
-- Phase 1.5 schema-backed persistence is implemented for minimal produce metadata (`plu_code`, `organic_flag` on `ReceiptLineItem`), and RC-16/RC-17/RC-18 parser + historical-loop + rollout-hardening upgrades are complete.
+- Phase 1.5 schema-backed persistence is implemented for minimal produce metadata (`plu_code`, `organic_flag` on `ReceiptLineItem`), and RC-16/RC-17/RC-18/RC-19 parser + historical-loop + rollout-hardening + closeout synchronization are complete.
 
 Remaining high-impact work:
-- Execute receipt-plan closeout (`RC-19`) with final validation/status sync.
+- None in-plan; broader multilingual fixture breadth and optional backfill/admin tooling are documented as non-blocking follow-ups.
 
 ### 2) `docs/income-integrations-onboarding-plan.md` (not started)
 
@@ -285,7 +286,7 @@ Status legend:
 - [x] RC-16 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 4 hybrid structured parser upgrades.
 - [x] RC-17 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 5 historical feedback loop integration.
 - [x] RC-18 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 6 rollout hardening (threshold tuning, versioning, diagnostics, safe enforce promotion).
-- [ ] RC-19 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then close receipt plan with validation evidence and final status updates.
+- [x] RC-19 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then close receipt plan with validation evidence and final status updates.
 
 ### C. Implement Income Integrations Onboarding Plan
 
@@ -327,12 +328,12 @@ Status legend:
 
 ## Last Left Off Here (Update This Block First)
 
-- Current task ID: `RC-19`
-- Current task: `Receipt plan closeout and final validation evidence`
+- Current task ID: `IN-00`
+- Current task: `Income integrations Phase 0 design/schema contracts and security model decisions`
 - Status: `READY`
 - Last updated: `2026-02-27`
 - Primary source plan section:
-  - `docs/receipt-post-ocr-correction-plan.md` -> `Phase 6 closeout / RC-19 pickup block`
+  - `docs/income-integrations-onboarding-plan.md` -> `Phase 0`
 
 ## Documentation Sync Checklist (Run Every Session)
 
@@ -344,6 +345,25 @@ Status legend:
 - [ ] `docs/codebase-overview.md` updated if behavior/architecture/canonical path descriptions changed.
 
 ## Latest Job Summary (Append New Entries At Top)
+
+### 2026-02-27 - RC-19 complete: receipt plan closeout synchronized with final validation evidence
+- Completed:
+  - Ran RC-19 preflight scans for closeout scope across source plan + master plan + overview/changelog synchronization points.
+  - Revalidated the stabilized receipt-correction stack for closeout evidence:
+    - `npx tsx --test src/features/receiving/receipt/server/receipt-correction.service.test.mjs` -> PASS (2/2)
+    - `npx tsx --test src/features/receiving/receipt/server/receipt-workflow.historical-hints.test.mjs` -> PASS (3/3)
+    - `npx tsx --test src/features/receiving/receipt/server/receipt-parse-profile.service.test.mjs` -> PASS (5/5)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-core.test.mjs` -> PASS (14/14)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-fixtures.test.mjs` -> PASS (27/27)
+    - `npx tsc --noEmit --incremental false` -> PASS
+    - targeted `eslint` on touched correction/workflow/repository/profile files -> PASS
+  - Updated receipt source plan phase statuses and pickup marker to closed/completed state.
+  - Updated master plan checklist and completion percentages for RC-19 completion.
+  - Appended closeout changelog entry and overview sync for final receipt-plan state.
+- Remaining:
+  - Auto-advance to `IN-00` (income integrations onboarding plan Phase 0).
+- Next:
+  - `IN-00` in `docs/income-integrations-onboarding-plan.md`
 
 ### 2026-02-27 - RC-18 complete: rollout hardening (safe enforce guardrails, diagnostics payloads, and guard metrics)
 - Completed:

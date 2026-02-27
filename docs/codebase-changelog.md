@@ -20,6 +20,42 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-27 - RC-19 complete: receipt correction plan closeout and status synchronization
+- Suggested Commit Title: `chore(rc-19): close receipt correction plan with final validation evidence and doc sync`
+- Scope:
+  - Receipt correction Phase 6 closeout (`RC-19`) documentation/finalization slice.
+- Preflight evidence:
+  - Reviewed closeout scope markers and checklist requirements in:
+    - `docs/receipt-post-ocr-correction-plan.md`
+    - `docs/master-plan-v1.md`
+  - Verified canonical ordering gate for next sequence:
+    - `RC-19` completion required before starting `IN-*`.
+- What changed:
+  - Marked receipt source plan phases 0/1/1.5 as complete to reflect implemented behavior and aligned Phase 2-6 completion state.
+  - Updated receipt source plan `Pick Up Here` to indicate plan completion and next master-plan continuation (`IN-00`).
+  - Updated master plan:
+    - marked `RC-19` checklist item complete
+    - advanced `Last Left Off Here` to `IN-00`
+    - updated completion percentages
+    - appended RC-19 latest job summary entry
+    - added receipt plan to completed ledger and synchronized non-completed review notes
+  - Updated overview/changelog references to reflect receipt-plan completion state and remaining non-blocking follow-ups.
+- Files changed:
+  - `docs/receipt-post-ocr-correction-plan.md`
+  - `docs/master-plan-v1.md`
+  - `docs/codebase-overview.md`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - `npx tsx --test src/features/receiving/receipt/server/receipt-correction.service.test.mjs` -> PASS (2/2)
+  - `npx tsx --test src/features/receiving/receipt/server/receipt-workflow.historical-hints.test.mjs` -> PASS (3/3)
+  - `npx tsx --test src/features/receiving/receipt/server/receipt-parse-profile.service.test.mjs` -> PASS (5/5)
+  - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-core.test.mjs` -> PASS (14/14; expected Node experimental/module-type warnings)
+  - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-fixtures.test.mjs` -> PASS (27/27; expected Node experimental/module-type warnings)
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `npx eslint src/features/receiving/receipt/server/receipt-correction.contracts.ts src/features/receiving/receipt/server/receipt-correction.service.ts src/features/receiving/receipt/server/receipt-correction.service.test.mjs src/features/receiving/receipt/server/receipt-workflow.service.ts src/features/receiving/receipt/server/receipt.repository.ts src/features/receiving/receipt/server/receipt-workflow.historical-hints.test.mjs src/features/receiving/receipt/server/receipt-parse-profile.service.ts src/features/receiving/receipt/server/receipt-parse-profile.service.test.mjs --quiet` -> PASS
+- Notes:
+  - Receipt correction implementation plan is now closed; canonical next task is `IN-00`.
+
 ### 2026-02-27 - RC-18 complete: rollout hardening with enforce safety guardrails and diagnostics
 - Suggested Commit Title: `feat(rc-18): add receipt correction rollout guards and enforce fallback diagnostics`
 - Scope:

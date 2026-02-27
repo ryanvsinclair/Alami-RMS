@@ -4,6 +4,23 @@ Last updated: February 27, 2026 (draft / implementation-ready plan)
 
 ## Latest Update
 
+- **Phase 6 closeout RC-19 complete: receipt post-OCR correction plan closed with final validation evidence and doc synchronization** (February 27, 2026):
+  - Final validation bundle re-confirmed for stabilized receipt-correction stack:
+    - `npx tsx --test src/features/receiving/receipt/server/receipt-correction.service.test.mjs` -> PASS (2/2)
+    - `npx tsx --test src/features/receiving/receipt/server/receipt-workflow.historical-hints.test.mjs` -> PASS (3/3)
+    - `npx tsx --test src/features/receiving/receipt/server/receipt-parse-profile.service.test.mjs` -> PASS (5/5)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-core.test.mjs` -> PASS (14/14)
+    - `node --test --experimental-transform-types src/domain/parsers/receipt-correction-fixtures.test.mjs` -> PASS (27/27)
+    - `npx tsc --noEmit --incremental false` -> PASS
+    - targeted `eslint` on touched correction/workflow/repository/profile files -> PASS
+  - Phase status synchronization completed:
+    - Phases 0, 1, and 1.5 moved to complete to reflect implemented contracts, corrections, tax hardening, produce normalization/lookup, and persistence slices
+    - Phases 2-6 remain complete from RC-14 through RC-18
+  - Deferred/non-blocking follow-ups explicitly recorded:
+    - broader multilingual produce fixtures (FR/ES edge breadth) can continue as ongoing quality work outside this plan
+    - optional backfill/reparse tooling and admin diagnostics remain future enhancements (non-blocking)
+  - Canonical continuation moved to master plan next gate (`IN-00`).
+
 - **Phase 6 RC-18 complete: rollout hardening shipped (enforce safety guardrails + diagnostics payloads + guard metrics)** (February 27, 2026):
   - Added enforce rollout guardrails in `receipt-correction.service.ts`:
     - when `RECEIPT_POST_OCR_CORRECTION_MODE=enforce`, correction now validates safety gates before persisting corrected lines
@@ -315,18 +332,16 @@ Last updated: February 27, 2026 (draft / implementation-ready plan)
 
 ## Pick Up Here (Next Continuation)
 
-Continue with **Phase 6 closeout (RC-19): final receipt-plan validation + status synchronization**.
+Receipt post-OCR correction plan execution is **complete**.
 
 Recommended next implementation order:
 
-1. Run final receipt-plan validation bundle and capture evidence in plan docs
-   - parser/core/fixture/workflow/profile tests + typecheck/lint status snapshot
-2. Confirm all phase statuses and pickup pointers are synchronized
-   - source plan + master plan + changelog + overview
-3. Record residual risks/deferred items explicitly
-   - optional backfill/reparse tooling and admin diagnostics remain opt-in/deferred
-4. Mark RC-19 complete in canonical checklist and move execution to next plan gate
-   - handoff to income integrations sequence (`IN-*`)
+1. Continue master-plan canonical path at `IN-00`
+   - `docs/income-integrations-onboarding-plan.md` Phase 0 contract finalization
+2. Preserve receipt-correction safeguards as-is
+   - keep enforce rollout guards and shadow fallback enabled until product explicitly widens thresholds
+3. Track deferred quality extensions separately
+   - multilingual produce-fixture expansion and optional backfill/admin tooling
 
 Implementation guardrails (carry forward):
 
@@ -1352,7 +1367,7 @@ Test:
 
 ## Phase 0 - Contracts, fixtures, and instrumentation (foundation)
 
-Status: `[~]`
+Status: `[x]`
 
 Deliverables:
 
@@ -1371,12 +1386,12 @@ Progress notes (2026-02-26):
 - Inserted correction-stage calls into both receipt paths (`processReceiptImage`, `parseAndMatchReceipt`) with pass-through behavior only
 - Added correction observability metrics logging in `receipt-workflow.service.ts`
 - Expanded fixture corpus to 10 runnable JSON scenarios and added a fixture-driven `node:test` harness for correction-core regression checks
-- Remaining for full Phase 0 completion:
-  - optional feature flag surfacing/config docs for local/dev/prod environments
+- Closeout note (2026-02-27):
+  - Phase 0 deliverables are complete; feature flags/modes are implemented and actively used across receipt workflows.
 
 ## Phase 1 - Numeric sanity + dual interpretation + totals check (highest ROI)
 
-Status: `[~]`
+Status: `[x]`
 
 Deliverables:
 
@@ -1431,13 +1446,12 @@ Progress notes (2026-02-27):
   - province hint resolution now prioritizes Google Place Details (with cached lookup + address fallback)
   - added ON/QC mismatch/incomplete tax interpretation fixtures/assertions
   - hardened raw-text totals extraction for hyphenated/french labels and spaced/comma-decimal numeric formats
-- Remaining in Phase 1:
-  - monitor `shadow` metrics for province/tax interpretation false-positive drift and tune tolerances if needed
-  - proceed to Phase 1.5 service-layer lookup completion (`RC-12`)
+- Closeout note (2026-02-27):
+  - Phase 1 deliverables are complete through RC-11 + later hardening slices; further tolerance tuning continues as routine production quality work, not a blocker for plan closure.
 
 ## Phase 1.5 - Produce resolution & organic normalization
 
-Status: `[~]`
+Status: `[x]`
 
 Deliverables:
 
@@ -1486,9 +1500,8 @@ Progress notes (2026-02-27):
   - added nullable `ReceiptLineItem.plu_code` and `ReceiptLineItem.organic_flag` columns
   - added migration `20260227190000_receipt_line_item_produce_metadata`
   - wired line-item persistence of `plu_code` and `organic_flag` in `receipt.repository.ts`
-- Remaining:
-  - add broader multilingual produce fixtures and lookup validation cases
-  - continue with RC-19 receipt-plan closeout and final status synchronization
+- Closeout note (2026-02-27):
+  - Core Phase 1.5 deliverables are complete (normalization, lookup, persistence); broader multilingual fixture breadth is tracked as a non-blocking follow-up.
 
 ## Phase 2 - Line-level parse confidence and UI flags
 
