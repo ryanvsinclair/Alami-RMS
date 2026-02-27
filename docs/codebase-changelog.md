@@ -20,6 +20,32 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-27 - UI-02: intake session orchestration adapter layer
+- Suggested Commit Title: `feat(ui-02): add intake session orchestration adapter layer`
+- Scope: Phase 2 session orchestration unification for the Unified Inventory Intake Refactor plan.
+- Preflight evidence (reuse/refactor-first):
+  - No existing adapter between ShoppingSessionStatus/ReceiptStatus and IntakeSessionStatus — clean slate
+  - Confirmed ShoppingSessionStatus values from `prisma/schema.prisma`: `draft|reconciling|ready|committed|cancelled`
+  - Confirmed ReceiptStatus values from `prisma/schema.prisma`: `pending|parsing|review|committed|failed`
+  - Phase 2 scope: adapter-layer + DTO only; no schema change, no service rewrite
+- Changes:
+  - `src/features/intake/shared/intake-session.contracts.ts` (NEW):
+    - `shoppingStatusToIntakeStatus(shoppingStatus)`: maps 5 Shopping statuses + safe fallback
+    - `receiptStatusToIntakeStatus(receiptStatus)`: maps 5 Receipt statuses + safe fallback
+    - `IntakeSessionSummary` interface: lightweight read-only unified session projection DTO
+    - `buildIntakeSessionRoute(intent, underlyingId)`: intent-aware resume/continue route builder
+    - `deriveIntentFromSessionOrigin(origin)`: shopping|receipt|integration → IntakeIntent
+  - `src/features/intake/shared/index.ts`: updated barrel to re-export new contracts
+  - `src/features/intake/shared/intake-session.contracts.test.mjs` (NEW): 18 unit tests, 4 suites
+  - `docs/unified-inventory-intake-refactor-plan.md`: UI-02 Latest Update; Pick Up Here → UI-03
+  - `docs/master-plan-v1.md`: UI-02 `[x]`, left-off → UI-03, completion 23/38 = 60.53%
+  - `docs/codebase-overview.md`: adapter path added to Intake Hub canonical paths; current status updated
+- No schema migration required; no existing service/behavior changes
+- Validation:
+  - `node --test src/features/intake/shared/intake-session.contracts.test.mjs` → PASS 18/18
+  - `npx tsc --noEmit --incremental false` → PASS
+  - `npx eslint` targeted on `src/features/intake/shared/` → PASS
+
 ### 2026-02-27 - UI-01: Inventory Intake Hub shell — intent-first entry at /intake
 - Suggested Commit Title: `feat(ui-01): add Inventory Intake Hub shell with intent-first entry cards`
 - Scope: Phase 1 Intake Hub shell for the Unified Inventory Intake Refactor plan.

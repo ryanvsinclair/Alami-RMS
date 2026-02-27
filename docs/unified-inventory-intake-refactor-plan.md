@@ -1,9 +1,24 @@
 # Unified Inventory Intake Refactor Plan
 
 Last updated: February 27, 2026
-Status: Phase 1 complete; Phase 2 next
+Status: Phase 2 complete; Phase 3 next
 
 ## Latest Update
+
+### 2026-02-27 — UI-02 complete: Phase 2 session orchestration adapter layer
+
+- Created `src/features/intake/shared/intake-session.contracts.ts`:
+  - `shoppingStatusToIntakeStatus`: maps `ShoppingSessionStatus` → `IntakeSessionStatus`
+    - `draft→active`, `reconciling→reviewing`, `ready→reviewing`, `committed→committed`, `cancelled→archived`
+  - `receiptStatusToIntakeStatus`: maps `ReceiptStatus` → `IntakeSessionStatus`
+    - `pending→created`, `parsing→active`, `review→reviewing`, `committed→committed`, `failed→archived`
+  - `IntakeSessionSummary` DTO: lightweight read-only projection for unified session views
+  - `buildIntakeSessionRoute`: resume/continue route builder per intent (`live_purchase→/shopping`, `bulk_intake→/receive/receipt/:id`, `supplier_sync→/integrations`)
+  - `deriveIntentFromSessionOrigin`: maps session origin to intake intent
+- Updated `src/features/intake/shared/index.ts` to re-export new contracts
+- Added `src/features/intake/shared/intake-session.contracts.test.mjs`: 18 unit tests (all pass)
+- No schema migration required; no existing service changes; adapter-layer only
+- Validation: `node --test ...intake-session.contracts.test.mjs` → PASS 18/18; `npx tsc` → PASS; `npx eslint` → PASS
 
 ### 2026-02-27 — UI-01 complete: Phase 1 Intake Hub shell
 
@@ -36,7 +51,7 @@ Status: Phase 1 complete; Phase 2 next
 
 ## Pick Up Here
 
-- Next task: **UI-02** — Phase 2 session orchestration unification
+- Next task: **UI-03** — Phase 3 capability gating (industry-aware visibility/ordering)
 
 ## Purpose
 

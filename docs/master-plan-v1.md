@@ -177,12 +177,12 @@ Use the `Canonical Order Checklist` statuses as the source of truth.
 Current snapshot (2026-02-27):
 
 - Total checklist items: `38`
-- `[x]` complete: `22`
+- `[x]` complete: `23`
 - `[~]` in progress: `0`
-- Strict completion: `57.89%`
-- Weighted progress: `57.89%`
+- Strict completion: `60.53%`
+- Weighted progress: `60.53%`
 - **Income Integrations Plan (IN-00 through IN-08): COMPLETE**
-- **UI-01 complete: Inventory Intake Hub shell live at /intake**
+- **UI-02 complete: intake session orchestration adapter layer shipped**
 
 Update rule after each slice:
 
@@ -312,7 +312,7 @@ Status legend:
 
 - [x] UI-00 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then finalize Phase 0 vocabulary/contracts in code/docs.
 - [x] UI-01 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then add Phase 1 Inventory Intake Hub shell (intent-first entry).
-- [ ] UI-02 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then unify Phase 2 session orchestration to intake lifecycle.
+- [x] UI-02 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then unify Phase 2 session orchestration to intake lifecycle.
 - [ ] UI-03 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 3 capability gating (industry-aware visibility/ordering).
 - [ ] UI-04 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then implement Phase 4 navigation consolidation with compatibility routes/wrappers retained.
 - [ ] UI-05 Pre-check existing scoped implementation first (reuse/refactor/remove/move before creating new code/files), then execute Phase 5 cleanup/deprecation after adoption checks, with rollback safety.
@@ -336,13 +336,13 @@ Status legend:
 
 ## Last Left Off Here (Update This Block First)
 
-- Current task ID: `UI-02`
-- Current task: `Unified Inventory Intake Refactor — Phase 2 session orchestration unification`
+- Current task ID: `UI-03`
+- Current task: `Unified Inventory Intake Refactor — Phase 3 capability gating (industry-aware visibility/ordering)`
 - Status: `READY`
 - Last updated: `2026-02-27`
 - Primary source plan section:
-  - `docs/unified-inventory-intake-refactor-plan.md` -> `Phase 2`
-- Note: UI-01 (Phase 1 Hub shell) is **COMPLETE**. `/intake` route live with intent-first cards; tsc/eslint clean.
+  - `docs/unified-inventory-intake-refactor-plan.md` -> `Phase 3`
+- Note: UI-02 (Phase 2 session adapter layer) is **COMPLETE**. `intake-session.contracts.ts` adapter + 18 tests shipped; tsc/eslint clean.
 
 ## Documentation Sync Checklist (Run Every Session)
 
@@ -354,6 +354,32 @@ Status legend:
 - [ ] `docs/codebase-overview.md` updated if behavior/architecture/canonical path descriptions changed.
 
 ## Latest Job Summary (Append New Entries At Top)
+
+### 2026-02-27 - UI-02 complete: intake session orchestration adapter layer
+- Suggested Commit Title: `feat(ui-02): add intake session orchestration adapter layer`
+- Completed:
+  - Ran UI-02 preflight scans:
+    - `grep -rn "ShoppingSessionStatus|ReceiptStatus" src/features/intake/` → nothing — clean slate
+    - `grep -rn "IntakeSessionStatus" src/ app/` → only in intake.contracts.ts — no prior adapter
+    - Confirmed ShoppingSessionStatus enum: `draft|reconciling|ready|committed|cancelled`
+    - Confirmed ReceiptStatus enum: `pending|parsing|review|committed|failed`
+    - Phase 2 scope: adapter-layer only — no schema changes, no service rewrites
+  - UI-02 scoped additions (reuse-first, no new DB/service logic):
+    - `src/features/intake/shared/intake-session.contracts.ts`:
+      - `shoppingStatusToIntakeStatus`: 5 status mappings + safe unknown default
+      - `receiptStatusToIntakeStatus`: 5 status mappings + safe unknown default
+      - `IntakeSessionSummary` DTO: lightweight read-only unified projection
+      - `buildIntakeSessionRoute`: intent-aware resume route builder (preserves existing routes)
+      - `deriveIntentFromSessionOrigin`: origin → intent adapter
+    - `src/features/intake/shared/index.ts`: barrel updated to re-export new contracts
+    - `src/features/intake/shared/intake-session.contracts.test.mjs`: 18 unit tests (4 suites)
+  - No schema migration required; no existing service/behavior changes
+  - Validation gates all pass:
+    - `node --test src/features/intake/shared/intake-session.contracts.test.mjs` → PASS 18/18
+    - `npx tsc --noEmit --incremental false` → PASS
+    - `npx eslint` targeted on touched files → PASS
+  - Completion: 23/38 = 60.53%
+- Next: `UI-03` (`docs/unified-inventory-intake-refactor-plan.md` Phase 3 — capability gating)
 
 ### 2026-02-27 - UI-01 complete: Intake Hub shell live at /intake
 - Suggested Commit Title: `feat(ui-01): add Inventory Intake Hub shell with intent-first entry cards`
