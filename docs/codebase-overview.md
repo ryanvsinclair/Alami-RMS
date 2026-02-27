@@ -31,7 +31,7 @@ Related historical/planning docs (still useful for deep history):
 - `docs/income-integrations-onboarding-plan.md` (business-type onboarding + income provider OAuth/sync rollout plan)
 - `docs/receipt-post-ocr-correction-plan.md` (post-TabScanner numeric/structural correction and reconciliation accuracy plan)
 - `docs/unified-inventory-intake-refactor-plan.md` (intent-first regrouping plan to unify Shopping + Receive under a single Inventory Intake Hub without changing core feature behavior)
-- `docs/operational-calendar-schedule-plan.md` (Operational Calendar plan — ACTIVE; OC-04 Phase 3 complete, OC-05 next)
+- `docs/operational-calendar-schedule-plan.md` (Operational Calendar plan — ACTIVE; OC-05 Phase 4 complete, OC-06 next)
 
 ## Maintenance Rules (Required)
 
@@ -66,7 +66,7 @@ What remains outside plan completion:
 - Receipt post-OCR correction plan is complete through Phase 6 closeout (`RC-19`), with non-blocking follow-ups tracked separately.
 - **Income Integrations Onboarding Plan: COMPLETE** (all phases IN-00 through IN-08, security checklist 7/7).
 - **Unified Inventory Intake Refactor Plan: COMPLETE** (all phases UI-00 through UI-06). `/intake` is the canonical Hub entry; capability-gating via `resolveVisibleIntents()`; all migration-era scaffolding removed; `/shopping` and `/receive` remain as full feature routes under the Hub.
-- **Operational Calendar Plan: ACTIVE** — OC-04 Phase 3 complete; `/schedule` route live with calendar shell + provider health shell, and schedule server foundation for booking/reservation connectors, normalization, and duplicate/overlap conflict diagnostics. OC-05 (cross-feature suggestions) is next.
+- **Operational Calendar Plan: ACTIVE** — OC-05 Phase 4 complete; `/schedule` now includes cross-feature suggestion surface plus server suggestion derivation engine (delivery->intake, booking->inventory, job->material-gap). OC-06 (hardening/metrics) is next.
 
 ## Stack
 
@@ -272,6 +272,11 @@ Implemented capabilities:
   - provider-event normalization contracts and guardrails
   - deterministic duplicate suppression + overlap conflict diagnostics
   - sync preview service surface for provider fetch/normalize/conflict reporting
+- Cross-feature suggestion layer is active for Phase 4:
+  - delivery-window to intake-session coverage nudges
+  - booking/reservation inventory deficit hints
+  - job-assignment material gap warnings
+  - Schedule UI suggestion rail with empty-state-safe rendering
 
 Canonical paths:
 
@@ -279,9 +284,11 @@ Canonical paths:
 - `src/features/schedule/shared/schedule-provider.contracts.ts`
 - `src/features/schedule/shared/schedule-sync.contracts.ts`
 - `src/features/schedule/shared/schedule-normalization.contracts.ts`
+- `src/features/schedule/shared/schedule-suggestions.contracts.ts`
 - `src/features/schedule/server/scheduling-connectors.ts`
 - `src/features/schedule/server/schedule-conflict.service.ts`
 - `src/features/schedule/server/scheduling-sync.service.ts`
+- `src/features/schedule/server/schedule-suggestion.service.ts`
 - `src/features/schedule/ui/ScheduleClient.tsx`
 - `app/(dashboard)/schedule/page.tsx`
 

@@ -19,3 +19,6 @@ export type {
 
 export { runSchedulingProviderSyncPreview } from "./scheduling-sync.service";
 
+export type { DeriveScheduleSuggestionsInput } from "./schedule-suggestion.service";
+
+export { deriveScheduleOperationalSuggestions } from "./schedule-suggestion.service";

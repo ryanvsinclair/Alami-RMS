@@ -76,3 +76,19 @@ export {
   CALENDAR_OVERLAP_REASONS,
   isSchedulingPlatformProviderId,
 } from "./schedule-normalization.contracts";
+
+// Cross-feature suggestion contracts (OC-05)
+export type {
+  CalendarSuggestionType,
+  CalendarSuggestionSeverity,
+  CalendarSuggestedAction,
+  CalendarOperationalSuggestion,
+  BookingInventoryHintSignal,
+  JobMaterialGapSignal,
+} from "./schedule-suggestions.contracts";
+
+export {
+  CALENDAR_SUGGESTION_TYPES,
+  CALENDAR_SUGGESTION_SEVERITIES,
+  CALENDAR_SUGGESTED_ACTIONS,
+} from "./schedule-suggestions.contracts";

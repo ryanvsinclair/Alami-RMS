@@ -26,6 +26,7 @@ import {
   type CalendarEventSource,
   type CalendarProviderSyncCard,
   type CalendarSourceHealthSummary,
+  type CalendarOperationalSuggestion,
   deriveCalendarSourceHealth,
 } from "@/features/schedule/shared";
 
@@ -87,6 +88,7 @@ export default function ScheduleClient() {
   // Phase shell: no providers connected yet — empty card list.
   // Real provider sync cards wired in OC-04 via server data layer.
   const providerSyncCards: CalendarProviderSyncCard[] = [];
+  const operationalSuggestions: CalendarOperationalSuggestion[] = [];
 
   return (
     <div className="flex flex-col h-full">
@@ -167,6 +169,8 @@ export default function ScheduleClient() {
       {/* ------------------------------------------------------------------ */}
       <SourceHealthBar providerCards={providerSyncCards} />
 
+      <OperationalSuggestionsRail suggestions={operationalSuggestions} />
+
       {/* ------------------------------------------------------------------ */}
       {/* Calendar grid area — shell / populated in OC-04+                   */}
       {/* ------------------------------------------------------------------ */}
@@ -234,6 +238,35 @@ function SourceHealthBar({ providerCards }: { providerCards: CalendarProviderSyn
   );
 }
 
+function OperationalSuggestionsRail({
+  suggestions,
+}: {
+  suggestions: CalendarOperationalSuggestion[];
+}) {
+  if (suggestions.length === 0) {
+    return (
+      <div className="mx-4 mb-3 rounded-2xl border border-border/40 px-3 py-2">
+        <p className="text-xs text-muted/70">
+          No operational suggestions right now. Calendar-driven intake/inventory alerts appear here.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-4 mb-3 flex flex-col gap-2">
+      {suggestions.slice(0, 3).map((suggestion) => (
+        <div
+          key={suggestion.id}
+          className="rounded-2xl border border-border/40 px-3 py-2"
+        >
+          <p className="text-xs font-semibold text-foreground">{suggestion.title}</p>
+          <p className="text-xs text-muted/80 mt-0.5">{suggestion.description}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
 // ---------------------------------------------------------------------------
 // Calendar grid shell — renders time slots for the current view mode.
 // Real event rendering wired in OC-04 once server data layer is available.
@@ -430,3 +463,5 @@ function MonthGridShell({ today }: { today: Date }) {
     </div>
   );
 }
+
+

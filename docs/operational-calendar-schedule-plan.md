@@ -17,10 +17,36 @@ Implementation is now unblocked. Next task: **OC-01** (Phase 0 activation/baseli
 
 ## Pick Up Here
 
-- Current task: **OC-05** - Phase 4 cross-feature suggestion engine
+- Current task: **OC-06** - Phase 5 hardening and operational metrics
 - Status: READY
 
 ## Latest Update
+
+### 2026-02-27 - OC-05 complete: Phase 4 cross-feature suggestion engine - delivery/intake, booking/inventory, and job/material-gap signals
+
+- Preflight:
+  - Confirmed no existing schedule suggestion engine was present:
+    - `rg -n "delivery.?intake|booking.?inventory|material.?gap|suggestion engine|cross-feature suggestion|schedule suggestion|operational suggestion" src app test docs`
+    - `rg --files src app test | rg "suggest|hint|gap|schedule"`
+  - Reused existing event contracts from `src/features/schedule/shared/schedule.contracts.ts` and OC-04 normalization infrastructure; no duplicate event models introduced.
+  - DB preflight re-verified against canonical sources (no schema change required):
+    - `prisma/schema.prisma`
+    - latest migration `prisma/migrations/20260228013000_income_event_pilot/migration.sql`
+- Deliverables:
+  - `src/features/schedule/shared/schedule-suggestions.contracts.ts` (NEW): suggestion vocabulary and typed signal contracts (`delivery_to_intake`, `booking_inventory_hint`, `job_material_gap`).
+  - `src/features/schedule/server/schedule-suggestion.service.ts` (NEW): deterministic suggestion derivation engine with rule paths for:
+    - delivery windows lacking intake-session overlap
+    - appointment/reservation inventory deficit hints
+    - job-assignment material gap warnings
+  - `src/features/schedule/server/schedule-suggestion.service.test.ts` (NEW): targeted rule-engine coverage (5 tests).
+  - `src/features/schedule/shared/index.ts` (UPDATED): exports suggestion contracts.
+  - `src/features/schedule/server/index.ts` (UPDATED): exports suggestion derivation API.
+  - `src/features/schedule/ui/ScheduleClient.tsx` (UPDATED): adds `OperationalSuggestionsRail` shell so cross-feature suggestions have a visible schedule surface (empty-state safe by default).
+- Validation:
+  - `npx tsx --test src/features/schedule/server/scheduling-sync.service.test.ts src/features/schedule/server/schedule-suggestion.service.test.ts` -> PASS (10/10)
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - targeted `eslint` on touched schedule shared/server/ui files -> PASS
+- Next: OC-06 (Phase 5 - hardening and operational metrics)
 
 ### 2026-02-27 - OC-04 complete: Phase 3 scheduling-platform expansion - connector stubs, normalization contracts, conflict handling
 
