@@ -180,10 +180,10 @@ Use `Canonical Order Checklist` statuses as source of truth.
 Current snapshot (2026-02-28):
 
 - Launch-critical checklist items total: `50`
-- Launch-critical `[x]`: `35`
+- Launch-critical `[x]`: `36`
 - Launch-critical `[~]`: `0`
-- Strict completion: `70.00%`
-- Weighted progress: `70.00%`
+- Strict completion: `72.00%`
+- Weighted progress: `72.00%`
 - Parked post-launch checklist items (DI): `7` (excluded from launch completion %)
 
 Update rule after each slice:
@@ -226,11 +226,11 @@ Parked stream:
 
 ## Last Left Off Here
 
-- Current task ID: `RTS-05-a`
-- Current task: `Host/Kitchen mode toggle in profile`
+- Current task ID: `RTS-05-b`
+- Current task: `Kitchen mode redirect from / to /service/kitchen`
 - Status: `NOT STARTED`
 - Last updated: `2026-02-28`
-- Note: RTS-04 phase completed through overdue urgency rendering; continue deterministic order with RTS-05-a.
+- Note: RTS-05-a profile mode toggle completed; continue deterministic order with RTS-05-b.
 
 ## Canonical Order Checklist
 
@@ -319,7 +319,7 @@ Plan doc: `docs/restaurant-table-service-plan.md`
 
 #### Phase RTS-05 - Profile mode toggle and launch hardening
 
-- [ ] RTS-05-a: Add Host/Kitchen mode toggle in profile
+- [x] RTS-05-a: Add Host/Kitchen mode toggle in profile
 - [ ] RTS-05-b: Kitchen mode auto-redirects `/` to kitchen queue
 - [ ] RTS-05-c: Add explicit temporary note for future role-based refactor
 - [ ] RTS-05-d: Launch smoke tests for QR/host/kitchen core loop
@@ -417,10 +417,46 @@ No additional missing plan docs were identified from the current chat scope afte
 ## Completion Snapshot
 
 - Launch-critical initiatives active: `5` (RPK, RTS, IMG-L, UX-L, LG)
-- Launch-critical items complete: `35`
+- Launch-critical items complete: `36`
 - Parked post-launch initiatives: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - RTS-05-a profile Host/Kitchen mode toggle added
+
+- Constitution Restatement:
+  - Task ID: `RTS-05-a`
+  - Scope: add launch-mode toggle (`Host` / `Kitchen`) in profile for table-service operators.
+  - Invariants confirmed: no role-permission model rewrite; no new dependencies or schema fields; toggle is launch bridge only.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: structural profile card addition only.
+- Preflight evidence:
+  - `Get-Content docs/restaurant-table-service-plan.md`
+  - `Get-Content app/(dashboard)/profile/page.tsx`
+  - `Get-Content lib/core/auth/tenant.ts`
+  - `Get-Content src/features/table-service/shared/table-service.contracts.ts`
+  - `rg -n "profile|mode toggle|kitchen mode|/service/kitchen|RTS-05" app src/features docs/master-plan-v2.md docs/restaurant-table-service-plan.md --glob '!**/generated/**'`
+- Implementation:
+  - Added shared workspace-mode constants/types:
+    - `TABLE_SERVICE_WORKSPACE_MODES`
+    - `TABLE_SERVICE_WORKSPACE_MODE_STORAGE_KEY`
+  - Added `TableServiceModeToggleCard` client component with local-storage persistence.
+  - Added profile integration with restaurant + module gate:
+    - toggle visible only when business is restaurant and `table_service` module is enabled.
+  - Added explicit temporary-note text in toggle card indicating planned future role-based replacement.
+- Validation:
+  - `npx eslint "app/(dashboard)/profile/page.tsx" "src/features/table-service/ui/TableServiceModeToggleCard.tsx" "src/features/table-service/ui/index.ts" "src/features/table-service/shared/table-service.contracts.ts"` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 4 (profile page + new toggle UI + shared mode contracts + UI exports)
+  - changed docs: source/master/overview/changelog sync
+  - proportionality reason: exactly scoped to RTS-05-a mode-toggle capability.
+- Unrelated-file check:
+  - pre-existing unrelated local files remained untouched; this slice modified only RTS-05-a scope files plus required canonical docs.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+- Commit checkpoint: pending (record after commit).
 
 ### 2026-02-28 - RTS-04-e overdue urgency styling added without queue reorder
 

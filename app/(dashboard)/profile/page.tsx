@@ -3,11 +3,26 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { signOutAction } from "@/app/actions/core/auth";
 import { requireBusinessMembership } from "@/core/auth/tenant";
+import { prisma } from "@/core/prisma";
 import { getTerminology } from "@/lib/config/terminology";
+import { TABLE_SERVICE_MODULE_ID } from "@/features/table-service/shared";
+import { TableServiceModeToggleCard } from "@/features/table-service/ui";
 
 export default async function ProfilePage() {
   const { business, membership, user } = await requireBusinessMembership();
   const terms = getTerminology(business.industry_type);
+  const tableServiceModule =
+    business.industry_type === "restaurant"
+      ? await prisma.businessModule.findFirst({
+          where: {
+            business_id: business.id,
+            module_id: TABLE_SERVICE_MODULE_ID,
+            enabled: true,
+          },
+          select: { id: true },
+        })
+      : null;
+  const showTableServiceModeToggle = Boolean(tableServiceModule);
 
   return (
     <div className="p-4 space-y-4">
@@ -39,6 +54,8 @@ export default async function ProfilePage() {
           </Button>
         </form>
       </Card>
+
+      {showTableServiceModeToggle && <TableServiceModeToggleCard />}
 
       <Card className="p-5">
         <p className="text-xs uppercase tracking-wide text-muted">Appearance</p>

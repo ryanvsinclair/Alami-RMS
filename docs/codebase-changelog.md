@@ -20,6 +20,45 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - RTS-05-a completed: profile Host/Kitchen mode toggle
+
+- Suggested Commit Title: `feat(rts-05): add profile host-kitchen mode toggle`
+- Scope: RTS phase `RTS-05-a` (profile mode selection bridge).
+- Constitution Restatement:
+  - Task ID: `RTS-05-a`
+  - Scope sentence: add profile mode toggle for Host/Kitchen workflow emphasis in launch phase.
+  - Invariants confirmed: role/permission model unchanged; launch bridge only; no schema/env/dependency changes.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: structural profile card addition only.
+- Deliverables:
+  - Added shared workspace-mode constants + storage key.
+  - Added `TableServiceModeToggleCard` client component with local-storage persistence.
+  - Added profile gating logic so toggle appears only for restaurant businesses with `table_service` enabled.
+  - Added explicit temporary note that role-based refactor will replace this mode toggle.
+- Touched Files (single-entry log):
+  - `app/(dashboard)/profile/page.tsx` (updated)
+  - `src/features/table-service/shared/table-service.contracts.ts` (updated)
+  - `src/features/table-service/ui/TableServiceModeToggleCard.tsx` (added)
+  - `src/features/table-service/ui/index.ts` (updated)
+  - `docs/restaurant-table-service-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx eslint "app/(dashboard)/profile/page.tsx" "src/features/table-service/ui/TableServiceModeToggleCard.tsx" "src/features/table-service/ui/index.ts" "src/features/table-service/shared/table-service.contracts.ts"` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 4.
+  - Delta rationale: exact RTS-05-a scope (profile mode-toggle bridge).
+- Unrelated-file check:
+  - Existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: pending (record after commit)
+  - Commit title: `feat(rts-05): add profile host-kitchen mode toggle`
+
 ### 2026-02-28 - RTS-04-e completed: overdue urgency visuals without queue reorder
 
 - Suggested Commit Title: `feat(rts-04): add overdue urgency visuals without queue reorder`

@@ -1,6 +1,9 @@
 import type { KitchenOrderItemStatus } from "@/lib/generated/prisma/client";
 
 export const TABLE_SERVICE_MODULE_ID = "table_service" as const;
+export const TABLE_SERVICE_WORKSPACE_MODES = ["host", "kitchen"] as const;
+export type TableServiceWorkspaceMode = (typeof TABLE_SERVICE_WORKSPACE_MODES)[number];
+export const TABLE_SERVICE_WORKSPACE_MODE_STORAGE_KEY = "table_service_workspace_mode" as const;
 
 export const KITCHEN_ORDER_ITEM_STATUSES = [
   "pending",
