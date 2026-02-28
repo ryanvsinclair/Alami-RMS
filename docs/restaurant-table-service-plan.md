@@ -24,6 +24,12 @@ Constitution source: `docs/execution-constitution.md`
 
 ## Latest Update
 
+- **2026-02-28 - RTS-00-b completed (table_service module registration + guard baseline).**
+  - Registered `table_service` in shared module registry (`MODULE_REGISTRY`) with dedicated module definition.
+  - Added restaurant provisioning defaults so new restaurant businesses enable `table_service` at creation.
+  - Added `requireTableServiceAccess()` guard helper to enforce restaurant-industry and module-enabled access.
+  - Applied additive migration `20260228130000_table_service_module_backfill` to enable `table_service` for existing restaurant businesses.
+
 - **2026-02-28 - RTS-00-a completed (table-service schema baseline + additive migration).**
   - Added Prisma enum `KitchenOrderItemStatus` and models `DiningTable`, `MenuCategory`, `MenuItem`, `TableSession`, `KitchenOrder`, `KitchenOrderItem`.
   - Added required constraints/indexes, including per-business table uniqueness and one-order-per-session (`kitchen_orders.table_session_id` unique).
@@ -45,7 +51,7 @@ Constitution source: `docs/execution-constitution.md`
 ## Pick Up Here
 
 - Current phase: `RTS-00`
-- Current task: `RTS-00-b`
+- Current task: `RTS-00-c`
 - Status: `[~]` in progress
 
 ## Scope
@@ -163,7 +169,7 @@ Before starting any checklist item in this plan:
 
 - [x] RTS-00-0: Constitution restatement logged for this phase and no deviation required.
 - [x] RTS-00-a: Add table-service models/enums and required indexes per decision lock (`DiningTable`, `MenuCategory`, `MenuItem`, `TableSession`, `KitchenOrder`, `KitchenOrderItem`).
-- [ ] RTS-00-b: Add `table_service` module registration and guards.
+- [x] RTS-00-b: Add `table_service` module registration and guards.
 - [ ] RTS-00-c: Add shared contracts for menu/table/session/order flows (including one-order-per-session and same-order item append behavior).
 - [ ] RTS-00-d: Validate tenant scoping and authorization boundaries in contract layer.
 

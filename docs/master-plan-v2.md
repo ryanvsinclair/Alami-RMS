@@ -180,10 +180,10 @@ Use `Canonical Order Checklist` statuses as source of truth.
 Current snapshot (2026-02-28):
 
 - Launch-critical checklist items total: `50`
-- Launch-critical `[x]`: `18`
+- Launch-critical `[x]`: `19`
 - Launch-critical `[~]`: `0`
-- Strict completion: `36.00%`
-- Weighted progress: `36.00%`
+- Strict completion: `38.00%`
+- Weighted progress: `38.00%`
 - Parked post-launch checklist items (DI): `7` (excluded from launch completion %)
 
 Update rule after each slice:
@@ -226,11 +226,11 @@ Parked stream:
 
 ## Last Left Off Here
 
-- Current task ID: `RTS-00-b`
-- Current task: `table_service module and guards`
+- Current task ID: `RTS-00-c`
+- Current task: `Core shared contracts for menu/table/order flows`
 - Status: `IN PROGRESS`
 - Last updated: `2026-02-28`
-- Note: RTS-00-a schema baseline completed; continue deterministic order with RTS-00-b.
+- Note: RTS-00-b module registration + guard baseline completed; continue deterministic order with RTS-00-c.
 
 ## Canonical Order Checklist
 
@@ -287,7 +287,7 @@ Plan doc: `docs/restaurant-table-service-plan.md`
 #### Phase RTS-00 - Schema/module/contracts
 
 - [x] RTS-00-a: Add table-service models/enums
-- [ ] RTS-00-b: Add `table_service` module and guards
+- [x] RTS-00-b: Add `table_service` module and guards
 - [ ] RTS-00-c: Add core shared contracts for menu/table/order flows
 
 #### Phase RTS-01 - Menu and table setup
@@ -417,10 +417,47 @@ No additional missing plan docs were identified from the current chat scope afte
 ## Completion Snapshot
 
 - Launch-critical initiatives active: `5` (RPK, RTS, IMG-L, UX-L, LG)
-- Launch-critical items complete: `18`
+- Launch-critical items complete: `19`
 - Parked post-launch initiatives: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - RTS-00-b table_service module registration and guard baseline completed
+
+- Constitution Restatement:
+  - Task ID: `RTS-00-b`
+  - Scope: register `table_service` module and add baseline access guard wiring without implementing RTS UI/workflows yet.
+  - Invariants confirmed: restaurant-only launch target for table-service workflows; no product fork; module gating remains explicit and business-scoped.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: no UI changes in this slice.
+- Preflight evidence:
+  - `Get-Content lib/modules/registry.ts`
+  - `Get-Content lib/config/presets.ts`
+  - `Get-Content lib/core/modules/guard.ts`
+  - `Get-Content lib/core/auth/tenant.ts`
+  - `rg -n "defaultModules|MODULE_REGISTRY|requireModule|business_modules|table_service" lib src app prisma`
+- Implementation:
+  - Added module definition `table_service` and registered it in `MODULE_REGISTRY`.
+  - Updated restaurant default provisioning modules to include `table_service`.
+  - Added `requireTableServiceAccess()` guard helper (`src/features/table-service/server/guard.ts`) enforcing:
+    - `industry_type === "restaurant"`
+    - `table_service` module enabled
+  - Added and applied additive migration `20260228130000_table_service_module_backfill` to enable `table_service` for existing restaurant businesses.
+- Validation:
+  - `npx prisma migrate deploy` -> PASS
+  - `npx prisma validate` -> PASS
+  - `npx prisma migrate status` -> PASS
+  - `npx eslint lib/modules/table-service/index.ts lib/modules/registry.ts lib/config/presets.ts src/features/table-service/server/guard.ts src/features/table-service/server/index.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 6 (module definition/registry, presets, table-service guard, additive data migration)
+  - changed docs: source/master/overview/changelog sync
+  - proportionality reason: exactly scoped to RTS-00-b module and guard baseline requirements.
+- Unrelated-file check:
+  - pre-existing unrelated local files remained untouched; this slice modified only RTS-00-b code/doc paths.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+- Commit checkpoint: pending (record after commit).
 
 ### 2026-02-28 - RTS-00-a table-service schema baseline completed
 

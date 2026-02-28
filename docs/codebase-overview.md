@@ -298,14 +298,20 @@ Implemented capabilities:
 - `industry_type` remains the canonical signup input for business provisioning.
 - Signup now supports optional restaurant place capture (`google_place_id`, formatted address, latitude, longitude) with explicit skip behavior.
 - Business provisioning persists optional place metadata on `Business` when supplied.
+- Restaurant businesses now default-enable `table_service` alongside existing launch modules.
+- Existing restaurant businesses are backfilled with `table_service` module enablement via additive migration.
 
 Canonical paths:
 
 - `app/auth/signup/page.tsx`
 - `app/actions/core/auth.ts`
 - `lib/core/auth/tenant.ts`
+- `lib/modules/registry.ts`
+- `lib/modules/table-service/index.ts`
+- `src/features/table-service/server/guard.ts`
 - `prisma/schema.prisma`
 - `prisma/migrations/20260228060000_business_profile_place_metadata/migration.sql`
+- `prisma/migrations/20260228130000_table_service_module_backfill/migration.sql`
 
 ### Operational Calendar (OC-04 complete)
 

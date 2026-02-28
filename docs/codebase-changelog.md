@@ -20,6 +20,49 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - RTS-00-b completed: table_service module registration + guard baseline
+
+- Suggested Commit Title: `feat(rts-00): register table_service module and add access guard baseline`
+- Scope: RTS schema/module/contracts phase step `RTS-00-b` (module registration + guard wiring).
+- Constitution Restatement:
+  - Task ID: `RTS-00-b`
+  - Scope sentence: register and gate the `table_service` module without shipping RTS UI/workflow routes yet.
+  - Invariants confirmed: restaurant-only launch target for table service, explicit module gating, no workflow behavior expansion beyond guard/module baseline.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+- Deliverables:
+  - Added module definition `table_service` and registered it in `MODULE_REGISTRY`.
+  - Updated restaurant default module provisioning to include `table_service`.
+  - Added `requireTableServiceAccess()` guard helper enforcing restaurant industry + module enabled.
+  - Added additive migration `20260228130000_table_service_module_backfill` for existing restaurant businesses.
+  - Applied migration successfully.
+- Touched Files (single-entry log):
+  - `lib/modules/table-service/index.ts` (added)
+  - `lib/modules/registry.ts` (updated)
+  - `lib/config/presets.ts` (updated)
+  - `src/features/table-service/server/guard.ts` (added)
+  - `src/features/table-service/server/index.ts` (added)
+  - `prisma/migrations/20260228130000_table_service_module_backfill/migration.sql` (added)
+  - `docs/restaurant-table-service-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx prisma migrate deploy` -> PASS
+  - `npx prisma validate` -> PASS
+  - `npx prisma migrate status` -> PASS
+  - `npx eslint lib/modules/table-service/index.ts lib/modules/registry.ts lib/config/presets.ts src/features/table-service/server/guard.ts src/features/table-service/server/index.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 6.
+  - Delta rationale: exact RTS-00-b scope (module registration, restaurant default enablement, and baseline guard wiring).
+- Unrelated-file check:
+  - Existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: pending (record after commit)
+  - Commit title: `feat(rts-00): register table_service module and add access guard baseline`
+
 ### 2026-02-28 - RTS-00-a completed: table-service schema baseline + additive migration
 
 - Suggested Commit Title: `feat(rts-00): add table-service schema baseline models and indexes`

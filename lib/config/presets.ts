@@ -48,7 +48,7 @@ export function isIndustryType(value: string): value is IndustryType {
 
 export const INDUSTRY_PRESETS: Record<IndustryType, IndustryPreset> = {
   restaurant: {
-    defaultModules: ["shopping", "receipts", "integrations"],
+    defaultModules: ["shopping", "receipts", "integrations", "table_service"],
     defaultCategories: [
       "Produce",
       "Meat & Seafood",
