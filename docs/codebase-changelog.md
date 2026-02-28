@@ -52,7 +52,7 @@ Companion overview: `docs/codebase-overview.md`
 - Dependency change check: no new dependencies added.
 - Env-var change check: no new env vars introduced.
 - Commit checkpoint:
-  - Commit hash: pending (record after commit)
+  - Commit hash: `fb7cd94`
   - Commit title: `feat(rts-04): add overdue urgency visuals without queue reorder`
 
 ### 2026-02-28 - RTS-04-d completed: host done/paid closes order and session

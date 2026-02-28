@@ -451,7 +451,7 @@ No additional missing plan docs were identified from the current chat scope afte
   - pre-existing unrelated local files remained untouched; this slice modified only RTS-04-e scope files plus required canonical docs.
 - Dependency check: no new dependencies.
 - Env-var check: no new environment variables.
-- Commit checkpoint: pending (record after commit).
+- Commit checkpoint: `fb7cd94` (`feat(rts-04): add overdue urgency visuals without queue reorder`).
 
 ### 2026-02-28 - RTS-04-d host done/paid close flow implemented
 
