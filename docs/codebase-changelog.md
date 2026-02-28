@@ -51,7 +51,7 @@ Companion overview: `docs/codebase-overview.md`
 - Dependency change check: no new dependencies added.
 - Env-var change check: no new env vars introduced.
 - Commit checkpoint:
-  - Commit hash: pending (record after commit)
+  - Commit hash: `000ab65`
   - Commit title: `feat(rts-02): gate public review CTA on google_place_id`
 
 ### 2026-02-28 - RTS-02-c completed: menu-first public diner landing
