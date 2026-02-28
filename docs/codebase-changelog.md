@@ -20,6 +20,46 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - governance wording sync: per-step commit explicitly tied to repository history
+
+- Suggested Commit Title: `docs(governance): clarify per-step commit requirement as repository checkpoint`
+- Scope: canonical governance wording update across master constitution/protocol/source plans; no behavioral or schema changes.
+- Constitution Restatement:
+  - Task ID: `GOV-COMMIT-WORDING`
+  - Scope sentence: update commit-checkpoint language to explicitly require scoped commits to repository history after each completed checklist step.
+  - Invariants confirmed: documentation-only sync; no runtime/schema/dependency/env changes.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: not a UI-touching implementation slice.
+- Deliverables:
+  - Updated commit checkpoint language in:
+    - `docs/master-plan-v2.md`
+    - `docs/execution-constitution.md`
+    - `docs/OVERNIGHT_EXECUTION_PROTOCOL.md`
+    - `docs/business-industry-packaging-refactor-plan.md`
+    - `docs/restaurant-table-service-plan.md`
+    - `docs/item-image-enrichment-plan.md`
+    - `docs/inventory-shopping-ux-redesign-plan.md`
+    - `docs/document-intake-pipeline-plan.md`
+- Touched Files (single-entry log):
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/execution-constitution.md` (updated)
+  - `docs/OVERNIGHT_EXECUTION_PROTOCOL.md` (updated)
+  - `docs/business-industry-packaging-refactor-plan.md` (updated)
+  - `docs/restaurant-table-service-plan.md` (updated)
+  - `docs/item-image-enrichment-plan.md` (updated)
+  - `docs/inventory-shopping-ux-redesign-plan.md` (updated)
+  - `docs/document-intake-pipeline-plan.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `rg -n -i "scoped git commit" docs/master-plan-v2.md docs/execution-constitution.md docs/OVERNIGHT_EXECUTION_PROTOCOL.md docs/business-industry-packaging-refactor-plan.md docs/restaurant-table-service-plan.md docs/item-image-enrichment-plan.md docs/inventory-shopping-ux-redesign-plan.md docs/document-intake-pipeline-plan.md` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 0.
+  - Delta rationale: exact documentation wording clarification requested for per-step commit policy.
+- Unrelated-file check:
+  - Existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+
 ### 2026-02-28 - UX-L-00-c completed: launch defer-lock confirmation
 
 - Suggested Commit Title: `docs(ux-launch): lock post-launch defer scope for ux-01+`

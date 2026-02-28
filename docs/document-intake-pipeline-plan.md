@@ -57,7 +57,7 @@ Before starting any checklist item in this plan after unpark:
 
 After each completed checklist step in this plan:
 
-- [ ] Create one scoped git commit before moving to the next step.
+- [ ] Create one scoped git commit to this repository before moving to the next step.
 - [ ] Include the `DI-*` task ID in the commit message.
 - [ ] Record commit hash + title in job summary/changelog evidence.
 
@@ -1050,7 +1050,7 @@ After each phase is complete:
 4. Update `## Data Model` in `docs/codebase-overview.md` with new document entities
 5. Update `docs/MASTER_BACKEND_ARCHITECTURE.md` Section 2 once DI-00 migration is applied (4 new tables, 3 new enums, 1 enum value addition)
 6. Update this plan with phase completion notes (same format as `docs/income-integrations-onboarding-plan.md`)
-7. Create one scoped git commit per completed checklist step and record commit hash in changelog
+7. Create one scoped git commit to this repository per completed checklist step and record commit hash in changelog
 
 ---
 

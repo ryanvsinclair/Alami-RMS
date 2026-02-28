@@ -203,7 +203,7 @@ This full-completion mode does not remove these controls:
 3. Expanded validation gate before marking `[x]`.
 4. Source-plan, master-plan, and changelog synchronization.
 5. `docs/codebase-overview.md` updates when architecture/behavior changes.
-6. One scoped git commit is required after each completed checklist step before advancing.
+6. One scoped git commit to this repository is required after each completed checklist step before advancing.
 
 Hard rule:
 
@@ -219,7 +219,7 @@ Repeat until no eligible work remains or a hard stop condition is hit:
 4. Implement in-scope changes.
 5. Run validation.
 6. Sync docs and status.
-7. Create scoped git commit for the completed step and record hash in job summary/changelog.
+7. Create a scoped git commit to this repository for the completed step and record hash in job summary/changelog.
 8. Advance automatically.
 
 Philosophy shift:

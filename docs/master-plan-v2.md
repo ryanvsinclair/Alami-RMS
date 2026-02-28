@@ -16,7 +16,7 @@ Primary Purpose: canonical sequencing and progress tracker for launch-critical r
 - RTS V1 uses one order per table session; post-confirm edits append items on the same order.
 - RTS orders collapse from kitchen queue when all items are terminal and close only on host done/paid.
 - UI tasks must follow design constitution: no glow/gradients/new ad-hoc colors, homepage tokens only, structural UI only.
-- Each completed checklist step must have a scoped git commit before advancing.
+- Each completed checklist step must have a scoped git commit to this repository before advancing.
 - A task cannot close unless validation includes:
   - proportional diff review
   - unrelated-file review
@@ -40,7 +40,7 @@ Constitution source: `docs/execution-constitution.md`
    - `docs/codebase-changelog.md` (always)
    - `docs/codebase-overview.md` when behavior/architecture changed
 6. Commit checkpoint:
-   - create one scoped git commit for each completed checklist step before moving to the next step
+   - create one scoped git commit to this repository for each completed checklist step before moving to the next step
 
 ## Immutable Constitution Reference (Required)
 
@@ -152,7 +152,7 @@ A task can be marked `[x]` only if all applicable checks pass.
 10. Master plan checklist, left-off marker, and completion snapshot synced.
 11. Changelog entry appended with suggested commit title and a single touched-files log block.
 12. Per-step commit checkpoint recorded:
-    - a scoped git commit exists for this completed step
+    - a scoped git commit for this completed step exists in repository history
     - commit hash and message are recorded in job summary/changelog
 
 ## Auto-Advance Sequence Gates
@@ -412,7 +412,7 @@ No additional missing plan docs were identified from the current chat scope afte
 - [ ] `docs/codebase-changelog.md` appended with newest entry at top.
 - [ ] Single touched-files log included in that changelog entry (all files touched this slice).
 - [ ] `docs/codebase-overview.md` updated when behavior/architecture/canonical paths changed.
-- [ ] Scoped git commit created for the completed step and commit hash recorded in job summary/changelog.
+- [ ] Scoped git commit to this repository created for the completed step and commit hash recorded in job summary/changelog.
 
 ## Completion Snapshot
 
@@ -421,6 +421,30 @@ No additional missing plan docs were identified from the current chat scope afte
 - Parked post-launch initiatives: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - governance wording sync: per-step commit explicitly tied to repository history
+
+- Constitution Restatement:
+  - Task ID: `GOV-COMMIT-WORDING`
+  - Scope: clarify commit-checkpoint language across canonical plans/protocol so each completed checklist step requires a scoped commit to this repository before advancing.
+  - Invariants confirmed: documentation-only governance wording sync; no runtime/schema/dependency/env changes.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: not a UI-touching implementation slice.
+- Preflight evidence:
+  - `rg -n "scoped git commit|commit checkpoint|completed checklist step" docs/master-plan-v2.md docs/execution-constitution.md docs/OVERNIGHT_EXECUTION_PROTOCOL.md docs/business-industry-packaging-refactor-plan.md docs/restaurant-table-service-plan.md docs/item-image-enrichment-plan.md docs/inventory-shopping-ux-redesign-plan.md docs/document-intake-pipeline-plan.md`
+- Implementation:
+  - Updated commit-checkpoint wording in master plan, execution constitution, overnight protocol, and all active/parked source plans to explicitly require scoped commits to repository history after each completed step.
+  - Preserved checklist ordering, gating, and launch status; no task completion statuses changed.
+- Validation:
+  - `rg -n -i "scoped git commit" docs/master-plan-v2.md docs/execution-constitution.md docs/OVERNIGHT_EXECUTION_PROTOCOL.md docs/business-industry-packaging-refactor-plan.md docs/restaurant-table-service-plan.md docs/item-image-enrichment-plan.md docs/inventory-shopping-ux-redesign-plan.md docs/document-intake-pipeline-plan.md` -> PASS
+- Diff proportionality:
+  - changed runtime files: 0
+  - changed docs: canonical governance/plan documents only
+  - proportionality reason: exact scope wording clarification request across commit-checkpoint sections.
+- Unrelated-file check:
+  - pre-existing unrelated local files remained untouched; only canonical docs for commit policy were modified.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
 
 ### 2026-02-28 - UX-L-00-c completed (launch defer-lock confirmation)
 

@@ -75,7 +75,7 @@ Before starting any checklist item in this plan:
 
 After each completed checklist step in this plan:
 
-- [ ] Create one scoped git commit before moving to the next step.
+- [ ] Create one scoped git commit to this repository before moving to the next step.
 - [ ] Include the `IMG-*` task ID in the commit message.
 - [ ] Record commit hash + title in job summary/changelog evidence.
 
@@ -416,7 +416,7 @@ After each phase:
 2. Update `docs/codebase-overview.md` â€” Data Model section with new columns/table
 3. Update `docs/MASTER_BACKEND_ARCHITECTURE.md` after IMG-00 migration
 4. Update this plan with phase completion notes
-5. Create one scoped git commit per completed checklist step and record commit hash in changelog
+5. Create one scoped git commit to this repository per completed checklist step and record commit hash in changelog
 
 ---
 

@@ -93,7 +93,7 @@ Before starting any checklist item in this plan:
 
 After each completed checklist step in this plan:
 
-- [ ] Create one scoped git commit before moving to the next step.
+- [ ] Create one scoped git commit to this repository before moving to the next step.
 - [ ] Include the `UX-*` task ID in the commit message.
 - [ ] Record commit hash + title in job summary/changelog evidence.
 
@@ -695,7 +695,7 @@ After each phase:
 1. Append entry to `docs/codebase-changelog.md`
 2. Update `docs/codebase-overview.md` â€” UI section
 3. Update this plan with phase completion notes
-4. Create one scoped git commit per completed checklist step and record commit hash in changelog
+4. Create one scoped git commit to this repository per completed checklist step and record commit hash in changelog
 
 ---
 

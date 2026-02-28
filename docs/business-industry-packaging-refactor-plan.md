@@ -301,7 +301,7 @@ A task in this plan can move to `[x]` only when all applicable checks pass:
 - [ ] No unrelated files modified by this slice.
 - [ ] No new dependencies introduced, or approved deviation reference recorded.
 - [ ] No new environment variables introduced, or approved deviation reference recorded.
-- [ ] Scoped git commit created for each completed checklist step before advancing.
+- [ ] Scoped git commit to this repository created for each completed checklist step before advancing.
 - [ ] Commit hash and title recorded in job summary/changelog.
 - [ ] `Latest Update` and `Pick Up Here` synced.
 - [ ] `docs/master-plan-v2.md` task status synced.
@@ -327,4 +327,4 @@ A task in this plan can move to `[x]` only when all applicable checks pass:
 - [ ] Update `docs/master-plan-v2.md` status/checklists.
 - [ ] Append changelog entry with a single touched-files block.
 - [ ] Update `docs/codebase-overview.md` when behavior/architecture changes.
-- [ ] Create one scoped git commit per completed checklist step and record commit hash in changelog.
+- [ ] Create one scoped git commit to this repository per completed checklist step and record commit hash in changelog.

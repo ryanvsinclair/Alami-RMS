@@ -25,7 +25,7 @@ Primary Purpose: define non-negotiable execution rules that apply to every activ
    - `docs/codebase-changelog.md`
    - `docs/codebase-overview.md` when behavior/architecture changes
 10. Each completed checklist step/slice must be committed before advancing:
-   - create one scoped git commit per completed step
+   - create one scoped git commit to this repository per completed step
    - include task ID in commit message
    - record commit hash in session summary/changelog evidence
 
