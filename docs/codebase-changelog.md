@@ -57,7 +57,7 @@ Companion overview: `docs/codebase-overview.md`
 - Dependency change check: no new dependencies added.
 - Env-var change check: no new env vars introduced.
 - Commit checkpoint:
-  - Commit hash: pending (record after commit)
+  - Commit hash: `f597a65`
   - Commit title: `feat(rts-03): append post-confirm items on same kitchen order`
 
 ### 2026-02-28 - RTS-03-c completed: confirm timestamps and 30-minute due timer

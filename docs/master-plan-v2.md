@@ -458,7 +458,7 @@ No additional missing plan docs were identified from the current chat scope afte
   - pre-existing unrelated local files remained untouched; this slice modified only RTS-03-d scope files plus required canonical docs.
 - Dependency check: no new dependencies.
 - Env-var check: no new environment variables.
-- Commit checkpoint: pending (record after commit).
+- Commit checkpoint: `f597a65` (`feat(rts-03): append post-confirm items on same kitchen order`).
 
 ### 2026-02-28 - RTS-03-c confirmation timestamps and 30-minute due timer enforced
 
