@@ -53,7 +53,7 @@ Companion overview: `docs/codebase-overview.md`
 - Dependency change check: no new dependencies added.
 - Env-var change check: no new env vars introduced.
 - Commit checkpoint:
-  - Commit hash: pending (record after commit)
+  - Commit hash: `4de9240`
   - Commit title: `feat(rts-03): set confirmed_at and 30-minute due_at on confirm`
 
 ### 2026-02-28 - RTS-03-b completed: host confirm creates kitchen ticket immediately
