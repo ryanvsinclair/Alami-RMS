@@ -147,6 +147,11 @@ export interface KitchenOrderDraftItemInput {
   notes?: string | null;
 }
 
+export interface UpdateKitchenOrderItemStatusInput {
+  kitchenOrderItemId: string;
+  status: KitchenOrderItemStatusContract;
+}
+
 export interface AppendKitchenOrderItemsInput {
   kitchenOrderId: string;
   items: KitchenOrderDraftItemInput[];

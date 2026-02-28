@@ -180,10 +180,10 @@ Use `Canonical Order Checklist` statuses as source of truth.
 Current snapshot (2026-02-28):
 
 - Launch-critical checklist items total: `50`
-- Launch-critical `[x]`: `31`
+- Launch-critical `[x]`: `32`
 - Launch-critical `[~]`: `0`
-- Strict completion: `62.00%`
-- Weighted progress: `62.00%`
+- Strict completion: `64.00%`
+- Weighted progress: `64.00%`
 - Parked post-launch checklist items (DI): `7` (excluded from launch completion %)
 
 Update rule after each slice:
@@ -226,11 +226,11 @@ Parked stream:
 
 ## Last Left Off Here
 
-- Current task ID: `RTS-04-b`
-- Current task: `Kitchen item status lifecycle actions`
+- Current task ID: `RTS-04-c`
+- Current task: `Collapse queue when all items terminal`
 - Status: `NOT STARTED`
 - Last updated: `2026-02-28`
-- Note: RTS-04-a FIFO queue rendering completed; continue deterministic order with RTS-04-b.
+- Note: RTS-04-b status lifecycle controls completed; continue deterministic order with RTS-04-c.
 
 ## Canonical Order Checklist
 
@@ -312,7 +312,7 @@ Plan doc: `docs/restaurant-table-service-plan.md`
 #### Phase RTS-04 - Kitchen queue operations
 
 - [x] RTS-04-a: FIFO queue by confirmation time
-- [ ] RTS-04-b: Item status lifecycle includes `pending`, `preparing`, `ready_to_serve`, `served`, `cancelled`
+- [x] RTS-04-b: Item status lifecycle includes `pending`, `preparing`, `ready_to_serve`, `served`, `cancelled`
 - [ ] RTS-04-c: Collapse order from queue when all items are terminal (`served`/`cancelled`) while keeping order open
 - [ ] RTS-04-d: Host `done/paid` action closes order and closes table session
 - [ ] RTS-04-e: Overdue visual urgency without queue reordering
@@ -417,10 +417,46 @@ No additional missing plan docs were identified from the current chat scope afte
 ## Completion Snapshot
 
 - Launch-critical initiatives active: `5` (RPK, RTS, IMG-L, UX-L, LG)
-- Launch-critical items complete: `31`
+- Launch-critical items complete: `32`
 - Parked post-launch initiatives: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - RTS-04-b kitchen item status lifecycle actions implemented
+
+- Constitution Restatement:
+  - Task ID: `RTS-04-b`
+  - Scope: add kitchen item status controls for canonical lifecycle values on queue items.
+  - Invariants confirmed: status values remain constrained to canonical enum; FIFO queue ordering preserved; no terminal-collapse/close-order logic added in this slice.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: structural queue controls only.
+- Preflight evidence:
+  - `Get-Content docs/restaurant-table-service-plan.md`
+  - `Get-Content app/actions/modules/table-service.ts`
+  - `Get-Content src/features/table-service/server/order.service.ts`
+  - `Get-Content app/(dashboard)/service/kitchen/page.tsx`
+  - `rg -n "service/kitchen|kitchen queue|KitchenOrderItem|status|RTS-04" app src/features docs/restaurant-table-service-plan.md docs/master-plan-v2.md --glob '!**/generated/**'`
+- Implementation:
+  - Added `updateKitchenOrderItemStatus(...)` server function in `src/features/table-service/server/order.service.ts` with business + active-order/session guardrails.
+  - Added action wrappers:
+    - `getKitchenQueue(...)`
+    - `updateKitchenOrderItemStatus(...)`
+  - Added client queue UI `src/features/table-service/ui/KitchenQueuePageClient.tsx` with per-item status select controls.
+  - Updated `app/(dashboard)/service/kitchen/page.tsx` to server-load initial queue and hand off to client queue controller.
+  - Added queue contracts and UI exports required for status-driven queue interactions.
+- Validation:
+  - `npx eslint "app/(dashboard)/service/kitchen/page.tsx" "app/actions/modules/table-service.ts" "src/features/table-service/server/order.service.ts" "src/features/table-service/shared/table-service.contracts.ts" "src/features/table-service/ui/KitchenQueuePageClient.tsx" "src/features/table-service/ui/index.ts" "src/features/table-service/ui/HostOrderComposerPageClient.tsx"` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 6 (status update service + action wrappers + kitchen queue client surface + kitchen route handoff + shared contracts + UI exports)
+  - changed docs: source/master/overview/changelog sync
+  - proportionality reason: exactly scoped to RTS-04-b lifecycle status controls.
+- Unrelated-file check:
+  - pre-existing unrelated local files remained untouched; this slice modified only RTS-04-b scope files plus required canonical docs.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+- Commit checkpoint: pending (record after commit).
 
 ### 2026-02-28 - RTS-04-a FIFO kitchen queue rendering implemented
 

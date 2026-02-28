@@ -20,6 +20,48 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - RTS-04-b completed: kitchen item lifecycle status controls
+
+- Suggested Commit Title: `feat(rts-04): add kitchen item status lifecycle controls`
+- Scope: RTS phase `RTS-04-b` (item status actions in kitchen queue).
+- Constitution Restatement:
+  - Task ID: `RTS-04-b`
+  - Scope sentence: add per-item lifecycle status controls for kitchen queue items using canonical status enum.
+  - Invariants confirmed: FIFO queue ordering remains confirmation-time based; status values constrained to canonical lifecycle; no terminal-collapse behavior introduced in this slice.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: structural queue controls only.
+- Deliverables:
+  - Added server status mutation path `updateKitchenOrderItemStatus(...)`.
+  - Added table-service actions for queue fetch and status update.
+  - Added client kitchen queue surface with per-item status selector controls and refresh loop.
+  - Updated kitchen page route to render client queue controller with server-provided initial queue.
+- Touched Files (single-entry log):
+  - `app/(dashboard)/service/kitchen/page.tsx` (updated)
+  - `app/actions/modules/table-service.ts` (updated)
+  - `src/features/table-service/server/order.service.ts` (updated)
+  - `src/features/table-service/shared/table-service.contracts.ts` (updated)
+  - `src/features/table-service/ui/KitchenQueuePageClient.tsx` (added)
+  - `src/features/table-service/ui/index.ts` (updated)
+  - `src/features/table-service/ui/HostOrderComposerPageClient.tsx` (updated)
+  - `docs/restaurant-table-service-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx eslint "app/(dashboard)/service/kitchen/page.tsx" "app/actions/modules/table-service.ts" "src/features/table-service/server/order.service.ts" "src/features/table-service/shared/table-service.contracts.ts" "src/features/table-service/ui/KitchenQueuePageClient.tsx" "src/features/table-service/ui/index.ts" "src/features/table-service/ui/HostOrderComposerPageClient.tsx"` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 6.
+  - Delta rationale: exact RTS-04-b scope (lifecycle status write path + queue controls).
+- Unrelated-file check:
+  - Existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: pending (record after commit)
+  - Commit title: `feat(rts-04): add kitchen item status lifecycle controls`
+
 ### 2026-02-28 - RTS-04-a completed: FIFO kitchen queue by confirmation time
 
 - Suggested Commit Title: `feat(rts-04): render kitchen queue FIFO by confirmed_at`

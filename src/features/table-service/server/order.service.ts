@@ -4,10 +4,12 @@ import type {
   AppendKitchenOrderItemsInput,
   ConfirmKitchenOrderInput,
   KitchenOrderDraftItemInput,
-  TableServiceKitchenQueueEntry,
   KitchenOrderItemStatusContract,
+  TableServiceKitchenQueueEntry,
   TableServiceKitchenOrderSummary,
+  UpdateKitchenOrderItemStatusInput,
 } from "../shared/table-service.contracts";
+import { KITCHEN_ORDER_ITEM_STATUSES } from "../shared/table-service.contracts";
 
 type KitchenOrderRecord = {
   id: string;
@@ -29,6 +31,7 @@ type KitchenOrderRecord = {
 };
 
 const CONFIRMATION_WINDOW_MS = 30 * 60 * 1000;
+const KITCHEN_ORDER_ITEM_STATUS_SET = new Set<string>(KITCHEN_ORDER_ITEM_STATUSES);
 
 function normalizeOptionalText(value: string | null | undefined) {
   const trimmed = value?.trim();
@@ -337,5 +340,51 @@ export async function appendKitchenOrderItems(
     }
 
     return serialize(toKitchenOrderSummary(updatedOrder as KitchenOrderRecord));
+  });
+}
+
+export async function updateKitchenOrderItemStatus(
+  businessId: string,
+  input: UpdateKitchenOrderItemStatusInput,
+) {
+  const kitchenOrderItemId = input.kitchenOrderItemId.trim();
+  if (!kitchenOrderItemId) {
+    throw new Error("Kitchen order item id is required");
+  }
+  if (!KITCHEN_ORDER_ITEM_STATUS_SET.has(input.status)) {
+    throw new Error("Invalid kitchen order item status");
+  }
+
+  const existingItem = await prisma.kitchenOrderItem.findFirst({
+    where: {
+      id: kitchenOrderItemId,
+      business_id: businessId,
+      kitchen_order: {
+        closed_at: null,
+        table_session: {
+          closed_at: null,
+        },
+      },
+    },
+    select: { id: true },
+  });
+  if (!existingItem) {
+    throw new Error("Kitchen order item not found");
+  }
+
+  const updatedItem = await prisma.kitchenOrderItem.update({
+    where: { id: existingItem.id },
+    data: {
+      status: input.status,
+    },
+    select: {
+      id: true,
+      status: true,
+    },
+  });
+
+  return serialize({
+    id: updatedItem.id,
+    status: updatedItem.status as KitchenOrderItemStatusContract,
   });
 }

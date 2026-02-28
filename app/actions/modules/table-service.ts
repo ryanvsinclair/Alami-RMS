@@ -13,18 +13,21 @@ import {
   deleteDiningTable as _deleteDiningTable,
   deleteMenuItem as _deleteMenuItem,
   getDiningTables as _getDiningTables,
+  getKitchenQueue as _getKitchenQueue,
   getKitchenOrderForSession as _getKitchenOrderForSession,
   getMenuSetupData as _getMenuSetupData,
   importMenuItemsFromCsv as _importMenuItemsFromCsv,
   regenerateDiningTableQrToken as _regenerateDiningTableQrToken,
   requireTableServiceAccess,
   updateDiningTable as _updateDiningTable,
+  updateKitchenOrderItemStatus as _updateKitchenOrderItemStatus,
   updateMenuCategory as _updateMenuCategory,
   updateMenuItem as _updateMenuItem,
 } from "@/features/table-service/server";
 import type {
   AppendKitchenOrderItemsInput,
   ConfirmKitchenOrderInput,
+  UpdateKitchenOrderItemStatusInput,
   UpsertMenuCategoryInput,
   UpsertMenuItemInput,
 } from "@/features/table-service/shared";
@@ -108,6 +111,11 @@ export async function getKitchenOrderForSession(tableSessionId: string) {
   return _getKitchenOrderForSession(businessId, tableSessionId);
 }
 
+export async function getKitchenQueue() {
+  const { businessId } = await requireTableServiceAccess();
+  return _getKitchenQueue(businessId);
+}
+
 export async function confirmKitchenOrder(input: ConfirmKitchenOrderInput) {
   const { businessId } = await requireTableServiceAccess();
   return _confirmKitchenOrder(businessId, input);
@@ -116,4 +124,11 @@ export async function confirmKitchenOrder(input: ConfirmKitchenOrderInput) {
 export async function appendKitchenOrderItems(input: AppendKitchenOrderItemsInput) {
   const { businessId } = await requireTableServiceAccess();
   return _appendKitchenOrderItems(businessId, input);
+}
+
+export async function updateKitchenOrderItemStatus(
+  input: UpdateKitchenOrderItemStatusInput,
+) {
+  const { businessId } = await requireTableServiceAccess();
+  return _updateKitchenOrderItemStatus(businessId, input);
 }

@@ -342,6 +342,7 @@ Implemented capabilities:
   - post-confirm append action that adds new `KitchenOrderItem` rows onto the same `KitchenOrder`
   - existing ticket state surfaced in host workspace to prevent duplicate order creation
 - Kitchen workspace route `/service/kitchen` now renders confirmed open orders in FIFO order by `confirmed_at` (oldest first).
+- Kitchen queue now supports per-item lifecycle status updates (`pending`, `preparing`, `ready_to_serve`, `served`, `cancelled`) with immediate refresh after each change.
 
 Canonical paths:
 
@@ -356,6 +357,7 @@ Canonical paths:
 - `src/features/table-service/server/menu-csv.ts`
 - `src/features/table-service/server/menu.service.ts`
 - `src/features/table-service/server/order.service.ts`
+- `src/features/table-service/ui/KitchenQueuePageClient.tsx`
 - `src/features/table-service/server/table.service.ts`
 - `src/features/table-service/ui/HostOrderComposerPageClient.tsx`
 - `src/features/table-service/ui/MenuSetupPageClient.tsx`
