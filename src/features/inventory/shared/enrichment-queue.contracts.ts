@@ -10,6 +10,7 @@ export type InventoryEnrichmentTaskType =
   | "confirm_category"
   | "confirm_brand_title_cleanup"
   | "review_receipt_match"
+  | "review_purchase_confirmation"
   | "resolve_shopping_pairing";
 
 /** Actions a user can take on a queue item/task. */
@@ -62,6 +63,7 @@ export interface EnrichmentQueueObservability {
   candidate_sources: {
     barcode_metadata: number;
     receipt_matching: number;
+    purchase_confirmations: number;
     shopping_pairing: number;
     normalization_gaps: number;
   };

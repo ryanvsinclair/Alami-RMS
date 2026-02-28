@@ -26,6 +26,7 @@ import {
   findInventoryItemsForEnrichmentQueue,
   findGlobalBarcodeCatalogByBarcodes,
   findInventoryItemsMissingCategory,
+  findReceiptPurchaseConfirmationsToResolve,
   findRecentUnresolvedReceiptLines,
   findUnresolvedShoppingItems,
   updateInventoryItemForBusiness,
@@ -92,6 +93,7 @@ function buildEmptyEnrichmentTaskCounts(): Record<InventoryEnrichmentTaskType, n
     confirm_category: 0,
     confirm_brand_title_cleanup: 0,
     review_receipt_match: 0,
+    review_purchase_confirmation: 0,
     resolve_shopping_pairing: 0,
   };
 }
@@ -104,10 +106,17 @@ export async function getInventoryEnrichmentQueue(
   },
 ) {
   // -- Source 1: barcode metadata gaps (existing logic) -----------------------
-  const [scannedItems, unresolvedReceiptLines, unresolvedShoppingItems, itemsMissingCategory] =
+  const [
+    scannedItems,
+    unresolvedReceiptLines,
+    unresolvedPurchaseConfirmations,
+    unresolvedShoppingItems,
+    itemsMissingCategory,
+  ] =
     await Promise.all([
       findInventoryItemsForEnrichmentQueue(businessId, opts?.inventoryScanLimit ?? 250),
       findRecentUnresolvedReceiptLines(businessId, { daysBack: 30, limit: 100 }),
+      findReceiptPurchaseConfirmationsToResolve(businessId, { daysBack: 30, limit: 100 }),
       findUnresolvedShoppingItems(businessId, { daysBack: 30, limit: 100 }),
       findInventoryItemsMissingCategory(businessId, 100),
     ]);
@@ -125,6 +134,7 @@ export async function getInventoryEnrichmentQueue(
   // Observability counters
   let barcodeMetadataCandidates = 0;
   let receiptMatchingCandidates = 0;
+  let purchaseConfirmationCandidates = 0;
   let shoppingPairingCandidates = 0;
   let normalizationGapCandidates = 0;
 
@@ -282,6 +292,38 @@ export async function getInventoryEnrichmentQueue(
     receiptMatchingCandidates++;
   }
 
+  // -- Process source 2b: explicit resolve-later purchase confirmations -------
+  const purchaseConfirmationsByItemId = new Map<string, number>();
+  for (const line of unresolvedPurchaseConfirmations) {
+    if (!line.matched_item_id) continue;
+    purchaseConfirmationsByItemId.set(
+      line.matched_item_id,
+      (purchaseConfirmationsByItemId.get(line.matched_item_id) ?? 0) + 1,
+    );
+  }
+
+  for (const [itemId, lineCount] of purchaseConfirmationsByItemId) {
+    const itemInfo = scannedItems.find((i) => i.id === itemId);
+    if (!itemInfo) continue;
+
+    const itemBarcodes = itemInfo.barcodes.map((b) => b.barcode);
+    const entry = getOrCreateCandidate(
+      itemId,
+      itemInfo.name,
+      itemInfo.category?.name ?? null,
+      itemInfo.updated_at,
+      itemBarcodes,
+      0,
+      null,
+    );
+    addTask(
+      entry,
+      "review_purchase_confirmation",
+      `${lineCount} receipt line${lineCount > 1 ? "s" : ""} marked resolve later for purchase confirmation.`,
+    );
+    purchaseConfirmationCandidates++;
+  }
+
   // -- Process source 3: unresolved shopping pairing leftovers ----------------
   // Group unresolved shopping items by inventory_item_id (if linked) or by
   // scanned_barcode -> inventory item mapping
@@ -377,7 +419,8 @@ export async function getInventoryEnrichmentQueue(
       (t) =>
         t === "add_product_photo" ||
         t === "confirm_size" ||
-        t === "review_receipt_match",
+        t === "review_receipt_match" ||
+        t === "review_purchase_confirmation",
     );
     candidate.priority = hasHigh ? "high" : hasMedium ? "medium" : "low";
   }
@@ -422,6 +465,7 @@ export async function getInventoryEnrichmentQueue(
       t === "confirm_size" || t === "confirm_brand_title_cleanup",
     )) sourceCount++;
     if (candidate.task_types.includes("review_receipt_match")) sourceCount++;
+    if (candidate.task_types.includes("review_purchase_confirmation")) sourceCount++;
     if (candidate.task_types.includes("resolve_shopping_pairing")) sourceCount++;
     if (sourceCount > 1) multiSourceItems++;
   }
@@ -439,6 +483,7 @@ export async function getInventoryEnrichmentQueue(
     candidate_sources: {
       barcode_metadata: barcodeMetadataCandidates,
       receipt_matching: receiptMatchingCandidates + orphanReceiptLines,
+      purchase_confirmations: purchaseConfirmationCandidates,
       shopping_pairing: shoppingPairingCandidates,
       normalization_gaps: normalizationGapCandidates,
     },

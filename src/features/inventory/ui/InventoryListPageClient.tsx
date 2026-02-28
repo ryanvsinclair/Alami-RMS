@@ -26,6 +26,8 @@ interface InventoryLevel {
   last_transaction_at: Date | null;
 }
 
+type QueueFilter = "all" | "purchase_confirmation";
+
 const enrichmentTaskLabel: Record<InventoryEnrichmentTaskType, string> = {
   review_barcode_resolution: "Review barcode",
   add_product_photo: "Add photo",
@@ -33,6 +35,7 @@ const enrichmentTaskLabel: Record<InventoryEnrichmentTaskType, string> = {
   confirm_category: "Confirm category",
   confirm_brand_title_cleanup: "Title/brand cleanup",
   review_receipt_match: "Review receipt match",
+  review_purchase_confirmation: "Purchase confirmation",
   resolve_shopping_pairing: "Shopping pairing",
 };
 
@@ -44,6 +47,7 @@ export default function InventoryListPageClient() {
   const [loading, setLoading] = useState(true);
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
   const [showStats, setShowStats] = useState(false);
+  const [queueFilter, setQueueFilter] = useState<QueueFilter>("all");
 
   const {
     filteredQueue: enrichmentQueue,
@@ -115,6 +119,17 @@ export default function InventoryListPageClient() {
       item.category?.name.toLowerCase().includes(search.toLowerCase())
   );
 
+  const purchaseConfirmationCount =
+    enrichmentQueue?.summary.task_type_counts.review_purchase_confirmation ?? 0;
+  const visibleQueueItems =
+    enrichmentQueue == null
+      ? []
+      : queueFilter === "purchase_confirmation"
+        ? enrichmentQueue.items.filter((candidate) =>
+            candidate.task_types.includes("review_purchase_confirmation"),
+          )
+        : enrichmentQueue.items;
+
   return (
     <div className="p-4 space-y-4">
       {/* Fix Later Queue Card */}
@@ -168,11 +183,41 @@ export default function InventoryListPageClient() {
                 {enrichmentQueue.summary.task_type_counts.review_receipt_match} receipt
               </Badge>
             )}
+            {enrichmentQueue.summary.task_type_counts.review_purchase_confirmation > 0 && (
+              <Badge variant="warning">
+                {enrichmentQueue.summary.task_type_counts.review_purchase_confirmation} purchase
+              </Badge>
+            )}
             {enrichmentQueue.summary.task_type_counts.resolve_shopping_pairing > 0 && (
               <Badge variant="danger">
                 {enrichmentQueue.summary.task_type_counts.resolve_shopping_pairing} shopping
               </Badge>
             )}
+          </div>
+
+          <div className="flex items-center gap-2 mt-2">
+            <button
+              onClick={() => setQueueFilter("all")}
+              className={`px-2 py-1 text-xs rounded-md border ${
+                queueFilter === "all"
+                  ? "border-primary text-primary"
+                  : "border-border text-muted"
+              }`}
+              type="button"
+            >
+              All queue items
+            </button>
+            <button
+              onClick={() => setQueueFilter("purchase_confirmation")}
+              className={`px-2 py-1 text-xs rounded-md border ${
+                queueFilter === "purchase_confirmation"
+                  ? "border-primary text-primary"
+                  : "border-border text-muted"
+              }`}
+              type="button"
+            >
+              Unresolved purchases ({purchaseConfirmationCount})
+            </button>
           </div>
 
           {/* Observability stats (collapsible) */}
@@ -191,6 +236,8 @@ export default function InventoryListPageClient() {
                   <span>{enrichmentQueue.observability.candidate_sources.barcode_metadata}</span>
                   <span>Receipt sources:</span>
                   <span>{enrichmentQueue.observability.candidate_sources.receipt_matching}</span>
+                  <span>Purchase confirmations:</span>
+                  <span>{enrichmentQueue.observability.candidate_sources.purchase_confirmations}</span>
                   <span>Shopping sources:</span>
                   <span>{enrichmentQueue.observability.candidate_sources.shopping_pairing}</span>
                   <span>Normalization gaps:</span>
@@ -212,7 +259,12 @@ export default function InventoryListPageClient() {
 
           {/* Queue items with action controls */}
           <div className="mt-3 space-y-2">
-            {enrichmentQueue.items.map((candidate) => {
+            {visibleQueueItems.length === 0 && (
+              <p className="text-xs text-muted">
+                No queue items match this filter.
+              </p>
+            )}
+            {visibleQueueItems.map((candidate) => {
               const isExpanded = expandedItemId === candidate.inventory_item_id;
               return (
                 <Card key={candidate.inventory_item_id}>

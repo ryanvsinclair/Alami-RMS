@@ -180,10 +180,10 @@ Use `Canonical Order Checklist` statuses as source of truth.
 Current snapshot (2026-02-28):
 
 - Launch-critical checklist items total: `50`
-- Launch-critical `[x]`: `12`
+- Launch-critical `[x]`: `14`
 - Launch-critical `[~]`: `0`
-- Strict completion: `24.00%`
-- Weighted progress: `24.00%`
+- Strict completion: `28.00%`
+- Weighted progress: `28.00%`
 - Parked post-launch checklist items (DI): `7` (excluded from launch completion %)
 
 Update rule after each slice:
@@ -226,11 +226,11 @@ Parked stream:
 
 ## Last Left Off Here
 
-- Current task ID: `RPK-04`
-- Current task: `Inventory Fix Later integration`
+- Current task ID: `RPK-05`
+- Current task: `Receipt detail and commit guardrails`
 - Status: `NOT STARTED`
 - Last updated: `2026-02-28`
-- Note: RPK-03 complete; continue deterministic order with RPK-04.
+- Note: RPK-04 complete; continue deterministic order with RPK-05.
 
 ## Canonical Order Checklist
 
@@ -271,8 +271,8 @@ Plan doc: `docs/business-industry-packaging-refactor-plan.md`
 
 #### Phase RPK-04 - Inventory Fix Later integration
 
-- [ ] RPK-04-a: Extend Fix Later task taxonomy for unresolved purchase confirmations
-- [ ] RPK-04-b: Add inventory queue UI entry/filter for unresolved purchases
+- [x] RPK-04-a: Extend Fix Later task taxonomy for unresolved purchase confirmations
+- [x] RPK-04-b: Add inventory queue UI entry/filter for unresolved purchases
 
 #### Phase RPK-05 - Receipt detail and commit guardrails
 
@@ -417,10 +417,42 @@ No additional missing plan docs were identified from the current chat scope afte
 ## Completion Snapshot
 
 - Launch-critical initiatives active: `5` (RPK, RTS, IMG-L, UX-L, LG)
-- Launch-critical items complete: `12`
+- Launch-critical items complete: `14`
 - Parked post-launch initiatives: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - RPK-04 Fix Later unresolved purchase-confirmation queue integration completed
+
+- Constitution Restatement:
+  - Task ID: `RPK-04`
+  - Scope: extend Fix Later taxonomy for unresolved purchase confirmations and add queue entry/filter support in Inventory UI.
+  - Invariants confirmed: no product fork, receipts do not auto-create inventory, inventory writes explicit/eligibility-gated, unresolved produce routed to Fix Later.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: structural UI only, no new glow/gradient/ad-hoc color systems.
+- Preflight evidence:
+  - `Get-Content src/features/inventory/shared/enrichment-queue.contracts.ts`
+  - `Get-Content src/features/inventory/server/inventory.repository.ts`
+  - `Get-Content src/features/inventory/server/inventory.service.ts`
+  - `Get-Content src/features/inventory/ui/InventoryListPageClient.tsx`
+  - `Get-Content src/features/inventory/ui/use-enrichment-dismissals.ts`
+- Implementation:
+  - Added `review_purchase_confirmation` to enrichment task taxonomy.
+  - Added `findReceiptPurchaseConfirmationsToResolve(...)` repository query for receipt lines marked `inventory_decision=resolve_later`.
+  - Extended inventory enrichment queue derivation with purchase-confirmation candidate source and summary counts.
+  - Added Inventory queue UI badge and dedicated `Unresolved purchases` filter view.
+  - Preserved per-task actions (`Done`, `Snooze`, `Skip`) so purchase-confirmation tasks are resolvable line-by-line.
+- Validation:
+  - `npx eslint src/features/inventory/shared/enrichment-queue.contracts.ts src/features/inventory/server/inventory.repository.ts src/features/inventory/server/inventory.service.ts src/features/inventory/ui/InventoryListPageClient.tsx src/features/inventory/ui/use-enrichment-dismissals.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 4 (inventory contracts/repository/service/UI)
+  - changed docs: canonical source/master/overview/changelog sync
+  - proportionality reason: directly scoped to RPK-04 taxonomy + queue filter requirements.
+- Unrelated-file check:
+  - pre-existing unrelated local changes remained untouched; this slice modified only inventory queue paths and required canonical docs.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
 
 ### 2026-02-28 - RPK-03 receipt decoupling and produce decision gate completed
 

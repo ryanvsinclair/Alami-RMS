@@ -20,6 +20,44 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - RPK-04 completed: Fix Later unresolved purchase-confirmation taxonomy and queue filter
+
+- Suggested Commit Title: `feat(rpk-04): add unresolved purchase confirmation queue taxonomy and filter`
+- Scope: Inventory Fix Later integration (`RPK-04`) for receipt `resolve_later` purchase decisions.
+- Constitution Restatement:
+  - Task ID: `RPK-04`
+  - Scope sentence: extend queue taxonomy and add unresolved purchase queue filter without changing receipt parse/review fundamentals.
+  - Invariants confirmed: no product fork; receipts do not auto-create inventory; unresolved produce decisions route into Fix Later.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+- Deliverables:
+  - Added enrichment task type: `review_purchase_confirmation`.
+  - Added repository query for receipt lines with `inventory_decision=resolve_later` and matched inventory item.
+  - Added queue derivation source + observability counts for unresolved purchase confirmations.
+  - Added Fix Later UI badge + dedicated `Unresolved purchases` filter.
+  - Preserved line-by-line resolve actions through existing per-task dismiss/deferral controls.
+- Touched Files (single-entry log):
+  - `src/features/inventory/shared/enrichment-queue.contracts.ts` (updated)
+  - `src/features/inventory/server/inventory.repository.ts` (updated)
+  - `src/features/inventory/server/inventory.service.ts` (updated)
+  - `src/features/inventory/ui/InventoryListPageClient.tsx` (updated)
+  - `docs/business-industry-packaging-refactor-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx eslint src/features/inventory/shared/enrichment-queue.contracts.ts src/features/inventory/server/inventory.repository.ts src/features/inventory/server/inventory.service.ts src/features/inventory/ui/InventoryListPageClient.tsx src/features/inventory/ui/use-enrichment-dismissals.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 4.
+  - Delta rationale: exact RPK-04 scope (taxonomy extension + queue entry/filter integration).
+- Unrelated-file check:
+  - Existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: pending (record after commit)
+  - Commit title: `feat(rpk-04): add unresolved purchase confirmation queue taxonomy and filter`
+
 ### 2026-02-28 - RPK-03 completed: receipt commit gate + parsed-produce decision checklist
 
 - Suggested Commit Title: `feat(rpk-03): gate receipt commit behind explicit produce decisions`

@@ -266,6 +266,48 @@ export async function findRecentUnresolvedReceiptLines(
 }
 
 /**
+ * Find recent receipt line items explicitly marked "resolve later" for purchase confirmation.
+ * These represent unresolved purchase-confirmation decisions from receipt review flow.
+ */
+export async function findReceiptPurchaseConfirmationsToResolve(
+  businessId: string,
+  opts?: { daysBack?: number; limit?: number },
+) {
+  const daysBack = opts?.daysBack ?? 30;
+  const limit = opts?.limit ?? 100;
+  const cutoff = new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000);
+
+  return prisma.receiptLineItem.findMany({
+    where: {
+      receipt: {
+        business_id: businessId,
+        status: { in: ["review", "committed"] },
+      },
+      inventory_decision: "resolve_later",
+      matched_item_id: { not: null },
+      created_at: { gte: cutoff },
+    },
+    select: {
+      id: true,
+      raw_text: true,
+      parsed_name: true,
+      status: true,
+      matched_item_id: true,
+      inventory_decision: true,
+      created_at: true,
+      receipt: {
+        select: {
+          id: true,
+          supplier_id: true,
+        },
+      },
+    },
+    orderBy: { created_at: "desc" },
+    take: limit,
+  });
+}
+
+/**
  * Find shopping session items with unresolved pairing from committed sessions.
  * These indicate items that went through shopping but couldn't be fully resolved.
  */

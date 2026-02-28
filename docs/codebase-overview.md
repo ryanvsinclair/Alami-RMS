@@ -515,6 +515,7 @@ Implemented capabilities:
 - Receipt review UI now surfaces parse-confidence indicators separately from match confidence (per-line parse badges, parse-band summary counts, inline parse flags for medium/low confidence lines)
 - Receipt review UI now includes a parsed-produce checklist (`yes/no/select all/resolve later`) with auto-advance highlighting
 - Receipt finalize flow now gates commit until produce decisions are explicit; only produce lines marked `add_to_inventory` can create inventory transactions
+- Receipt lines marked `resolve_later` now flow into Inventory Fix Later queue as purchase-confirmation tasks
 - Store-specific parse-profile memory is active via `ReceiptParseProfile` (dedicated table): correction summaries now accumulate province/tax/parse signals per store profile key (`place:<google_place_id>` preferred, fallback `supplier:<supplier_id>`)
 - Profile priors are now consumed in receipt workflows when Google Place province hints are unavailable, and line-review `confirmed`/`skipped` actions feed profile stats for continuous store adaptation
 - Raw-text receipt parsing now uses a hybrid section-aware parser (`src/domain/parsers/receipt.ts`) instead of regex-only extraction:
@@ -582,9 +583,11 @@ Implemented capabilities:
 - Expanded candidate sources:
   - barcode/global metadata quality gaps
   - receipt matching suggested/unresolved outcomes
+  - unresolved purchase confirmations (`inventory_decision=resolve_later`)
   - shopping pairing leftovers (unresolved barcode, missing-on-receipt, extra-on-receipt)
   - normalization gaps (e.g., missing category)
 - Queue observability stats in UI (candidate source breakdown, queue health)
+- Queue UI includes dedicated unresolved-purchase filter for faster Fix Later triage
 
 Canonical files (examples):
 

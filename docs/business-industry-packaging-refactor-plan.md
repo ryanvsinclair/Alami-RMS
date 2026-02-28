@@ -20,6 +20,12 @@ Constitution source: `docs/execution-constitution.md`
 
 ## Latest Update
 
+- **2026-02-28 - RPK-04 completed (Fix Later purchase-confirmation taxonomy + queue filter).**
+  - Added inventory enrichment task taxonomy entry `review_purchase_confirmation` for receipt lines explicitly marked `resolve_later`.
+  - Added server-side queue candidate derivation for unresolved purchase confirmations.
+  - Added Inventory queue UI badge and dedicated `Unresolved purchases` filter.
+  - Preserved existing per-task resolve actions so purchase-confirmation tasks are resolvable line-by-line.
+
 - **2026-02-28 - RPK-03 completed (receipt direct-commit gate + parsed-produce checklist decisions).**
   - Constitution Restatement logged for `RPK-03`: scope limited to receipt review/commit decision flow and additive persistence only.
   - Added additive receipt-line decision schema (`ReceiptInventoryDecision`, `inventory_decided_at`) for explicit produce decisions.
@@ -64,8 +70,8 @@ Constitution source: `docs/execution-constitution.md`
 
 ## Pick Up Here
 
-- Current phase: `RPK-04`
-- Current task: `RPK-04-a`
+- Current phase: `RPK-05`
+- Current task: `RPK-05-a`
 - Status: `[ ]` pending
 
 ## Scope and Launch Posture
@@ -182,7 +188,7 @@ General/Solo:
 - `RPK-01`: `[x]` completed
 - `RPK-02`: `[x]` completed
 - `RPK-03`: `[x]` completed
-- `RPK-04`: `[ ]` pending
+- `RPK-04`: `[x]` completed
 - `RPK-05`: `[ ]` pending
 - `Track B`: `[ ]` queued post-launch
 
@@ -239,12 +245,12 @@ Before starting any checklist item in this plan:
 
 ### RPK-04 - Inventory Fix Later integration
 
-**Status:** `[ ]` pending
+**Status:** `[x]` completed
 
-- [ ] RPK-04-0: Constitution restatement logged for this phase and no deviation required.
-- [ ] RPK-04-a: Extend Fix Later task taxonomy for unresolved purchase confirmations.
-- [ ] RPK-04-b: Add inventory queue surface/filter for unresolved purchase tasks.
-- [ ] RPK-04-c: Ensure tasks are resolvable line-by-line later.
+- [x] RPK-04-0: Constitution restatement logged for this phase and no deviation required.
+- [x] RPK-04-a: Extend Fix Later task taxonomy for unresolved purchase confirmations.
+- [x] RPK-04-b: Add inventory queue surface/filter for unresolved purchase tasks.
+- [x] RPK-04-c: Ensure tasks are resolvable line-by-line later.
 
 ### RPK-05 - Receipt photo visibility and commit guardrails
 
