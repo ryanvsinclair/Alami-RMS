@@ -463,7 +463,7 @@ No additional missing plan docs were identified from the current chat scope afte
   - pre-existing unrelated local files remained untouched; this slice modified only RTS-01-a paths plus required canonical docs.
 - Dependency check: no new dependencies.
 - Env-var check: no new environment variables.
-- Commit checkpoint: pending (record after commit).
+- Commit checkpoint: `ab00d50` (`feat(rts-01): add table-service menu CRUD and CSV import setup route`).
 
 ### 2026-02-28 - RTS-00-c shared contracts baseline completed (RTS-00 phase closed)
 
