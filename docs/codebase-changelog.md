@@ -59,7 +59,7 @@ Companion overview: `docs/codebase-overview.md`
 - Dependency change check: no new dependencies added.
 - Env-var change check: no new env vars introduced.
 - Commit checkpoint:
-  - Commit hash: pending (record after commit)
+  - Commit hash: `8f529c3`
   - Commit title: `feat(rts-04): add kitchen item status lifecycle controls`
 
 ### 2026-02-28 - RTS-04-a completed: FIFO kitchen queue by confirmation time
