@@ -81,6 +81,9 @@ Companion overview: `docs/codebase-overview.md`
   - Existing unrelated local files remained unchanged by this slice.
 - Dependency change check: no new dependencies added.
 - Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: `d4789c9`
+  - Commit title: `feat(di-00): add document intake schema and shared contracts baseline`
 
 ### 2026-02-28 - LG-00-e completed: multi-tenant isolation and permission checks pass
 

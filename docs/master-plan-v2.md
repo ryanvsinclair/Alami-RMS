@@ -468,6 +468,7 @@ No additional missing plan docs were identified from the current chat scope afte
   - pre-existing unrelated local files remained untouched; this slice changed only DI-00 scoped files and required canonical docs.
 - Dependency check: no new dependencies.
 - Env-var check: no new environment variables.
+- Commit checkpoint: `d4789c9` (`feat(di-00): add document intake schema and shared contracts baseline`).
 
 ### 2026-02-28 - LG-00-e completed (multi-tenant isolation and permission checks pass)
 
