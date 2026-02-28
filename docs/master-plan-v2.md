@@ -180,10 +180,10 @@ Use `Canonical Order Checklist` statuses as source of truth.
 Current snapshot (2026-02-28):
 
 - Launch-critical checklist items total: `50`
-- Launch-critical `[x]`: `36`
+- Launch-critical `[x]`: `37`
 - Launch-critical `[~]`: `0`
-- Strict completion: `72.00%`
-- Weighted progress: `72.00%`
+- Strict completion: `74.00%`
+- Weighted progress: `74.00%`
 - Parked post-launch checklist items (DI): `7` (excluded from launch completion %)
 
 Update rule after each slice:
@@ -226,11 +226,11 @@ Parked stream:
 
 ## Last Left Off Here
 
-- Current task ID: `RTS-05-b`
-- Current task: `Kitchen mode redirect from / to /service/kitchen`
+- Current task ID: `RTS-05-c`
+- Current task: `Temporary-mode note for role-refactor follow-up`
 - Status: `NOT STARTED`
 - Last updated: `2026-02-28`
-- Note: RTS-05-a profile mode toggle completed; continue deterministic order with RTS-05-b.
+- Note: RTS-05-b kitchen-mode home redirect completed; continue deterministic order with RTS-05-c.
 
 ## Canonical Order Checklist
 
@@ -320,7 +320,7 @@ Plan doc: `docs/restaurant-table-service-plan.md`
 #### Phase RTS-05 - Profile mode toggle and launch hardening
 
 - [x] RTS-05-a: Add Host/Kitchen mode toggle in profile
-- [ ] RTS-05-b: Kitchen mode auto-redirects `/` to kitchen queue
+- [x] RTS-05-b: Kitchen mode auto-redirects `/` to kitchen queue
 - [ ] RTS-05-c: Add explicit temporary note for future role-based refactor
 - [ ] RTS-05-d: Launch smoke tests for QR/host/kitchen core loop
 
@@ -417,10 +417,46 @@ No additional missing plan docs were identified from the current chat scope afte
 ## Completion Snapshot
 
 - Launch-critical initiatives active: `5` (RPK, RTS, IMG-L, UX-L, LG)
-- Launch-critical items complete: `36`
+- Launch-critical items complete: `37`
 - Parked post-launch initiatives: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - RTS-05-b kitchen-mode redirect from home route implemented
+
+- Constitution Restatement:
+  - Task ID: `RTS-05-b`
+  - Scope: when profile mode is `Kitchen`, redirect `/` to `/service/kitchen` for eligible table-service restaurants.
+  - Invariants confirmed: redirect remains gated by restaurant + `table_service` module; no schema/env changes; queue/module guards remain canonical.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: behavioral routing guard only; no unauthorized layout/theme changes.
+- Preflight evidence:
+  - `Get-Content docs/restaurant-table-service-plan.md`
+  - `Get-Content app/page.tsx`
+  - `Get-Content app/(dashboard)/profile/page.tsx`
+  - `Get-Content src/features/table-service/shared/table-service.contracts.ts`
+  - `rg -n "profile|mode toggle|kitchen mode|/service/kitchen|RTS-05" app src/features docs/master-plan-v2.md docs/restaurant-table-service-plan.md --glob '!**/generated/**'`
+- Implementation:
+  - Added home-route redirect effect in `app/page.tsx`:
+    - checks restaurant industry
+    - checks `table_service` module enabled
+    - checks stored workspace mode key
+    - redirects to `/service/kitchen` when mode is `kitchen`
+  - Reused shared storage key constant for consistent profile/home mode semantics.
+  - Minor home effect cleanup for lint conformance (removed unnecessary synchronous setState inside effect).
+- Validation:
+  - `npx eslint app/page.tsx "src/features/table-service/shared/table-service.contracts.ts" "src/features/table-service/ui/TableServiceModeToggleCard.tsx"` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 1 primary (`app/page.tsx`) + shared-constant reuse
+  - changed docs: source/master/overview/changelog sync
+  - proportionality reason: exactly scoped to RTS-05-b redirect behavior.
+- Unrelated-file check:
+  - pre-existing unrelated local files remained untouched; this slice modified only RTS-05-b scope files plus required canonical docs.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+- Commit checkpoint: pending (record after commit).
 
 ### 2026-02-28 - RTS-05-a profile Host/Kitchen mode toggle added
 

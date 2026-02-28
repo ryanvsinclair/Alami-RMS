@@ -1,6 +1,6 @@
 # Restaurant Table QR + Host/Kitchen Ops Plan (Restaurant-Only V1)
 
-Status: ACTIVE - RTS-00 through RTS-04 complete; RTS-05 in progress
+Status: ACTIVE - RTS-00 through RTS-04 complete; RTS-05 in progress (a-b complete)
 Created: 2026-02-28
 Last Updated: 2026-02-28
 Primary Purpose: launch restaurant table service with QR routing, host order confirmation, and kitchen queue operations.
@@ -23,6 +23,11 @@ Primary Purpose: launch restaurant table service with QR routing, host order con
 Constitution source: `docs/execution-constitution.md`
 
 ## Latest Update
+
+- **2026-02-28 - RTS-05-b completed (Kitchen mode redirect from `/` to `/service/kitchen`).**
+  - Home route now checks table-service workspace mode preference from local storage.
+  - For restaurant businesses with `table_service` enabled and mode `kitchen`, `/` redirects to `/service/kitchen`.
+  - Redirect preserves module/industry gating and does not alter home data fetch contracts.
 
 - **2026-02-28 - RTS-05-a completed (profile Host/Kitchen mode toggle).**
   - Added profile toggle card for table-service workspace mode (`Host` / `Kitchen`).
@@ -152,7 +157,7 @@ Constitution source: `docs/execution-constitution.md`
 ## Pick Up Here
 
 - Current phase: `RTS-05`
-- Current task: `RTS-05-b`
+- Current task: `RTS-05-c`
 - Status: `[ ]` pending
 
 ## Scope
@@ -326,7 +331,7 @@ Before starting any checklist item in this plan:
 
 - [x] RTS-05-0: Constitution restatement logged for this phase and no deviation required.
 - [x] RTS-05-a: Add Host/Kitchen mode toggle in profile.
-- [ ] RTS-05-b: In Kitchen mode, redirect `/` to `/service/kitchen`.
+- [x] RTS-05-b: In Kitchen mode, redirect `/` to `/service/kitchen`.
 - [ ] RTS-05-c: Add explicit note that this mode toggle is temporary until role model refactor.
 - [ ] RTS-05-d: Run launch smoke suite for QR split, host flow, kitchen flow, and queue lifecycle.
 

@@ -347,6 +347,7 @@ Implemented capabilities:
 - Kitchen queue now collapses orders from visible list when all items are terminal (`served`/`cancelled`) while keeping orders open until explicit close flow.
 - Kitchen queue now shows overdue urgency styling/labels when `due_at` is past, without changing FIFO ordering.
 - Profile page now includes table-service launch mode toggle (`Host` / `Kitchen`) for restaurant businesses with `table_service` enabled.
+- Home route now auto-redirects restaurant users to `/service/kitchen` when profile mode is set to `Kitchen`.
 
 Canonical paths:
 

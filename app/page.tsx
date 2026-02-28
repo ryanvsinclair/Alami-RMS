@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { getDashboardSummary, type DashboardPeriod } from "@/app/actions/core/financial";
 import { getCurrentBusinessConfigAction } from "@/app/actions/core/modules";
 import { BottomNav } from "@/components/nav/bottom-nav";
@@ -10,6 +11,7 @@ import { getTerminology } from "@/lib/config/terminology";
 import type { IndustryType } from "@/lib/generated/prisma/client";
 import { HomeIncomeLayer, HomeTransactionsLayer, Skeleton } from "@/features/home/ui";
 import type { HomeDashboardSummary } from "@/features/home/shared/dashboard-summary.contracts";
+import { TABLE_SERVICE_WORKSPACE_MODE_STORAGE_KEY } from "@/features/table-service/shared";
 
 // Types
 
@@ -31,6 +33,7 @@ const HOME_SNAPSHOT_PERIOD: DashboardPeriod = "month";
 // Page
 
 export default function HomePage() {
+  const router = useRouter();
   const [transactionsCollapsed, setTransactionsCollapsed] = useState(false);
   const [data, setData] = useState<DashboardData | null>(null);
   const [industryType, setIndustryType] = useState<IndustryType>("general");
@@ -52,13 +55,21 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    setLoading(true);
-    setError("");
     getDashboardSummary(HOME_SNAPSHOT_PERIOD)
       .then((res) => setData(res as DashboardData))
       .catch(() => setError("Failed to load financial data"))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (industryType !== "restaurant") return;
+    if (!enabledModules?.includes("table_service")) return;
+
+    const mode = window.localStorage.getItem(TABLE_SERVICE_WORKSPACE_MODE_STORAGE_KEY);
+    if (mode === "kitchen") {
+      router.replace("/service/kitchen");
+    }
+  }, [enabledModules, industryType, router]);
 
   const income = data?.income ?? 0;
   const expenses = data?.expenses ?? 0;

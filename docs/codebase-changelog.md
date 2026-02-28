@@ -20,6 +20,44 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - RTS-05-b completed: kitchen mode redirect from home
+
+- Suggested Commit Title: `feat(rts-05): redirect home to kitchen queue in kitchen mode`
+- Scope: RTS phase `RTS-05-b` (home redirect behavior).
+- Constitution Restatement:
+  - Task ID: `RTS-05-b`
+  - Scope sentence: redirect `/` to `/service/kitchen` when stored workspace mode is `kitchen` for eligible restaurant/table-service contexts.
+  - Invariants confirmed: redirect remains industry/module gated; no role system change; no schema/env changes.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: behavioral redirect only.
+- Deliverables:
+  - Added redirect effect in `app/page.tsx` keyed to shared workspace-mode storage constant.
+  - Redirect now activates only when:
+    - `industryType === "restaurant"`
+    - `enabledModules` includes `table_service`
+    - local storage workspace mode is `kitchen`
+  - Removed unnecessary synchronous state setters in home data effect to satisfy lint rule.
+- Touched Files (single-entry log):
+  - `app/page.tsx` (updated)
+  - `docs/restaurant-table-service-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx eslint app/page.tsx "src/features/table-service/shared/table-service.contracts.ts" "src/features/table-service/ui/TableServiceModeToggleCard.tsx"` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 1.
+  - Delta rationale: exact RTS-05-b scope (mode-driven home redirect).
+- Unrelated-file check:
+  - Existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: pending (record after commit)
+  - Commit title: `feat(rts-05): redirect home to kitchen queue in kitchen mode`
+
 ### 2026-02-28 - RTS-05-a completed: profile Host/Kitchen mode toggle
 
 - Suggested Commit Title: `feat(rts-05): add profile host-kitchen mode toggle`
