@@ -24,6 +24,11 @@ Constitution source: `docs/execution-constitution.md`
 
 ## Latest Update
 
+- **2026-02-28 - RTS-02-c completed (`/r/[publicSlug]` menu-first diner landing baseline).**
+  - Expanded public landing route `app/r/[publicSlug]/page.tsx` to menu-first rendering.
+  - Added category-grouped menu output with uncategorized fallback section.
+  - Added availability filter (`is_available=true`) for diner-visible menu items.
+
 - **2026-02-28 - RTS-02-b completed (session-aware scan branching baseline).**
   - Updated `/scan/t/[token]` route to branch by membership context:
     - authenticated business member -> host workspace path (`/service/host?...`) with active session open/create
@@ -82,7 +87,7 @@ Constitution source: `docs/execution-constitution.md`
 ## Pick Up Here
 
 - Current phase: `RTS-02`
-- Current task: `RTS-02-c`
+- Current task: `RTS-02-d`
 - Status: `[~]` in progress
 
 ## Scope
@@ -222,7 +227,7 @@ Before starting any checklist item in this plan:
 - [x] RTS-02-0: Constitution restatement logged for this phase and no deviation required.
 - [x] RTS-02-a: Implement `/scan/t/[token]` resolver.
 - [x] RTS-02-b: Implement session-aware branch (member -> host open/start session; otherwise public).
-- [ ] RTS-02-c: Implement `/r/[publicSlug]` diner landing with menu-first UX.
+- [x] RTS-02-c: Implement `/r/[publicSlug]` diner landing with menu-first UX.
 - [ ] RTS-02-d: Show review CTA only when `google_place_id` exists.
 - [ ] RTS-02-e: Ensure no login page is shown from public scan flow.
 - [ ] RTS-02-f: Enforce no guest ordering/session joining for public scanner path.

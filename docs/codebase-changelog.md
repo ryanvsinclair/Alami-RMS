@@ -20,6 +20,40 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - RTS-02-c completed: menu-first public diner landing
+
+- Suggested Commit Title: `feat(rts-02): implement menu-first /r/[publicSlug] diner landing`
+- Scope: RTS phase `RTS-02-c` (public menu-first landing).
+- Constitution Restatement:
+  - Task ID: `RTS-02-c`
+  - Scope sentence: replace public landing placeholder with menu-first diner surface.
+  - Invariants confirmed: no guest ordering/session-join behavior introduced; only available menu items are shown.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+- Deliverables:
+  - Expanded `app/r/[publicSlug]/page.tsx` to render menu-first diner landing.
+  - Added category-grouped menu sections and uncategorized fallback section.
+  - Added availability filtering (`is_available = true`) for public menu rendering.
+- Touched Files (single-entry log):
+  - `app/r/[publicSlug]/page.tsx` (updated)
+  - `docs/restaurant-table-service-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx eslint "app/r/[publicSlug]/page.tsx"` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 1.
+  - Delta rationale: exact RTS-02-c scope (menu-first public landing rendering).
+- Unrelated-file check:
+  - Existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: pending (record after commit)
+  - Commit title: `feat(rts-02): implement menu-first /r/[publicSlug] diner landing`
+
 ### 2026-02-28 - RTS-02-b completed: session-aware scan branching baseline
 
 - Suggested Commit Title: `feat(rts-02): add member-vs-public scan routing branches`

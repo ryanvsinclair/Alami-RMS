@@ -180,10 +180,10 @@ Use `Canonical Order Checklist` statuses as source of truth.
 Current snapshot (2026-02-28):
 
 - Launch-critical checklist items total: `50`
-- Launch-critical `[x]`: `24`
+- Launch-critical `[x]`: `25`
 - Launch-critical `[~]`: `0`
-- Strict completion: `48.00%`
-- Weighted progress: `48.00%`
+- Strict completion: `50.00%`
+- Weighted progress: `50.00%`
 - Parked post-launch checklist items (DI): `7` (excluded from launch completion %)
 
 Update rule after each slice:
@@ -226,11 +226,11 @@ Parked stream:
 
 ## Last Left Off Here
 
-- Current task ID: `RTS-02-c`
-- Current task: `Implement /r/[publicSlug] diner landing with menu-first UX`
+- Current task ID: `RTS-02-d`
+- Current task: `Show review CTA only when google_place_id exists`
 - Status: `IN PROGRESS`
 - Last updated: `2026-02-28`
-- Note: RTS-02-b session-aware branching completed; continue deterministic order with RTS-02-c.
+- Note: RTS-02-c menu-first public landing completed; continue deterministic order with RTS-02-d.
 
 ## Canonical Order Checklist
 
@@ -299,7 +299,7 @@ Plan doc: `docs/restaurant-table-service-plan.md`
 
 - [x] RTS-02-a: Implement `/scan/t/[token]` resolver
 - [x] RTS-02-b: Session-aware branch (member->host, otherwise public)
-- [ ] RTS-02-c: Implement `/r/[publicSlug]` diner landing with menu-first UX
+- [x] RTS-02-c: Implement `/r/[publicSlug]` diner landing with menu-first UX
 - [ ] RTS-02-d: Show review CTA only when `google_place_id` exists
 
 #### Phase RTS-03 - Host order confirmation flow
@@ -417,10 +417,44 @@ No additional missing plan docs were identified from the current chat scope afte
 ## Completion Snapshot
 
 - Launch-critical initiatives active: `5` (RPK, RTS, IMG-L, UX-L, LG)
-- Launch-critical items complete: `24`
+- Launch-critical items complete: `25`
 - Parked post-launch initiatives: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - RTS-02-c public diner landing menu-first UX implemented
+
+- Constitution Restatement:
+  - Task ID: `RTS-02-c`
+  - Scope: implement menu-first public landing at `/r/[publicSlug]` for non-member scan path.
+  - Invariants confirmed: no guest ordering/joining behavior added, menu visibility remains business-scoped and availability-filtered.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: structural landing composition only; no unauthorized design-system expansion.
+- Preflight evidence:
+  - `Get-Content app/r/[publicSlug]/page.tsx`
+  - `Get-Content prisma/schema.prisma`
+  - `rg -n "menu-first|MenuItem|is_available|publicSlug|/r/" app src prisma docs`
+- Implementation:
+  - Expanded `/r/[publicSlug]` route from placeholder to menu-first rendering:
+    - business header + optional address
+    - category-grouped visible menu items
+    - uncategorized items section fallback
+    - empty-state when no available menu items
+  - Enforced `is_available=true` filter for diner-facing menu output.
+  - Preserved review CTA for follow-on RTS-02-d slice.
+- Validation:
+  - `npx eslint "app/r/[publicSlug]/page.tsx"` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 1 (public landing page)
+  - changed docs: source/master/overview/changelog sync
+  - proportionality reason: exactly scoped to RTS-02-c public menu-first landing behavior.
+- Unrelated-file check:
+  - pre-existing unrelated local files remained untouched; this slice modified only RTS-02-c paths plus required canonical docs.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+- Commit checkpoint: pending (record after commit).
 
 ### 2026-02-28 - RTS-02-b session-aware branch implemented
 

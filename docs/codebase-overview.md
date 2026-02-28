@@ -330,6 +330,7 @@ Implemented capabilities:
 - Session-aware scan branching baseline:
   - member of scanned business -> host workspace (`/service/host`)
   - guest/non-member -> public landing (`/r/[publicSlug]`)
+- Public landing is now menu-first with category-grouped available items.
 
 Canonical paths:
 
