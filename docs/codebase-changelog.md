@@ -87,7 +87,7 @@ Companion overview: `docs/codebase-overview.md`
 - Dependency change check: no new dependencies added.
 - Env-var change check: no new env vars introduced.
 - Commit checkpoint:
-  - Commit hash: `TBD`
+  - Commit hash: `e6e17c4`
   - Commit title: `feat(di-01): implement postmark capture-isolation inbound pipeline`
 
 ### 2026-02-28 - DI-00 completed: document-intake schema and contracts baseline

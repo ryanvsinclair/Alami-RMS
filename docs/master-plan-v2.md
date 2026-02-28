@@ -467,6 +467,7 @@ No additional missing plan docs were identified from the current chat scope afte
   - pre-existing local unrelated files remained unchanged by this slice (`.claude/settings.local.json`, `docs/MASTER_BACKEND_ARCHITECTURE.md`).
 - Dependency check: no new dependencies.
 - Env-var check: no new environment variables introduced.
+- Commit checkpoint: `e6e17c4` (`feat(di-01): implement postmark capture-isolation inbound pipeline`).
 
 ### 2026-02-28 - DI-00 completed (document-intake schema + contracts baseline)
 

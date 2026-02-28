@@ -38,6 +38,7 @@ Constitution source: `docs/execution-constitution.md`
     - `document_drafts.raw_storage_path` persisted as `{businessId}/{draftId}/raw.json`
     - `financial_transactions` count for that `draftId` remained `0`
   - DI resume pointer advanced to **DI-02**.
+  - Commit checkpoint: `e6e17c4` (`feat(di-01): implement postmark capture-isolation inbound pipeline`).
 
 - **2026-02-28 - DI-00 completed (schema + contracts baseline).**
   - Added additive schema/enums for `documents` domain:
