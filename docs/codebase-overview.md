@@ -1,8 +1,34 @@
 # Codebase Overview and Engineering Guide
 
 Status: Active (living document)
-Last Updated: 2026-02-27
+Last Updated: 2026-02-28
 Primary Purpose: Current architecture reference, implementation summary, and feature-placement rules.
+
+---
+
+## 🔐 Backend Architecture Reference
+
+> **MANDATORY READ FOR ALL BACKEND WORK**
+>
+> All backend system understanding must be derived from:
+>
+> **[docs/MASTER_BACKEND_ARCHITECTURE.md](./MASTER_BACKEND_ARCHITECTURE.md)**
+>
+> This document is the **authoritative source of truth** for:
+> - Live database schema (introspected directly from Supabase)
+> - All 26 tables and 21 enums with full column details
+> - Security model and RLS posture
+> - Multi-tenant isolation strategy
+> - Migration history and governance rules
+> - External integrations (OAuth, barcode resolution, OCR)
+> - Deployment safety checklist
+> - Full schema audit report (schema alignment: 96.2%)
+>
+> Any engineer or AI agent modifying backend logic **must read that document first**.
+>
+> Do NOT duplicate backend explanations in this file. This document covers frontend structure, feature placement, and product capabilities. The backend document covers database, security, and data flow.
+
+---
 
 ## How To Use This Document
 
@@ -25,7 +51,7 @@ Related historical/planning docs (still useful for deep history):
 
 - `docs/codebase-changelog.md` (chronological engineering changelog + validation record)
 - `docs/master-plan-v1.md` (archived canonical execution ledger; all v1 checklist items complete)
-- `docs/master-plan-v2.md` (standby successor tracker for future initiatives)
+- `docs/master-plan-v2.md` (active canonical tracker for the restaurant launch major refactor program)
 - `docs/app-structure-refactor-agent-playbook.md` (refactor execution history and wrapper decisions)
 - `docs/inventoryintakeplan.md` (inventory/barcode/receipt/enrichment rollout history)
 - `docs/combined-plan-coordination.md` (cross-plan sequencing and handoff history)
@@ -59,7 +85,7 @@ High-level completion:
 - App structure refactor plan: complete through Phase 8 (manual core-flow smoke deferred to user/integrated QA).
 - Inventory intake plan: complete through Phases 0, A, B, C, D, E.
 - Combined coordination plan: complete (manual integrated smoke remains a user QA task).
-- Master execution tracker: `docs/master-plan-v1.md` archived complete; `docs/master-plan-v2.md` is the standby successor tracker.
+- Master execution tracker: `docs/master-plan-v1.md` archived complete; `docs/master-plan-v2.md` is the active canonical tracker.
 
 What remains outside plan completion:
 
@@ -242,6 +268,8 @@ Implemented capabilities:
 
 - `/intake` route with intent-first landing surface (`IntakeHubClient`)
 - Industry-aware intent card ordering via `INTAKE_INTENT_ORDER_BY_INDUSTRY` (from `src/features/intake/shared/`)
+- Restaurant-first launch support lock via `INDUSTRY_LAUNCH_SUPPORT_MAP` (`restaurant=full`, others=`planned`)
+- Intake launch guardrails codified in shared contracts (`intake_source` + `inventory_eligibility` vocabulary + invariant lock)
 - Three intent cards routing to existing flows:
   - **Live Purchase** → `/shopping` (existing Shopping flow, unchanged)
   - **Bulk Intake** → `/receive` (existing Receive flow, unchanged)
@@ -254,6 +282,7 @@ Canonical paths:
 - `src/features/intake/shared/intake.contracts.ts` (vocabulary, intent model, session lifecycle, capabilities)
 - `src/features/intake/shared/intake-session.contracts.ts` (session orchestration adapter: status mappings, `IntakeSessionSummary` DTO, route builder)
 - `src/features/intake/shared/intake-capability.service.ts` (capability gating: `resolveIntakeCapabilities`, `isIntentVisible`, `resolveVisibleIntents`)
+- `lib/config/presets.ts` (industry presets + launch support map)
 - `src/features/intake/ui/IntakeHubClient.tsx` (Hub UI component — uses `resolveVisibleIntents()`)
 - `app/(dashboard)/intake/page.tsx` (route wrapper)
 
@@ -261,6 +290,22 @@ Migration posture:
 
 - `/shopping` and `/receive` routes preserved and fully functional
 - Refactor complete (UI-00 through UI-06): navigation consolidated, migration-era comments removed, canonical stable state.
+
+### Signup and Business Provisioning
+
+Implemented capabilities:
+
+- `industry_type` remains the canonical signup input for business provisioning.
+- Signup now supports optional restaurant place capture (`google_place_id`, formatted address, latitude, longitude) with explicit skip behavior.
+- Business provisioning persists optional place metadata on `Business` when supplied.
+
+Canonical paths:
+
+- `app/auth/signup/page.tsx`
+- `app/actions/core/auth.ts`
+- `lib/core/auth/tenant.ts`
+- `prisma/schema.prisma`
+- `prisma/migrations/20260228060000_business_profile_place_metadata/migration.sql`
 
 ### Operational Calendar (OC-04 complete)
 
@@ -466,7 +511,10 @@ Implemented capabilities:
 - Service-layer produce lookup is now active post-core correction (`receipt-produce-lookup.service.ts`): PLU-first + fuzzy name matching against `produce_items`, with province-aware language order (`QC: FR -> EN`, default `EN`)
 - Schema-backed minimal produce persistence is active on `ReceiptLineItem` with nullable `plu_code` and `organic_flag` fields
 - Schema-backed parse metadata persistence is active on `ReceiptLineItem` (`parse_confidence_score`, `parse_confidence_band`, `parse_flags`, `parse_corrections`) so parse-confidence evidence survives parse/reload cycles
+- Schema-backed receipt produce decisions are active on `ReceiptLineItem` (`inventory_decision`, `inventory_decided_at`) to support explicit `yes/no/resolve later` flows
 - Receipt review UI now surfaces parse-confidence indicators separately from match confidence (per-line parse badges, parse-band summary counts, inline parse flags for medium/low confidence lines)
+- Receipt review UI now includes a parsed-produce checklist (`yes/no/select all/resolve later`) with auto-advance highlighting
+- Receipt finalize flow now gates commit until produce decisions are explicit; only produce lines marked `add_to_inventory` can create inventory transactions
 - Store-specific parse-profile memory is active via `ReceiptParseProfile` (dedicated table): correction summaries now accumulate province/tax/parse signals per store profile key (`place:<google_place_id>` preferred, fallback `supplier:<supplier_id>`)
 - Profile priors are now consumed in receipt workflows when Google Place province hints are unavailable, and line-review `confirmed`/`skipped` actions feed profile stats for continuous store adaptation
 - Raw-text receipt parsing now uses a hybrid section-aware parser (`src/domain/parsers/receipt.ts`) instead of regex-only extraction:
@@ -500,10 +548,13 @@ Implemented capabilities:
 
 - Shopping sessions tied to store/place context (`google_place_id`)
 - Quick-shop barcode loop
+- Produce quick-search autosuggest from `produce_items` with quantity-first add-to-basket
 - Receipt reconciliation / pairing
 - Manual pairing fallback for unresolved barcode items
 - Optional photo-assisted and web/AI suggestion flow (post-receipt authoritative phase)
 - Audit metadata persistence for fallback evidence and pairing decisions
+- Intake-source eligibility metadata persisted per shopping item (`resolution_audit.intake_source` + `inventory_eligibility`)
+- Commit guardrail: manual and shelf-label sources are expense-only at commit time (no inventory writes)
 - Web fallback hardening and observability
 
 Canonical paths:
@@ -570,7 +621,7 @@ Core operational entities:
 Receipt entities:
 
 - `Receipt`
-- `ReceiptLineItem`
+- `ReceiptLineItem` (includes parse metadata + produce decision persistence)
 - `ReceiptItemAlias` (store-context alias mapping)
 - `ReceiptParseProfile` (store-specific parse/tax/province memory + priors)
 
@@ -641,9 +692,10 @@ High-level flow:
 5. Apply tax interpretation checks (province/tax-structure/math validation where signals exist)
 6. Apply produce normalization (9-prefix PLU handling + organic keyword stripping on produce candidates)
 7. Resolve lines using alias + matching pipeline
-8. User reviews/edits unresolved/suggested lines
-9. Commit receipt transactions atomically
-10. Learn aliases from user confirmations
+8. User reviews/edits unresolved/suggested lines and completes parsed-produce checklist decisions
+9. Finalize receipt review (server gate ensures produce decisions are explicit)
+10. Commit eligible receipt transactions atomically (`add_to_inventory` produce lines only)
+11. Learn aliases from user confirmations
 
 Behavior invariants:
 

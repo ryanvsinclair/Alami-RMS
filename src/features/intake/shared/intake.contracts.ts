@@ -42,6 +42,113 @@ export const INTAKE_INTENT_DESCRIPTIONS: Record<IntakeIntent, string> = {
 } as const;
 
 // ---------------------------------------------------------------------------
+// Launch invariants and source eligibility contracts (RPK-00 lock)
+// ---------------------------------------------------------------------------
+
+/**
+ * Canonical intake invariants that must remain true across all launch slices.
+ */
+export const INTAKE_GLOBAL_INVARIANTS = {
+  receipts_do_not_auto_create_inventory: true,
+  inventory_writes_are_explicit_and_eligibility_gated: true,
+  unresolved_parsed_produce_routes_to_fix_later: true,
+} as const;
+
+/**
+ * Canonical intake item source vocabulary used for launch policy enforcement.
+ */
+export const INTAKE_ITEM_SOURCES = [
+  "barcode_scan",
+  "produce_search",
+  "manual_entry",
+  "shelf_label_scan",
+  "receipt_parse_review",
+  "receipt_produce_confirmed",
+  "receipt_produce_rejected",
+  "receipt_produce_resolve_later",
+  "integration_sync",
+] as const;
+export type IntakeItemSource = (typeof INTAKE_ITEM_SOURCES)[number];
+
+/**
+ * Whether a given source can write to inventory in launch mode.
+ *
+ * - `eligible`: explicit source can write to inventory
+ * - `expense_only`: source must only produce expense records
+ * - `requires_confirmation`: source can be promoted to inventory only after explicit user confirmation
+ * - `resolve_later`: unresolved path that must route to Fix Later
+ */
+export const INVENTORY_ELIGIBILITY_STATUSES = [
+  "eligible",
+  "expense_only",
+  "requires_confirmation",
+  "resolve_later",
+] as const;
+export type InventoryEligibilityStatus = (typeof INVENTORY_ELIGIBILITY_STATUSES)[number];
+
+export interface IntakeSourceEligibilityPolicy {
+  inventory_eligibility: InventoryEligibilityStatus;
+  requires_explicit_confirmation: boolean;
+  routes_to_fix_later_when_unresolved: boolean;
+}
+
+/**
+ * Launch policy matrix per source.
+ * This is the canonical source-of-truth used by intake/receipt/shopping workflows.
+ */
+export const INTAKE_SOURCE_ELIGIBILITY: Record<IntakeItemSource, IntakeSourceEligibilityPolicy> = {
+  barcode_scan: {
+    inventory_eligibility: "eligible",
+    requires_explicit_confirmation: true,
+    routes_to_fix_later_when_unresolved: false,
+  },
+  produce_search: {
+    inventory_eligibility: "eligible",
+    requires_explicit_confirmation: true,
+    routes_to_fix_later_when_unresolved: false,
+  },
+  manual_entry: {
+    inventory_eligibility: "expense_only",
+    requires_explicit_confirmation: false,
+    routes_to_fix_later_when_unresolved: false,
+  },
+  shelf_label_scan: {
+    inventory_eligibility: "expense_only",
+    requires_explicit_confirmation: false,
+    routes_to_fix_later_when_unresolved: false,
+  },
+  receipt_parse_review: {
+    inventory_eligibility: "requires_confirmation",
+    requires_explicit_confirmation: true,
+    routes_to_fix_later_when_unresolved: false,
+  },
+  receipt_produce_confirmed: {
+    inventory_eligibility: "eligible",
+    requires_explicit_confirmation: true,
+    routes_to_fix_later_when_unresolved: false,
+  },
+  receipt_produce_rejected: {
+    inventory_eligibility: "expense_only",
+    requires_explicit_confirmation: false,
+    routes_to_fix_later_when_unresolved: false,
+  },
+  receipt_produce_resolve_later: {
+    inventory_eligibility: "resolve_later",
+    requires_explicit_confirmation: false,
+    routes_to_fix_later_when_unresolved: true,
+  },
+  integration_sync: {
+    inventory_eligibility: "requires_confirmation",
+    requires_explicit_confirmation: true,
+    routes_to_fix_later_when_unresolved: false,
+  },
+} as const;
+
+export function isInventoryEligibleSource(source: IntakeItemSource): boolean {
+  return INTAKE_SOURCE_ELIGIBILITY[source].inventory_eligibility === "eligible";
+}
+
+// ---------------------------------------------------------------------------
 // Session lifecycle — unified lifecycle applicable to all intake sessions
 // ---------------------------------------------------------------------------
 

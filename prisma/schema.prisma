@@ -69,6 +69,13 @@ enum LineItemStatus {
   skipped
 }
 
+enum ReceiptInventoryDecision {
+  pending
+  add_to_inventory
+  expense_only
+  resolve_later
+}
+
 enum ShoppingSessionStatus {
   draft
   reconciling
@@ -385,6 +392,8 @@ model ReceiptLineItem {
   matched_item_id String?
   confidence      MatchConfidence @default(none)
   status          LineItemStatus  @default(unresolved)
+  inventory_decision ReceiptInventoryDecision @default(pending)
+  inventory_decided_at DateTime?
   created_at      DateTime        @default(now())
   updated_at      DateTime        @updatedAt
 
@@ -712,6 +721,10 @@ model Business {
   id             String                 @id @default(uuid())
   name           String
   industry_type  IndustryType           @default(general)
+  google_place_id String?
+  formatted_address String?
+  latitude       Decimal?               @db.Decimal(10, 7)
+  longitude      Decimal?               @db.Decimal(10, 7)
   created_at     DateTime               @default(now())
   updated_at     DateTime               @updatedAt
   memberships    UserBusiness[]

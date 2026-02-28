@@ -10,6 +10,35 @@ import { matchText } from "@/domain/matching/engine";
 import { extractProductName } from "@/domain/parsers/product-name";
 import { toNumber, round, normalizeName, getReceiptBalanceCheck } from "./helpers";
 import { recomputeSessionState } from "./session-state.service";
+import {
+  INTAKE_ITEM_SOURCES,
+  INTAKE_SOURCE_ELIGIBILITY,
+  type IntakeItemSource,
+} from "@/features/intake/shared";
+
+function resolveShoppingItemIntakeSource(item: {
+  origin: "staged" | "receipt";
+  scanned_barcode: string | null;
+  resolution_audit: unknown;
+}): IntakeItemSource {
+  const intakeSourceFromAudit =
+    item.resolution_audit &&
+    typeof item.resolution_audit === "object" &&
+    "intake_source" in (item.resolution_audit as Record<string, unknown>)
+      ? (item.resolution_audit as Record<string, unknown>).intake_source
+      : null;
+
+  if (
+    typeof intakeSourceFromAudit === "string" &&
+    (INTAKE_ITEM_SOURCES as readonly string[]).includes(intakeSourceFromAudit)
+  ) {
+    return intakeSourceFromAudit as IntakeItemSource;
+  }
+
+  if (item.origin === "receipt") return "receipt_produce_confirmed";
+  if (item.scanned_barcode) return "barcode_scan";
+  return "manual_entry";
+}
 
 export async function commitShoppingSession(
   sessionId: string,
@@ -75,7 +104,23 @@ export async function commitShoppingSession(
     }
 
     const transactions = [];
+    const ineligibleInventoryItems: Array<{
+      shopping_session_item_id: string;
+      intake_source: IntakeItemSource;
+      inventory_eligibility: string;
+    }> = [];
     for (const item of committableItems) {
+      const intakeSource = resolveShoppingItemIntakeSource(item);
+      const intakePolicy = INTAKE_SOURCE_ELIGIBILITY[intakeSource];
+      if (intakePolicy.inventory_eligibility !== "eligible") {
+        ineligibleInventoryItems.push({
+          shopping_session_item_id: item.id,
+          intake_source: intakeSource,
+          inventory_eligibility: intakePolicy.inventory_eligibility,
+        });
+        continue;
+      }
+
       const useReceipt = item.origin === "receipt" || item.resolution === "accept_receipt";
       const quantity = useReceipt ? (toNumber(item.receipt_quantity) ?? toNumber(item.quantity) ?? 1) : (toNumber(item.quantity) ?? 1);
       const unitPrice = useReceipt
@@ -129,6 +174,8 @@ export async function commitShoppingSession(
             shopping_session_item_id: item.id,
             reconciliation_status: item.reconciliation_status,
             resolution: item.resolution,
+            intake_source: intakeSource,
+            inventory_eligibility: intakePolicy.inventory_eligibility,
           } as never,
         },
         include: { inventory_item: true },
@@ -186,6 +233,8 @@ export async function commitShoppingSession(
           shopping_session_id: refreshed.id,
           metadata: {
             item_count: committableItems.length,
+            ineligible_inventory_item_count: ineligibleInventoryItems.length,
+            ineligible_inventory_item_ids: ineligibleInventoryItems.map((entry) => entry.shopping_session_item_id),
             receipt_total: toNumber(refreshed.receipt_total),
             staged_subtotal: toNumber(refreshed.staged_subtotal),
           } as never,

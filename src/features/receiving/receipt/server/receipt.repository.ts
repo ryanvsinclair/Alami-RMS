@@ -5,7 +5,12 @@
 
 import { prisma } from "@/server/db/prisma";
 import { serialize } from "@/domain/shared/serialize";
-import type { Prisma, MatchConfidence, LineItemStatus } from "@/lib/generated/prisma/client";
+import type {
+  Prisma,
+  MatchConfidence,
+  LineItemStatus,
+  ReceiptInventoryDecision,
+} from "@/lib/generated/prisma/client";
 import {
   RECEIPT_WITH_LINE_ITEMS_INCLUDE,
   RECEIPT_DETAIL_INCLUDE,
@@ -331,6 +336,8 @@ export async function updateLineItem(
     quantity?: number;
     unit?: string;
     confidence: MatchConfidence;
+    inventory_decision?: ReceiptInventoryDecision;
+    inventory_decided_at?: Date | null;
   },
 ) {
   return prisma.receiptLineItem.update({
@@ -341,6 +348,12 @@ export async function updateLineItem(
       quantity: data.quantity,
       unit: data.unit as never,
       confidence: data.confidence,
+      ...(data.inventory_decision !== undefined
+        ? {
+            inventory_decision: data.inventory_decision,
+            inventory_decided_at: data.inventory_decided_at ?? new Date(),
+          }
+        : {}),
     },
   });
 }

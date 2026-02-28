@@ -9,6 +9,21 @@ import type {
   UnitType,
 } from "@/lib/generated/prisma/client";
 
+const PRODUCE_PARSE_FLAGS = new Set([
+  "produce_lookup_plu_match",
+  "produce_lookup_name_fuzzy_match",
+]);
+
+function toStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((entry): entry is string => typeof entry === "string");
+}
+
+function hasProduceSignal(line: { parse_flags: unknown; plu_code: number | null }): boolean {
+  if (line.plu_code != null) return true;
+  return toStringArray(line.parse_flags).some((flag) => PRODUCE_PARSE_FLAGS.has(flag));
+}
+
 // ============================================================
 // Single transaction (barcode, photo, manual flows)
 // ============================================================
@@ -115,6 +130,26 @@ export async function commitReceiptTransactions(
       throw new Error("Partial receipt commit detected; manual reconciliation required");
     }
 
+    const receiptProduceLines = await tx.receiptLineItem.findMany({
+      where: {
+        receipt_id: receiptId,
+        receipt: { business_id: businessId },
+      },
+      select: {
+        id: true,
+        parse_flags: true,
+        plu_code: true,
+        inventory_decision: true,
+      },
+    });
+
+    const pendingProduceLinesOnReceipt = receiptProduceLines.filter(
+      (line) => hasProduceSignal(line) && line.inventory_decision === "pending",
+    );
+    if (pendingProduceLinesOnReceipt.length > 0) {
+      throw new Error("Complete produce checklist decisions before committing this receipt");
+    }
+
     // Validate that requested line ids belong to this receipt and are committable.
     const lineItems = await tx.receiptLineItem.findMany({
       where: {
@@ -130,11 +165,30 @@ export async function commitReceiptTransactions(
         unit_cost: true,
         line_cost: true,
         status: true,
+        parse_flags: true,
+        plu_code: true,
+        inventory_decision: true,
       },
     });
 
     if (lineItems.length !== requestedLineIds.length) {
       throw new Error("One or more receipt lines do not belong to this receipt");
+    }
+
+    const pendingProduceLines = lineItems.filter(
+      (line) => hasProduceSignal(line) && line.inventory_decision === "pending",
+    );
+    if (pendingProduceLines.length > 0) {
+      throw new Error("Complete produce checklist decisions before committing this receipt");
+    }
+
+    const ineligibleProduceLines = lineItems.filter(
+      (line) =>
+        hasProduceSignal(line) &&
+        line.inventory_decision !== "add_to_inventory",
+    );
+    if (ineligibleProduceLines.length > 0) {
+      throw new Error("Only produce lines marked yes can be committed to inventory");
     }
 
     const uncommittable = lineItems.filter(

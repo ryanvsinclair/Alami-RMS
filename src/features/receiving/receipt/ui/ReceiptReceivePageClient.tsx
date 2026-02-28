@@ -1,11 +1,16 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
-import { processReceiptText, processReceiptImage, updateLineItemMatch } from "@/app/actions/modules/receipts";
-import { commitReceiptTransactions } from "@/app/actions/core/transactions";
+import {
+  finalizeReceiptReview,
+  processReceiptImage,
+  processReceiptText,
+  setReceiptProduceDecision,
+  updateLineItemMatch,
+} from "@/app/actions/modules/receipts";
 import { compressImage } from "@/shared/utils/compress-image";
 import { ReceiptLineItemRow } from "@/features/receiving/receipt/ui/ReceiptLineItemRow";
 import type {
@@ -15,6 +20,58 @@ import type {
 
 type Step = "input" | "review" | "success";
 type InputMode = "camera" | "text";
+type ProduceDecision = "add_to_inventory" | "expense_only" | "resolve_later";
+
+const PRODUCE_PARSE_FLAGS = new Set([
+  "produce_lookup_plu_match",
+  "produce_lookup_name_fuzzy_match",
+]);
+
+function hasProduceSignal(line: ReceiveReceiptReviewLineItem): boolean {
+  if (line.plu_code != null) return true;
+  const flags = line.parse_flags ?? [];
+  return flags.some((flag) => PRODUCE_PARSE_FLAGS.has(flag));
+}
+
+function getProduceDecision(line: ReceiveReceiptReviewLineItem): ProduceDecision | "pending" {
+  const decision = line.inventory_decision;
+  if (!decision) return "pending";
+  if (
+    decision === "add_to_inventory" ||
+    decision === "expense_only" ||
+    decision === "resolve_later"
+  ) {
+    return decision;
+  }
+  return "pending";
+}
+
+function getDecisionStatus(decision: ProduceDecision): "confirmed" | "skipped" | "unresolved" {
+  switch (decision) {
+    case "add_to_inventory":
+      return "confirmed";
+    case "expense_only":
+      return "skipped";
+    case "resolve_later":
+      return "unresolved";
+  }
+}
+
+function pickNextPendingProduceId(
+  lines: ReceiveReceiptReviewLineItem[],
+  currentLineId: string | null,
+): string | null {
+  const candidates = lines.filter((line) => hasProduceSignal(line));
+  const pending = candidates.filter((line) => getProduceDecision(line) === "pending");
+  if (pending.length === 0) return null;
+  if (!currentLineId) return pending[0]?.id ?? null;
+
+  const currentIndex = pending.findIndex((line) => line.id === currentLineId);
+  if (currentIndex >= 0 && currentIndex + 1 < pending.length) {
+    return pending[currentIndex + 1]?.id ?? pending[0]?.id ?? null;
+  }
+  return pending[0]?.id ?? null;
+}
 
 export default function ReceiptReceivePageClient() {
   const [step, setStep] = useState<Step>("input");
@@ -24,6 +81,10 @@ export default function ReceiptReceivePageClient() {
   const [loading, setLoading] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [committing, setCommitting] = useState(false);
+  const [decisionSavingLineId, setDecisionSavingLineId] = useState<string | null>(null);
+  const [bulkDecisionSaving, setBulkDecisionSaving] = useState(false);
+  const [activeProduceLineId, setActiveProduceLineId] = useState<string | null>(null);
+  const [committedCount, setCommittedCount] = useState(0);
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -39,7 +100,9 @@ export default function ReceiptReceivePageClient() {
       const result = await processReceiptImage(base64);
 
       if (result.success && "receipt" in result && result.receipt) {
-        setReceipt(result.receipt as ReceiveReceiptReviewData);
+        const nextReceipt = result.receipt as ReceiveReceiptReviewData;
+        setReceipt(nextReceipt);
+        setActiveProduceLineId(pickNextPendingProduceId(nextReceipt.line_items, null));
         setStep("review");
       } else {
         setError("error" in result ? (result.error ?? "Scan failed") : "Scan failed. Try pasting text manually.");
@@ -62,7 +125,9 @@ export default function ReceiptReceivePageClient() {
     try {
       const result = await processReceiptText(rawText.trim());
       if (result) {
-        setReceipt(result as ReceiveReceiptReviewData);
+        const nextReceipt = result as ReceiveReceiptReviewData;
+        setReceipt(nextReceipt);
+        setActiveProduceLineId(pickNextPendingProduceId(nextReceipt.line_items, null));
         setStep("review");
       }
     } catch {
@@ -78,17 +143,39 @@ export default function ReceiptReceivePageClient() {
     status: "confirmed" | "skipped"
   ) {
     try {
+      const existingLine = receipt?.line_items.find((line) => line.id === lineItemId) ?? null;
+      const produceDecision =
+        existingLine && hasProduceSignal(existingLine)
+          ? status === "confirmed"
+            ? "add_to_inventory"
+            : "expense_only"
+          : undefined;
       await updateLineItemMatch(lineItemId, {
         matched_item_id: matchedItemId,
         status,
+        inventory_decision: produceDecision,
       });
       if (receipt) {
+        const nextLines = receipt.line_items.map((li) =>
+          li.id === lineItemId
+            ? {
+                ...li,
+                status,
+                matched_item: matchedItemId
+                  ? li.matched_item
+                  : null,
+                inventory_decision:
+                  produceDecision ?? li.inventory_decision,
+              }
+            : li
+        );
         setReceipt({
           ...receipt,
-          line_items: receipt.line_items.map((li) =>
-            li.id === lineItemId ? { ...li, status } : li
-          ),
+          line_items: nextLines,
         });
+        setActiveProduceLineId(
+          pickNextPendingProduceId(nextLines, lineItemId),
+        );
       }
     } catch {
       setError("Failed to update line item");
@@ -103,53 +190,122 @@ export default function ReceiptReceivePageClient() {
       await updateLineItemMatch(lineItemId, {
         matched_item_id: item.id,
         status: "confirmed",
+        inventory_decision: "add_to_inventory",
       });
       if (receipt) {
+        const nextLines = receipt.line_items.map((li) =>
+          li.id === lineItemId
+            ? {
+                ...li,
+                matched_item: { id: item.id, name: item.name, unit: "each" },
+                status: "confirmed",
+                confidence: "high",
+                inventory_decision: hasProduceSignal(li)
+                  ? "add_to_inventory"
+                  : li.inventory_decision,
+              }
+            : li
+        );
         setReceipt({
           ...receipt,
-          line_items: receipt.line_items.map((li) =>
-            li.id === lineItemId
-              ? {
-                  ...li,
-                  matched_item: { id: item.id, name: item.name, unit: "each" },
-                  status: "confirmed",
-                  confidence: "high",
-                }
-              : li
-          ),
+          line_items: nextLines,
         });
+        setActiveProduceLineId(
+          pickNextPendingProduceId(nextLines, lineItemId),
+        );
       }
     } catch {
       setError("Failed to link item");
     }
   }
 
+  async function handleProduceDecision(lineItemId: string, decision: ProduceDecision) {
+    if (!receipt) return;
+    setError("");
+    setDecisionSavingLineId(lineItemId);
+    try {
+      await setReceiptProduceDecision(lineItemId, decision);
+      const nextStatus = getDecisionStatus(decision);
+      const nextLines = receipt.line_items.map((line) =>
+        line.id === lineItemId
+          ? {
+              ...line,
+              status: nextStatus,
+              inventory_decision: decision,
+              inventory_decided_at: new Date().toISOString(),
+            }
+          : line,
+      );
+      setReceipt({
+        ...receipt,
+        line_items: nextLines,
+      });
+      setActiveProduceLineId(
+        pickNextPendingProduceId(nextLines, lineItemId),
+      );
+    } catch {
+      setError("Failed to save produce decision");
+    } finally {
+      setDecisionSavingLineId(null);
+    }
+  }
+
+  async function handleSelectAllProduce(decision: Exclude<ProduceDecision, "resolve_later">) {
+    if (!receipt) return;
+    setError("");
+    const pendingProduceLines = receipt.line_items.filter(
+      (line) => hasProduceSignal(line) && getProduceDecision(line) === "pending",
+    );
+    if (pendingProduceLines.length === 0) return;
+
+    setBulkDecisionSaving(true);
+    try {
+      await Promise.all(
+        pendingProduceLines.map((line) => setReceiptProduceDecision(line.id, decision)),
+      );
+
+      const nextStatus = getDecisionStatus(decision);
+      const nowIso = new Date().toISOString();
+      const pendingIds = new Set(pendingProduceLines.map((line) => line.id));
+      const nextLines = receipt.line_items.map((line) =>
+        pendingIds.has(line.id)
+          ? {
+              ...line,
+              status: nextStatus,
+              inventory_decision: decision,
+              inventory_decided_at: nowIso,
+            }
+          : line,
+      );
+      setReceipt({
+        ...receipt,
+        line_items: nextLines,
+      });
+      setActiveProduceLineId(pickNextPendingProduceId(nextLines, null));
+    } catch {
+      setError("Failed to apply produce decision to all items");
+    } finally {
+      setBulkDecisionSaving(false);
+    }
+  }
+
   async function handleCommitAll() {
     if (!receipt) return;
-    setCommitting(true);
-
-    const confirmedLines = receipt.line_items.filter(
-      (li) => (li.status === "confirmed" || li.status === "matched") && li.matched_item
-    );
-
-    if (confirmedLines.length === 0) {
-      setError("No confirmed items to commit");
-      setCommitting(false);
+    const pendingProduceCount = receipt.line_items.filter(
+      (line) => hasProduceSignal(line) && getProduceDecision(line) === "pending",
+    ).length;
+    if (pendingProduceCount > 0) {
+      setError("Resolve produce checklist decisions before committing this receipt");
       return;
     }
 
+    setCommitting(true);
+
     try {
-      await commitReceiptTransactions(
-        receipt.id,
-        confirmedLines.map((li) => ({
-          inventory_item_id: li.matched_item!.id,
-          receipt_line_item_id: li.id,
-          quantity: Number(li.quantity) || 1,
-          unit: (li.matched_item!.unit || li.unit || "each") as never,
-          unit_cost: li.unit_cost ? Number(li.unit_cost) : undefined,
-          total_cost: li.line_cost ? Number(li.line_cost) : undefined,
-        }))
-      );
+      const result = (await finalizeReceiptReview(receipt.id)) as {
+        committed_count?: number;
+      } | null;
+      setCommittedCount(result?.committed_count ?? 0);
       setStep("success");
     } catch {
       setError("Failed to commit transactions");
@@ -157,6 +313,23 @@ export default function ReceiptReceivePageClient() {
       setCommitting(false);
     }
   }
+
+  const produceCandidates = useMemo(
+    () => receipt?.line_items.filter((line) => hasProduceSignal(line)) ?? [],
+    [receipt],
+  );
+
+  const pendingProduceCount = produceCandidates.filter(
+    (line) => getProduceDecision(line) === "pending",
+  ).length;
+
+  const eligibleInventoryCount = receipt?.line_items.filter((line) => {
+    const hasMatched = Boolean(line.matched_item);
+    const committableStatus = line.status === "confirmed" || line.status === "matched";
+    if (!hasMatched || !committableStatus) return false;
+    if (!hasProduceSignal(line)) return true;
+    return getProduceDecision(line) === "add_to_inventory";
+  }).length ?? 0;
 
   const confirmedCount = receipt?.line_items.filter(
     (li) => li.status === "confirmed" || li.status === "matched"
@@ -177,6 +350,10 @@ export default function ReceiptReceivePageClient() {
     setInputMode("camera");
     setRawText("");
     setReceipt(null);
+    setActiveProduceLineId(null);
+    setDecisionSavingLineId(null);
+    setBulkDecisionSaving(false);
+    setCommittedCount(0);
     setError("");
   }
 
@@ -280,6 +457,100 @@ export default function ReceiptReceivePageClient() {
             </div>
           </div>
 
+          {produceCandidates.length > 0 && (
+            <div className="rounded-lg border border-border bg-white/6 p-3 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium">Parsed Produce Checklist</p>
+                  <p className="text-xs text-muted">
+                    {pendingProduceCount} pending decision{pendingProduceCount === 1 ? "" : "s"}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => handleSelectAllProduce("add_to_inventory")}
+                    disabled={bulkDecisionSaving || pendingProduceCount === 0}
+                    className="px-2 py-1 text-xs rounded-md bg-success/12 text-success disabled:opacity-50"
+                  >
+                    Select All Yes
+                  </button>
+                  <button
+                    onClick={() => handleSelectAllProduce("expense_only")}
+                    disabled={bulkDecisionSaving || pendingProduceCount === 0}
+                    className="px-2 py-1 text-xs rounded-md bg-white/10 text-white/70 disabled:opacity-50"
+                  >
+                    Select All No
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                {produceCandidates.map((line) => {
+                  const decision = getProduceDecision(line);
+                  const isPending = decision === "pending";
+                  const isActive = line.id === activeProduceLineId;
+                  return (
+                    <div
+                      key={line.id}
+                      className={`rounded-md border p-2 ${
+                        isActive ? "border-primary" : "border-border"
+                      } ${isPending ? "bg-white/6" : "bg-white/4"}`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="text-sm font-medium">
+                            {line.parsed_name ?? line.raw_text}
+                          </p>
+                          <p className="text-xs text-muted">
+                            {line.quantity ?? "?"} {line.unit ?? "each"}
+                            {line.line_cost ? ` • $${Number(line.line_cost).toFixed(2)}` : ""}
+                          </p>
+                        </div>
+                        <span className="text-[11px] text-muted">
+                          {decision === "pending"
+                            ? "Pending"
+                            : decision === "add_to_inventory"
+                            ? "Yes"
+                            : decision === "expense_only"
+                            ? "No"
+                            : "Resolve later"}
+                        </span>
+                      </div>
+
+                      <div className="mt-2 flex gap-1">
+                        <button
+                          onClick={() => handleProduceDecision(line.id, "add_to_inventory")}
+                          disabled={
+                            decisionSavingLineId === line.id ||
+                            bulkDecisionSaving ||
+                            !line.matched_item
+                          }
+                          className="px-2 py-1 text-xs rounded-md bg-success/12 text-success disabled:opacity-50"
+                        >
+                          Yes
+                        </button>
+                        <button
+                          onClick={() => handleProduceDecision(line.id, "expense_only")}
+                          disabled={decisionSavingLineId === line.id || bulkDecisionSaving}
+                          className="px-2 py-1 text-xs rounded-md bg-white/10 text-white/70 disabled:opacity-50"
+                        >
+                          No
+                        </button>
+                        <button
+                          onClick={() => handleProduceDecision(line.id, "resolve_later")}
+                          disabled={decisionSavingLineId === line.id || bulkDecisionSaving}
+                          className="px-2 py-1 text-xs rounded-md bg-amber-500/12 text-amber-300 disabled:opacity-50"
+                        >
+                          Resolve Later
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <div className="space-y-2">
             {receipt.line_items.map((li) => (
               <ReceiptLineItemRow
@@ -288,7 +559,15 @@ export default function ReceiptReceivePageClient() {
                 onConfirm={(matchedItemId) =>
                   handleLineItemUpdate(li.id, matchedItemId, "confirmed")
                 }
-                onSkip={() => handleLineItemUpdate(li.id, null, "skipped")}
+                onSkip={() =>
+                  handleLineItemUpdate(
+                    li.id,
+                    hasProduceSignal(li as ReceiveReceiptReviewLineItem)
+                      ? li.matched_item?.id ?? null
+                      : null,
+                    "skipped",
+                  )
+                }
                 onNewItem={handleNewItemForLine}
               />
             ))}
@@ -300,10 +579,11 @@ export default function ReceiptReceivePageClient() {
             <Button
               onClick={handleCommitAll}
               loading={committing}
+              disabled={pendingProduceCount > 0}
               className="w-full"
               size="lg"
             >
-              Add All ({confirmedCount} items)
+              Finalize Receipt ({eligibleInventoryCount} inventory items)
             </Button>
           </div>
         </>
@@ -318,7 +598,7 @@ export default function ReceiptReceivePageClient() {
           </div>
           <div>
             <h3 className="font-semibold text-lg">Receipt Committed</h3>
-            <p className="text-muted">{confirmedCount} items added to inventory</p>
+            <p className="text-muted">{committedCount} items added to inventory</p>
           </div>
           {receipt && (
             <Link

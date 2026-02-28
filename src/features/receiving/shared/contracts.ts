@@ -37,6 +37,13 @@ export interface ReceiveReceiptReviewLineItem {
   parse_confidence_band: string | null;
   parse_flags: string[] | null;
   parse_corrections: ReceiveParseCorrectionAction[] | null;
+  plu_code?: number | null;
+  inventory_decision?:
+    | "pending"
+    | "add_to_inventory"
+    | "expense_only"
+    | "resolve_later";
+  inventory_decided_at?: string | null;
   status: string;
   matched_item: ReceiveMatchedItemRef | null;
 }
@@ -59,6 +66,13 @@ export interface ReceiveReceiptDetailLineItem {
   parse_confidence_band: string | null;
   parse_flags: string[] | null;
   parse_corrections: ReceiveParseCorrectionAction[] | null;
+  plu_code?: number | null;
+  inventory_decision?:
+    | "pending"
+    | "add_to_inventory"
+    | "expense_only"
+    | "resolve_later";
+  inventory_decided_at?: string | null;
   matched_item: ReceiveMatchedItemRef | null;
 }
 

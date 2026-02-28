@@ -3,27 +3,62 @@ import { requireSupabaseUser } from "@/core/auth/server";
 import { INDUSTRY_PRESETS } from "@/lib/config/presets";
 import type { BusinessRole, IndustryType } from "@/lib/generated/prisma/client";
 
+interface EnsureBusinessForUserOptions {
+  industryType?: IndustryType;
+  googlePlaceId?: string | null;
+  formattedAddress?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+}
+
 export async function ensureBusinessForUser(
   userId: string,
   preferredName?: string,
-  options?: { industryType?: IndustryType }
+  options?: EnsureBusinessForUserOptions
 ) {
+  const industryType = options?.industryType ?? "general";
+  const preset = INDUSTRY_PRESETS[industryType] ?? INDUSTRY_PRESETS.general;
+  const googlePlaceId = options?.googlePlaceId?.trim() || null;
+  const formattedAddress = options?.formattedAddress?.trim() || null;
+  const latitude = options?.latitude ?? null;
+  const longitude = options?.longitude ?? null;
+
   const existing = await prisma.userBusiness.findFirst({
     where: { user_id: userId },
     include: { business: true },
   });
 
   if (existing?.business) {
+    const updateData: {
+      google_place_id?: string;
+      formatted_address?: string;
+      latitude?: number;
+      longitude?: number;
+    } = {};
+
+    if (googlePlaceId) updateData.google_place_id = googlePlaceId;
+    if (formattedAddress) updateData.formatted_address = formattedAddress;
+    if (latitude != null) updateData.latitude = latitude;
+    if (longitude != null) updateData.longitude = longitude;
+
+    if (Object.keys(updateData).length > 0) {
+      return prisma.business.update({
+        where: { id: existing.business.id },
+        data: updateData,
+      });
+    }
+
     return existing.business;
   }
-
-  const industryType = options?.industryType ?? "general";
-  const preset = INDUSTRY_PRESETS[industryType] ?? INDUSTRY_PRESETS.general;
 
   const business = await prisma.business.create({
     data: {
       name: preferredName?.trim() || "My Business",
       industry_type: industryType,
+      google_place_id: googlePlaceId,
+      formatted_address: formattedAddress,
+      latitude,
+      longitude,
       modules: {
         create: preset.defaultModules.map((moduleId) => ({
           module_id: moduleId,

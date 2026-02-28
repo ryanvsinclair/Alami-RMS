@@ -15,6 +15,7 @@ import {
   commitShoppingSession,
   getActiveShoppingSession,
   pairShoppingSessionBarcodeItemToReceiptItem,
+  searchProduceCatalog,
   scanAndReconcileReceipt,
   suggestShoppingSessionBarcodeReceiptPairWithWebFallback,
   removeShoppingSessionItem,
@@ -56,6 +57,13 @@ export type ShoppingSessionRefs = {
   scanFileRef: RefObject<HTMLInputElement | null>;
 };
 
+type ProduceSuggestion = {
+  plu_code: number;
+  display_name: string;
+  commodity: string;
+  variety: string | null;
+};
+
 export function useShoppingSession(refs: ShoppingSessionRefs) {
   const { fileInputRef, quickBarcodeInputRef, receiptSectionRef, fallbackPhotoInputRef, scanFileRef } = refs;
 
@@ -70,6 +78,8 @@ export function useShoppingSession(refs: ShoppingSessionRefs) {
   const [quickBarcode, setQuickBarcode] = useState("");
   const [quickScanLoading, setQuickScanLoading] = useState(false);
   const [quickScanFeedback, setQuickScanFeedback] = useState<QuickScanFeedback | null>(null);
+  const [produceSuggestions, setProduceSuggestions] = useState<ProduceSuggestion[]>([]);
+  const [produceSearchLoading, setProduceSearchLoading] = useState(false);
 
   const [receiptScanning, setReceiptScanning] = useState(false);
   const [commitLoading, setCommitLoading] = useState(false);
@@ -221,6 +231,34 @@ export function useShoppingSession(refs: ShoppingSessionRefs) {
     return () => clearTimeout(timeout);
   }, [storeQuery, placesReady, selectedStore]);
 
+  useEffect(() => {
+    const sessionId = session?.id ?? null;
+    if (!sessionId) {
+      setProduceSuggestions([]);
+      return;
+    }
+    const query = itemName.trim();
+    if (query.length < 2) {
+      setProduceSuggestions([]);
+      setProduceSearchLoading(false);
+      return;
+    }
+
+    const timeout = setTimeout(async () => {
+      setProduceSearchLoading(true);
+      try {
+        const results = await searchProduceCatalog(query, 6);
+        setProduceSuggestions(results as ProduceSuggestion[]);
+      } catch {
+        setProduceSuggestions([]);
+      } finally {
+        setProduceSearchLoading(false);
+      }
+    }, 180);
+
+    return () => clearTimeout(timeout);
+  }, [itemName, session?.id]);
+
   // ─── Handlers ────────────────────────────────────────────
 
   async function selectSuggestion(suggestion: PlacePrediction) {
@@ -265,13 +303,39 @@ export function useShoppingSession(refs: ShoppingSessionRefs) {
         name: itemName.trim(),
         quantity: Number(qty) || 1,
         unit_price: price ? Number(price) : undefined,
+        intake_source: "manual_entry",
       });
       setSession(updated as ShoppingSession);
       setItemName("");
       setQty("1");
       setPrice("");
+      setProduceSuggestions([]);
     } catch {
       setError("Failed to add item");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleAddProduceSuggestion(suggestion: ProduceSuggestion) {
+    if (!session) return;
+    setSaving(true);
+    setError("");
+    try {
+      const updated = await addShoppingSessionItem({
+        session_id: session.id,
+        name: `${suggestion.display_name} (PLU ${suggestion.plu_code})`,
+        quantity: Number(qty) || 1,
+        unit_price: price ? Number(price) : undefined,
+        intake_source: "produce_search",
+      });
+      setSession(updated as ShoppingSession);
+      setItemName("");
+      setQty("1");
+      setPrice("");
+      setProduceSuggestions([]);
+    } catch {
+      setError("Failed to add produce item");
     } finally {
       setSaving(false);
     }
@@ -601,6 +665,8 @@ export function useShoppingSession(refs: ShoppingSessionRefs) {
     setQuickBarcode,
     quickScanLoading,
     quickScanFeedback,
+    produceSuggestions,
+    produceSearchLoading,
     receiptScanning,
     commitLoading,
     cancelLoading,
@@ -639,6 +705,7 @@ export function useShoppingSession(refs: ShoppingSessionRefs) {
     selectSuggestion,
     confirmStoreAndStart,
     handleAddItem,
+    handleAddProduceSuggestion,
     handleQuickBarcodeAdd,
     handleUpdateItem,
     handleRemoveItem,

@@ -12,6 +12,11 @@ import {
   learnReceiptItemAlias,
 } from "@/core/matching/receipt-line";
 import { requireBusinessId } from "@/core/auth/tenant";
+import {
+  INTAKE_ITEM_SOURCES,
+  INTAKE_SOURCE_ELIGIBILITY,
+  type IntakeItemSource,
+} from "@/features/intake/shared";
 import type {
   ShoppingItemResolution,
   UnitType,
@@ -42,6 +47,14 @@ import {
 } from "@/features/shopping/server/helpers";
 import type { SelectedGooglePlace, ShoppingFallbackPhotoAnalysis } from "@/features/shopping/server/contracts";
 import { matchText } from "@/core/matching/engine";
+
+function resolveIntakeSource(source: IntakeItemSource | undefined): IntakeItemSource {
+  if (!source) return "manual_entry";
+  if ((INTAKE_ITEM_SOURCES as readonly string[]).includes(source)) {
+    return source;
+  }
+  return "manual_entry";
+}
 
 // ─── Session CRUD ────────────────────────────────────────────
 
@@ -114,6 +127,7 @@ export async function addShoppingSessionItem(data: {
   unit_price?: number;
   inventory_item_id?: string;
   scanned_barcode?: string;
+  intake_source?: IntakeItemSource;
 }) {
   await requireModule("shopping");
   const businessId = await requireBusinessId();
@@ -121,6 +135,8 @@ export async function addShoppingSessionItem(data: {
   const unitPrice = data.unit_price != null && data.unit_price >= 0 ? data.unit_price : null;
   const lineTotal = unitPrice != null ? round(quantity * unitPrice) : null;
   const scannedBarcode = data.scanned_barcode ? normalizeBarcode(data.scanned_barcode) : null;
+  const intakeSource = resolveIntakeSource(data.intake_source);
+  const intakePolicy = INTAKE_SOURCE_ELIGIBILITY[intakeSource];
 
   await prisma.$transaction(async (tx) => {
     const session = await tx.shoppingSession.findFirstOrThrow({
@@ -145,6 +161,11 @@ export async function addShoppingSessionItem(data: {
         staged_line_total: lineTotal,
         reconciliation_status: session.status === "draft" ? "pending" : "missing_on_receipt",
         resolution: "pending",
+        resolution_audit: {
+          intake_source: intakeSource,
+          inventory_eligibility: intakePolicy.inventory_eligibility,
+          requires_explicit_confirmation: intakePolicy.requires_explicit_confirmation,
+        } as never,
       },
     });
 
@@ -192,6 +213,7 @@ export async function addShoppingSessionItemByBarcodeQuick(data: {
     quantity,
     inventory_item_id: inventoryItemId,
     scanned_barcode: normalizedBarcode,
+    intake_source: "barcode_scan",
   });
 
   return {
@@ -256,6 +278,41 @@ export async function updateShoppingSessionItem(
   });
 
   return getShoppingSession(item.session_id);
+}
+
+export async function searchProduceCatalog(query: string, limit = 8) {
+  await requireModule("shopping");
+  const trimmed = query.trim();
+  if (trimmed.length < 2) {
+    return [] as Array<{
+      plu_code: number;
+      display_name: string;
+      commodity: string;
+      variety: string | null;
+    }>;
+  }
+
+  const safeLimit = Math.max(1, Math.min(limit, 20));
+  const rows = await prisma.produceItem.findMany({
+    where: {
+      language_code: "EN",
+      OR: [
+        { display_name: { contains: trimmed, mode: "insensitive" } },
+        { commodity: { contains: trimmed, mode: "insensitive" } },
+        { variety: { contains: trimmed, mode: "insensitive" } },
+      ],
+    },
+    select: {
+      plu_code: true,
+      display_name: true,
+      commodity: true,
+      variety: true,
+    },
+    orderBy: { display_name: "asc" },
+    take: safeLimit,
+  });
+
+  return serialize(rows);
 }
 
 export async function removeShoppingSessionItem(itemId: string) {
@@ -481,6 +538,7 @@ export async function addShelfLabelItem(data: {
     unit: "each",
     unit_price: data.parsed.unit_price ?? undefined,
     inventory_item_id: data.inventory_item_id,
+    intake_source: "shelf_label_scan",
   });
 }
 

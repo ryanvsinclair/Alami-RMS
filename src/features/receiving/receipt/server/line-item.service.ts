@@ -12,6 +12,7 @@ import {
   findLineItemWithReceipt,
   updateLineItem,
 } from "./receipt.repository";
+import type { ReceiptInventoryDecision } from "@/lib/generated/prisma/client";
 
 /**
  * Update a line item match (confirms, changes, or skips).
@@ -22,9 +23,10 @@ export async function updateLineItemMatch(
   businessId: string,
   data: {
     matched_item_id: string | null;
-    status: "confirmed" | "skipped";
+    status: "confirmed" | "skipped" | "unresolved";
     quantity?: number;
     unit?: string;
+    inventory_decision?: ReceiptInventoryDecision;
   },
 ) {
   const lineExists = await findLineItemWithReceipt(lineItemId, businessId);
@@ -48,6 +50,8 @@ export async function updateLineItemMatch(
     quantity: data.quantity,
     unit: data.unit,
     confidence: data.matched_item_id ? "high" : "none",
+    inventory_decision: data.inventory_decision,
+    inventory_decided_at: data.inventory_decision ? new Date() : undefined,
   });
 
   // Learn alias from user correction (FR-6)

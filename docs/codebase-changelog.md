@@ -1,7 +1,7 @@
 ﻿# Codebase Changelog
 
 Status: Active (living document)
-Last Updated: 2026-02-27
+Last Updated: 2026-02-28
 Primary Purpose: Chronological engineering changelog and validation record.
 
 Companion overview: `docs/codebase-overview.md`
@@ -19,6 +19,335 @@ Companion overview: `docs/codebase-overview.md`
 - Do not delete historical entries; add corrections as new entries.
 
 ## Changelog (Append New Entries At Top)
+
+### 2026-02-28 - RPK-03 completed: receipt commit gate + parsed-produce decision checklist
+
+- Suggested Commit Title: `feat(rpk-03): gate receipt commit behind explicit produce decisions`
+- Scope: Receipt decoupling and confirmation flow (`RPK-03`) with additive receipt-line decision persistence.
+- Constitution Restatement:
+  - Task ID: `RPK-03`
+  - Scope sentence: remove direct receipt commit behavior by gating commit and add parsed-produce checklist decisions with persistence.
+  - Invariants confirmed: receipts do not auto-create inventory; inventory writes remain explicit/eligibility-gated; unresolved produce decisions persist for Fix Later follow-up.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+- Deliverables:
+  - Added additive schema support for receipt produce decisions:
+    - `ReceiptInventoryDecision` enum
+    - `ReceiptLineItem.inventory_decision`
+    - `ReceiptLineItem.inventory_decided_at`
+  - Added migration `20260228102000_receipt_inventory_decisions` and applied it safely via `prisma db execute` + `prisma migrate resolve`.
+  - Added `setReceiptProduceDecision` and `finalizeReceiptReview` actions in receipt module flow.
+  - Added commit gating in `commitReceiptTransactions`:
+    - blocks pending produce decisions
+    - blocks produce lines not marked `add_to_inventory`
+  - Added parsed-produce checklist UI with `yes/no/resolve later` and `select all yes/no`.
+  - Added auto-advance highlight behavior for pending produce decisions.
+  - Preserved receipt parse/review flow and expense-only outcomes.
+- Touched Files (single-entry log):
+  - `prisma/schema.prisma` (updated)
+  - `prisma/migrations/20260228102000_receipt_inventory_decisions/migration.sql` (added)
+  - `app/actions/modules/receipts.ts` (updated)
+  - `app/actions/core/transactions.ts` (updated)
+  - `src/features/receiving/receipt/server/line-item.service.ts` (updated)
+  - `src/features/receiving/receipt/server/receipt.repository.ts` (updated)
+  - `src/features/receiving/shared/contracts.ts` (updated)
+  - `src/features/receiving/receipt/ui/ReceiptReceivePageClient.tsx` (updated)
+  - `docs/business-industry-packaging-refactor-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx prisma db execute --file prisma/migrations/20260228102000_receipt_inventory_decisions/migration.sql` -> PASS
+  - `npx prisma migrate resolve --applied 20260228102000_receipt_inventory_decisions` -> PASS
+  - `npx prisma migrate status` -> PASS
+  - `npx prisma validate` -> PASS
+  - `npx prisma generate` -> PASS
+  - `npx eslint app/actions/modules/receipts.ts app/actions/core/transactions.ts src/features/receiving/receipt/ui/ReceiptReceivePageClient.tsx src/features/receiving/shared/contracts.ts src/features/receiving/receipt/server/line-item.service.ts src/features/receiving/receipt/server/receipt.repository.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `node --test src/domain/parsers/receipt.test.mjs src/domain/parsers/receipt-correction-core.test.mjs` -> PASS
+  - `node --test src/features/intake/shared/intake-capability.service.test.mjs src/features/intake/shared/intake-session.contracts.test.mjs` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 8.
+  - Delta rationale: exact RPK-03 scope (receipt commit gate + produce checklist decisions + persistence).
+- Unrelated-file check:
+  - Pre-existing dirty/untracked files existed in workspace before this slice; this slice changed only receipt RPK-03 runtime paths and required canonical docs.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: pending (recorded in run output after commit)
+  - Commit title: `feat(rpk-03): gate receipt commit behind explicit produce decisions`
+
+### 2026-02-28 - RPK-02 completed: shopping produce autosuggest + intake-source eligibility enforcement
+
+- Suggested Commit Title: `feat(rpk-02): add produce autosuggest and enforce shopping intake-source eligibility`
+- Scope: Shopping intake behavior alignment for launch (`RPK-02`) with no destructive schema changes.
+- Constitution Restatement:
+  - Task ID: `RPK-02`
+  - Scope sentence: keep barcode path inventory-eligible, add produce autosuggest + quantity add, and enforce manual/shelf expense-only policy.
+  - Invariants confirmed: no product fork; receipts do not auto-create inventory; inventory writes explicit/eligibility-gated; unresolved produce still routes to Fix Later.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+- Deliverables:
+  - Added `searchProduceCatalog` server action querying EN `produce_items`.
+  - Added produce quick-search autosuggest and quantity-first add flow in shopping UI/hook.
+  - Added shopping item intake-source metadata (`resolution_audit`) at creation time.
+  - Enforced launch policy in commit flow:
+    - `manual_entry` and `shelf_label_scan` items remain expense-only
+    - barcode and produce-search paths remain inventory-eligible
+  - Preserved expense ledger posting behavior for full shopping session totals.
+- Touched Files (single-entry log):
+  - `app/actions/modules/shopping.ts` (updated)
+  - `src/features/shopping/ui/use-shopping-session.ts` (updated)
+  - `app/(dashboard)/shopping/page.tsx` (updated)
+  - `src/features/shopping/server/commit.service.ts` (updated)
+  - `docs/business-industry-packaging-refactor-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx eslint app/actions/modules/shopping.ts src/features/shopping/server/commit.service.ts src/features/shopping/ui/use-shopping-session.ts app/(dashboard)/shopping/page.tsx` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed files: 8.
+  - Delta rationale: exactly the shopping action/server/ui/doc paths required for RPK-02.
+- Unrelated-file check:
+  - Pre-existing dirty files remained; this slice touched only shopping intake-policy and required canonical docs.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+
+### 2026-02-28 - RPK-01 completed: signup place capture + additive business place metadata persistence
+
+- Suggested Commit Title: `feat(rpk-01): add optional restaurant place capture in signup and persist on business`
+- Scope: Signup/business provisioning alignment (`RPK-01`) with additive schema changes only.
+- Constitution Restatement:
+  - Task ID: `RPK-01`
+  - Scope sentence: keep industry selection canonical while adding optional restaurant place metadata capture/persistence.
+  - Invariants confirmed: no product fork; receipts do not auto-create inventory; inventory writes remain explicit/eligibility-gated; unresolved produce still routes to Fix Later.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+- Deliverables:
+  - Preserved `industry_type` as canonical signup input path.
+  - Added optional restaurant place metadata fields to signup UI with explicit skip posture.
+  - Extended provisioning flow to persist optional place metadata on `Business`.
+  - Added additive migration `20260228060000_business_profile_place_metadata`.
+  - Applied migration via safe fallback because `prisma migrate dev` hit pre-existing `P3006` shadow-db issue.
+- Touched Files (single-entry log):
+  - `app/auth/signup/page.tsx` (updated)
+  - `app/actions/core/auth.ts` (updated)
+  - `lib/core/auth/tenant.ts` (updated)
+  - `prisma/schema.prisma` (updated)
+  - `prisma/migrations/20260228060000_business_profile_place_metadata/migration.sql` (added)
+  - `docs/business-industry-packaging-refactor-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx prisma db execute --file prisma/migrations/20260228060000_business_profile_place_metadata/migration.sql` -> PASS
+  - `npx prisma migrate resolve --applied 20260228060000_business_profile_place_metadata` -> PASS
+  - `npx prisma migrate status` -> PASS
+  - `npx prisma generate` -> PASS
+  - `npx prisma validate` -> PASS
+  - `npx eslint app/auth/signup/page.tsx app/actions/core/auth.ts lib/core/auth/tenant.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed files: 9.
+  - Delta rationale: exact RPK-01 scope (signup/provisioning + additive schema + canonical docs sync).
+- Unrelated-file check:
+  - Pre-existing dirty docs remained untouched outside this slice's canonical sync files.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+
+### 2026-02-28 - RPK-00 completed: launch support map + intake invariant/source eligibility contracts
+
+- Suggested Commit Title: `feat(rpk-00): lock launch support map and intake eligibility contracts`
+- Scope: Contract/config baseline for `RPK-00` plus canonical tracker sync.
+- Constitution Restatement:
+  - Task ID: `RPK-00`
+  - Scope sentence: add shared launch-support and intake-policy contracts without runtime flow rewiring.
+  - Invariants confirmed: receipts do not auto-create inventory; inventory writes explicit/eligibility-gated; unresolved produce routes to Fix Later.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+- Deliverables:
+  - Added `INDUSTRY_LAUNCH_SUPPORT_MAP` and `isIndustryLaunchReady()` to shared presets.
+  - Added intake invariant lock and launch source/eligibility vocabulary in `intake.contracts.ts`.
+  - Advanced RPK source plan + master plan markers to `RPK-01` and recalculated completion snapshot (3/50, 6.00%).
+  - Synced codebase overview intake capability section to reflect the new launch-policy contract layer.
+- Touched Files (single-entry log):
+  - `lib/config/presets.ts` (updated)
+  - `src/features/intake/shared/intake.contracts.ts` (updated)
+  - `docs/business-industry-packaging-refactor-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `node --test src/features/intake/shared/intake-capability.service.test.mjs` -> PASS (17/17)
+  - `node --test src/features/intake/shared/intake-session.contracts.test.mjs` -> PASS (18/18)
+  - `npx eslint src/features/intake/shared/intake.contracts.ts lib/config/presets.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed files: 6 (runtime + required canonical docs).
+  - Delta rationale: exact RPK-00 scope (contract/config lock + mandatory tracker sync), no feature-surface expansion.
+- Unrelated-file check:
+  - Pre-existing dirty docs existed in the workspace; this slice did not modify unrelated runtime areas outside RPK-00 scope.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+
+### 2026-02-28 - governance update: per-step git commit checkpoint enforced across canonical plans
+
+- Suggested Commit Title: `docs(governance): require scoped commit after each completed checklist step`
+- Scope: Documentation governance update only (no runtime/schema code changes).
+- Deliverables:
+  - Added immutable per-step commit rule to the execution constitution.
+  - Added commit checkpoint requirements to master plan validation/docs-sync/session template.
+  - Added commit checkpoint controls to overnight autonomy protocol.
+  - Propagated commit checkpoint requirements into active source plans (`RPK`, `RTS`, `IMG`, `UX`) and parked `DI` resume workflow.
+- Touched Files (single-entry log):
+  - `docs/execution-constitution.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/OVERNIGHT_EXECUTION_PROTOCOL.md` (updated)
+  - `docs/business-industry-packaging-refactor-plan.md` (updated)
+  - `docs/restaurant-table-service-plan.md` (updated)
+  - `docs/item-image-enrichment-plan.md` (updated)
+  - `docs/inventory-shopping-ux-redesign-plan.md` (updated)
+  - `docs/document-intake-pipeline-plan.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - targeted docs consistency scan for commit-checkpoint language across canonical docs -> PASS
+  - no code compile/test/lint run in this docs-only slice
+
+### 2026-02-28 - overnight autonomy contract upgraded to full completion mode
+
+- Suggested Commit Title: `docs(protocol): switch overnight execution to full-completion autonomy mode`
+- Scope: Documentation governance update only (no runtime/schema code changes).
+- Deliverables:
+  - Replaced overnight protocol with a full completion-mode autonomy contract.
+  - Added explicit "continue unless dangerous" mandate with strict hard-stop limits.
+  - Added autonomous ambiguity resolution with `ASSUMED - SAFE` logging requirement.
+  - Added additive-only DB migration policy and no-permission-loop clause.
+  - Added sequence-gate optimization guidance for advancing any eligible stream without stalling.
+  - Preserved mandatory validation, restatement, and documentation-sync control rails.
+- Touched Files (single-entry log):
+  - `docs/OVERNIGHT_EXECUTION_PROTOCOL.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - targeted protocol consistency pass against `docs/master-plan-v2.md` and `docs/execution-constitution.md` -> PASS
+  - no code compile/test/lint run (docs-only slice)
+
+### 2026-02-28 - overnight protocol migrated to v2 canonical execution model
+
+- Suggested Commit Title: `docs(protocol): rebase overnight execution protocol from v1 to v2`
+- Scope: Documentation governance update only (no runtime/schema code changes).
+- Deliverables:
+  - Replaced v1-anchored overnight protocol with v2 canonical execution rules.
+  - Updated execution anchor to `master-plan-v2` + `execution-constitution` + active source-plan set.
+  - Added deterministic selection and sequence-gate alignment for RPK/RTS/IMG-L/UX-L/LG and DI post-launch resume.
+  - Added explicit mandatory restatement requirement before each task.
+  - Synced validation, stop conditions, invariant set, and documentation sync workflow to current v2 controls.
+- Touched Files (single-entry log):
+  - `docs/OVERNIGHT_EXECUTION_PROTOCOL.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - targeted doc consistency read against `docs/master-plan-v2.md` and `docs/execution-constitution.md` -> PASS
+  - no code compile/test/lint run (docs-only slice)
+
+### 2026-02-28 - mandatory restatement gate propagation across remaining supporting plans
+
+- Suggested Commit Title: `docs(governance): add constitution restatement gate to remaining support plans`
+- Scope: Documentation governance update only (no runtime/schema code changes).
+- Deliverables:
+  - Added explicit constitution source references and mandatory restatement gates to plans that were missing them.
+  - Standardized pre-task re-grounding language so supporting plans consistently require re-reading/restating guidelines before execution.
+  - Added resume-ready restatement gate to the parked DI plan for future reactivation consistency.
+- Touched Files (single-entry log):
+  - `docs/item-image-enrichment-plan.md` (updated)
+  - `docs/inventory-shopping-ux-redesign-plan.md` (updated)
+  - `docs/document-intake-pipeline-plan.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - targeted docs consistency scan for mandatory restatement gate presence -> PASS
+  - no code compile/test/lint run (docs-only slice)
+
+### 2026-02-28 - stall-point elimination update: RTS decision lock + RPK targets + launch-slice scope confirmation
+
+- Suggested Commit Title: `docs(plan): lock RTS schema decisions, embed RPK file targets, and finalize LG/UX-L/IMG-L launch scope`
+- Scope: Documentation planning/governance update only (no runtime/schema code changes in this slice).
+- Deliverables:
+  - Locked RTS schema and lifecycle decisions in the RTS source plan (DiningTable/MenuCategory/MenuItem/TableSession/KitchenOrder/KitchenOrderItem).
+  - Removed amendment-ticket assumption and aligned to same-order item append behavior for post-confirm host edits.
+  - Synced master tracker RTS checklist language to the resolved queue/session lifecycle.
+  - Added explicit LG-00 smoke test format lock (`node --test` integration-first; Playwright only for browser-only cases).
+  - Confirmed launch UX scope as UX-00 primitives only and explicitly deferred UX-01/UX-02.
+  - Confirmed launch IMG scope as IMG-00 + IMG-01 only with no enrichment-run/pre-population requirement.
+  - Added RPK preflight file-target map (`RPK-01` through `RPK-05`) to remove discovery stall points.
+- Touched Files (single-entry log):
+  - `docs/restaurant-table-service-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/business-industry-packaging-refactor-plan.md` (updated)
+  - `docs/item-image-enrichment-plan.md` (updated)
+  - `docs/inventory-shopping-ux-redesign-plan.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - targeted preflight file discovery via `rg` and direct file reads -> PASS
+  - docs consistency pass across source plans and master tracker -> PASS
+  - no runtime tests/typecheck/lint run (docs-only slice)
+
+### 2026-02-28 - ui/ux design constitution enforcement across canonical plans
+
+- Suggested Commit Title: `docs(ux-constitution): enforce minimal design rules and ui validation gates across active plans`
+- Scope: Documentation governance update only (no runtime/schema code changes).
+- Deliverables:
+  - Added formal UI/UX Design Constitution rules to immutable execution constitution.
+  - Extended constitution restatement template with mandatory UI confirmations for UI-touching tasks.
+  - Updated master tracker to enforce UI governance in compressed invariants, mandatory restatement, and validation gate.
+  - Added explicit UX constitution overlay and per-phase design-restatement checklist steps in the UX redesign plan.
+  - Removed/overrode conflicting UX guidance (custom color hash placeholders, amber-only badge guidance, blur/glass top bar suggestion) in favor of token-governed minimal styling.
+  - Added explicit UI-constitution references in active restaurant-launch source plans where UI work can occur.
+- Touched Files (single-entry log):
+  - `docs/execution-constitution.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/inventory-shopping-ux-redesign-plan.md` (updated)
+  - `docs/business-industry-packaging-refactor-plan.md` (updated)
+  - `docs/restaurant-table-service-plan.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - docs rule propagation and section-presence review -> PASS
+  - no code compile/test/lint run (docs-only slice)
+
+### 2026-02-28 - execution governance hardening: constitution + validation/deviation controls + plan format normalization
+
+- Suggested Commit Title: `docs(plan): add immutable constitution and normalize active launch plans to strict execution format`
+- Scope: Documentation governance update only (no runtime/schema code changes).
+- Deliverables:
+  - Added immutable constitution source file and linked it from active plans.
+  - Upgraded `docs/master-plan-v2.md` with:
+    - compressed invariant block for context compaction survival
+    - mandatory pre-task restatement gate
+    - explicit deviation proposal workflow
+    - expanded validation gate (proportional diff, unrelated-file check, dependency/env checks)
+    - completion percentage section and documentation sync checklist aligned to execution controls
+  - Normalized active source plans to explicit in-progress/checklist format:
+    - `docs/business-industry-packaging-refactor-plan.md`
+    - `docs/restaurant-table-service-plan.md`
+  - Added per-phase constitution-restatement checklist steps so immutable constraints are repeated at every phase boundary.
+- Touched Files (single-entry log):
+  - `docs/execution-constitution.md` (created)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/business-industry-packaging-refactor-plan.md` (updated)
+  - `docs/restaurant-table-service-plan.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - docs structure and checklist consistency review -> PASS
+  - no code compile/test/lint run (docs-only slice)
+
+### 2026-02-28 - docs rebase: restaurant launch canonical tracker + RTS plan + launch-slice alignment
+
+- Suggested Commit Title: `docs(plan): rebase v2 to restaurant launch and add RTS source plan`
+- Scope: Documentation planning update only (no runtime/schema code changes).
+- Deliverables:
+  - Added `docs/restaurant-table-service-plan.md` as dedicated source plan for table QR + host/kitchen operations.
+  - Reworked `docs/business-industry-packaging-refactor-plan.md` to active restaurant launch posture with Track A (intake slice 1-8) and Track B continuation.
+  - Rewrote `docs/master-plan-v2.md` as canonical restaurant-first tracker (RPK/RTS/IMG-L/UX-L active, DI parked post-launch).
+  - Updated `docs/document-intake-pipeline-plan.md` status to parked post-launch with explicit resume trigger.
+  - Updated `docs/item-image-enrichment-plan.md` and `docs/inventory-shopping-ux-redesign-plan.md` to reflect launch-slice priority posture.
+- Validation:
+  - docs consistency review across source plans and v2 tracker -> PASS
+  - no build/test commands run (docs-only update)
 
 ### 2026-02-27 - OC-07: close operational calendar plan and archive tracker to v2 standby
 

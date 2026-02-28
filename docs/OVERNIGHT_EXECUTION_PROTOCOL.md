@@ -1,172 +1,227 @@
-Overnight Autonomous Execution Protocol
-Purpose
+# Overnight Execution Autonomy Contract (Full Completion Mode)
 
-This document defines how the agent must behave during unattended or long-running execution sessions (e.g., overnight).
+Status: Active
+Last Updated: 2026-02-28
+Purpose: maximize autonomous overnight completion of the v2 master plan while preserving architectural safety.
 
-The goal is:
+This contract supersedes conservative overnight behavior that halted on minor uncertainty.
 
-Prevent drift
+Canonical references:
 
-Prevent skipping
+- `docs/master-plan-v2.md`
+- `docs/execution-constitution.md`
+- Active source plans referenced by `docs/master-plan-v2.md`
 
-Prevent schema hallucination
+`docs/master-plan-v1.md` is archived and must not be used for active execution selection.
 
-Prevent partial-completion marking
+## 1. Core Execution Mandate
 
-Ensure deterministic continuation
+The agent is explicitly authorized to:
 
-1️⃣ Execution Anchor
+1. Execute the master plan end-to-end autonomously.
+2. Continue across initiatives when sequence gates are satisfied.
+3. Resolve minor ambiguities using best-fit interpretation aligned to constitution.
+4. Prefer forward progress over pausing for clarification.
 
-Before doing any work, the agent must:
+Default action:
 
-Read:
+- Continue safely; do not wait.
 
-docs/master-plan-v1.md
+## 2. Autonomous Resolution Rule
 
-docs/codebase-overview.md
+If a non-destructive ambiguity occurs, the agent must:
 
-prisma/schema.prisma
+1. Choose the safest additive interpretation.
+2. Log the assumption as `ASSUMED - SAFE`.
+3. Continue execution.
 
-Identify:
+Do not halt for:
 
-## Last Left Off Here
+1. Minor naming decisions.
+2. Internal refactor structure choices.
+3. UI layout detail choices.
+4. Small enum naming clarifications.
+5. Optional field nullability decisions (if non-breaking).
 
-Current [~] task (or first [ ] if none in progress)
+Halt only for destructive or invariant-breaking conflicts.
 
-No task may be selected outside the Canonical Order Checklist.
+## 3. Revised Hard Stop Conditions (Strictly Limited)
 
-2️⃣ Deterministic Task Selection
+The agent must halt only if:
 
-Follow the Autonomous Execution Contract strictly:
+1. A destructive DB migration is required (drop/rename/type change).
+2. A constitutional invariant would be violated.
+3. Live production data would be put at risk.
+4. Required external credential is missing and no safe bypass exists.
+5. Sequence gates make progression logically impossible for all remaining eligible work.
 
-If a [~] task exists → continue it.
+All other issues must be resolved autonomously.
 
-Else → pick first [ ] in top-to-bottom order.
+## 4. DB Migration Policy (Autonomous but Safe)
 
-Never skip ahead.
+Allowed autonomously:
 
-Only one task may be [~].
+1. Create new tables.
+2. Add new columns.
+3. Add enums.
+4. Add indexes.
+5. Tighten constraints if non-breaking.
+6. Generate and apply additive migrations.
 
-3️⃣ Scoped Implementation Only
+Not allowed without explicit scope approval:
 
-The agent must:
+1. Drop tables or columns.
+2. Rename existing columns.
+3. Change existing column types.
+4. Remove enum values.
+5. Rewrite RLS policies unless explicitly scoped.
 
-Implement only the currently selected task ID.
+If unsure whether migration is destructive:
 
-Not refactor unrelated modules.
+- Assume additive-only and continue safely.
 
-Not expand scope beyond the selected task section.
+## 5. No Permission Loop Clause
 
-Not pre-implement future phases.
+The agent is prohibited from stopping solely to request:
 
-4️⃣ Mandatory Preflight Gates
+1. Style clarification.
+2. Minor schema naming clarification.
+3. Internal implementation preference.
+4. File organization preference.
+5. Test formatting preference.
+6. Minor UX interpretation.
 
-Before writing code:
+If in scope and non-destructive:
 
-Run reuse/refactor-first scans.
+- Resolve and continue.
 
-Confirm Prisma schema alignment if database is touched.
+## 6. Sequence Gate Optimization
 
-Confirm plan section alignment.
+Sequence gates remain enforced from `docs/master-plan-v2.md`.
 
-No schema guessing.
-No duplicate files.
+However:
 
-5️⃣ Validation Before Completion
+1. If one stream is gated, continue any other eligible stream whose gates are satisfied.
+2. Do not stall the run because one gated stream cannot advance.
 
-A task may only move [~] → [x] if:
+Example:
 
-Typecheck passes
+- If `DI-*` is gated behind `LG-00`, continue eligible RPK/RTS/IMG-L/UX-L/LG work.
 
-Targeted tests pass
+## 7. Safe Assumption Framework
 
-Lint passes
+When assumptions are required, default to:
 
-Source plan updated
+1. Additive schema.
+2. Minimal abstraction.
+3. No new dependencies.
+4. No UI experimentation.
+5. Grayscale/minimal styling.
+6. One-level relational hierarchy.
+7. Existing patterns over invention.
+8. Simplicity unless explicitly told otherwise.
 
-Master plan updated
+## 8. UI Autonomy Clarification
 
-Changelog updated
+The agent may:
 
-No validation → no completion.
+1. Implement structural UI required for feature completion.
+2. Use homepage-approved tokens.
+3. Default to neutral minimal styling.
 
-6️⃣ Auto-Advance Behavior
+The agent must not:
 
-If:
+1. Add glow, gradients, or stylistic experiments.
+2. Re-theme existing pages.
 
-Task completes successfully
+If uncertain:
 
-No stop condition triggered
+- Use Apple/Tesla/Google-level minimal restraint and continue.
 
-Then:
+## 9. Controlled Diff Expansion Rule
 
-Mark [x]
+The agent may expand change surface when:
 
-Update completion %
+1. Required to complete a phase coherently.
+2. Within initiative boundary.
+3. Not introducing architectural redesign.
 
-Append Job Summary
+Do not halt solely due to number of files modified.
 
-Commit changes
+If change surface is large:
 
-Move to next task
+- Log rationale and continue.
 
-Repeat until:
+## 10. Phase Completion Priority
 
-Stop condition occurs
+The agent is explicitly authorized to:
 
-Explicit blocker is encountered
+1. Continue through all eligible phases.
+2. Complete the master plan fully where possible.
+3. Apply additive migrations.
+4. Generate tests.
+5. Sync documentation.
+6. Advance to next phase automatically.
 
-7️⃣ Stop Conditions (Mandatory Halt)
+Default mode:
 
-The agent must stop and mark [!] if:
+- Finish everything possible before stopping.
 
-Tests fail and cannot be resolved in task scope
+## 11. Soft Stop Instead of Hard Halt
 
-Schema change is ambiguous
+If uncertainty is non-destructive:
 
-Migration risk exists
+1. Log as `ASSUMED - SAFE`.
+2. Continue.
 
-External credentials are required
+Escalate only if continuing risks:
 
-Architectural invariant conflict detected
+1. Data loss.
+2. Invariant violation.
+3. Destructive schema impact.
 
-No guessing.
-No silent bypassing.
+## 12. Execution Goal
 
-8️⃣ Architectural Invariants Must Not Change
+By end of overnight run:
 
-The following may not be altered:
+1. All additive migrations applied.
+2. All scoped eligible initiatives complete.
+3. All sequence gates respected.
+4. All validation passing for completed tasks.
+5. No destructive changes made.
+6. No drift outside master plan.
+7. No creative scope expansion.
 
-Intake unification model
+If full completion is possible within constraints, it must be achieved.
 
-Correction → Matching pipeline order
+## 13. Required Control Rails (Still Mandatory)
 
-Organic as attribute
+This full-completion mode does not remove these controls:
 
-Provider-agnostic integrations
+1. Deterministic task selection from `docs/master-plan-v2.md`.
+2. Mandatory constitution restatement before each task.
+3. Expanded validation gate before marking `[x]`.
+4. Source-plan, master-plan, and changelog synchronization.
+5. `docs/codebase-overview.md` updates when architecture/behavior changes.
+6. One scoped git commit is required after each completed checklist step before advancing.
 
-Master plan as canonical execution order
+Hard rule:
 
-Prisma schema as authoritative database contract
+- No validation evidence means no completion mark.
 
-9️⃣ Logging & Documentation Discipline
+## 14. Operational Loop
 
-After each completed task:
+Repeat until no eligible work remains or a hard stop condition is hit:
 
-Update ## Latest Job Summary
+1. Select next eligible task deterministically.
+2. Restate constitution and scope.
+3. Run scoped preflight.
+4. Implement in-scope changes.
+5. Run validation.
+6. Sync docs and status.
+7. Create scoped git commit for the completed step and record hash in job summary/changelog.
+8. Advance automatically.
 
-Update completion %
+Philosophy shift:
 
-Append to changelog (newest on top)
-
-Update codebase overview if structure changed
-
-🔟 Behavioral Rule
-
-The agent must behave deterministically and conservatively.
-
-Speed is secondary to correctness.
-
-No speculative refactors.
-No architectural experimentation.
-No scope expansion.
+- Continue unless dangerous.

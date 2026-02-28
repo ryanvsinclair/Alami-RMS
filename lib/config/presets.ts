@@ -23,6 +23,25 @@ export const INDUSTRY_LABELS: Record<IndustryType, string> = {
   general: "Other",
 };
 
+export const INDUSTRY_LAUNCH_SUPPORT_LEVELS = ["full", "planned"] as const;
+export type IndustryLaunchSupportLevel = (typeof INDUSTRY_LAUNCH_SUPPORT_LEVELS)[number];
+
+/**
+ * Canonical launch support policy for restaurant-first launch.
+ * Restaurant is full-support; all other industries are planned continuation scope.
+ */
+export const INDUSTRY_LAUNCH_SUPPORT_MAP: Record<IndustryType, IndustryLaunchSupportLevel> = {
+  restaurant: "full",
+  salon: "planned",
+  retail: "planned",
+  contractor: "planned",
+  general: "planned",
+};
+
+export function isIndustryLaunchReady(industryType: IndustryType): boolean {
+  return INDUSTRY_LAUNCH_SUPPORT_MAP[industryType] === "full";
+}
+
 export function isIndustryType(value: string): value is IndustryType {
   return (INDUSTRY_TYPES as readonly string[]).includes(value);
 }

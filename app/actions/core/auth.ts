@@ -45,10 +45,18 @@ export async function signInAction(formData: FormData) {
 export async function signUpAction(formData: FormData) {
   const businessName = String(formData.get("business_name") ?? "").trim();
   const industryTypeInput = String(formData.get("industry_type") ?? "general").trim();
+  const googlePlaceId = String(formData.get("google_place_id") ?? "").trim();
+  const formattedAddress = String(formData.get("formatted_address") ?? "").trim();
+  const latitudeInput = String(formData.get("place_latitude") ?? "").trim();
+  const longitudeInput = String(formData.get("place_longitude") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const next = String(formData.get("next") ?? "/");
   const industryType = isIndustryType(industryTypeInput) ? industryTypeInput : "general";
+  const parsedLatitude = latitudeInput ? Number.parseFloat(latitudeInput) : null;
+  const parsedLongitude = longitudeInput ? Number.parseFloat(longitudeInput) : null;
+  const latitude = parsedLatitude != null && Number.isFinite(parsedLatitude) ? parsedLatitude : null;
+  const longitude = parsedLongitude != null && Number.isFinite(parsedLongitude) ? parsedLongitude : null;
 
   if (!businessName || !email || !password) {
     redirect("/auth/signup?error=Business%20name%2C%20email%2C%20and%20password%20are%20required");
@@ -77,7 +85,13 @@ export async function signUpAction(formData: FormData) {
     signInResult.data.session.access_token,
     signInResult.data.session.refresh_token
   );
-  await ensureBusinessForUser(signInResult.data.user.id, businessName, { industryType });
+  await ensureBusinessForUser(signInResult.data.user.id, businessName, {
+    industryType,
+    googlePlaceId: industryType === "restaurant" && googlePlaceId ? googlePlaceId : null,
+    formattedAddress: industryType === "restaurant" && formattedAddress ? formattedAddress : null,
+    latitude: industryType === "restaurant" ? latitude : null,
+    longitude: industryType === "restaurant" ? longitude : null,
+  });
   redirect(next.startsWith("/") ? next : "/");
 }
 

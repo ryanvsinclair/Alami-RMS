@@ -12,7 +12,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ItemNotFound } from "@/components/flows/item-not-found";
-import { useTerm } from "@/lib/config/context";
 import { useShoppingSession } from "@/features/shopping/ui/use-shopping-session";
 import {
   asNumber,
@@ -25,7 +24,6 @@ import {
 
 export default function ShoppingPage() {
   const router = useRouter();
-  const shoppingTerm = useTerm("shopping");
 
   // Refs must live in the component (React Compiler rule: no ref access during render from hooks)
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -270,6 +268,30 @@ export default function ShoppingPage() {
             value={s.itemName}
             onChange={(e) => s.setItemName(e.target.value)}
           />
+          {s.produceSearchLoading && s.itemName.trim().length >= 2 && (
+            <p className="mt-2 text-xs text-muted">Searching produce suggestions...</p>
+          )}
+          {s.produceSuggestions.length > 0 && (
+            <div className="mt-2 overflow-hidden rounded-2xl border border-border bg-foreground/[0.02]">
+              {s.produceSuggestions.map((suggestion) => (
+                <button
+                  key={`produce-suggest-${suggestion.plu_code}`}
+                  type="button"
+                  onClick={() => s.handleAddProduceSuggestion(suggestion)}
+                  className="w-full border-b border-border/60 px-3 py-2 text-left transition-colors last:border-b-0 hover:bg-foreground/[0.04]"
+                >
+                  <p className="text-sm font-medium">{suggestion.display_name}</p>
+                  <p className="mt-0.5 text-xs text-muted">
+                    PLU {suggestion.plu_code}
+                    {suggestion.variety ? ` • ${suggestion.variety}` : ""}
+                    {suggestion.commodity ? ` • ${suggestion.commodity}` : ""}
+                    {" • "}
+                    Add qty {Number(s.qty) > 0 ? Number(s.qty) : 1}
+                  </p>
+                </button>
+              ))}
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-2 mt-2">
             <Input
               type="number"
