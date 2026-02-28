@@ -456,7 +456,7 @@ No additional missing plan docs were identified from the current chat scope afte
   - pre-existing unrelated local files remained untouched; this slice modified only RTS-00-c code/doc paths.
 - Dependency check: no new dependencies.
 - Env-var check: no new environment variables.
-- Commit checkpoint: pending (record after commit).
+- Commit checkpoint: `b9b757d` (`feat(rts-00): add shared table-service contracts and lock order-flow invariants`).
 
 ### 2026-02-28 - RTS-00-b table_service module registration and guard baseline completed
 

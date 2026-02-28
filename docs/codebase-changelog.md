@@ -54,7 +54,7 @@ Companion overview: `docs/codebase-overview.md`
 - Dependency change check: no new dependencies added.
 - Env-var change check: no new env vars introduced.
 - Commit checkpoint:
-  - Commit hash: pending (record after commit)
+  - Commit hash: `b9b757d`
   - Commit title: `feat(rts-00): add shared table-service contracts and lock order-flow invariants`
 
 ### 2026-02-28 - RTS-00-b completed: table_service module registration + guard baseline
