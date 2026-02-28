@@ -456,6 +456,7 @@ No additional missing plan docs were identified from the current chat scope afte
   - pre-existing unrelated local files remained untouched; this slice modified only LG-00-e test+docs scope files.
 - Dependency check: no new dependencies.
 - Env-var check: no new environment variables.
+- Commit checkpoint: `6053f74` (`test(lg-00-e): extend tenant-isolation and permission launch smoke coverage`).
 
 ### 2026-02-28 - LG-00-d completed (timer and queue-advancement regression pass)
 

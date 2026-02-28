@@ -52,6 +52,9 @@ Companion overview: `docs/codebase-overview.md`
   - Existing unrelated local files remained unchanged by this slice.
 - Dependency change check: no new dependencies added.
 - Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: `6053f74`
+  - Commit title: `test(lg-00-e): extend tenant-isolation and permission launch smoke coverage`
 
 ### 2026-02-28 - LG-00-d completed: timer and queue-advancement regression pass
 
