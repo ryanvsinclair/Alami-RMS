@@ -6,12 +6,19 @@ import {
   confirmLineItemMapping as _confirmLineItemMapping,
   confirmVendorMapping as _confirmVendorMapping,
   createVendorProfileForBusiness as _createVendorProfileForBusiness,
+  getDraftDetail as _getDraftDetail,
+  getDraftDocumentUrl as _getDraftDocumentUrl,
+  getDraftInbox as _getDraftInbox,
+  getDraftInboxBadgeCount as _getDraftInboxBadgeCount,
   getVendorProfiles as _getVendorProfiles,
   findOrCreateInboundAddress,
   getAddressDisplayString,
+  postDraft as _postDraft,
+  rejectDraft as _rejectDraft,
   updateVendorDefaults as _updateVendorDefaults,
   updateVendorTrustThreshold as _updateVendorTrustThreshold,
 } from "@/features/documents/server";
+import type { DocumentDraftStatus } from "@/features/documents/shared";
 
 export async function getInboundAddress() {
   const { business } = await requireBusinessMembership();
@@ -29,6 +36,41 @@ export async function getVendorProfiles() {
   const { business } = await requireBusinessMembership();
   await requireModule("documents");
   return _getVendorProfiles(business.id);
+}
+
+export async function getDraftInbox(filters: {
+  page?: number;
+  pageSize?: number;
+  statusFilter?: DocumentDraftStatus | "all";
+} = {}) {
+  const { business } = await requireBusinessMembership();
+  await requireModule("documents");
+  return _getDraftInbox(business.id, filters);
+}
+
+export async function getDraftInboxBadgeCount() {
+  const { business } = await requireBusinessMembership();
+  await requireModule("documents");
+  return _getDraftInboxBadgeCount(business.id);
+}
+
+export async function getDraftDetail(draftId: string) {
+  const { business, membership } = await requireBusinessMembership();
+  await requireModule("documents");
+  const detail = await _getDraftDetail(business.id, draftId);
+  if (!detail) return null;
+
+  return {
+    ...detail,
+    canManageTrustThreshold:
+      membership.role === "owner" || membership.role === "manager",
+  };
+}
+
+export async function getDraftDocumentUrl(draftId: string) {
+  const { business } = await requireBusinessMembership();
+  await requireModule("documents");
+  return _getDraftDocumentUrl(business.id, draftId);
 }
 
 export async function createVendorProfile(payload: {
@@ -75,4 +117,16 @@ export async function confirmLineItemMapping(
   const { business } = await requireBusinessMembership();
   await requireModule("documents");
   return _confirmLineItemMapping(business.id, vendorProfileId, rawName, inventoryItemId);
+}
+
+export async function postDraft(draftId: string) {
+  const { business, user } = await requireBusinessMembership();
+  await requireModule("documents");
+  return _postDraft(business.id, draftId, user.id, { autoPosted: false });
+}
+
+export async function rejectDraft(draftId: string) {
+  const { business, user } = await requireBusinessMembership();
+  await requireModule("documents");
+  return _rejectDraft(business.id, draftId, user.id);
 }

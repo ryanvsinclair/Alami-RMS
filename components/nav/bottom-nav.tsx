@@ -3,7 +3,7 @@
 /**
  * Bottom navigation bar.
  *
- * Final nav order (OC-01): Home | Staff | Intake | Inventory | Schedule
+ * Current nav order: Home | Staff | Intake | Documents (module-gated) | Inventory | Schedule
  *
  * - /intake highlights when user is anywhere in /intake, /shopping, or /receive.
  * - /shopping and /receive are full feature routes accessible via the Intake Hub.
@@ -13,6 +13,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useBusinessConfig } from "@/lib/config/context";
+import { useEffect, useMemo, useState } from "react";
+import { getDraftInboxBadgeCount } from "@/app/actions/modules/documents";
 
 // /intake highlights when user is inside any intake-family route.
 const INTAKE_ACTIVE_PREFIXES = ["/intake", "/shopping", "/receive"];
@@ -21,6 +23,7 @@ type NavItem = {
   href: string;
   label: string;
   exact: boolean;
+  moduleId?: string;
   icon: React.ReactNode;
 };
 
@@ -57,6 +60,17 @@ const navItems: NavItem[] = [
     ),
   },
   {
+    href: "/documents",
+    label: "Documents",
+    exact: false,
+    moduleId: "documents",
+    icon: (
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-8.25A2.25 2.25 0 0 0 17.25 3.75H6.75A2.25 2.25 0 0 0 4.5 6v12A2.25 2.25 0 0 0 6.75 20.25h6.75M8.25 7.5h7.5M8.25 11.25h7.5M8.25 15h4.5m3.75 0h4.5m0 0-1.5-1.5m1.5 1.5-1.5 1.5" />
+      </svg>
+    ),
+  },
+  {
     href: "/inventory",
     label: "Inventory",
     exact: false,
@@ -79,11 +93,49 @@ const navItems: NavItem[] = [
   },
 ];
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function BottomNav({ enabledModules: _enabledModules }: { enabledModules?: string[] }) {
+function formatBadgeCount(count: number) {
+  return count > 99 ? "99+" : String(count);
+}
+
+export function BottomNav({ enabledModules }: { enabledModules?: string[] }) {
   const pathname = usePathname();
   useBusinessConfig(); // keep context subscription for potential future capability gating
-  const visibleItems = navItems;
+  const [documentsBadgeCount, setDocumentsBadgeCount] = useState<number | null>(null);
+
+  const enabledModuleSet = useMemo(
+    () => new Set(enabledModules ?? []),
+    [enabledModules],
+  );
+
+  const visibleItems = useMemo(
+    () =>
+      navItems.filter((item) =>
+        item.moduleId ? enabledModuleSet.has(item.moduleId) : true,
+      ),
+    [enabledModuleSet],
+  );
+
+  useEffect(() => {
+    if (!enabledModuleSet.has("documents")) {
+      return;
+    }
+
+    let active = true;
+    getDraftInboxBadgeCount()
+      .then((count) => {
+        if (!active) return;
+        const numericCount = typeof count === "number" ? count : Number(count ?? 0);
+        setDocumentsBadgeCount(Number.isFinite(numericCount) ? numericCount : 0);
+      })
+      .catch(() => {
+        if (!active) return;
+        setDocumentsBadgeCount(0);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [enabledModuleSet, pathname]);
 
   return (
     <nav className="fixed inset-x-0 bottom-4 z-50 px-3 pointer-events-none safe-bottom">
@@ -124,7 +176,14 @@ export function BottomNav({ enabledModules: _enabledModules }: { enabledModules?
                 }
               `}
             >
-              {item.icon}
+              <span className="relative inline-flex">
+                {item.icon}
+                {item.href === "/documents" && (documentsBadgeCount ?? 0) > 0 ? (
+                  <span className="absolute -right-3 -top-2 inline-flex min-w-[18px] justify-center rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                    {formatBadgeCount(documentsBadgeCount ?? 0)}
+                  </span>
+                ) : null}
+              </span>
               {item.label}
             </Link>
           );
