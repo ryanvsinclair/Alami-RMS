@@ -28,6 +28,7 @@ export type VendorTrustState = (typeof VENDOR_TRUST_STATES)[number];
 
 export const VENDOR_TRUST_THRESHOLD = 5 as const;
 export const DOCUMENT_AUTO_POST_CONFIDENCE_MIN = 0.85 as const;
+export const DOCUMENT_ANALYTICS_MIN_POSTED_DRAFTS = 20 as const;
 export const POSTMARK_INBOUND_CHANNEL = "email" as const;
 
 export interface ParsedLineItem {
@@ -68,6 +69,90 @@ export interface DocumentDraftSummary {
     id: string;
     vendor_name: string;
   } | null;
+}
+
+export interface DocumentAnalyticsPeriodFilter {
+  days?: 30 | 60 | 90;
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface VendorSpendSummaryItem {
+  vendorId: string;
+  vendorName: string;
+  totalSpend: number;
+  draftCount: number;
+}
+
+export interface VendorSpendSummaryResult {
+  periodLabel: string;
+  periodStart: string;
+  periodEnd: string;
+  postedDraftCount: number;
+  totalPostedDraftCount: number;
+  minimumPostedDraftsRequired: number;
+  minimumDataSatisfied: boolean;
+  summary: VendorSpendSummaryItem[];
+}
+
+export interface PriceTrendPoint {
+  date: string;
+  description: string;
+  unitCost: number | null;
+  lineTotal: number | null;
+  quantity: number | null;
+}
+
+export interface PriceTrendResult {
+  periodLabel: string;
+  periodStart: string;
+  periodEnd: string;
+  vendorProfileId: string;
+  availableItemNames: string[];
+  points: PriceTrendPoint[];
+}
+
+export interface ReorderSignal {
+  inventoryItemId: string;
+  inventoryItemName: string;
+  lastPurchaseAt: string;
+  avgPurchaseIntervalDays: number;
+  daysSinceLastPurchase: number;
+  estimatedDaysUntilReorder: number;
+}
+
+export interface ReorderSignalsResult {
+  generatedAt: string;
+  signals: ReorderSignal[];
+}
+
+export interface TaxSummaryByVendor {
+  vendorId: string;
+  vendorName: string;
+  taxTotal: number;
+  draftCount: number;
+}
+
+export interface TaxSummaryResult {
+  periodLabel: string;
+  periodStart: string;
+  periodEnd: string;
+  postedDraftCount: number;
+  totalTax: number;
+  byVendor: TaxSummaryByVendor[];
+}
+
+export interface CogsSummaryCategory {
+  categoryName: string;
+  totalExpense: number;
+}
+
+export interface CogsSummaryResult {
+  periodLabel: string;
+  periodStart: string;
+  periodEnd: string;
+  totalExpense: number;
+  byCategory: CogsSummaryCategory[];
 }
 
 export type DocumentAnomalyFlag =

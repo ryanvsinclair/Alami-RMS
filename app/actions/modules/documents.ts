@@ -12,6 +12,11 @@ import {
   getDraftDocumentUrl as _getDraftDocumentUrl,
   getDraftInbox as _getDraftInbox,
   getDraftInboxBadgeCount as _getDraftInboxBadgeCount,
+  getCogsSummary as _getCogsSummary,
+  getPriceTrends as _getPriceTrends,
+  getReorderSignals as _getReorderSignals,
+  getTaxSummary as _getTaxSummary,
+  getVendorSpendSummary as _getVendorSpendSummary,
   getVendorProfiles as _getVendorProfiles,
   findOrCreateInboundAddress,
   getAddressDisplayString,
@@ -145,4 +150,47 @@ export async function blockVendor(vendorProfileId: string) {
   await requireModule("documents");
   requireRole("manager", membership.role);
   return _blockVendor(business.id, vendorProfileId);
+}
+
+export async function getVendorSpendSummary(options: {
+  period?: { days?: 30 | 60 | 90; startDate?: string; endDate?: string };
+} = {}) {
+  const { business } = await requireBusinessMembership();
+  await requireModule("documents");
+  return _getVendorSpendSummary(business.id, options);
+}
+
+export async function getPriceTrends(
+  vendorProfileId: string,
+  options: {
+    period?: { days?: 30 | 60 | 90; startDate?: string; endDate?: string };
+    inventoryItemId?: string;
+    rawLineItemName?: string;
+  } = {},
+) {
+  const { business } = await requireBusinessMembership();
+  await requireModule("documents");
+  return _getPriceTrends(business.id, vendorProfileId, options);
+}
+
+export async function getReorderSignals() {
+  const { business } = await requireBusinessMembership();
+  await requireModule("documents");
+  return _getReorderSignals(business.id);
+}
+
+export async function getTaxSummary(options: {
+  period?: { days?: 30 | 60 | 90; startDate?: string; endDate?: string };
+} = {}) {
+  const { business } = await requireBusinessMembership();
+  await requireModule("documents");
+  return _getTaxSummary(business.id, options);
+}
+
+export async function getCogsSummary(options: {
+  period?: { days?: 30 | 60 | 90; startDate?: string; endDate?: string };
+} = {}) {
+  const { business } = await requireBusinessMembership();
+  await requireModule("documents");
+  return _getCogsSummary(business.id, options);
 }

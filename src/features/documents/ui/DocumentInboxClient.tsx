@@ -124,14 +124,24 @@ export function DocumentInboxClient() {
   return (
     <div className="space-y-4 p-4">
       <section className="rounded-3xl border border-border bg-card p-5 shadow-[var(--surface-card-shadow)]">
-        <p className="text-xs font-semibold uppercase tracking-wide text-primary">Documents</p>
-        <h1 className="mt-1 text-2xl font-bold text-foreground">{title}</h1>
-        <p className="mt-2 text-sm text-muted">
-          Review parsed documents and post verified expenses.
-        </p>
-        <p className="mt-2 text-xs uppercase tracking-wide text-muted">
-          Total: <span className="text-foreground">{data?.total ?? 0}</span>
-        </p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary">Documents</p>
+            <h1 className="mt-1 text-2xl font-bold text-foreground">{title}</h1>
+            <p className="mt-2 text-sm text-muted">
+              Review parsed documents and post verified expenses.
+            </p>
+            <p className="mt-2 text-xs uppercase tracking-wide text-muted">
+              Total: <span className="text-foreground">{data?.total ?? 0}</span>
+            </p>
+          </div>
+          <Link
+            href="/documents/analytics"
+            className="rounded-full border border-border px-3 py-1 text-xs font-semibold uppercase tracking-wide text-foreground/80 hover:text-foreground"
+          >
+            Analytics
+          </Link>
+        </div>
       </section>
 
       <section className="flex flex-wrap gap-2">

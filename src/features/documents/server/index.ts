@@ -4,6 +4,7 @@ export * from "./document-storage.service";
 export * from "./document-draft.repository";
 export * from "./document-parse.service";
 export * from "./document-post.service";
+export * from "./document-analytics.service";
 export * from "./draft-review.service";
 export * from "./trust.service";
 export * from "./vendor-profile.repository";
