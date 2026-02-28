@@ -59,6 +59,9 @@ Companion overview: `docs/codebase-overview.md`
   - Existing unrelated local files remained unchanged by this slice.
 - Dependency change check: no new dependencies added.
 - Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: `fff925d`
+  - Commit title: `docs(governance): clarify per-step commit requirement as repository checkpoint`
 
 ### 2026-02-28 - UX-L-00-c completed: launch defer-lock confirmation
 

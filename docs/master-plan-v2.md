@@ -445,6 +445,7 @@ No additional missing plan docs were identified from the current chat scope afte
   - pre-existing unrelated local files remained untouched; only canonical docs for commit policy were modified.
 - Dependency check: no new dependencies.
 - Env-var check: no new environment variables.
+- Commit checkpoint: `fff925d` (`docs(governance): clarify per-step commit requirement as repository checkpoint`).
 
 ### 2026-02-28 - UX-L-00-c completed (launch defer-lock confirmation)
 
