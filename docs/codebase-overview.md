@@ -343,6 +343,7 @@ Implemented capabilities:
   - existing ticket state surfaced in host workspace to prevent duplicate order creation
 - Kitchen workspace route `/service/kitchen` now renders confirmed open orders in FIFO order by `confirmed_at` (oldest first).
 - Kitchen queue now supports per-item lifecycle status updates (`pending`, `preparing`, `ready_to_serve`, `served`, `cancelled`) with immediate refresh after each change.
+- Kitchen queue now collapses orders from visible list when all items are terminal (`served`/`cancelled`) while keeping orders open until explicit close flow.
 
 Canonical paths:
 

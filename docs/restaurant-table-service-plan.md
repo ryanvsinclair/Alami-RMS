@@ -1,6 +1,6 @@
 # Restaurant Table QR + Host/Kitchen Ops Plan (Restaurant-Only V1)
 
-Status: ACTIVE - RTS-00 through RTS-03 complete; RTS-04 in progress (a-b complete); RTS-05 pending
+Status: ACTIVE - RTS-00 through RTS-03 complete; RTS-04 in progress (a-c complete); RTS-05 pending
 Created: 2026-02-28
 Last Updated: 2026-02-28
 Primary Purpose: launch restaurant table service with QR routing, host order confirmation, and kitchen queue operations.
@@ -23,6 +23,12 @@ Primary Purpose: launch restaurant table service with QR routing, host order con
 Constitution source: `docs/execution-constitution.md`
 
 ## Latest Update
+
+- **2026-02-28 - RTS-04-c completed (queue collapse on terminal-only items).**
+  - Kitchen queue read path now hides orders where all items are terminal (`served`/`cancelled`).
+  - Orders remain open in storage (`kitchen_orders.closed_at` unchanged) while collapsed from visible queue.
+  - Queue visibility now derives from presence of at least one non-terminal item.
+  - This preserves re-surface behavior when append adds new non-terminal items in follow-on scope.
 
 - **2026-02-28 - RTS-04-b completed (kitchen item status lifecycle controls).**
   - Added status update service/action path for `KitchenOrderItem.status`.
@@ -129,7 +135,7 @@ Constitution source: `docs/execution-constitution.md`
 ## Pick Up Here
 
 - Current phase: `RTS-04`
-- Current task: `RTS-04-c`
+- Current task: `RTS-04-d`
 - Status: `[ ]` pending
 
 ## Scope
@@ -291,7 +297,7 @@ Before starting any checklist item in this plan:
 - [x] RTS-04-0: Constitution restatement logged for this phase and no deviation required.
 - [x] RTS-04-a: Render queue in FIFO order by confirmation timestamp.
 - [x] RTS-04-b: Add item status/actions for `pending`, `preparing`, `ready_to_serve`, `served`, and `cancelled`.
-- [ ] RTS-04-c: Collapse order from visible queue when all items are terminal (`served`/`cancelled`) while keeping order open.
+- [x] RTS-04-c: Collapse order from visible queue when all items are terminal (`served`/`cancelled`) while keeping order open.
 - [ ] RTS-04-d: Re-surface collapsed order in queue when new items are appended post-confirm.
 - [ ] RTS-04-e: Keep already-served items immutable when new items are appended.
 - [ ] RTS-04-f: Overdue visual urgency without queue reordering.

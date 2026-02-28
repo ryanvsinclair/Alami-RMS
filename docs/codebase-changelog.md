@@ -20,6 +20,41 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - RTS-04-c completed: collapse queue when all items terminal
+
+- Suggested Commit Title: `feat(rts-04): collapse terminal-only orders from kitchen queue`
+- Scope: RTS phase `RTS-04-c` (queue collapse visibility rule).
+- Constitution Restatement:
+  - Task ID: `RTS-04-c`
+  - Scope sentence: hide open orders from queue when every item status is terminal (`served`/`cancelled`) without closing the order.
+  - Invariants confirmed: order records remain open until explicit host close action; queue ordering remains confirmation-time FIFO for visible entries; no new status values introduced.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: structural behavior-only change in queue derivation.
+- Deliverables:
+  - Added terminal-status set usage in kitchen queue derivation.
+  - Queue now filters out orders with only terminal items while preserving open-order persistence.
+  - Maintained FIFO ordering logic for remaining visible queue entries.
+- Touched Files (single-entry log):
+  - `src/features/table-service/server/order.service.ts` (updated)
+  - `docs/restaurant-table-service-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx eslint "src/features/table-service/server/order.service.ts" "app/(dashboard)/service/kitchen/page.tsx" "src/features/table-service/ui/KitchenQueuePageClient.tsx" "app/actions/modules/table-service.ts"` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 1.
+  - Delta rationale: exact RTS-04-c scope (terminal-only queue collapse filter).
+- Unrelated-file check:
+  - Existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: pending (record after commit)
+  - Commit title: `feat(rts-04): collapse terminal-only orders from kitchen queue`
+
 ### 2026-02-28 - RTS-04-b completed: kitchen item lifecycle status controls
 
 - Suggested Commit Title: `feat(rts-04): add kitchen item status lifecycle controls`

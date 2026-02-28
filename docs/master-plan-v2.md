@@ -180,10 +180,10 @@ Use `Canonical Order Checklist` statuses as source of truth.
 Current snapshot (2026-02-28):
 
 - Launch-critical checklist items total: `50`
-- Launch-critical `[x]`: `32`
+- Launch-critical `[x]`: `33`
 - Launch-critical `[~]`: `0`
-- Strict completion: `64.00%`
-- Weighted progress: `64.00%`
+- Strict completion: `66.00%`
+- Weighted progress: `66.00%`
 - Parked post-launch checklist items (DI): `7` (excluded from launch completion %)
 
 Update rule after each slice:
@@ -226,11 +226,11 @@ Parked stream:
 
 ## Last Left Off Here
 
-- Current task ID: `RTS-04-c`
-- Current task: `Collapse queue when all items terminal`
+- Current task ID: `RTS-04-d`
+- Current task: `Host done/paid closes order and session`
 - Status: `NOT STARTED`
 - Last updated: `2026-02-28`
-- Note: RTS-04-b status lifecycle controls completed; continue deterministic order with RTS-04-c.
+- Note: RTS-04-c terminal-collapse queue visibility completed; continue deterministic order with RTS-04-d.
 
 ## Canonical Order Checklist
 
@@ -313,7 +313,7 @@ Plan doc: `docs/restaurant-table-service-plan.md`
 
 - [x] RTS-04-a: FIFO queue by confirmation time
 - [x] RTS-04-b: Item status lifecycle includes `pending`, `preparing`, `ready_to_serve`, `served`, `cancelled`
-- [ ] RTS-04-c: Collapse order from queue when all items are terminal (`served`/`cancelled`) while keeping order open
+- [x] RTS-04-c: Collapse order from queue when all items are terminal (`served`/`cancelled`) while keeping order open
 - [ ] RTS-04-d: Host `done/paid` action closes order and closes table session
 - [ ] RTS-04-e: Overdue visual urgency without queue reordering
 
@@ -417,10 +417,43 @@ No additional missing plan docs were identified from the current chat scope afte
 ## Completion Snapshot
 
 - Launch-critical initiatives active: `5` (RPK, RTS, IMG-L, UX-L, LG)
-- Launch-critical items complete: `32`
+- Launch-critical items complete: `33`
 - Parked post-launch initiatives: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - RTS-04-c queue collapse on terminal-only items enforced
+
+- Constitution Restatement:
+  - Task ID: `RTS-04-c`
+  - Scope: collapse orders from visible kitchen queue when all items are terminal (`served`/`cancelled`) while keeping orders open.
+  - Invariants confirmed: queue remains confirmation-time ordered for visible entries; order/session close semantics unchanged; append and status operations remain additive.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: no additional UI surface changes beyond existing queue rendering behavior.
+- Preflight evidence:
+  - `Get-Content docs/restaurant-table-service-plan.md`
+  - `Get-Content src/features/table-service/server/order.service.ts`
+  - `Get-Content src/features/table-service/shared/table-service.contracts.ts`
+  - `rg -n "KITCHEN_TERMINAL_ITEM_STATUSES|terminal|served|cancelled|RTS-04-c|collapse" src/features/table-service app/(dashboard)/service/kitchen/page.tsx docs/restaurant-table-service-plan.md docs/master-plan-v2.md --glob '!**/generated/**'`
+- Implementation:
+  - Updated kitchen queue derivation in `getKitchenQueue(...)`:
+    - added terminal-status set from shared contracts (`served`, `cancelled`)
+    - filters out any order where every item is terminal
+    - keeps order records open in DB (no `closed_at` mutation)
+  - Preserved FIFO ordering logic for remaining visible entries.
+- Validation:
+  - `npx eslint "src/features/table-service/server/order.service.ts" "app/(dashboard)/service/kitchen/page.tsx" "src/features/table-service/ui/KitchenQueuePageClient.tsx" "app/actions/modules/table-service.ts"` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 1 (queue derivation filter in order service)
+  - changed docs: source/master/overview/changelog sync
+  - proportionality reason: exactly scoped to RTS-04-c terminal-collapse queue behavior.
+- Unrelated-file check:
+  - pre-existing unrelated local files remained untouched; this slice modified only RTS-04-c scope files plus required canonical docs.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+- Commit checkpoint: pending (record after commit).
 
 ### 2026-02-28 - RTS-04-b kitchen item status lifecycle actions implemented
 

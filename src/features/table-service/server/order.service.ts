@@ -9,7 +9,10 @@ import type {
   TableServiceKitchenOrderSummary,
   UpdateKitchenOrderItemStatusInput,
 } from "../shared/table-service.contracts";
-import { KITCHEN_ORDER_ITEM_STATUSES } from "../shared/table-service.contracts";
+import {
+  KITCHEN_ORDER_ITEM_STATUSES,
+  KITCHEN_TERMINAL_ITEM_STATUSES,
+} from "../shared/table-service.contracts";
 
 type KitchenOrderRecord = {
   id: string;
@@ -32,6 +35,7 @@ type KitchenOrderRecord = {
 
 const CONFIRMATION_WINDOW_MS = 30 * 60 * 1000;
 const KITCHEN_ORDER_ITEM_STATUS_SET = new Set<string>(KITCHEN_ORDER_ITEM_STATUSES);
+const KITCHEN_TERMINAL_STATUS_SET = new Set<string>(KITCHEN_TERMINAL_ITEM_STATUSES);
 
 function normalizeOptionalText(value: string | null | undefined) {
   const trimmed = value?.trim();
@@ -151,6 +155,9 @@ export async function getKitchenQueue(businessId: string) {
 
   const queue: TableServiceKitchenQueueEntry[] = orders
     .filter((order) => order.confirmed_at !== null)
+    .filter((order) =>
+      order.items.some((item) => !KITCHEN_TERMINAL_STATUS_SET.has(item.status)),
+    )
     .map((order) => ({
       orderId: order.id,
       businessId: order.business_id,
