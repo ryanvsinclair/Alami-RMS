@@ -1,6 +1,6 @@
 # Restaurant Table QR + Host/Kitchen Ops Plan (Restaurant-Only V1)
 
-Status: ACTIVE - RTS-00 through RTS-04 complete; RTS-05 in progress (a-c complete)
+Status: COMPLETE - RTS-00 through RTS-05 complete
 Created: 2026-02-28
 Last Updated: 2026-02-28
 Primary Purpose: launch restaurant table service with QR routing, host order confirmation, and kitchen queue operations.
@@ -23,6 +23,12 @@ Primary Purpose: launch restaurant table service with QR routing, host order con
 Constitution source: `docs/execution-constitution.md`
 
 ## Latest Update
+
+- **2026-02-28 - RTS-05-d completed (launch smoke coverage for QR/host/kitchen loop).**
+  - Added launch smoke test suite at `src/features/table-service/shared/table-service.launch-smoke.test.ts`.
+  - Smoke coverage includes route presence, queue lifecycle collapse/resurface contract, timer window contract, and mode-toggle/redirect wiring checks.
+  - Executed with: `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts src/features/table-service/shared/table-service.launch-smoke.test.ts`.
+  - RTS source checklist is now fully complete.
 
 - **2026-02-28 - RTS-05-c completed (temporary-mode note explicitly present).**
   - Verified explicit temporary-note text is present in profile mode toggle UI:
@@ -163,8 +169,8 @@ Constitution source: `docs/execution-constitution.md`
 ## Pick Up Here
 
 - Current phase: `RTS-05`
-- Current task: `RTS-05-d`
-- Status: `[ ]` pending
+- Current task: `COMPLETE`
+- Status: `[x]` completed
 
 ## Scope
 
@@ -266,7 +272,7 @@ This section is authoritative for RTS V1 Prisma modeling.
 - `RTS-02`: `[x]` completed
 - `RTS-03`: `[x]` completed
 - `RTS-04`: `[x]` completed
-- `RTS-05`: `[~]` in progress
+- `RTS-05`: `[x]` completed
 
 ## Mandatory Restatement Before Phase Work
 
@@ -333,13 +339,13 @@ Before starting any checklist item in this plan:
 
 ## RTS-05 - Profile mode toggle and launch hardening
 
-**Status:** `[~]` in progress
+**Status:** `[x]` completed
 
 - [x] RTS-05-0: Constitution restatement logged for this phase and no deviation required.
 - [x] RTS-05-a: Add Host/Kitchen mode toggle in profile.
 - [x] RTS-05-b: In Kitchen mode, redirect `/` to `/service/kitchen`.
 - [x] RTS-05-c: Add explicit note that this mode toggle is temporary until role model refactor.
-- [ ] RTS-05-d: Run launch smoke suite for QR split, host flow, kitchen flow, and queue lifecycle.
+- [x] RTS-05-d: Run launch smoke suite for QR split, host flow, kitchen flow, and queue lifecycle.
 
 ## Validation Gate (Expanded)
 

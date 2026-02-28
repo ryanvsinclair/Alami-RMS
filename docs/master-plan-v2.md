@@ -180,10 +180,10 @@ Use `Canonical Order Checklist` statuses as source of truth.
 Current snapshot (2026-02-28):
 
 - Launch-critical checklist items total: `50`
-- Launch-critical `[x]`: `38`
+- Launch-critical `[x]`: `39`
 - Launch-critical `[~]`: `0`
-- Strict completion: `76.00%`
-- Weighted progress: `76.00%`
+- Strict completion: `78.00%`
+- Weighted progress: `78.00%`
 - Parked post-launch checklist items (DI): `7` (excluded from launch completion %)
 
 Update rule after each slice:
@@ -226,11 +226,11 @@ Parked stream:
 
 ## Last Left Off Here
 
-- Current task ID: `RTS-05-d`
-- Current task: `Launch smoke coverage for QR/host/kitchen loop`
+- Current task ID: `IMG-L-00-a`
+- Current task: `IMG launch schema/contracts completion`
 - Status: `NOT STARTED`
 - Last updated: `2026-02-28`
-- Note: RTS-05-c temporary-note requirement confirmed complete; continue deterministic order with RTS-05-d.
+- Note: RTS phase is fully complete; continue deterministic order into IMG launch slice.
 
 ## Canonical Order Checklist
 
@@ -322,7 +322,7 @@ Plan doc: `docs/restaurant-table-service-plan.md`
 - [x] RTS-05-a: Add Host/Kitchen mode toggle in profile
 - [x] RTS-05-b: Kitchen mode auto-redirects `/` to kitchen queue
 - [x] RTS-05-c: Add explicit temporary note for future role-based refactor
-- [ ] RTS-05-d: Launch smoke tests for QR/host/kitchen core loop
+- [x] RTS-05-d: Launch smoke tests for QR/host/kitchen core loop
 
 ### Initiative IMG-L - Launch Slice from Item Image Enrichment
 
@@ -417,10 +417,51 @@ No additional missing plan docs were identified from the current chat scope afte
 ## Completion Snapshot
 
 - Launch-critical initiatives active: `5` (RPK, RTS, IMG-L, UX-L, LG)
-- Launch-critical items complete: `38`
+- Launch-critical items complete: `39`
 - Parked post-launch initiatives: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - RTS-05-d launch smoke suite added and executed
+
+- Constitution Restatement:
+  - Task ID: `RTS-05-d`
+  - Scope: add and run launch smoke tests for QR split, host flow, kitchen flow, and queue lifecycle contracts.
+  - Invariants confirmed: smoke scope is additive test coverage only; no destructive schema/runtime behavior introduced.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: no new UI behavior beyond tested existing launch flows.
+- Preflight evidence:
+  - `Get-Content docs/restaurant-table-service-plan.md`
+  - `Get-Content src/features/table-service/shared/table-service.contracts.ts`
+  - `Get-Content src/features/table-service/shared/table-service.launch-smoke.test.ts`
+  - `Get-Content app/page.tsx`
+  - `rg -n "RTS-05|launch smoke|queue visibility|due-at|workspace mode" docs/master-plan-v2.md docs/restaurant-table-service-plan.md src/features/table-service/shared app/page.tsx`
+- Implementation:
+  - Added shared smoke test suite:
+    - `src/features/table-service/shared/table-service.launch-smoke.test.ts`
+  - Added/used shared helper contracts to test real launch logic paths:
+    - queue visibility helper (`shouldShowKitchenOrderInQueue`)
+    - due-at computation helper (`getKitchenOrderDueAt`)
+    - confirmation window constant
+  - Smoke tests cover:
+    - required route presence (`/scan/t/[token]`, `/r/[publicSlug]`, host, kitchen, profile)
+    - queue collapse/resurface visibility logic
+    - 30-minute timer contract
+    - profile toggle and home redirect wiring
+- Validation:
+  - `npx eslint app/page.tsx "src/features/table-service/shared/table-service.contracts.ts" "src/features/table-service/server/order.service.ts" "src/features/table-service/ui/TableServiceModeToggleCard.tsx" "src/features/table-service/shared/table-service.launch-smoke.test.ts"` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts src/features/table-service/shared/table-service.launch-smoke.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 2 (shared contracts helper exports + order-service helper usage)
+  - changed test files: 1 (new launch smoke suite)
+  - changed docs: source/master/overview/changelog sync
+  - proportionality reason: exactly scoped to RTS-05-d smoke coverage and required helperization.
+- Unrelated-file check:
+  - pre-existing unrelated local files remained untouched; this slice modified only RTS-05-d scope files plus required canonical docs.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+- Commit checkpoint: pending (record after commit).
 
 ### 2026-02-28 - RTS-05-c temporary mode note requirement verified complete
 

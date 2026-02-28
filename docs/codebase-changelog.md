@@ -20,6 +20,48 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - RTS-05-d completed: launch smoke suite for QR/host/kitchen loop
+
+- Suggested Commit Title: `test(rts-05): add launch smoke suite for qr-host-kitchen loop`
+- Scope: RTS phase `RTS-05-d` (launch smoke coverage).
+- Constitution Restatement:
+  - Task ID: `RTS-05-d`
+  - Scope sentence: add executable smoke tests for core launch loop contracts (QR split, host flow, kitchen queue lifecycle, mode wiring).
+  - Invariants confirmed: additive test/helper coverage only; no destructive runtime changes.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: no new UI behavior beyond existing feature validation.
+- Deliverables:
+  - Added smoke suite: `src/features/table-service/shared/table-service.launch-smoke.test.ts`.
+  - Added/leveraged shared helper contracts:
+    - `shouldShowKitchenOrderInQueue(...)`
+    - `getKitchenOrderDueAt(...)`
+    - `KITCHEN_CONFIRMATION_WINDOW_MINUTES`
+  - Wired queue service to shared visibility/due-at helpers.
+  - Executed smoke suite with node test runner.
+- Touched Files (single-entry log):
+  - `src/features/table-service/shared/table-service.launch-smoke.test.ts` (added)
+  - `src/features/table-service/shared/table-service.contracts.ts` (updated)
+  - `src/features/table-service/server/order.service.ts` (updated)
+  - `docs/restaurant-table-service-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx eslint app/page.tsx "src/features/table-service/shared/table-service.contracts.ts" "src/features/table-service/server/order.service.ts" "src/features/table-service/ui/TableServiceModeToggleCard.tsx" "src/features/table-service/shared/table-service.launch-smoke.test.ts"` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts src/features/table-service/shared/table-service.launch-smoke.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 3.
+  - Changed test files: 1.
+  - Delta rationale: exact RTS-05-d scope (smoke coverage plus helperization).
+- Unrelated-file check:
+  - Existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: pending (record after commit)
+  - Commit title: `test(rts-05): add launch smoke suite for qr-host-kitchen loop`
+
 ### 2026-02-28 - RTS-05-c completed: temporary mode note confirmed
 
 - Suggested Commit Title: `docs(rts-05): mark temporary mode note requirement complete`

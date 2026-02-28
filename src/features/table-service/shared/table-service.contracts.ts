@@ -4,6 +4,7 @@ export const TABLE_SERVICE_MODULE_ID = "table_service" as const;
 export const TABLE_SERVICE_WORKSPACE_MODES = ["host", "kitchen"] as const;
 export type TableServiceWorkspaceMode = (typeof TABLE_SERVICE_WORKSPACE_MODES)[number];
 export const TABLE_SERVICE_WORKSPACE_MODE_STORAGE_KEY = "table_service_workspace_mode" as const;
+export const KITCHEN_CONFIRMATION_WINDOW_MINUTES = 30 as const;
 
 export const KITCHEN_ORDER_ITEM_STATUSES = [
   "pending",
@@ -18,6 +19,20 @@ export const KITCHEN_TERMINAL_ITEM_STATUSES = [
   "served",
   "cancelled",
 ] as const satisfies readonly KitchenOrderItemStatusContract[];
+const KITCHEN_TERMINAL_STATUS_SET = new Set<KitchenOrderItemStatusContract>(
+  KITCHEN_TERMINAL_ITEM_STATUSES,
+);
+
+export function shouldShowKitchenOrderInQueue(
+  statuses: readonly KitchenOrderItemStatusContract[],
+) {
+  return statuses.some((status) => !KITCHEN_TERMINAL_STATUS_SET.has(status));
+}
+
+export function getKitchenOrderDueAt(confirmedAt: Date) {
+  const windowMs = KITCHEN_CONFIRMATION_WINDOW_MINUTES * 60 * 1000;
+  return new Date(confirmedAt.getTime() + windowMs);
+}
 
 export const TABLE_SERVICE_ORDER_FLOW_CONTRACT = {
   one_order_per_session: true,

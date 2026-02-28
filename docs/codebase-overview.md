@@ -348,6 +348,7 @@ Implemented capabilities:
 - Kitchen queue now shows overdue urgency styling/labels when `due_at` is past, without changing FIFO ordering.
 - Profile page now includes table-service launch mode toggle (`Host` / `Kitchen`) for restaurant businesses with `table_service` enabled.
 - Home route now auto-redirects restaurant users to `/service/kitchen` when profile mode is set to `Kitchen`.
+- Table-service launch smoke coverage now lives in `src/features/table-service/shared/table-service.launch-smoke.test.ts`.
 
 Canonical paths:
 

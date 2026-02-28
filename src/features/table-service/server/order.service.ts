@@ -11,8 +11,9 @@ import type {
   UpdateKitchenOrderItemStatusInput,
 } from "../shared/table-service.contracts";
 import {
+  getKitchenOrderDueAt,
   KITCHEN_ORDER_ITEM_STATUSES,
-  KITCHEN_TERMINAL_ITEM_STATUSES,
+  shouldShowKitchenOrderInQueue,
 } from "../shared/table-service.contracts";
 
 type KitchenOrderRecord = {
@@ -34,9 +35,7 @@ type KitchenOrderRecord = {
   }>;
 };
 
-const CONFIRMATION_WINDOW_MS = 30 * 60 * 1000;
 const KITCHEN_ORDER_ITEM_STATUS_SET = new Set<string>(KITCHEN_ORDER_ITEM_STATUSES);
-const KITCHEN_TERMINAL_STATUS_SET = new Set<string>(KITCHEN_TERMINAL_ITEM_STATUSES);
 
 function normalizeOptionalText(value: string | null | undefined) {
   const trimmed = value?.trim();
@@ -86,10 +85,6 @@ function toKitchenOrderSummary(order: KitchenOrderRecord): TableServiceKitchenOr
       status: item.status,
     })),
   };
-}
-
-function withDueAt(confirmedAt: Date) {
-  return new Date(confirmedAt.getTime() + CONFIRMATION_WINDOW_MS);
 }
 
 export async function getKitchenOrderForSession(businessId: string, tableSessionId: string) {
@@ -156,9 +151,7 @@ export async function getKitchenQueue(businessId: string) {
 
   const queue: TableServiceKitchenQueueEntry[] = orders
     .filter((order) => order.confirmed_at !== null)
-    .filter((order) =>
-      order.items.some((item) => !KITCHEN_TERMINAL_STATUS_SET.has(item.status)),
-    )
+    .filter((order) => shouldShowKitchenOrderInQueue(order.items.map((item) => item.status)))
     .map((order) => ({
       orderId: order.id,
       businessId: order.business_id,
@@ -218,7 +211,7 @@ export async function confirmKitchenOrder(
       }
 
       const confirmedAt = existingOrder.confirmed_at ?? new Date();
-      const dueAt = existingOrder.due_at ?? withDueAt(confirmedAt);
+      const dueAt = existingOrder.due_at ?? getKitchenOrderDueAt(confirmedAt);
       const backfilledOrder = await tx.kitchenOrder.update({
         where: { id: existingOrder.id },
         data: {
@@ -250,7 +243,7 @@ export async function confirmKitchenOrder(
     }
 
     const confirmedAt = new Date();
-    const dueAt = withDueAt(confirmedAt);
+    const dueAt = getKitchenOrderDueAt(confirmedAt);
 
     const createdOrder = await tx.kitchenOrder.create({
       data: {
