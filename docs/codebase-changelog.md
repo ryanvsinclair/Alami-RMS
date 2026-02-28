@@ -57,7 +57,7 @@ Companion overview: `docs/codebase-overview.md`
 - Dependency change check: no new dependencies added.
 - Env-var change check: no new env vars introduced.
 - Commit checkpoint:
-  - Commit hash: pending (record after commit)
+  - Commit hash: `0b9426a`
   - Commit title: `feat(rts-04): add host done-paid close for order and session`
 
 ### 2026-02-28 - RTS-04-c completed: collapse queue when all items terminal
