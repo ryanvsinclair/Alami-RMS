@@ -457,7 +457,7 @@ No additional missing plan docs were identified from the current chat scope afte
   - pre-existing unrelated local files remained untouched; this slice modified only UX-L-00-a scope files plus required canonical docs.
 - Dependency check: no new dependencies.
 - Env-var check: no new environment variables.
-- Commit checkpoint: pending (record after commit).
+- Commit checkpoint: `c012083` (`feat(ux-00): add launch shared ui primitives and view hook`).
 
 ### 2026-02-28 - IMG-L-00-c completed (launch enrichment deferral lock)
 

@@ -59,7 +59,7 @@ Companion overview: `docs/codebase-overview.md`
 - Dependency change check: no new dependencies added.
 - Env-var change check: no new env vars introduced.
 - Commit checkpoint:
-  - Commit hash: pending (record after commit)
+  - Commit hash: `c012083`
   - Commit title: `feat(ux-00): add launch shared ui primitives and view hook`
 
 ### 2026-02-28 - IMG-L-00-c completed: launch enrichment deferral lock
