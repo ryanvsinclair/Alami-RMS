@@ -112,3 +112,26 @@ test("launch smoke: order service enforces same-order append and host-controlled
   assert.match(orderService, /tx\.tableSession\.update/);
   assert.match(orderService, /closed_at:\s*closedAt/);
 });
+
+test("launch smoke: kitchen queue stays FIFO by confirmation time for advancement behavior", () => {
+  const orderService = fs.readFileSync(
+    path.join(repoRoot, "src/features/table-service/server/order.service.ts"),
+    "utf8",
+  );
+
+  assert.match(orderService, /orderBy:\s*\[\{\s*confirmed_at:\s*"asc"\s*\},\s*\{\s*created_at:\s*"asc"\s*\}\]/);
+  assert.match(orderService, /shouldShowKitchenOrderInQueue/);
+  assert.match(orderService, /confirmed_at:\s*\{\s*not:\s*null/);
+});
+
+test("launch smoke: overdue timer urgency remains visual and does not reorder queue", () => {
+  const kitchenQueueClient = fs.readFileSync(
+    path.join(repoRoot, "src/features/table-service/ui/KitchenQueuePageClient.tsx"),
+    "utf8",
+  );
+
+  assert.match(kitchenQueueClient, /getOverdueMinutesLabel/);
+  assert.match(kitchenQueueClient, /Queue Position \{index \+ 1\}/);
+  assert.match(kitchenQueueClient, /FIFO by confirmation time\. Orders are rendered oldest confirmed first\./);
+  assert.match(kitchenQueueClient, /overdueLabel \? "border-danger\/40 bg-danger\/5" : "border-border"/);
+});

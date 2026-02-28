@@ -20,6 +20,38 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - LG-00-d completed: timer and queue-advancement regression pass
+
+- Suggested Commit Title: `test(lg-00-d): extend timer and queue-advancement launch smoke coverage`
+- Scope: Integrated launch gate `LG-00-d` (timer and queue advancement behavior pass) via additive smoke assertions.
+- Constitution Restatement:
+  - Task ID: `LG-00-d`
+  - Scope sentence: extend launch smoke suite to lock due-at timer behavior, FIFO queue ordering, and overdue urgency visual policy.
+  - Invariants confirmed: queue remains confirmation-time FIFO; overdue urgency does not reorder queue; no schema/runtime behavior changes.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: no UI implementation changes in this slice.
+- Deliverables:
+  - Extended `src/features/table-service/shared/table-service.launch-smoke.test.ts`:
+    - validates FIFO order query and queue-visibility progression behavior
+    - validates overdue urgency rendering remains visual-only while queue position remains index/FIFO driven
+  - Marked `LG-00-d` complete in master checklist and advanced pointer to `LG-00-e`.
+- Touched Files (single-entry log):
+  - `src/features/table-service/shared/table-service.launch-smoke.test.ts` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx eslint src/features/table-service/shared/table-service.launch-smoke.test.ts` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts src/features/table-service/shared/table-service.launch-smoke.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 0.
+  - Changed test files: 1.
+  - Delta rationale: exact LG-00-d gate scope (timer/FIFO queue-advancement smoke assertions + canonical status sync).
+- Unrelated-file check:
+  - Existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+
 ### 2026-02-28 - LG-00-c completed: host->kitchen queue lifecycle regression pass
 
 - Suggested Commit Title: `test(lg-00-c): extend lifecycle launch smoke coverage for host-kitchen flow`

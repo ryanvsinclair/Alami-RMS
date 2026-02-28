@@ -180,10 +180,10 @@ Use `Canonical Order Checklist` statuses as source of truth.
 Current snapshot (2026-02-28):
 
 - Launch-critical checklist items total: `50`
-- Launch-critical `[x]`: `48`
+- Launch-critical `[x]`: `49`
 - Launch-critical `[~]`: `0`
-- Strict completion: `96.00%`
-- Weighted progress: `96.00%`
+- Strict completion: `98.00%`
+- Weighted progress: `98.00%`
 - Parked post-launch checklist items (DI): `7` (excluded from launch completion %)
 
 Update rule after each slice:
@@ -226,11 +226,11 @@ Parked stream:
 
 ## Last Left Off Here
 
-- Current task ID: `LG-00-d`
-- Current task: `Integrated launch gate timer and queue advancement behavior pass`
+- Current task ID: `LG-00-e`
+- Current task: `Integrated launch gate multi-tenant isolation and permission checks pass`
 - Status: `NOT STARTED`
 - Last updated: `2026-02-28`
-- Note: LG-00-c host->kitchen lifecycle pass is complete; continue deterministic LG gate sequence.
+- Note: LG-00-d timer and queue-advancement pass is complete; continue deterministic LG gate sequence.
 
 ## Canonical Order Checklist
 
@@ -364,7 +364,7 @@ Test format lock:
 - [x] LG-00-a: End-to-end intake 1-8 regression pass
 - [x] LG-00-b: End-to-end QR actor split pass
 - [x] LG-00-c: Host->kitchen queue lifecycle pass
-- [ ] LG-00-d: Timer and queue advancement behavior pass
+- [x] LG-00-d: Timer and queue advancement behavior pass
 - [ ] LG-00-e: Multi-tenant isolation and permission checks pass
 
 ## Post-Launch Queue (Parked)
@@ -417,10 +417,42 @@ No additional missing plan docs were identified from the current chat scope afte
 ## Completion Snapshot
 
 - Launch-critical initiatives active: `5` (RPK, RTS, IMG-L, UX-L, LG)
-- Launch-critical items complete: `48`
+- Launch-critical items complete: `49`
 - Parked post-launch initiatives: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - LG-00-d completed (timer and queue-advancement regression pass)
+
+- Constitution Restatement:
+  - Task ID: `LG-00-d`
+  - Scope: run launch-gate timer and queue-advancement regression coverage for due-at timing, FIFO ordering, and overdue urgency behavior.
+  - Invariants confirmed: queue ordering remains confirmation-time FIFO; overdue indication remains visual-only; no schema/runtime behavior changes.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: no UI implementation changes in this slice.
+- Preflight evidence:
+  - `Get-Content src/features/table-service/server/order.service.ts`
+  - `Get-Content src/features/table-service/ui/KitchenQueuePageClient.tsx`
+  - `Get-Content src/features/table-service/shared/table-service.launch-smoke.test.ts`
+  - `rg -n "confirmed_at|orderBy|getKitchenOrderDueAt|overdue|Queue Position|FIFO" src/features/table-service docs/master-plan-v2.md docs/restaurant-table-service-plan.md`
+- Implementation:
+  - Extended `src/features/table-service/shared/table-service.launch-smoke.test.ts` with LG-00-d assertions for:
+    - FIFO queue ordering by confirmation timestamp in `getKitchenQueue`
+    - overdue timer urgency rendered as visual signal without queue reordering
+  - Marked `LG-00-d` complete and advanced canonical pointer to `LG-00-e`.
+- Validation:
+  - `npx eslint src/features/table-service/shared/table-service.launch-smoke.test.ts` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts src/features/table-service/shared/table-service.launch-smoke.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 0
+  - changed test files: 1
+  - changed docs: master/changelog sync
+  - proportionality reason: exact LG-00-d gate scope (timer/FIFO advancement smoke assertions + canonical status sync).
+- Unrelated-file check:
+  - pre-existing unrelated local files remained untouched; this slice modified only LG-00-d test+docs scope files.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
 
 ### 2026-02-28 - LG-00-c completed (host->kitchen queue lifecycle regression pass)
 
