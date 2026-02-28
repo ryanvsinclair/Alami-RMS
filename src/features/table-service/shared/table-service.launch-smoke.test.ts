@@ -80,3 +80,35 @@ test("launch smoke: public diner landing remains menu-first with google-review C
   assert.match(publicLanding, /writereview\?placeid=/);
   assert.doesNotMatch(publicLanding, /service\/host/);
 });
+
+test("launch smoke: host composer wires confirm, append, and done-paid close lifecycle actions", () => {
+  const hostComposer = fs.readFileSync(
+    path.join(repoRoot, "src/features/table-service/ui/HostOrderComposerPageClient.tsx"),
+    "utf8",
+  );
+
+  assert.match(hostComposer, /confirmKitchenOrder/);
+  assert.match(hostComposer, /appendKitchenOrderItems/);
+  assert.match(hostComposer, /closeKitchenOrderAndSession/);
+  assert.match(hostComposer, /Append Items To Order/);
+  assert.match(hostComposer, /Done\/Paid And Close Table Session/);
+  assert.match(hostComposer, /Post-confirm edits append new item rows to the same kitchen order/);
+});
+
+test("launch smoke: order service enforces same-order append and host-controlled table-session closure", () => {
+  const orderService = fs.readFileSync(
+    path.join(repoRoot, "src/features/table-service/server/order.service.ts"),
+    "utf8",
+  );
+
+  assert.match(orderService, /export async function confirmKitchenOrder/);
+  assert.match(orderService, /if \(existingOrder\)/);
+  assert.match(orderService, /table_session_id:\s*session\.id/);
+  assert.match(orderService, /export async function appendKitchenOrderItems/);
+  assert.match(orderService, /id:\s*kitchenOrderId/);
+  assert.match(orderService, /table_session:/);
+  assert.match(orderService, /closed_at:\s*null/);
+  assert.match(orderService, /export async function closeKitchenOrderAndSession/);
+  assert.match(orderService, /tx\.tableSession\.update/);
+  assert.match(orderService, /closed_at:\s*closedAt/);
+});

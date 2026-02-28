@@ -180,10 +180,10 @@ Use `Canonical Order Checklist` statuses as source of truth.
 Current snapshot (2026-02-28):
 
 - Launch-critical checklist items total: `50`
-- Launch-critical `[x]`: `47`
+- Launch-critical `[x]`: `48`
 - Launch-critical `[~]`: `0`
-- Strict completion: `94.00%`
-- Weighted progress: `94.00%`
+- Strict completion: `96.00%`
+- Weighted progress: `96.00%`
 - Parked post-launch checklist items (DI): `7` (excluded from launch completion %)
 
 Update rule after each slice:
@@ -226,11 +226,11 @@ Parked stream:
 
 ## Last Left Off Here
 
-- Current task ID: `LG-00-c`
-- Current task: `Integrated launch gate host->kitchen queue lifecycle pass`
+- Current task ID: `LG-00-d`
+- Current task: `Integrated launch gate timer and queue advancement behavior pass`
 - Status: `NOT STARTED`
 - Last updated: `2026-02-28`
-- Note: LG-00-b QR actor split pass is complete; continue deterministic LG gate sequence.
+- Note: LG-00-c host->kitchen lifecycle pass is complete; continue deterministic LG gate sequence.
 
 ## Canonical Order Checklist
 
@@ -363,7 +363,7 @@ Test format lock:
 
 - [x] LG-00-a: End-to-end intake 1-8 regression pass
 - [x] LG-00-b: End-to-end QR actor split pass
-- [ ] LG-00-c: Host->kitchen queue lifecycle pass
+- [x] LG-00-c: Host->kitchen queue lifecycle pass
 - [ ] LG-00-d: Timer and queue advancement behavior pass
 - [ ] LG-00-e: Multi-tenant isolation and permission checks pass
 
@@ -417,10 +417,42 @@ No additional missing plan docs were identified from the current chat scope afte
 ## Completion Snapshot
 
 - Launch-critical initiatives active: `5` (RPK, RTS, IMG-L, UX-L, LG)
-- Launch-critical items complete: `47`
+- Launch-critical items complete: `48`
 - Parked post-launch initiatives: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - LG-00-c completed (host->kitchen queue lifecycle regression pass)
+
+- Constitution Restatement:
+  - Task ID: `LG-00-c`
+  - Scope: run launch-gate lifecycle regression coverage for host confirm/append flow, kitchen queue visibility rules, and host done/paid closure path.
+  - Invariants confirmed: one-order-per-session remains locked; post-confirm edits append on same order; done/paid closes order and table session.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: no UI implementation changes in this slice.
+- Preflight evidence:
+  - `Get-Content src/features/table-service/ui/HostOrderComposerPageClient.tsx`
+  - `Get-Content src/features/table-service/server/order.service.ts`
+  - `Get-Content src/features/table-service/shared/table-service.launch-smoke.test.ts`
+  - `rg -n "confirmKitchenOrder|appendKitchenOrderItems|closeKitchenOrderAndSession|shouldShowKitchenOrderInQueue|closed_at" src/features/table-service app/actions/modules/table-service.ts docs/master-plan-v2.md`
+- Implementation:
+  - Extended `src/features/table-service/shared/table-service.launch-smoke.test.ts` with LG-00-c assertions for:
+    - host composer wiring of confirm/append/done-paid actions
+    - order-service same-order append and host-controlled table-session closure invariants
+  - Marked `LG-00-c` complete and advanced canonical pointer to `LG-00-d`.
+- Validation:
+  - `npx eslint src/features/table-service/shared/table-service.launch-smoke.test.ts` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts src/features/table-service/shared/table-service.launch-smoke.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 0
+  - changed test files: 1
+  - changed docs: master/changelog sync
+  - proportionality reason: exact LG-00-c gate scope (lifecycle smoke assertions + canonical status sync).
+- Unrelated-file check:
+  - pre-existing unrelated local files remained untouched; this slice modified only LG-00-c test+docs scope files.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
 
 ### 2026-02-28 - LG-00-b completed (launch QR actor split regression pass)
 

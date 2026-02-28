@@ -20,6 +20,38 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - LG-00-c completed: host->kitchen queue lifecycle regression pass
+
+- Suggested Commit Title: `test(lg-00-c): extend lifecycle launch smoke coverage for host-kitchen flow`
+- Scope: Integrated launch gate `LG-00-c` (host->kitchen queue lifecycle pass) via additive smoke assertions.
+- Constitution Restatement:
+  - Task ID: `LG-00-c`
+  - Scope sentence: extend launch smoke suite to lock host confirm/append/done-paid lifecycle behavior and service-layer closure invariants.
+  - Invariants confirmed: one-order-per-session and same-order append preserved; host done/paid closes order and table session.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: no UI implementation changes in this slice.
+- Deliverables:
+  - Extended `src/features/table-service/shared/table-service.launch-smoke.test.ts`:
+    - validates host composer action wiring for confirm/append/close lifecycle
+    - validates order-service same-order append and table-session closure invariants
+  - Marked `LG-00-c` complete in master checklist and advanced pointer to `LG-00-d`.
+- Touched Files (single-entry log):
+  - `src/features/table-service/shared/table-service.launch-smoke.test.ts` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx eslint src/features/table-service/shared/table-service.launch-smoke.test.ts` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts src/features/table-service/shared/table-service.launch-smoke.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 0.
+  - Changed test files: 1.
+  - Delta rationale: exact LG-00-c gate scope (host->kitchen lifecycle smoke assertions + canonical status sync).
+- Unrelated-file check:
+  - Existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+
 ### 2026-02-28 - LG-00-b completed: launch QR actor split regression pass
 
 - Suggested Commit Title: `test(lg-00-b): extend qr actor-split launch smoke coverage`
