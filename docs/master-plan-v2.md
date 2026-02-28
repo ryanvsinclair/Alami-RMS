@@ -180,10 +180,10 @@ Use `Canonical Order Checklist` statuses as source of truth.
 Current snapshot (2026-02-28):
 
 - Launch-critical checklist items total: `50`
-- Launch-critical `[x]`: `45`
+- Launch-critical `[x]`: `46`
 - Launch-critical `[~]`: `0`
-- Strict completion: `90.00%`
-- Weighted progress: `90.00%`
+- Strict completion: `92.00%`
+- Weighted progress: `92.00%`
 - Parked post-launch checklist items (DI): `7` (excluded from launch completion %)
 
 Update rule after each slice:
@@ -226,11 +226,11 @@ Parked stream:
 
 ## Last Left Off Here
 
-- Current task ID: `LG-00-a`
-- Current task: `Integrated launch gate intake regression pass`
+- Current task ID: `LG-00-b`
+- Current task: `Integrated launch gate QR actor split pass`
 - Status: `NOT STARTED`
 - Last updated: `2026-02-28`
-- Note: UX launch slice is complete through UX-L-00-c; continue deterministic order into LG launch gate.
+- Note: LG-00-a intake regression is complete; continue deterministic LG gate sequence.
 
 ## Canonical Order Checklist
 
@@ -361,7 +361,7 @@ Test format lock:
 - Prefer `node --test` integration-style tests.
 - Use Playwright only where browser-only behavior cannot be validated otherwise.
 
-- [ ] LG-00-a: End-to-end intake 1-8 regression pass
+- [x] LG-00-a: End-to-end intake 1-8 regression pass
 - [ ] LG-00-b: End-to-end QR actor split pass
 - [ ] LG-00-c: Host->kitchen queue lifecycle pass
 - [ ] LG-00-d: Timer and queue advancement behavior pass
@@ -417,10 +417,46 @@ No additional missing plan docs were identified from the current chat scope afte
 ## Completion Snapshot
 
 - Launch-critical initiatives active: `5` (RPK, RTS, IMG-L, UX-L, LG)
-- Launch-critical items complete: `45`
+- Launch-critical items complete: `46`
 - Parked post-launch initiatives: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - LG-00-a completed (launch intake 1-8 regression pass)
+
+- Constitution Restatement:
+  - Task ID: `LG-00-a`
+  - Scope: run launch-gate intake regression coverage across RPK 1-8 invariants and add missing launch-smoke assertions where needed.
+  - Invariants confirmed: no destructive schema/runtime changes; receipt/inventory eligibility and fix-later invariants preserved.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: no UI implementation changes in this slice.
+- Preflight evidence:
+  - `rg -n "LG-00|launch gate|smoke|intake|resolve_later|View Photo|INTAKE_SOURCE_ELIGIBILITY" docs/master-plan-v2.md docs/business-industry-packaging-refactor-plan.md src app`
+  - `Get-Content src/features/table-service/shared/table-service.launch-smoke.test.ts`
+  - `Get-Content src/features/intake/shared/intake.contracts.ts`
+  - `Get-Content app/actions/modules/receipts.ts`
+  - `Get-Content src/features/shopping/server/commit.service.ts`
+- Implementation:
+  - Added `src/features/intake/shared/intake.launch-smoke.test.ts` with launch-gate assertions for:
+    - intake source eligibility matrix and global intake invariants
+    - explicit produce-decision gate before receipt finalization
+    - expense-ledger preservation while blocking ineligible inventory writes
+    - resolve-later routing into inventory fix-later purchase confirmation queue
+    - `View Photo` CTA presence on receipt-linked surfaces
+  - Marked `LG-00-a` complete and advanced canonical pointer to `LG-00-b`.
+- Validation:
+  - `npx eslint src/features/intake/shared/intake.launch-smoke.test.ts` -> PASS
+  - `node --test --experimental-transform-types src/features/intake/shared/intake.launch-smoke.test.ts src/features/intake/shared/intake-capability.service.test.mjs src/features/intake/shared/intake-session.contracts.test.mjs src/domain/parsers/receipt.test.mjs` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 0
+  - changed test files: 1
+  - changed docs: master/changelog sync
+  - proportionality reason: exact LG-00-a launch-gate intake regression coverage and status sync.
+- Unrelated-file check:
+  - pre-existing unrelated local files remained untouched; this slice modified only LG-00-a test+docs scope files.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
 
 ### 2026-02-28 - governance wording sync: per-step commit explicitly tied to repository history
 

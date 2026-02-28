@@ -20,6 +20,41 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - LG-00-a completed: launch intake 1-8 regression pass
+
+- Suggested Commit Title: `test(lg-00-a): add launch intake regression smoke coverage`
+- Scope: Integrated launch gate `LG-00-a` (end-to-end intake 1-8 regression pass) using node integration-style smoke coverage.
+- Constitution Restatement:
+  - Task ID: `LG-00-a`
+  - Scope sentence: add and execute intake launch-gate smoke checks that cover RPK intake invariants without runtime behavior changes.
+  - Invariants confirmed: receipts remain non-auto-inventory; inventory writes stay explicit/eligibility-gated; resolve-later routes to Fix Later.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: no UI implementation changes in this slice.
+- Deliverables:
+  - Added `src/features/intake/shared/intake.launch-smoke.test.ts` with assertions for:
+    - launch intake source eligibility contract lock
+    - receipt produce-decision finalization gate
+    - shopping commit eligibility + expense-ledger preservation
+    - resolve-later purchase confirmations routed into Fix Later queue derivation
+    - receipt-linked `View Photo` CTA presence across launch surfaces
+  - Marked `LG-00-a` complete in canonical master checklist and advanced pointer to `LG-00-b`.
+- Touched Files (single-entry log):
+  - `src/features/intake/shared/intake.launch-smoke.test.ts` (added)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx eslint src/features/intake/shared/intake.launch-smoke.test.ts` -> PASS
+  - `node --test --experimental-transform-types src/features/intake/shared/intake.launch-smoke.test.ts src/features/intake/shared/intake-capability.service.test.mjs src/features/intake/shared/intake-session.contracts.test.mjs src/domain/parsers/receipt.test.mjs` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 0.
+  - Changed test files: 1.
+  - Delta rationale: exact LG-00-a gate scope (intake regression smoke coverage + canonical status sync).
+- Unrelated-file check:
+  - Existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+
 ### 2026-02-28 - governance wording sync: per-step commit explicitly tied to repository history
 
 - Suggested Commit Title: `docs(governance): clarify per-step commit requirement as repository checkpoint`
