@@ -20,6 +20,49 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - RTS-01-b completed: dining-table CRUD + static scan-token generation
+
+- Suggested Commit Title: `feat(rts-01): add dining-table CRUD and static scan-token setup route`
+- Scope: RTS phase `RTS-01-b` (dining-table CRUD + static QR token generation).
+- Constitution Restatement:
+  - Task ID: `RTS-01-b`
+  - Scope sentence: add business-scoped dining table setup workflows and static token generation for scan routing.
+  - Invariants confirmed: static per-table token persisted on `DiningTable.qr_token`; no guest-ordering scope introduced; module/industry guard unchanged.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+- Deliverables:
+  - Added table setup route `/service/tables`.
+  - Added dining-table server service (`list/create/update/delete`).
+  - Added token generation/regeneration for static scan paths.
+  - Added copyable static scan URL output in setup UI.
+  - Confirmed menu `isAvailable` toggle remains active (RTS-01-e closure).
+- Touched Files (single-entry log):
+  - `app/(dashboard)/service/tables/page.tsx` (added)
+  - `app/actions/modules/table-service.ts` (updated)
+  - `src/features/table-service/server/table.service.ts` (added)
+  - `src/features/table-service/server/index.ts` (updated)
+  - `src/features/table-service/ui/TableSetupPageClient.tsx` (added)
+  - `src/features/table-service/ui/MenuSetupPageClient.tsx` (updated)
+  - `src/features/table-service/ui/index.ts` (updated)
+  - `docs/restaurant-table-service-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx eslint app/actions/modules/table-service.ts "app/(dashboard)/service/layout.tsx" "app/(dashboard)/service/menu/page.tsx" "app/(dashboard)/service/tables/page.tsx" src/features/table-service/server/menu-csv.ts src/features/table-service/server/menu.service.ts src/features/table-service/server/table.service.ts src/features/table-service/server/index.ts src/features/table-service/ui/MenuSetupPageClient.tsx src/features/table-service/ui/TableSetupPageClient.tsx src/features/table-service/ui/index.ts src/features/table-service/shared/table-service.contracts.ts` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `npx prisma migrate status` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 5.
+  - Delta rationale: exact RTS-01-b scope (table CRUD + static token generation setup).
+- Unrelated-file check:
+  - Existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: pending (record after commit)
+  - Commit title: `feat(rts-01): add dining-table CRUD and static scan-token setup route`
+
 ### 2026-02-28 - RTS-01-a completed: menu CRUD + CSV import setup surface
 
 - Suggested Commit Title: `feat(rts-01): add table-service menu CRUD and CSV import setup route`

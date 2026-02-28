@@ -1,6 +1,6 @@
 # Restaurant Table QR + Host/Kitchen Ops Plan (Restaurant-Only V1)
 
-Status: ACTIVE - RTS-00 complete; RTS-01 in progress; RTS-02 through RTS-05 pending
+Status: ACTIVE - RTS-00 and RTS-01 complete; RTS-02 through RTS-05 pending
 Created: 2026-02-28
 Last Updated: 2026-02-28
 Primary Purpose: launch restaurant table service with QR routing, host order confirmation, and kitchen queue operations.
@@ -23,6 +23,13 @@ Primary Purpose: launch restaurant table service with QR routing, host order con
 Constitution source: `docs/execution-constitution.md`
 
 ## Latest Update
+
+- **2026-02-28 - RTS-01-c/d/e completed (dining-table CRUD + static scan-token generation).**
+  - Added module-gated route `/service/tables` for dining-table setup operations.
+  - Implemented business-scoped dining-table CRUD (`create`, `update`, `delete`).
+  - Added static scan token generation and regeneration (`DiningTable.qr_token`) for `/scan/t/[token]` pathing.
+  - Added copyable static scan URL output for each configured table.
+  - Confirmed menu availability toggle (`is_available`) is active in setup workflows.
 
 - **2026-02-28 - RTS-01-a/b completed (manual menu CRUD + CSV import).**
   - Added table-service module-gated route `/service/menu` with setup UI for category/item management.
@@ -62,9 +69,9 @@ Constitution source: `docs/execution-constitution.md`
 
 ## Pick Up Here
 
-- Current phase: `RTS-01`
-- Current task: `RTS-01-c`
-- Status: `[~]` in progress
+- Current phase: `RTS-02`
+- Current task: `RTS-02-a`
+- Status: `[ ]` pending
 
 ## Scope
 
@@ -162,7 +169,7 @@ This section is authoritative for RTS V1 Prisma modeling.
 ## Phase Status Ledger
 
 - `RTS-00`: `[x]` completed
-- `RTS-01`: `[~]` in progress
+- `RTS-01`: `[x]` completed
 - `RTS-02`: `[ ]` pending
 - `RTS-03`: `[ ]` pending
 - `RTS-04`: `[ ]` pending
@@ -187,14 +194,14 @@ Before starting any checklist item in this plan:
 
 ## RTS-01 - Menu and table setup surfaces
 
-**Status:** `[~]` in progress
+**Status:** `[x]` completed
 
 - [x] RTS-01-0: Constitution restatement logged for this phase and no deviation required.
 - [x] RTS-01-a: Implement menu CRUD (manual) with business-scoped `MenuCategory` (seeded + custom).
 - [x] RTS-01-b: Add CSV import for menu items.
-- [ ] RTS-01-c: Implement dining-table CRUD.
-- [ ] RTS-01-d: Generate and persist static `DiningTable.qr_token` per table.
-- [ ] RTS-01-e: Add menu item `is_available` (86) toggle to setup/workspace surfaces.
+- [x] RTS-01-c: Implement dining-table CRUD.
+- [x] RTS-01-d: Generate and persist static `DiningTable.qr_token` per table.
+- [x] RTS-01-e: Add menu item `is_available` (86) toggle to setup/workspace surfaces.
 
 ## RTS-02 - QR router and diner landing
 

@@ -180,10 +180,10 @@ Use `Canonical Order Checklist` statuses as source of truth.
 Current snapshot (2026-02-28):
 
 - Launch-critical checklist items total: `50`
-- Launch-critical `[x]`: `21`
+- Launch-critical `[x]`: `22`
 - Launch-critical `[~]`: `0`
-- Strict completion: `42.00%`
-- Weighted progress: `42.00%`
+- Strict completion: `44.00%`
+- Weighted progress: `44.00%`
 - Parked post-launch checklist items (DI): `7` (excluded from launch completion %)
 
 Update rule after each slice:
@@ -226,11 +226,11 @@ Parked stream:
 
 ## Last Left Off Here
 
-- Current task ID: `RTS-01-b`
-- Current task: `Dining table CRUD and static QR generation`
+- Current task ID: `RTS-02-a`
+- Current task: `Implement /scan/t/[token] resolver`
 - Status: `NOT STARTED`
 - Last updated: `2026-02-28`
-- Note: RTS-01-a completed (manual menu CRUD + CSV import); continue deterministic order with RTS-01-b.
+- Note: RTS-01 complete through menu/table setup; continue deterministic order with RTS-02-a.
 
 ## Canonical Order Checklist
 
@@ -293,7 +293,7 @@ Plan doc: `docs/restaurant-table-service-plan.md`
 #### Phase RTS-01 - Menu and table setup
 
 - [x] RTS-01-a: Menu CRUD (manual) + CSV import
-- [ ] RTS-01-b: Dining table CRUD and static QR generation
+- [x] RTS-01-b: Dining table CRUD and static QR generation
 
 #### Phase RTS-02 - QR router and diner landing
 
@@ -417,10 +417,52 @@ No additional missing plan docs were identified from the current chat scope afte
 ## Completion Snapshot
 
 - Launch-critical initiatives active: `5` (RPK, RTS, IMG-L, UX-L, LG)
-- Launch-critical items complete: `21`
+- Launch-critical items complete: `22`
 - Parked post-launch initiatives: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - RTS-01-b dining-table CRUD and static scan-token generation completed
+
+- Constitution Restatement:
+  - Task ID: `RTS-01-b`
+  - Scope: implement dining-table CRUD and static QR token generation surfaces under module-gated table-service setup.
+  - Invariants confirmed: static per-table token model preserved, no guest ordering scope added, table-service module/industry guard remains enforced.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: structural setup UI only; no unauthorized visual system changes.
+- Preflight evidence:
+  - `Get-Content docs/restaurant-table-service-plan.md`
+  - `Get-Content app/actions/modules/table-service.ts`
+  - `Get-Content src/features/table-service/server/guard.ts`
+  - `Get-Content src/features/table-service/shared/table-service.contracts.ts`
+  - `rg -n "DiningTable|qr_token|service/tables|table_service|scan/t" app src prisma docs`
+- Implementation:
+  - Added table-service setup route page:
+    - `app/(dashboard)/service/tables/page.tsx`
+  - Added dining-table server service:
+    - list/create/update/delete operations
+    - unique static token generation + regeneration (`tbl_<uuid>`)
+  - Added table-service action wrappers for dining-table operations.
+  - Added table setup UI with:
+    - table CRUD controls
+    - token display
+    - copyable static scan URL output
+    - token regeneration control
+  - Confirmed menu item availability toggle (`isAvailable`) remains wired in menu setup (RTS-01-e closure).
+- Validation:
+  - `npx eslint app/actions/modules/table-service.ts "app/(dashboard)/service/layout.tsx" "app/(dashboard)/service/menu/page.tsx" "app/(dashboard)/service/tables/page.tsx" src/features/table-service/server/menu-csv.ts src/features/table-service/server/menu.service.ts src/features/table-service/server/table.service.ts src/features/table-service/server/index.ts src/features/table-service/ui/MenuSetupPageClient.tsx src/features/table-service/ui/TableSetupPageClient.tsx src/features/table-service/ui/index.ts src/features/table-service/shared/table-service.contracts.ts` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `npx prisma migrate status` -> PASS
+- Diff proportionality:
+  - changed runtime files: 5 (table service + actions + tables route/UI + export updates)
+  - changed docs: source/master/overview/changelog sync
+  - proportionality reason: exactly aligned with RTS-01-b dining-table CRUD + static token generation scope.
+- Unrelated-file check:
+  - pre-existing unrelated local files remained untouched; this slice modified only RTS-01-b paths plus required canonical docs.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+- Commit checkpoint: pending (record after commit).
 
 ### 2026-02-28 - RTS-01-a menu CRUD and CSV import completed
 

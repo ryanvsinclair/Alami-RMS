@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { Card } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -231,7 +232,12 @@ export default function MenuSetupPageClient() {
   return (
     <div className="space-y-4 p-4">
       <Card className="p-5">
-        <p className="text-xs uppercase tracking-wide text-muted">Table Service</p>
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs uppercase tracking-wide text-muted">Table Service</p>
+          <Link href="/service/tables" className="text-xs font-semibold text-primary hover:underline">
+            Manage Tables
+          </Link>
+        </div>
         <h1 className="mt-1 text-xl font-bold text-foreground">Menu Setup</h1>
         <p className="mt-2 text-sm text-muted">
           Manage categories and menu items. CSV import supports headers: name, category, description, price, is_available, sort_order.

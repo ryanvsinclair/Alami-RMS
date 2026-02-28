@@ -6,11 +6,16 @@
 import {
   createMenuCategory as _createMenuCategory,
   createMenuItem as _createMenuItem,
+  createDiningTable as _createDiningTable,
   deleteMenuCategory as _deleteMenuCategory,
+  deleteDiningTable as _deleteDiningTable,
   deleteMenuItem as _deleteMenuItem,
+  getDiningTables as _getDiningTables,
   getMenuSetupData as _getMenuSetupData,
   importMenuItemsFromCsv as _importMenuItemsFromCsv,
+  regenerateDiningTableQrToken as _regenerateDiningTableQrToken,
   requireTableServiceAccess,
+  updateDiningTable as _updateDiningTable,
   updateMenuCategory as _updateMenuCategory,
   updateMenuItem as _updateMenuItem,
 } from "@/features/table-service/server";
@@ -63,4 +68,32 @@ export async function deleteMenuItem(menuItemId: string) {
 export async function importMenuItemsFromCsv(csvText: string) {
   const { businessId } = await requireTableServiceAccess();
   return _importMenuItemsFromCsv(businessId, csvText);
+}
+
+export async function getDiningTables() {
+  const { businessId } = await requireTableServiceAccess();
+  return _getDiningTables(businessId);
+}
+
+export async function createDiningTable(input: { tableNumber: string }) {
+  const { businessId } = await requireTableServiceAccess();
+  return _createDiningTable(businessId, input);
+}
+
+export async function updateDiningTable(
+  tableId: string,
+  input: { tableNumber: string },
+) {
+  const { businessId } = await requireTableServiceAccess();
+  return _updateDiningTable(businessId, tableId, input);
+}
+
+export async function deleteDiningTable(tableId: string) {
+  const { businessId } = await requireTableServiceAccess();
+  return _deleteDiningTable(businessId, tableId);
+}
+
+export async function regenerateDiningTableQrToken(tableId: string) {
+  const { businessId } = await requireTableServiceAccess();
+  return _regenerateDiningTableQrToken(businessId, tableId);
 }
