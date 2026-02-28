@@ -6,9 +6,11 @@ import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  blockVendor,
   confirmLineItemMapping,
   confirmVendorForDraft,
   createVendorProfile,
+  disableAutoPost,
   getDraftDetail,
   getDraftDocumentUrl,
   postDraft,
@@ -197,6 +199,8 @@ export function DocumentDraftDetailClient({ draftId }: { draftId: string }) {
 
   const canPost =
     detail.status === "pending_review" || detail.status === "draft";
+  const effectiveTrustThreshold =
+    detail.vendor_profile?.trust_threshold_override ?? 5;
   const showPdfPreview =
     documentUrl != null && detail.raw_content_type.toLowerCase().includes("pdf");
   const showImagePreview =
@@ -334,6 +338,48 @@ export function DocumentDraftDetailClient({ draftId }: { draftId: string }) {
           })
         }
       />
+
+      {detail.vendor_profile ? (
+        <section className="space-y-2 rounded-2xl border border-border bg-card p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-primary">Vendor Trust</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="default">state: {detail.vendor_profile.trust_state}</Badge>
+            <Badge variant="default">posted: {detail.vendor_profile.total_posted}</Badge>
+            <Badge variant="default">threshold: {effectiveTrustThreshold}</Badge>
+            <Badge variant={detail.vendor_profile.auto_post_enabled ? "success" : "warning"}>
+              auto-post {detail.vendor_profile.auto_post_enabled ? "enabled" : "disabled"}
+            </Badge>
+          </div>
+          {detail.canManageTrustThreshold ? (
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="secondary"
+                disabled={!detail.vendor_profile.auto_post_enabled || saving}
+                onClick={() =>
+                  runAction(async () => {
+                    await disableAutoPost(detail.vendor_profile!.id);
+                    setNotice("Auto-post disabled for vendor.");
+                  })
+                }
+              >
+                Disable Auto-Post
+              </Button>
+              <Button
+                variant="danger"
+                disabled={saving}
+                onClick={() =>
+                  runAction(async () => {
+                    await blockVendor(detail.vendor_profile!.id);
+                    setNotice("Vendor blocked from auto-post.");
+                  })
+                }
+              >
+                Block Vendor
+              </Button>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
 
       <section className="space-y-2 rounded-2xl border border-border bg-card p-4">
         <p className="text-xs font-semibold uppercase tracking-wide text-primary">Line Items</p>

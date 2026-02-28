@@ -3,9 +3,11 @@
 import { requireBusinessMembership, requireRole } from "@/core/auth/tenant";
 import { requireModule } from "@/core/modules/guard";
 import {
+  blockVendor as _blockVendor,
   confirmLineItemMapping as _confirmLineItemMapping,
   confirmVendorMapping as _confirmVendorMapping,
   createVendorProfileForBusiness as _createVendorProfileForBusiness,
+  disableAutoPost as _disableAutoPost,
   getDraftDetail as _getDraftDetail,
   getDraftDocumentUrl as _getDraftDocumentUrl,
   getDraftInbox as _getDraftInbox,
@@ -129,4 +131,18 @@ export async function rejectDraft(draftId: string) {
   const { business, user } = await requireBusinessMembership();
   await requireModule("documents");
   return _rejectDraft(business.id, draftId, user.id);
+}
+
+export async function disableAutoPost(vendorProfileId: string) {
+  const { business, membership } = await requireBusinessMembership();
+  await requireModule("documents");
+  requireRole("manager", membership.role);
+  return _disableAutoPost(business.id, vendorProfileId);
+}
+
+export async function blockVendor(vendorProfileId: string) {
+  const { business, membership } = await requireBusinessMembership();
+  await requireModule("documents");
+  requireRole("manager", membership.role);
+  return _blockVendor(business.id, vendorProfileId);
 }

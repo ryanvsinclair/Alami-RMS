@@ -236,6 +236,25 @@ export async function updateVendorDefaults(
   });
 }
 
+export async function disableAutoPost(
+  businessId: string,
+  vendorProfileId: string,
+) {
+  return updateVendorProfile(businessId, vendorProfileId, {
+    autoPostEnabled: false,
+  });
+}
+
+export async function blockVendor(
+  businessId: string,
+  vendorProfileId: string,
+) {
+  return updateVendorProfile(businessId, vendorProfileId, {
+    trustState: "blocked",
+    autoPostEnabled: false,
+  });
+}
+
 export async function confirmLineItemMapping(
   businessId: string,
   vendorProfileId: string,

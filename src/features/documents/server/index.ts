@@ -5,6 +5,7 @@ export * from "./document-draft.repository";
 export * from "./document-parse.service";
 export * from "./document-post.service";
 export * from "./draft-review.service";
+export * from "./trust.service";
 export * from "./vendor-profile.repository";
 export * from "./vendor-item-mapping.repository";
 export * from "./vendor-mapping.service";

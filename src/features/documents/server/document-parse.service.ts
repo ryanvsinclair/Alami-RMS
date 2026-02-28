@@ -49,6 +49,37 @@ async function attemptVendorAutoResolution(businessId: string, draftId: string) 
   }
 }
 
+async function attemptAutoPostIfEligible(businessId: string, draftId: string) {
+  try {
+    const draft = await findDraftById(businessId, draftId);
+    if (!draft?.vendor_profile_id) return;
+
+    const vendorModule = await import("./" + "vendor-profile.repository");
+    const findVendor = (vendorModule as Record<string, unknown>).findVendorById;
+    if (typeof findVendor !== "function") return;
+
+    const vendorProfile = await (
+      findVendor as (
+        businessId: string,
+        vendorProfileId: string,
+      ) => Promise<{ auto_post_enabled: boolean } | null>
+    )(businessId, draft.vendor_profile_id);
+
+    if (!vendorProfile?.auto_post_enabled) return;
+
+    const trustModule = await import("./" + "trust.service");
+    const candidate = (trustModule as Record<string, unknown>).attemptAutoPost;
+    if (typeof candidate === "function") {
+      await (candidate as (businessId: string, draftId: string) => Promise<unknown>)(
+        businessId,
+        draftId,
+      );
+    }
+  } catch {
+    // DI-05 wiring is optional while earlier DI phases are active.
+  }
+}
+
 export async function parseAndSaveDraft(businessId: string, draftId: string) {
   const draft = await findDraftById(businessId, draftId);
   if (!draft) return null;
@@ -85,7 +116,10 @@ export async function parseAndSaveDraft(businessId: string, draftId: string) {
     });
 
     await attemptVendorAutoResolution(businessId, draftId);
-    return updated;
+    await attemptAutoPostIfEligible(businessId, draftId);
+
+    const latest = await findDraftById(businessId, draftId);
+    return latest ?? updated;
   } catch (error) {
     await updateDraftParsedFields(businessId, draftId, {
       status: "draft",
