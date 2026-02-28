@@ -453,6 +453,7 @@ No additional missing plan docs were identified from the current chat scope afte
   - pre-existing unrelated local files remained untouched; this slice modified only LG-00-b test+docs scope files.
 - Dependency check: no new dependencies.
 - Env-var check: no new environment variables.
+- Commit checkpoint: `a31ae32` (`test(lg-00-b): extend qr actor-split launch smoke coverage`).
 
 ### 2026-02-28 - LG-00-a completed (launch intake 1-8 regression pass)
 

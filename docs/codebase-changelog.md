@@ -51,6 +51,9 @@ Companion overview: `docs/codebase-overview.md`
   - Existing unrelated local files remained unchanged by this slice.
 - Dependency change check: no new dependencies added.
 - Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: `a31ae32`
+  - Commit title: `test(lg-00-b): extend qr actor-split launch smoke coverage`
 
 ### 2026-02-28 - LG-00-a completed: launch intake 1-8 regression pass
 
