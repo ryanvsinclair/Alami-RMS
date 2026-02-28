@@ -56,7 +56,7 @@ Companion overview: `docs/codebase-overview.md`
 - Dependency change check: no new dependencies added.
 - Env-var change check: no new env vars introduced.
 - Commit checkpoint:
-  - Commit hash: pending (record after commit)
+  - Commit hash: `d3384d0`
   - Commit title: `feat(rts-05): add profile host-kitchen mode toggle`
 
 ### 2026-02-28 - RTS-04-e completed: overdue urgency visuals without queue reorder

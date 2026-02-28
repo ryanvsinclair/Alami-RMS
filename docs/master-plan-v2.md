@@ -456,7 +456,7 @@ No additional missing plan docs were identified from the current chat scope afte
   - pre-existing unrelated local files remained untouched; this slice modified only RTS-05-a scope files plus required canonical docs.
 - Dependency check: no new dependencies.
 - Env-var check: no new environment variables.
-- Commit checkpoint: pending (record after commit).
+- Commit checkpoint: `d3384d0` (`feat(rts-05): add profile host-kitchen mode toggle`).
 
 ### 2026-02-28 - RTS-04-e overdue urgency styling added without queue reorder
 
