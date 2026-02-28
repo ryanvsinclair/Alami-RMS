@@ -457,7 +457,7 @@ No additional missing plan docs were identified from the current chat scope afte
   - pre-existing unrelated local files remained untouched; this slice modified only RTS-00-b code/doc paths.
 - Dependency check: no new dependencies.
 - Env-var check: no new environment variables.
-- Commit checkpoint: pending (record after commit).
+- Commit checkpoint: `634310d` (`feat(rts-00): register table_service module and add access guard baseline`).
 
 ### 2026-02-28 - RTS-00-a table-service schema baseline completed
 

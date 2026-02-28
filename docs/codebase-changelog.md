@@ -60,7 +60,7 @@ Companion overview: `docs/codebase-overview.md`
 - Dependency change check: no new dependencies added.
 - Env-var change check: no new env vars introduced.
 - Commit checkpoint:
-  - Commit hash: pending (record after commit)
+  - Commit hash: `634310d`
   - Commit title: `feat(rts-00): register table_service module and add access guard baseline`
 
 ### 2026-02-28 - RTS-00-a completed: table-service schema baseline + additive migration
