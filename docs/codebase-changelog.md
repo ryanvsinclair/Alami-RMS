@@ -73,8 +73,8 @@ Companion overview: `docs/codebase-overview.md`
 - Dependency change check: no new dependencies added.
 - Env-var change check: no new env vars introduced.
 - Commit checkpoint:
-  - Commit hash: pending (recorded in run output after commit)
-  - Commit title: `feat(rpk-03): gate receipt commit behind explicit produce decisions`
+  - Commit hash: `d9257b8`
+  - Commit title: `feat(rpk): complete launch intake slices through rpk-03`
 
 ### 2026-02-28 - RPK-02 completed: shopping produce autosuggest + intake-source eligibility enforcement
 

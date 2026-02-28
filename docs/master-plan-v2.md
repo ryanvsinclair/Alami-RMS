@@ -466,6 +466,7 @@ No additional missing plan docs were identified from the current chat scope afte
   - repository had pre-existing dirty files and untracked docs before this slice; only RPK-03 paths and mandatory canonical docs were changed in this slice.
 - Dependency check: no new dependencies.
 - Env-var check: no new environment variables.
+- Commit checkpoint: `d9257b8` (`feat(rpk): complete launch intake slices through rpk-03`).
 
 ### 2026-02-28 - RPK-02 shopping intake policy completed
 
