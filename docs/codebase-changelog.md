@@ -71,7 +71,7 @@ Companion overview: `docs/codebase-overview.md`
 - Dependency change check: no new dependencies added.
 - Env-var change check: no new env vars introduced.
 - Commit checkpoint:
-  - Commit hash: `TBD`
+  - Commit hash: `ec4c933`
   - Commit title: `feat(di-02): add document draft parse-score pipeline`
 
 ### 2026-02-28 - DI-01 completed: document capture/isolation inbound pipeline

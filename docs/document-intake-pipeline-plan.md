@@ -36,6 +36,7 @@ Constitution source: `docs/execution-constitution.md`
     - `parsed_vendor_name` populated
     - `confidence_score > 0`
   - DI resume pointer advanced to **DI-03**.
+  - Commit checkpoint: `ec4c933` (`feat(di-02): add document draft parse-score pipeline`).
 
 - **2026-02-28 - DI-01 completed (capture and isolation pipeline).**
   - Added DI-01 server layer under `src/features/documents/server/`:

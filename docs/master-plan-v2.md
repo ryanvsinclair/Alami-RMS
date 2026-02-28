@@ -459,6 +459,7 @@ No additional missing plan docs were identified from the current chat scope afte
   - pre-existing unrelated local files remained unchanged by this slice (`.claude/settings.local.json`, `docs/MASTER_BACKEND_ARCHITECTURE.md`).
 - Dependency check: no new dependencies.
 - Env-var check: no new environment variables introduced.
+- Commit checkpoint: `ec4c933` (`feat(di-02): add document draft parse-score pipeline`).
 
 ### 2026-02-28 - DI-01 completed (capture/isolation webhook ingest baseline)
 
