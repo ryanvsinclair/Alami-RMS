@@ -20,6 +20,56 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - IMG-L-00-a completed: IMG-00 schema/contracts baseline
+
+- Suggested Commit Title: `feat(img-00): add item image schema and shared contracts baseline`
+- Scope: IMG launch phase `IMG-L-00-a` (complete IMG-00 schema/contracts).
+- Constitution Restatement:
+  - Task ID: `IMG-L-00-a`
+  - Scope sentence: complete additive IMG-00 schema/contracts baseline for launch image support.
+  - Invariants confirmed: additive-only DB changes; no destructive migration actions; no scope expansion beyond IMG-00.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: not a UI-touching slice.
+- Deliverables:
+  - Added Prisma schema fields:
+    - `inventory_items.image_url` (nullable)
+    - `global_barcode_catalog.image_storage_path` (nullable)
+  - Added Prisma model/table mapping:
+    - `ProduceItemImage` -> `produce_item_images`
+  - Added additive migration:
+    - `prisma/migrations/20260228153000_item_image_enrichment_schema/migration.sql`
+  - Added shared IMG contracts:
+    - `src/features/inventory/shared/item-image.contracts.ts`
+  - Migration execution note:
+    - `npx prisma migrate dev --name item_image_enrichment_schema` failed on a pre-existing shadow DB migration-chain issue (`P3006`/`P1014`).
+    - Applied additive-safe fallback using tracked migration + `npx prisma migrate deploy`.
+- Touched Files (single-entry log):
+  - `prisma/schema.prisma` (updated)
+  - `prisma/migrations/20260228153000_item_image_enrichment_schema/migration.sql` (added)
+  - `src/features/inventory/shared/item-image.contracts.ts` (added)
+  - `docs/item-image-enrichment-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx prisma migrate deploy` -> PASS
+  - `npx prisma migrate status` -> PASS (database schema up to date)
+  - `npx prisma generate` -> PASS
+  - `npx prisma validate` -> PASS
+  - `npx eslint src/features/inventory/shared/item-image.contracts.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 2.
+  - Changed migration files: 1.
+  - Delta rationale: exact IMG-L-00-a scope (schema/contracts baseline only).
+- Unrelated-file check:
+  - Existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: pending (record after commit)
+  - Commit title: `feat(img-00): add item image schema and shared contracts baseline`
+
 ### 2026-02-28 - RTS-05-d completed: launch smoke suite for QR/host/kitchen loop
 
 - Suggested Commit Title: `test(rts-05): add launch smoke suite for qr-host-kitchen loop`
@@ -51,7 +101,7 @@ Companion overview: `docs/codebase-overview.md`
   - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts src/features/table-service/shared/table-service.launch-smoke.test.ts` -> PASS
   - `npx tsc --noEmit --incremental false` -> PASS
 - Diff proportionality:
-  - Changed runtime files: 3.
+  - Changed runtime files: 2.
   - Changed test files: 1.
   - Delta rationale: exact RTS-05-d scope (smoke coverage plus helperization).
 - Unrelated-file check:

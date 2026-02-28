@@ -243,6 +243,7 @@ model InventoryItem {
   supplier_id    String?
   par_level      Decimal?
   is_active      Boolean  @default(true)
+  image_url      String?
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
 
@@ -321,6 +322,7 @@ model GlobalBarcodeCatalog {
   size_text          String?
   category_hint      String?
   image_url          String?
+  image_storage_path String?
   confidence         MatchConfidence         @default(none)
   source_provider    BarcodeSourceProvider?
   source_updated_at  DateTime?
@@ -700,6 +702,16 @@ model ProduceItem {
   @@index([commodity(ops: raw("gin_trgm_ops"))], type: Gin)
   @@index([variety(ops: raw("gin_trgm_ops"))], type: Gin)
   @@map("produce_items")
+}
+
+model ProduceItemImage {
+  plu_code        Int      @id
+  image_url       String
+  storage_path    String
+  source_provider String
+  enriched_at     DateTime @default(now())
+
+  @@map("produce_item_images")
 }
 
 model ReceiptParseProfile {

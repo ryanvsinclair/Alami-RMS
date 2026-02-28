@@ -680,7 +680,7 @@ Route/action wrappers remain in `app/(dashboard)` and `app/actions/core`.
 Core operational entities:
 
 - `Business`
-- `InventoryItem`
+- `InventoryItem` (includes optional `image_url`)
 - `ItemBarcode`
 - `ItemAlias`
 - `InventoryTransaction`
@@ -711,8 +711,13 @@ Restaurant table-service entities (RTS baseline):
 
 Barcode intelligence entities:
 
-- `GlobalBarcodeCatalog`
+- `GlobalBarcodeCatalog` (includes provider `image_url` and optional `image_storage_path`)
 - `BarcodeResolutionEvent`
+
+Item image enrichment entities:
+
+- `ProduceItem` (seeded PLU reference rows)
+- `ProduceItemImage` (one image metadata row per `plu_code`)
 
 Design principles currently enforced:
 

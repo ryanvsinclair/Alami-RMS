@@ -180,10 +180,10 @@ Use `Canonical Order Checklist` statuses as source of truth.
 Current snapshot (2026-02-28):
 
 - Launch-critical checklist items total: `50`
-- Launch-critical `[x]`: `39`
+- Launch-critical `[x]`: `40`
 - Launch-critical `[~]`: `0`
-- Strict completion: `78.00%`
-- Weighted progress: `78.00%`
+- Strict completion: `80.00%`
+- Weighted progress: `80.00%`
 - Parked post-launch checklist items (DI): `7` (excluded from launch completion %)
 
 Update rule after each slice:
@@ -226,11 +226,11 @@ Parked stream:
 
 ## Last Left Off Here
 
-- Current task ID: `IMG-L-00-a`
-- Current task: `IMG launch schema/contracts completion`
+- Current task ID: `IMG-L-00-b`
+- Current task: `IMG launch resolver/storage completion`
 - Status: `NOT STARTED`
 - Last updated: `2026-02-28`
-- Note: RTS phase is fully complete; continue deterministic order into IMG launch slice.
+- Note: IMG-L-00-a is complete and checkpointed; continue deterministic order with IMG-L-00-b.
 
 ## Canonical Order Checklist
 
@@ -330,7 +330,7 @@ Source plan: `docs/item-image-enrichment-plan.md`
 
 Launch scope only:
 
-- [ ] IMG-L-00-a: Complete IMG-00 schema/contracts
+- [x] IMG-L-00-a: Complete IMG-00 schema/contracts
 - [ ] IMG-L-00-b: Complete IMG-01 resolver/storage service
 - [ ] IMG-L-00-c: Launch does not require enrichment runs or pre-populated produce images
 
@@ -417,10 +417,53 @@ No additional missing plan docs were identified from the current chat scope afte
 ## Completion Snapshot
 
 - Launch-critical initiatives active: `5` (RPK, RTS, IMG-L, UX-L, LG)
-- Launch-critical items complete: `39`
+- Launch-critical items complete: `40`
 - Parked post-launch initiatives: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - IMG-L-00-a completed (IMG-00 schema/contracts baseline)
+
+- Constitution Restatement:
+  - Task ID: `IMG-L-00-a`
+  - Scope: complete IMG-00 additive schema/contracts baseline for launch image enablement.
+  - Invariants confirmed: additive DB only; no destructive migration actions; no launch-scope expansion beyond IMG-00.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: not a UI-touching slice.
+- Preflight evidence:
+  - `Get-Content docs/item-image-enrichment-plan.md`
+  - `Get-Content prisma/schema.prisma`
+  - `Get-Content prisma/migrations/20260228130000_table_service_module_backfill/migration.sql`
+  - `rg -n "InventoryItem|inventory_items|GlobalBarcodeCatalog|global_barcode_catalog|ProduceItem|produce_items|produce_item_images" src app test docs prisma/schema.prisma`
+- Implementation:
+  - Added Prisma schema fields:
+    - `InventoryItem.image_url String?`
+    - `GlobalBarcodeCatalog.image_storage_path String?`
+  - Added new Prisma model `ProduceItemImage` mapped to `produce_item_images`.
+  - Added additive migration:
+    - `prisma/migrations/20260228153000_item_image_enrichment_schema/migration.sql`
+  - Added shared contracts baseline:
+    - `src/features/inventory/shared/item-image.contracts.ts`
+  - Migration execution note:
+    - `npx prisma migrate dev --name item_image_enrichment_schema` failed on pre-existing shadow DB migration-chain issue (`P3006`/`P1014` for historical migration table mismatch).
+    - Used additive-safe fallback: generated additive SQL scope and applied tracked migration via `npx prisma migrate deploy`.
+- Validation:
+  - `npx prisma migrate deploy` -> PASS
+  - `npx prisma migrate status` -> PASS (database schema up to date)
+  - `npx prisma generate` -> PASS
+  - `npx prisma validate` -> PASS
+  - `npx eslint src/features/inventory/shared/item-image.contracts.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 2 (`prisma/schema.prisma`, `src/features/inventory/shared/item-image.contracts.ts`)
+  - changed migration files: 1 (new additive migration SQL)
+  - changed docs: source/master/overview/changelog sync
+  - proportionality reason: exactly scoped to IMG-L-00-a schema/contracts baseline requirements.
+- Unrelated-file check:
+  - pre-existing unrelated local files remained untouched; this slice modified only IMG-L-00-a scope files plus required canonical docs.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+- Commit checkpoint: pending (record after commit).
 
 ### 2026-02-28 - RTS-05-d launch smoke suite added and executed
 
