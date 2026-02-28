@@ -14,6 +14,7 @@ export default async function PublicRestaurantLandingPage({
       id: true,
       name: true,
       formatted_address: true,
+      google_place_id: true,
     },
   });
 
@@ -52,6 +53,18 @@ export default async function PublicRestaurantLandingPage({
         <h1 className="text-xl font-bold text-foreground">{business.name}</h1>
         {business.formatted_address && (
           <p className="text-sm text-muted">{business.formatted_address}</p>
+        )}
+        {business.google_place_id && (
+          <a
+            href={`https://search.google.com/local/writereview?placeid=${encodeURIComponent(
+              business.google_place_id,
+            )}`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex w-fit items-center rounded-xl border border-border px-3 py-2 text-xs font-semibold text-foreground hover:bg-foreground/5"
+          >
+            Leave a Review
+          </a>
         )}
       </Card>
 

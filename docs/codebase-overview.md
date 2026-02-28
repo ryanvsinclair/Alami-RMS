@@ -331,6 +331,7 @@ Implemented capabilities:
   - member of scanned business -> host workspace (`/service/host`)
   - guest/non-member -> public landing (`/r/[publicSlug]`)
 - Public landing is now menu-first with category-grouped available items.
+- Public landing shows review CTA only when `google_place_id` exists.
 
 Canonical paths:
 

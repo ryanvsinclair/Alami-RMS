@@ -20,6 +20,40 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - RTS-02-d completed: review CTA gated by google_place_id
+
+- Suggested Commit Title: `feat(rts-02): gate public review CTA on google_place_id`
+- Scope: RTS phase `RTS-02-d` (public review CTA gating).
+- Constitution Restatement:
+  - Task ID: `RTS-02-d`
+  - Scope sentence: show review CTA only when business has `google_place_id` and keep public scan constraints intact.
+  - Invariants confirmed: no guest ordering/session-join path introduced; no forced login from public scan.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+- Deliverables:
+  - Added `Leave a Review` CTA to `/r/[publicSlug]`.
+  - Gated CTA display on presence of `google_place_id`.
+  - Closed remaining RTS-02 public-scan constraints (`RTS-02-e`, `RTS-02-f`) in source plan.
+- Touched Files (single-entry log):
+  - `app/r/[publicSlug]/page.tsx` (updated)
+  - `docs/restaurant-table-service-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx eslint "app/r/[publicSlug]/page.tsx"` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 1.
+  - Delta rationale: exact RTS-02-d scope (conditional review CTA rendering).
+- Unrelated-file check:
+  - Existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: pending (record after commit)
+  - Commit title: `feat(rts-02): gate public review CTA on google_place_id`
+
 ### 2026-02-28 - RTS-02-c completed: menu-first public diner landing
 
 - Suggested Commit Title: `feat(rts-02): implement menu-first /r/[publicSlug] diner landing`

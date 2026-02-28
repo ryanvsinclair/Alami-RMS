@@ -180,10 +180,10 @@ Use `Canonical Order Checklist` statuses as source of truth.
 Current snapshot (2026-02-28):
 
 - Launch-critical checklist items total: `50`
-- Launch-critical `[x]`: `25`
+- Launch-critical `[x]`: `26`
 - Launch-critical `[~]`: `0`
-- Strict completion: `50.00%`
-- Weighted progress: `50.00%`
+- Strict completion: `52.00%`
+- Weighted progress: `52.00%`
 - Parked post-launch checklist items (DI): `7` (excluded from launch completion %)
 
 Update rule after each slice:
@@ -226,11 +226,11 @@ Parked stream:
 
 ## Last Left Off Here
 
-- Current task ID: `RTS-02-d`
-- Current task: `Show review CTA only when google_place_id exists`
-- Status: `IN PROGRESS`
+- Current task ID: `RTS-03-a`
+- Current task: `Host table order composer`
+- Status: `NOT STARTED`
 - Last updated: `2026-02-28`
-- Note: RTS-02-c menu-first public landing completed; continue deterministic order with RTS-02-d.
+- Note: RTS-02 complete through resolver/branch/public landing/review gating; continue deterministic order with RTS-03-a.
 
 ## Canonical Order Checklist
 
@@ -300,7 +300,7 @@ Plan doc: `docs/restaurant-table-service-plan.md`
 - [x] RTS-02-a: Implement `/scan/t/[token]` resolver
 - [x] RTS-02-b: Session-aware branch (member->host, otherwise public)
 - [x] RTS-02-c: Implement `/r/[publicSlug]` diner landing with menu-first UX
-- [ ] RTS-02-d: Show review CTA only when `google_place_id` exists
+- [x] RTS-02-d: Show review CTA only when `google_place_id` exists
 
 #### Phase RTS-03 - Host order confirmation flow
 
@@ -417,10 +417,41 @@ No additional missing plan docs were identified from the current chat scope afte
 ## Completion Snapshot
 
 - Launch-critical initiatives active: `5` (RPK, RTS, IMG-L, UX-L, LG)
-- Launch-critical items complete: `25`
+- Launch-critical items complete: `26`
 - Parked post-launch initiatives: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - RTS-02-d review CTA gating completed (RTS-02 phase closed)
+
+- Constitution Restatement:
+  - Task ID: `RTS-02-d`
+  - Scope: show public review CTA only when `google_place_id` exists and close remaining public-scan constraints for RTS-02.
+  - Invariants confirmed: no forced login from public scan flow; no guest ordering/session-join functionality exposed.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: structural CTA addition only.
+- Preflight evidence:
+  - `Get-Content app/r/[publicSlug]/page.tsx`
+  - `Get-Content app/scan/t/[token]/page.tsx`
+  - `rg -n "google_place_id|review|/r/|scan/t|guest" app src prisma docs`
+- Implementation:
+  - Added `Leave a Review` CTA in public landing.
+  - Render-gated CTA so it appears only when `business.google_place_id` exists.
+  - Confirmed public-scan flow keeps guest users out of login requirement and ordering/session-join actions.
+  - Closed RTS-02 source-plan residual checks (`RTS-02-e`, `RTS-02-f`) as satisfied by current branch/landing behavior.
+- Validation:
+  - `npx eslint "app/r/[publicSlug]/page.tsx"` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 1 (public landing CTA gate)
+  - changed docs: source/master/overview/changelog sync
+  - proportionality reason: exactly scoped to RTS-02-d CTA gate behavior.
+- Unrelated-file check:
+  - pre-existing unrelated local files remained untouched; this slice modified only RTS-02-d paths plus required canonical docs.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+- Commit checkpoint: pending (record after commit).
 
 ### 2026-02-28 - RTS-02-c public diner landing menu-first UX implemented
 

@@ -1,6 +1,6 @@
 # Restaurant Table QR + Host/Kitchen Ops Plan (Restaurant-Only V1)
 
-Status: ACTIVE - RTS-00 and RTS-01 complete; RTS-02 in progress; RTS-03 through RTS-05 pending
+Status: ACTIVE - RTS-00 through RTS-02 complete; RTS-03 through RTS-05 pending
 Created: 2026-02-28
 Last Updated: 2026-02-28
 Primary Purpose: launch restaurant table service with QR routing, host order confirmation, and kitchen queue operations.
@@ -23,6 +23,11 @@ Primary Purpose: launch restaurant table service with QR routing, host order con
 Constitution source: `docs/execution-constitution.md`
 
 ## Latest Update
+
+- **2026-02-28 - RTS-02-d/e/f completed (review CTA gating + public-scan constraints).**
+  - Added public landing review CTA and gated it to businesses with `google_place_id` only.
+  - Confirmed public scan flow does not force login before landing resolution.
+  - Confirmed guest path has no ordering/session-join affordances in V1 baseline.
 
 - **2026-02-28 - RTS-02-c completed (`/r/[publicSlug]` menu-first diner landing baseline).**
   - Expanded public landing route `app/r/[publicSlug]/page.tsx` to menu-first rendering.
@@ -86,9 +91,9 @@ Constitution source: `docs/execution-constitution.md`
 
 ## Pick Up Here
 
-- Current phase: `RTS-02`
-- Current task: `RTS-02-d`
-- Status: `[~]` in progress
+- Current phase: `RTS-03`
+- Current task: `RTS-03-a`
+- Status: `[ ]` pending
 
 ## Scope
 
@@ -187,7 +192,7 @@ This section is authoritative for RTS V1 Prisma modeling.
 
 - `RTS-00`: `[x]` completed
 - `RTS-01`: `[x]` completed
-- `RTS-02`: `[~]` in progress
+- `RTS-02`: `[x]` completed
 - `RTS-03`: `[ ]` pending
 - `RTS-04`: `[ ]` pending
 - `RTS-05`: `[ ]` pending
@@ -222,15 +227,15 @@ Before starting any checklist item in this plan:
 
 ## RTS-02 - QR router and diner landing
 
-**Status:** `[~]` in progress
+**Status:** `[x]` completed
 
 - [x] RTS-02-0: Constitution restatement logged for this phase and no deviation required.
 - [x] RTS-02-a: Implement `/scan/t/[token]` resolver.
 - [x] RTS-02-b: Implement session-aware branch (member -> host open/start session; otherwise public).
 - [x] RTS-02-c: Implement `/r/[publicSlug]` diner landing with menu-first UX.
-- [ ] RTS-02-d: Show review CTA only when `google_place_id` exists.
-- [ ] RTS-02-e: Ensure no login page is shown from public scan flow.
-- [ ] RTS-02-f: Enforce no guest ordering/session joining for public scanner path.
+- [x] RTS-02-d: Show review CTA only when `google_place_id` exists.
+- [x] RTS-02-e: Ensure no login page is shown from public scan flow.
+- [x] RTS-02-f: Enforce no guest ordering/session joining for public scanner path.
 
 ## RTS-03 - Host order confirmation flow
 
