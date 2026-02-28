@@ -1,12 +1,41 @@
 # Document Intake Pipeline Plan
 
 Last updated: February 28, 2026
-Status: ACTIVE - DI-01 complete, DI-02 next
+Status: ACTIVE - DI-02 complete, DI-03 next
 Constitution source: `docs/execution-constitution.md`
 
 ---
 
 ## Latest Update
+
+- **2026-02-28 - DI-02 completed (structured parse + confidence layer).**
+  - Added domain parser:
+    - `src/domain/parsers/document-draft.ts`
+    - `parseDocumentFromPostmark`, `parseDocumentFromText`, `parseDocumentFromJson`
+    - `scoreDocumentConfidence`, `REQUIRED_DOCUMENT_FIELDS`, `stripHtml`
+  - Added parse service:
+    - `src/features/documents/server/document-parse.service.ts`
+    - `parseAndSaveDraft(businessId, draftId)` now:
+      - loads raw payload from storage
+      - parses/scorers draft fields
+      - updates draft to `pending_review` with confidence metadata
+      - falls back to `draft` status with structured `parser_error` flag on unhandled parse failures
+      - attempts optional vendor auto-resolution hook (DI-03) when available
+  - Added storage read helper:
+    - `loadRawDocument(storagePath)` in `src/features/documents/server/document-storage.service.ts`
+  - Updated server barrel export:
+    - `src/features/documents/server/index.ts` now exports parse service
+  - Added DI-02 parser tests:
+    - `src/domain/parsers/document-draft.test.mjs` (12 cases)
+  - Validation passed:
+    - parser tests
+    - targeted `eslint`
+    - `tsc`
+  - Manual parse check passed via webhook ingest:
+    - resulting draft reached `status: pending_review`
+    - `parsed_vendor_name` populated
+    - `confidence_score > 0`
+  - DI resume pointer advanced to **DI-03**.
 
 - **2026-02-28 - DI-01 completed (capture and isolation pipeline).**
   - Added DI-01 server layer under `src/features/documents/server/`:
@@ -82,7 +111,7 @@ Constitution source: `docs/execution-constitution.md`
 
 ## Pick Up Here
 
-Next task: **DI-02** - Structured Draft Layer (Parse and Score).
+Next task: **DI-03** - Vendor Mapping and Trust Setup.
 
 ---
 
@@ -617,7 +646,7 @@ Validation:
 
 **Goal:** Parse each ingested document into structured draft fields. Assign a confidence score. Save all output back onto the `document_draft` record. Move draft status to `pending_review`. Never post.
 
-**Status:** `[ ]` pending
+**Status:** `[x]` completed
 
 **Prerequisite:** DI-01 complete.
 
@@ -636,7 +665,7 @@ The parser receives the stored Postmark JSON (loaded from storage), re-parses it
 #### Checklist
 
 Domain parser:
-- [ ] Create `src/domain/parsers/document-draft.ts`:
+- [x] Create `src/domain/parsers/document-draft.ts`:
   - `parseDocumentFromPostmark(payload: PostmarkInboundPayload)` → `ParsedDocumentFields`:
     - Resolve text: `payload.TextBody || stripHtml(payload.HtmlBody) || ''`
     - Vendor name seed: first from text extraction, then `payload.FromFull.Name`, then email domain
@@ -658,7 +687,7 @@ Domain parser:
   - Internal `stripHtml(html: string)` — basic tag removal for HtmlBody fallback
 
 Parse service:
-- [ ] Create `src/features/documents/server/document-parse.service.ts`:
+- [x] Create `src/features/documents/server/document-parse.service.ts`:
   - `parseAndSaveDraft(businessId, draftId)`:
     1. Load draft from DB
     2. Load raw JSON from Supabase Storage (`raw_storage_path`)
@@ -670,7 +699,7 @@ Parse service:
     8. On any unhandled error: set status `draft`, log structured error in `parse_flags`; never throw
 
 Unit tests:
-- [ ] Create `src/domain/parsers/document-draft.test.mjs`:
+- [x] Create `src/domain/parsers/document-draft.test.mjs`:
   - Test: `parseDocumentFromPostmark` with realistic invoice TextBody → vendor, date, total all extracted
   - Test: `parseDocumentFromPostmark` with empty TextBody → falls back to HtmlBody
   - Test: vendor name fallback chain: no body match → uses `FromFull.Name`
@@ -684,10 +713,10 @@ Unit tests:
   - Minimum 12 test cases
 
 Validation:
-- [ ] `node --test src/domain/parsers/document-draft.test.mjs` → PASS (12+/12+)
-- [ ] `npx tsc --noEmit --incremental false` → PASS
-- [ ] `npx eslint src/domain/parsers/document-draft.ts src/features/documents/server/document-parse.service.ts` → PASS
-- [ ] Manual: send real email to `{serverHash}+{token}@inbound.postmarkapp.com` → after async parse, draft has `status: pending_review`, `parsed_vendor_name` populated, `confidence_score > 0`
+- [x] `node --test src/domain/parsers/document-draft.test.mjs` → PASS (12+/12+)
+- [x] `npx tsc --noEmit --incremental false` → PASS
+- [x] `npx eslint src/domain/parsers/document-draft.ts src/features/documents/server/document-parse.service.ts` → PASS
+- [x] Manual: send real email to `{serverHash}+{token}@inbound.postmarkapp.com` → after async parse, draft has `status: pending_review`, `parsed_vendor_name` populated, `confidence_score > 0`
 
 ---
 

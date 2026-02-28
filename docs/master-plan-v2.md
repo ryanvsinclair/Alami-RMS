@@ -226,11 +226,11 @@ Post-launch stream:
 
 ## Last Left Off Here
 
-- Current task ID: `DI-02`
-- Current task: `Document intake parse/score pipeline`
+- Current task ID: `DI-03`
+- Current task: `Document intake vendor mapping/trust setup`
 - Status: `NOT STARTED`
 - Last updated: `2026-02-28`
-- Note: DI-01 is complete; continue deterministic DI sequence at DI-02.
+- Note: DI-02 is complete; continue deterministic DI sequence at DI-03.
 
 ## Canonical Order Checklist
 
@@ -374,13 +374,13 @@ Test format lock:
 Plan doc: `docs/document-intake-pipeline-plan.md`
 Current state: active, resumed after launch-gate completion.
 Re-entry trigger: satisfied (`LG-00` fully complete).
-Resume point: `DI-02`.
+Resume point: `DI-03`.
 
 High-level DI checklist:
 
 - [x] DI-00 schema/contracts
 - [x] DI-01 capture/isolation
-- [ ] DI-02 parse/score
+- [x] DI-02 parse/score
 - [ ] DI-03 vendor mapping/trust setup
 - [ ] DI-04 inbox/post flow
 - [ ] DI-05 trust-gated auto-post
@@ -421,6 +421,44 @@ No additional missing plan docs were identified from the current chat scope afte
 - Post-launch initiatives in progress: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - DI-02 completed (structured draft parse/score pipeline)
+
+- Constitution Restatement:
+  - Task ID: `DI-02`
+  - Scope: implement document parsing/scoring flow for ingested drafts and persist `pending_review` output without posting.
+  - Invariants confirmed: no financial posting; parse flow reads raw stored payloads only; failures route draft to `draft` with structured parse error metadata.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: no UI implementation changes in this slice.
+- Preflight evidence:
+  - `Get-Content docs/document-intake-pipeline-plan.md`
+  - `rg -n "parseAndSaveDraft|document-draft|confidence|pending_review|raw_storage_path" src app docs`
+  - `Get-Content src/features/documents/server/document-draft.repository.ts`
+- Implementation:
+  - Added parser domain module: `src/domain/parsers/document-draft.ts`
+  - Added parser test suite: `src/domain/parsers/document-draft.test.mjs`
+  - Added parse service: `src/features/documents/server/document-parse.service.ts`
+  - Added raw storage read helper: `loadRawDocument` in `src/features/documents/server/document-storage.service.ts`
+  - Updated documents server barrel export: `src/features/documents/server/index.ts`
+  - Route async enqueue hook now resolves `parseAndSaveDraft` from server barrel for post-response parse execution.
+  - Marked DI-02 complete and advanced deterministic pointer to DI-03.
+- Validation:
+  - `node --test src/domain/parsers/document-draft.test.mjs` -> PASS (12 tests)
+  - `npx eslint src/domain/parsers/document-draft.ts src/features/documents/server/document-parse.service.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - Manual parse smoke via local inbound POST -> PASS:
+    - resulting draft status: `pending_review`
+    - `parsed_vendor_name` populated
+    - `confidence_score` populated (`> 0`)
+- Diff proportionality:
+  - changed runtime files: 4 (`document-draft.ts`, `document-parse.service.ts`, storage helper update, server index export)
+  - changed tests: 1
+  - changed docs: source/master/changelog sync
+  - proportionality reason: exact DI-02 scope (parse + score + persistence path).
+- Unrelated-file check:
+  - pre-existing unrelated local files remained unchanged by this slice (`.claude/settings.local.json`, `docs/MASTER_BACKEND_ARCHITECTURE.md`).
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables introduced.
 
 ### 2026-02-28 - DI-01 completed (capture/isolation webhook ingest baseline)
 

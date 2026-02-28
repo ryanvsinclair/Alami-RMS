@@ -314,7 +314,7 @@ Canonical paths:
 - `prisma/migrations/20260228060000_business_profile_place_metadata/migration.sql`
 - `prisma/migrations/20260228130000_table_service_module_backfill/migration.sql`
 
-### Document Intake (DI-01 capture/isolation baseline)
+### Document Intake (DI-02 parse/score baseline)
 
 Implemented capabilities:
 
@@ -341,6 +341,11 @@ Implemented capabilities:
   - capture-only persistence (`DocumentDraft.status = received`) and no financial posting
   - asynchronous parse enqueue hook after `200` response
 - `documents` module is registered in module registry and documents actions are module-gated.
+- DI-02 parse/score layer now active:
+  - domain parser for Postmark text/html and generic JSON payloads
+  - confidence scoring (`score`, `band`, parser flags) with totals-consistency checks
+  - parse service updates draft rows to `pending_review` and preserves structured parse metadata
+  - parse-service failure path sets draft status to `draft` with `parser_error` payload
 
 Canonical paths:
 
@@ -353,6 +358,10 @@ Canonical paths:
 - `src/features/documents/server/document-storage.service.ts`
 - `src/features/documents/server/document-draft.repository.ts`
 - `src/features/documents/server/index.ts`
+- `src/domain/parsers/document-draft.ts`
+- `src/domain/parsers/document-draft.test.mjs`
+- `src/features/documents/server/document-parse.service.ts`
+- `src/features/documents/server/document-storage.service.ts`
 - `app/api/documents/inbound/route.ts`
 - `app/actions/modules/documents.ts`
 - `lib/modules/documents/index.ts`

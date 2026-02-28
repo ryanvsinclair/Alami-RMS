@@ -92,3 +92,26 @@ export async function getRawDocumentSignedUrl(
 
   return data.signedUrl;
 }
+
+export async function loadRawDocument(storagePath: string) {
+  const normalizedPath = storagePath.trim().replace(/^\/+/, "");
+  if (!normalizedPath) {
+    throw new DocumentStorageError("Storage path is required to download a document");
+  }
+
+  const bucket = getDocumentsBucketName();
+  const supabase = createServiceClient();
+  const { data, error } = await supabase.storage.from(bucket).download(normalizedPath);
+  if (error || !data) {
+    throw new DocumentStorageError(
+      `Failed to download document content: ${error?.message ?? "unknown storage error"}`,
+      { storagePath: normalizedPath },
+    );
+  }
+
+  const arrayBuffer = await data.arrayBuffer();
+  return {
+    content: Buffer.from(arrayBuffer),
+    contentType: data.type ?? null,
+  };
+}

@@ -20,6 +20,60 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - DI-02 completed: structured draft parse and confidence scoring layer
+
+- Suggested Commit Title: `feat(di-02): add document draft parse-score pipeline`
+- Scope: DI phase `DI-02` (parse and score only; no posting/UI flows).
+- Constitution Restatement:
+  - Task ID: `DI-02`
+  - Scope sentence: parse stored document payloads into structured draft fields, score confidence, and persist `pending_review` outputs.
+  - Invariants confirmed: no financial posting; parse failures degrade to `draft` with structured error metadata; no dependency/env surface changes.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: no UI implementation changes in this slice.
+- Deliverables:
+  - Added parser domain module:
+    - `src/domain/parsers/document-draft.ts`
+  - Added parser test suite:
+    - `src/domain/parsers/document-draft.test.mjs` (12 tests)
+  - Added parse service:
+    - `src/features/documents/server/document-parse.service.ts`
+  - Extended document storage service:
+    - `loadRawDocument(storagePath)` in `src/features/documents/server/document-storage.service.ts`
+  - Updated documents server barrel:
+    - `src/features/documents/server/index.ts`
+  - Inbound route async enqueue now resolves `parseAndSaveDraft` from server barrel after response.
+  - Manual parse smoke passed (local inbound POST):
+    - draft reached `pending_review`
+    - `parsed_vendor_name` populated
+    - `confidence_score` populated (`> 0`)
+- Touched Files (single-entry log):
+  - `src/domain/parsers/document-draft.ts` (added)
+  - `src/domain/parsers/document-draft.test.mjs` (added)
+  - `src/features/documents/server/document-parse.service.ts` (added)
+  - `src/features/documents/server/document-storage.service.ts` (updated)
+  - `src/features/documents/server/index.ts` (updated)
+  - `docs/document-intake-pipeline-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `node --test src/domain/parsers/document-draft.test.mjs` -> PASS
+  - `npx eslint src/domain/parsers/document-draft.ts src/features/documents/server/document-parse.service.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - Manual parse smoke (local inbound POST + DB check) -> PASS
+- Diff proportionality:
+  - Changed runtime files: 4
+  - Changed tests: 1
+  - Changed docs: 4
+  - Delta rationale: exact DI-02 scope (parse/scoring + persistence flow and canonical sync).
+- Unrelated-file check:
+  - Pre-existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: `TBD`
+  - Commit title: `feat(di-02): add document draft parse-score pipeline`
+
 ### 2026-02-28 - DI-01 completed: document capture/isolation inbound pipeline
 
 - Suggested Commit Title: `feat(di-01): implement postmark capture-isolation inbound pipeline`
