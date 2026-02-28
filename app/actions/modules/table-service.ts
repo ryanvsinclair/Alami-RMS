@@ -4,6 +4,7 @@
 "use server";
 
 import {
+  appendKitchenOrderItems as _appendKitchenOrderItems,
   confirmKitchenOrder as _confirmKitchenOrder,
   createMenuCategory as _createMenuCategory,
   createMenuItem as _createMenuItem,
@@ -22,6 +23,7 @@ import {
   updateMenuItem as _updateMenuItem,
 } from "@/features/table-service/server";
 import type {
+  AppendKitchenOrderItemsInput,
   ConfirmKitchenOrderInput,
   UpsertMenuCategoryInput,
   UpsertMenuItemInput,
@@ -109,4 +111,9 @@ export async function getKitchenOrderForSession(tableSessionId: string) {
 export async function confirmKitchenOrder(input: ConfirmKitchenOrderInput) {
   const { businessId } = await requireTableServiceAccess();
   return _confirmKitchenOrder(businessId, input);
+}
+
+export async function appendKitchenOrderItems(input: AppendKitchenOrderItemsInput) {
+  const { businessId } = await requireTableServiceAccess();
+  return _appendKitchenOrderItems(businessId, input);
 }

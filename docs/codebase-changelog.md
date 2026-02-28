@@ -20,6 +20,46 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - RTS-03-d completed: post-confirm item append on same kitchen order
+
+- Suggested Commit Title: `feat(rts-03): append post-confirm items on same kitchen order`
+- Scope: RTS phase `RTS-03-d` (same-order append behavior).
+- Constitution Restatement:
+  - Task ID: `RTS-03-d`
+  - Scope sentence: implement post-confirm host edits as append-only `KitchenOrderItem` rows on the existing `KitchenOrder`.
+  - Invariants confirmed: one-order-per-session preserved; no amendment table introduced; existing item rows remain unchanged by append action.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: structural host composer workflow updates only.
+- Deliverables:
+  - Added `appendKitchenOrderItems(...)` service path for active ticket append operations.
+  - Added `appendKitchenOrderItems(...)` server action wrapper.
+  - Updated host submit logic to branch by ticket state:
+    - no ticket -> create on confirm
+    - existing ticket -> append draft items to same ticket
+  - Updated host ticket panel to surface recently appended item lines/statuses.
+- Touched Files (single-entry log):
+  - `src/features/table-service/server/order.service.ts` (updated)
+  - `app/actions/modules/table-service.ts` (updated)
+  - `src/features/table-service/ui/HostOrderComposerPageClient.tsx` (updated)
+  - `docs/restaurant-table-service-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx eslint "src/features/table-service/server/order.service.ts" "app/actions/modules/table-service.ts" "src/features/table-service/ui/HostOrderComposerPageClient.tsx" "app/(dashboard)/service/host/page.tsx"` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 3.
+  - Delta rationale: exact RTS-03-d scope (append-only post-confirm path on same order).
+- Unrelated-file check:
+  - Existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: pending (record after commit)
+  - Commit title: `feat(rts-03): append post-confirm items on same kitchen order`
+
 ### 2026-02-28 - RTS-03-c completed: confirm timestamps and 30-minute due timer
 
 - Suggested Commit Title: `feat(rts-03): set confirmed_at and 30-minute due_at on confirm`

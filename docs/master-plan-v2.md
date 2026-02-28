@@ -180,10 +180,10 @@ Use `Canonical Order Checklist` statuses as source of truth.
 Current snapshot (2026-02-28):
 
 - Launch-critical checklist items total: `50`
-- Launch-critical `[x]`: `29`
+- Launch-critical `[x]`: `30`
 - Launch-critical `[~]`: `0`
-- Strict completion: `58.00%`
-- Weighted progress: `58.00%`
+- Strict completion: `60.00%`
+- Weighted progress: `60.00%`
 - Parked post-launch checklist items (DI): `7` (excluded from launch completion %)
 
 Update rule after each slice:
@@ -226,11 +226,11 @@ Parked stream:
 
 ## Last Left Off Here
 
-- Current task ID: `RTS-03-d`
-- Current task: `Post-confirm edits append items on same order`
+- Current task ID: `RTS-04-a`
+- Current task: `FIFO kitchen queue by confirmation time`
 - Status: `NOT STARTED`
 - Last updated: `2026-02-28`
-- Note: RTS-03-c confirmation timer fields completed; continue deterministic order with RTS-03-d.
+- Note: RTS-03 phase completed through same-order append flow; advance to RTS-04-a per gate order.
 
 ## Canonical Order Checklist
 
@@ -307,7 +307,7 @@ Plan doc: `docs/restaurant-table-service-plan.md`
 - [x] RTS-03-a: Host table order composer
 - [x] RTS-03-b: Confirm order -> kitchen ticket creation
 - [x] RTS-03-c: Start 30-minute due timer at confirmation
-- [ ] RTS-03-d: Post-confirm edits append new items on same order (no amendment table in V1)
+- [x] RTS-03-d: Post-confirm edits append new items on same order (no amendment table in V1)
 
 #### Phase RTS-04 - Kitchen queue operations
 
@@ -417,10 +417,48 @@ No additional missing plan docs were identified from the current chat scope afte
 ## Completion Snapshot
 
 - Launch-critical initiatives active: `5` (RPK, RTS, IMG-L, UX-L, LG)
-- Launch-critical items complete: `29`
+- Launch-critical items complete: `30`
 - Parked post-launch initiatives: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - RTS-03-d post-confirm append-to-same-order flow completed
+
+- Constitution Restatement:
+  - Task ID: `RTS-03-d`
+  - Scope: route post-confirm host edits to append new `KitchenOrderItem` rows on the same `KitchenOrder`.
+  - Invariants confirmed: one-order-per-session preserved; no amendment table introduced; existing item statuses are not rewritten by append action.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: structural host workflow controls only.
+- Preflight evidence:
+  - `Get-Content docs/restaurant-table-service-plan.md`
+  - `Get-Content src/features/table-service/server/order.service.ts`
+  - `Get-Content app/actions/modules/table-service.ts`
+  - `Get-Content src/features/table-service/ui/HostOrderComposerPageClient.tsx`
+  - `rg -n "append|post-confirm|KitchenOrderItem|same order|RTS-03-d" docs/master-plan-v2.md docs/restaurant-table-service-plan.md src/features/table-service/server/order.service.ts src/features/table-service/ui/HostOrderComposerPageClient.tsx app/actions/modules/table-service.ts`
+- Implementation:
+  - Added `appendKitchenOrderItems(...)` in `src/features/table-service/server/order.service.ts`:
+    - validates active ticket/session and available menu items
+    - appends new `KitchenOrderItem` rows via insert-only writes
+    - returns refreshed order summary with full item list
+  - Added server action wrapper `appendKitchenOrderItems(...)` in `app/actions/modules/table-service.ts`.
+  - Updated host composer submit flow:
+    - if no ticket exists -> confirm creates ticket
+    - if ticket exists -> append items to same ticket
+  - Updated host ticket panel to show recent appended lines and statuses.
+- Validation:
+  - `npx eslint "src/features/table-service/server/order.service.ts" "app/actions/modules/table-service.ts" "src/features/table-service/ui/HostOrderComposerPageClient.tsx" "app/(dashboard)/service/host/page.tsx"` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 3 (append service + action wrapper + host post-confirm append wiring)
+  - changed docs: source/master/overview/changelog sync
+  - proportionality reason: exactly scoped to RTS-03-d same-order append behavior.
+- Unrelated-file check:
+  - pre-existing unrelated local files remained untouched; this slice modified only RTS-03-d scope files plus required canonical docs.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+- Commit checkpoint: pending (record after commit).
 
 ### 2026-02-28 - RTS-03-c confirmation timestamps and 30-minute due timer enforced
 

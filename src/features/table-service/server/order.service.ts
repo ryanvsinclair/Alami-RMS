@@ -1,6 +1,7 @@
 import { serialize } from "@/domain/shared/serialize";
 import { prisma } from "@/server/db/prisma";
 import type {
+  AppendKitchenOrderItemsInput,
   ConfirmKitchenOrderInput,
   KitchenOrderDraftItemInput,
   KitchenOrderItemStatusContract,
@@ -193,5 +194,77 @@ export async function confirmKitchenOrder(
     });
 
     return serialize(toKitchenOrderSummary(createdOrder as KitchenOrderRecord));
+  });
+}
+
+export async function appendKitchenOrderItems(
+  businessId: string,
+  input: AppendKitchenOrderItemsInput,
+) {
+  const kitchenOrderId = input.kitchenOrderId.trim();
+  if (!kitchenOrderId) {
+    throw new Error("Kitchen order id is required");
+  }
+
+  const normalizedItems = normalizeConfirmItems(input.items);
+
+  return prisma.$transaction(async (tx) => {
+    const existingOrder = await tx.kitchenOrder.findFirst({
+      where: {
+        id: kitchenOrderId,
+        business_id: businessId,
+        closed_at: null,
+        table_session: {
+          closed_at: null,
+        },
+      },
+      include: {
+        items: {
+          orderBy: [{ created_at: "asc" }, { id: "asc" }],
+        },
+      },
+    });
+    if (!existingOrder) {
+      throw new Error("Active kitchen ticket not found");
+    }
+
+    const uniqueMenuItemIds = Array.from(
+      new Set(normalizedItems.map((item) => item.menuItemId)),
+    );
+    const availableMenuItems = await tx.menuItem.findMany({
+      where: {
+        id: { in: uniqueMenuItemIds },
+        business_id: businessId,
+        is_available: true,
+      },
+      select: { id: true },
+    });
+    if (availableMenuItems.length !== uniqueMenuItemIds.length) {
+      throw new Error("One or more menu items are unavailable for append");
+    }
+
+    await tx.kitchenOrderItem.createMany({
+      data: normalizedItems.map((item) => ({
+        business_id: businessId,
+        kitchen_order_id: existingOrder.id,
+        menu_item_id: item.menuItemId,
+        quantity: item.quantity,
+        notes: item.notes,
+      })),
+    });
+
+    const updatedOrder = await tx.kitchenOrder.findUnique({
+      where: { id: existingOrder.id },
+      include: {
+        items: {
+          orderBy: [{ created_at: "asc" }, { id: "asc" }],
+        },
+      },
+    });
+    if (!updatedOrder) {
+      throw new Error("Kitchen ticket disappeared after append");
+    }
+
+    return serialize(toKitchenOrderSummary(updatedOrder as KitchenOrderRecord));
   });
 }
