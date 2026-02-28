@@ -79,6 +79,11 @@ export interface TableServiceKitchenOrderSummary {
   items: TableServiceKitchenOrderItemSummary[];
 }
 
+export interface TableServiceMenuSetupData {
+  categories: TableServiceMenuCategorySummary[];
+  items: TableServiceMenuItemSummary[];
+}
+
 export interface UpsertMenuCategoryInput {
   categoryId?: string;
   name: string;
@@ -120,4 +125,11 @@ export interface AppendKitchenOrderItemsInput {
     quantity: number;
     notes?: string | null;
   }>;
+}
+
+export interface MenuCsvImportReport {
+  createdCount: number;
+  updatedCount: number;
+  skippedCount: number;
+  errors: string[];
 }

@@ -313,6 +313,27 @@ Canonical paths:
 - `prisma/migrations/20260228060000_business_profile_place_metadata/migration.sql`
 - `prisma/migrations/20260228130000_table_service_module_backfill/migration.sql`
 
+### Table Service Menu Setup (RTS-01-a)
+
+Implemented capabilities:
+
+- Module-gated restaurant setup route at `/service/menu`.
+- Manual menu category CRUD (create/update/delete).
+- Manual menu item CRUD (create/update/delete) with:
+  - optional category assignment
+  - `description`, `price`, `isAvailable`, and `sortOrder`
+- CSV import for menu items with header mapping and row-level validation.
+- Import result reporting (`createdCount`, `updatedCount`, `skippedCount`, `errors`).
+
+Canonical paths:
+
+- `app/(dashboard)/service/layout.tsx`
+- `app/(dashboard)/service/menu/page.tsx`
+- `app/actions/modules/table-service.ts`
+- `src/features/table-service/server/menu-csv.ts`
+- `src/features/table-service/server/menu.service.ts`
+- `src/features/table-service/ui/MenuSetupPageClient.tsx`
+
 ### Operational Calendar (OC-04 complete)
 
 Implemented capabilities:

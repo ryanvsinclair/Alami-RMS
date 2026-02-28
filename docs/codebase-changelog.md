@@ -20,6 +20,50 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - RTS-01-a completed: menu CRUD + CSV import setup surface
+
+- Suggested Commit Title: `feat(rts-01): add table-service menu CRUD and CSV import setup route`
+- Scope: RTS phase `RTS-01-a` (manual menu CRUD + CSV import).
+- Constitution Restatement:
+  - Task ID: `RTS-01-a`
+  - Scope sentence: implement restaurant table-service menu setup CRUD and CSV import in module-gated dashboard route.
+  - Invariants confirmed: module/industry guard remains explicit, no guest ordering scope added, no changes to one-order-per-session/same-order append invariants.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+- Deliverables:
+  - Added module-gated table-service setup route `/service/menu`.
+  - Added manual menu category/item CRUD actions and service layer.
+  - Added CSV parser/import flow with row-level validation and import summary reporting.
+  - Added setup UI for category/item CRUD and CSV import.
+- Touched Files (single-entry log):
+  - `app/actions/modules/table-service.ts` (added)
+  - `app/(dashboard)/service/layout.tsx` (added)
+  - `app/(dashboard)/service/menu/page.tsx` (added)
+  - `src/features/table-service/server/menu-csv.ts` (added)
+  - `src/features/table-service/server/menu.service.ts` (added)
+  - `src/features/table-service/server/index.ts` (updated)
+  - `src/features/table-service/ui/MenuSetupPageClient.tsx` (added)
+  - `src/features/table-service/ui/index.ts` (added)
+  - `src/features/table-service/shared/table-service.contracts.ts` (updated)
+  - `docs/restaurant-table-service-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx eslint app/actions/modules/table-service.ts "app/(dashboard)/service/layout.tsx" "app/(dashboard)/service/menu/page.tsx" src/features/table-service/server/menu-csv.ts src/features/table-service/server/menu.service.ts src/features/table-service/server/index.ts src/features/table-service/ui/MenuSetupPageClient.tsx src/features/table-service/ui/index.ts src/features/table-service/shared/table-service.contracts.ts src/features/table-service/shared/index.ts src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `npx prisma migrate status` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 9.
+  - Delta rationale: exact RTS-01-a scope (menu CRUD + CSV import setup).
+- Unrelated-file check:
+  - Existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: pending (record after commit)
+  - Commit title: `feat(rts-01): add table-service menu CRUD and CSV import setup route`
+
 ### 2026-02-28 - RTS-00-c completed: shared contract baseline and RTS-00 phase closeout
 
 - Suggested Commit Title: `feat(rts-00): add shared table-service contracts and lock order-flow invariants`

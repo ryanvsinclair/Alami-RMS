@@ -180,10 +180,10 @@ Use `Canonical Order Checklist` statuses as source of truth.
 Current snapshot (2026-02-28):
 
 - Launch-critical checklist items total: `50`
-- Launch-critical `[x]`: `20`
+- Launch-critical `[x]`: `21`
 - Launch-critical `[~]`: `0`
-- Strict completion: `40.00%`
-- Weighted progress: `40.00%`
+- Strict completion: `42.00%`
+- Weighted progress: `42.00%`
 - Parked post-launch checklist items (DI): `7` (excluded from launch completion %)
 
 Update rule after each slice:
@@ -226,11 +226,11 @@ Parked stream:
 
 ## Last Left Off Here
 
-- Current task ID: `RTS-01-a`
-- Current task: `Menu CRUD (manual) + CSV import`
+- Current task ID: `RTS-01-b`
+- Current task: `Dining table CRUD and static QR generation`
 - Status: `NOT STARTED`
 - Last updated: `2026-02-28`
-- Note: RTS-00 complete through schema/module/contracts; auto-advance gate satisfied for RTS-01.
+- Note: RTS-01-a completed (manual menu CRUD + CSV import); continue deterministic order with RTS-01-b.
 
 ## Canonical Order Checklist
 
@@ -292,7 +292,7 @@ Plan doc: `docs/restaurant-table-service-plan.md`
 
 #### Phase RTS-01 - Menu and table setup
 
-- [ ] RTS-01-a: Menu CRUD (manual) + CSV import
+- [x] RTS-01-a: Menu CRUD (manual) + CSV import
 - [ ] RTS-01-b: Dining table CRUD and static QR generation
 
 #### Phase RTS-02 - QR router and diner landing
@@ -417,10 +417,53 @@ No additional missing plan docs were identified from the current chat scope afte
 ## Completion Snapshot
 
 - Launch-critical initiatives active: `5` (RPK, RTS, IMG-L, UX-L, LG)
-- Launch-critical items complete: `20`
+- Launch-critical items complete: `21`
 - Parked post-launch initiatives: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - RTS-01-a menu CRUD and CSV import completed
+
+- Constitution Restatement:
+  - Task ID: `RTS-01-a`
+  - Scope: implement manual menu CRUD and CSV import in module-gated table-service setup surface.
+  - Invariants confirmed: no guest ordering scope, module + industry guard enforced, one-order-per-session/same-order append invariants unchanged.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: structural setup UI only; no new design-token systems introduced.
+- Preflight evidence:
+  - `Get-Content docs/restaurant-table-service-plan.md`
+  - `Get-Content app/actions/modules/shopping.ts`
+  - `Get-Content src/features/shopping/server/contracts.ts`
+  - `Get-Content src/features/contacts/ui/ContactsPageClient.tsx`
+  - `rg -n "table_service|menu|csv|service/menu|requireModule|MenuCategory|MenuItem" app src prisma docs`
+- Implementation:
+  - Added module-gated dashboard route:
+    - `app/(dashboard)/service/layout.tsx`
+    - `app/(dashboard)/service/menu/page.tsx`
+  - Added table-service menu actions wrapper:
+    - `app/actions/modules/table-service.ts`
+  - Added menu server layer:
+    - CSV parsing helper (`menu-csv.ts`)
+    - menu CRUD/import service (`menu.service.ts`)
+  - Added setup UI:
+    - category CRUD
+    - menu item CRUD (including `isAvailable`/sort order)
+    - CSV import textarea + import result summary
+  - Preserved business scoping and table-service access guard (`requireTableServiceAccess`).
+- Validation:
+  - `npx eslint app/actions/modules/table-service.ts "app/(dashboard)/service/layout.tsx" "app/(dashboard)/service/menu/page.tsx" src/features/table-service/server/menu-csv.ts src/features/table-service/server/menu.service.ts src/features/table-service/server/index.ts src/features/table-service/ui/MenuSetupPageClient.tsx src/features/table-service/ui/index.ts src/features/table-service/shared/table-service.contracts.ts src/features/table-service/shared/index.ts src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `npx prisma migrate status` -> PASS
+- Diff proportionality:
+  - changed runtime files: 9 (route/layout, module actions, service parser/service, UI, shared exports/contracts adjustments)
+  - changed docs: source/master/overview/changelog sync
+  - proportionality reason: exactly aligned with RTS-01-a menu CRUD + CSV import scope.
+- Unrelated-file check:
+  - pre-existing unrelated local files remained untouched; this slice modified only RTS-01-a paths plus required canonical docs.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+- Commit checkpoint: pending (record after commit).
 
 ### 2026-02-28 - RTS-00-c shared contracts baseline completed (RTS-00 phase closed)
 
