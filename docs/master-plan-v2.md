@@ -180,10 +180,10 @@ Use `Canonical Order Checklist` statuses as source of truth.
 Current snapshot (2026-02-28):
 
 - Launch-critical checklist items total: `50`
-- Launch-critical `[x]`: `33`
+- Launch-critical `[x]`: `34`
 - Launch-critical `[~]`: `0`
-- Strict completion: `66.00%`
-- Weighted progress: `66.00%`
+- Strict completion: `68.00%`
+- Weighted progress: `68.00%`
 - Parked post-launch checklist items (DI): `7` (excluded from launch completion %)
 
 Update rule after each slice:
@@ -226,11 +226,11 @@ Parked stream:
 
 ## Last Left Off Here
 
-- Current task ID: `RTS-04-d`
-- Current task: `Host done/paid closes order and session`
+- Current task ID: `RTS-04-e`
+- Current task: `Overdue visual urgency without queue reorder`
 - Status: `NOT STARTED`
 - Last updated: `2026-02-28`
-- Note: RTS-04-c terminal-collapse queue visibility completed; continue deterministic order with RTS-04-d.
+- Note: RTS-04-d host done/paid close flow completed; continue deterministic order with RTS-04-e.
 
 ## Canonical Order Checklist
 
@@ -314,7 +314,7 @@ Plan doc: `docs/restaurant-table-service-plan.md`
 - [x] RTS-04-a: FIFO queue by confirmation time
 - [x] RTS-04-b: Item status lifecycle includes `pending`, `preparing`, `ready_to_serve`, `served`, `cancelled`
 - [x] RTS-04-c: Collapse order from queue when all items are terminal (`served`/`cancelled`) while keeping order open
-- [ ] RTS-04-d: Host `done/paid` action closes order and closes table session
+- [x] RTS-04-d: Host `done/paid` action closes order and closes table session
 - [ ] RTS-04-e: Overdue visual urgency without queue reordering
 
 #### Phase RTS-05 - Profile mode toggle and launch hardening
@@ -417,10 +417,47 @@ No additional missing plan docs were identified from the current chat scope afte
 ## Completion Snapshot
 
 - Launch-critical initiatives active: `5` (RPK, RTS, IMG-L, UX-L, LG)
-- Launch-critical items complete: `33`
+- Launch-critical items complete: `34`
 - Parked post-launch initiatives: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - RTS-04-d host done/paid close flow implemented
+
+- Constitution Restatement:
+  - Task ID: `RTS-04-d`
+  - Scope: add host `done/paid` action that closes active order and closes active table session.
+  - Invariants confirmed: closure remains explicit host action; no auto-close on terminal items; queue derivation remains non-destructive and confirmation-ordered.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: structural host controls/state messaging only.
+- Preflight evidence:
+  - `Get-Content docs/restaurant-table-service-plan.md`
+  - `Get-Content src/features/table-service/server/order.service.ts`
+  - `Get-Content app/actions/modules/table-service.ts`
+  - `Get-Content src/features/table-service/ui/HostOrderComposerPageClient.tsx`
+  - `rg -n "done/paid|closed_at|closeKitchenOrderAndSession|RTS-04-d|table session" src/features/table-service app docs/master-plan-v2.md docs/restaurant-table-service-plan.md --glob '!**/generated/**'`
+- Implementation:
+  - Added `closeKitchenOrderAndSession(...)` server function:
+    - closes `KitchenOrder.closed_at`
+    - closes corresponding `TableSession.closed_at`
+    - returns updated order summary
+  - Added table-service action wrapper for host close action.
+  - Added host `Done/Paid And Close Table Session` control when an order is active.
+  - Host UI now reflects closed state and prevents post-close append/edit operations.
+  - Source-plan mapping recorded: source `RTS-04-g` completed; source `RTS-04-f` remains pending for overdue urgency.
+- Validation:
+  - `npx eslint "src/features/table-service/ui/HostOrderComposerPageClient.tsx" "src/features/table-service/server/order.service.ts" "app/actions/modules/table-service.ts" "src/features/table-service/shared/table-service.contracts.ts" "app/(dashboard)/service/kitchen/page.tsx" "src/features/table-service/ui/KitchenQueuePageClient.tsx"` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 4 (close service + action wrapper + host close control + shared close contract input)
+  - changed docs: source/master/overview/changelog sync
+  - proportionality reason: exactly scoped to RTS-04-d explicit close behavior.
+- Unrelated-file check:
+  - pre-existing unrelated local files remained untouched; this slice modified only RTS-04-d scope files plus required canonical docs.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+- Commit checkpoint: pending (record after commit).
 
 ### 2026-02-28 - RTS-04-c queue collapse on terminal-only items enforced
 

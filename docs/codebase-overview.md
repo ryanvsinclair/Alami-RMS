@@ -341,6 +341,7 @@ Implemented capabilities:
   - `confirmed_at` + `due_at` timer fields set at confirm time (`due_at = confirmed_at + 30 minutes`)
   - post-confirm append action that adds new `KitchenOrderItem` rows onto the same `KitchenOrder`
   - existing ticket state surfaced in host workspace to prevent duplicate order creation
+  - host `Done/Paid` close action that closes both order and active table session
 - Kitchen workspace route `/service/kitchen` now renders confirmed open orders in FIFO order by `confirmed_at` (oldest first).
 - Kitchen queue now supports per-item lifecycle status updates (`pending`, `preparing`, `ready_to_serve`, `served`, `cancelled`) with immediate refresh after each change.
 - Kitchen queue now collapses orders from visible list when all items are terminal (`served`/`cancelled`) while keeping orders open until explicit close flow.

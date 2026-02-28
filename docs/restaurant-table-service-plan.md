@@ -1,6 +1,6 @@
 # Restaurant Table QR + Host/Kitchen Ops Plan (Restaurant-Only V1)
 
-Status: ACTIVE - RTS-00 through RTS-03 complete; RTS-04 in progress (a-c complete); RTS-05 pending
+Status: ACTIVE - RTS-00 through RTS-03 complete; RTS-04 in progress (a-e and g complete; f pending); RTS-05 pending
 Created: 2026-02-28
 Last Updated: 2026-02-28
 Primary Purpose: launch restaurant table service with QR routing, host order confirmation, and kitchen queue operations.
@@ -23,6 +23,12 @@ Primary Purpose: launch restaurant table service with QR routing, host order con
 Constitution source: `docs/execution-constitution.md`
 
 ## Latest Update
+
+- **2026-02-28 - RTS-04-g completed (host done/paid closes order + table session).**
+  - Added close service/action path to set `KitchenOrder.closed_at` and `TableSession.closed_at` together.
+  - Added host `Done/Paid` control to close active order/session from host workspace.
+  - Host workspace now reflects closed-order state and blocks post-close append/edit operations.
+  - Confirmed source `RTS-04-d` re-surface and `RTS-04-e` served-immutability are satisfied by existing terminal-collapse + append-only behavior.
 
 - **2026-02-28 - RTS-04-c completed (queue collapse on terminal-only items).**
   - Kitchen queue read path now hides orders where all items are terminal (`served`/`cancelled`).
@@ -135,7 +141,7 @@ Constitution source: `docs/execution-constitution.md`
 ## Pick Up Here
 
 - Current phase: `RTS-04`
-- Current task: `RTS-04-d`
+- Current task: `RTS-04-f`
 - Status: `[ ]` pending
 
 ## Scope
@@ -298,10 +304,10 @@ Before starting any checklist item in this plan:
 - [x] RTS-04-a: Render queue in FIFO order by confirmation timestamp.
 - [x] RTS-04-b: Add item status/actions for `pending`, `preparing`, `ready_to_serve`, `served`, and `cancelled`.
 - [x] RTS-04-c: Collapse order from visible queue when all items are terminal (`served`/`cancelled`) while keeping order open.
-- [ ] RTS-04-d: Re-surface collapsed order in queue when new items are appended post-confirm.
-- [ ] RTS-04-e: Keep already-served items immutable when new items are appended.
+- [x] RTS-04-d: Re-surface collapsed order in queue when new items are appended post-confirm.
+- [x] RTS-04-e: Keep already-served items immutable when new items are appended.
 - [ ] RTS-04-f: Overdue visual urgency without queue reordering.
-- [ ] RTS-04-g: Add explicit host close action (`done/paid`) that closes order and closes table session.
+- [x] RTS-04-g: Add explicit host close action (`done/paid`) that closes order and closes table session.
 
 ## RTS-05 - Profile mode toggle and launch hardening
 

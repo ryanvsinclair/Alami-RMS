@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   appendKitchenOrderItems,
+  closeKitchenOrderAndSession,
   confirmKitchenOrder,
 } from "@/app/actions/modules/table-service";
 import { Button } from "@/shared/ui/button";
@@ -72,6 +73,7 @@ export default function HostOrderComposerPageClient({
   const [draftItems, setDraftItems] = useState<DraftLineItem[]>([]);
   const [orderNotes, setOrderNotes] = useState("");
   const [confirming, setConfirming] = useState(false);
+  const [closing, setClosing] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
   const [confirmedOrder, setConfirmedOrder] = useState<TableServiceKitchenOrderSummary | null>(
@@ -122,10 +124,15 @@ export default function HostOrderComposerPageClient({
   }, [draftItems, itemsById]);
 
   const hasConfirmedOrder = confirmedOrder !== null;
+  const isOrderClosed = Boolean(confirmedOrder?.closedAt);
 
   function handleAddLine() {
     setError("");
     setSuccess("");
+    if (isOrderClosed) {
+      setError("Order is already closed.");
+      return;
+    }
     if (!selectedMenuItemId) {
       setError("Select a menu item first.");
       return;
@@ -166,6 +173,10 @@ export default function HostOrderComposerPageClient({
   async function handleSubmitOrder() {
     setError("");
     setSuccess("");
+    if (isOrderClosed) {
+      setError("Order is closed and cannot be edited.");
+      return;
+    }
 
     if (draftItems.length === 0) {
       setError(
@@ -214,6 +225,26 @@ export default function HostOrderComposerPageClient({
     }
   }
 
+  async function handleDonePaid() {
+    if (!confirmedOrder || isOrderClosed) return;
+    setError("");
+    setSuccess("");
+    setClosing(true);
+
+    try {
+      const closedOrder = (await closeKitchenOrderAndSession({
+        kitchenOrderId: confirmedOrder.id,
+      })) as TableServiceKitchenOrderSummary;
+      setConfirmedOrder(closedOrder);
+      setDraftItems([]);
+      setSuccess("Order and table session were closed with done/paid.");
+    } catch {
+      setError("Failed to close order and table session.");
+    } finally {
+      setClosing(false);
+    }
+  }
+
   return (
     <div className="space-y-4">
       <Card className="p-5">
@@ -256,6 +287,7 @@ export default function HostOrderComposerPageClient({
             <p>Order notes: {confirmedOrder.notes ?? "None"}</p>
             <p>Confirmed at: {formatDateTimeLabel(confirmedOrder.confirmedAt)}</p>
             <p>Due at: {formatDateTimeLabel(confirmedOrder.dueAt)}</p>
+            <p>Closed at: {formatDateTimeLabel(confirmedOrder.closedAt)}</p>
           </div>
           <div className="rounded-2xl border border-border px-4 py-3 text-sm text-muted space-y-1">
             {confirmedOrder.items.slice(-6).map((item) => {
@@ -271,8 +303,19 @@ export default function HostOrderComposerPageClient({
             )}
           </div>
           <p className="text-xs text-muted">
-            Post-confirm edits append new lines to this same ticket in `RTS-03-d`.
+            {isOrderClosed
+              ? "Order is closed. Start a new table session for additional orders."
+              : "Post-confirm edits append new lines to this same ticket in `RTS-03-d`."}
           </p>
+          {!isOrderClosed && (
+            <Button
+              onClick={handleDonePaid}
+              loading={closing}
+              className="w-full"
+            >
+              Done/Paid And Close Table Session
+            </Button>
+          )}
         </Card>
       )}
 
@@ -294,8 +337,9 @@ export default function HostOrderComposerPageClient({
               value={selectedMenuItemId}
               placeholder="Choose menu item"
               onChange={(event) => setSelectedMenuItemId(event.target.value)}
+              disabled={isOrderClosed}
             />
-            <Button onClick={handleAddLine} disabled={!selectedMenuItemId}>
+            <Button onClick={handleAddLine} disabled={!selectedMenuItemId || isOrderClosed}>
               Add Item Line
             </Button>
           </>
@@ -348,6 +392,7 @@ export default function HostOrderComposerPageClient({
                         quantity: event.target.value,
                       })
                     }
+                    disabled={isOrderClosed}
                   />
                   <Input
                     id={`${line.id}-notes`}
@@ -355,8 +400,14 @@ export default function HostOrderComposerPageClient({
                     placeholder="No onions"
                     value={line.notes}
                     onChange={(event) => updateLine(line.id, { notes: event.target.value })}
+                    disabled={isOrderClosed}
                   />
-                  <Button size="sm" variant="danger" onClick={() => removeLine(line.id)}>
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    onClick={() => removeLine(line.id)}
+                    disabled={isOrderClosed}
+                  >
                     Remove
                   </Button>
                 </div>
@@ -384,14 +435,20 @@ export default function HostOrderComposerPageClient({
           className="w-full"
           onClick={handleSubmitOrder}
           loading={confirming}
-          disabled={draftItems.length === 0}
+          disabled={draftItems.length === 0 || isOrderClosed}
         >
-          {hasConfirmedOrder ? "Append Items To Order" : "Confirm Order"}
+          {isOrderClosed
+            ? "Order Closed"
+            : hasConfirmedOrder
+              ? "Append Items To Order"
+              : "Confirm Order"}
         </Button>
         <p className="text-xs text-muted">
-          {hasConfirmedOrder
-            ? "Post-confirm edits append new item rows to the same kitchen order."
-            : "Confirm creates a kitchen ticket immediately and starts the 30-minute due timer."}
+          {isOrderClosed
+            ? "Done/paid has closed this order and table session."
+            : hasConfirmedOrder
+              ? "Post-confirm edits append new item rows to the same kitchen order."
+              : "Confirm creates a kitchen ticket immediately and starts the 30-minute due timer."}
         </p>
       </Card>
     </div>

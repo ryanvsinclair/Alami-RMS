@@ -20,6 +20,46 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - RTS-04-d completed: host done/paid closes order and session
+
+- Suggested Commit Title: `feat(rts-04): add host done-paid close for order and session`
+- Scope: RTS phase `RTS-04-d` (explicit close action).
+- Constitution Restatement:
+  - Task ID: `RTS-04-d`
+  - Scope sentence: add explicit host done/paid action that closes order and table session.
+  - Invariants confirmed: no auto-close on terminal-only items; close remains explicit host-triggered action; no destructive schema changes.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: structural host controls and status messaging only.
+- Deliverables:
+  - Added `closeKitchenOrderAndSession(...)` service path to atomically close order + table session.
+  - Added server action wrapper for close flow.
+  - Added host workspace `Done/Paid And Close Table Session` control.
+  - Host workspace now displays closed state and blocks append/edit after closure.
+  - Added close-input shared contract type.
+- Touched Files (single-entry log):
+  - `src/features/table-service/shared/table-service.contracts.ts` (updated)
+  - `src/features/table-service/server/order.service.ts` (updated)
+  - `app/actions/modules/table-service.ts` (updated)
+  - `src/features/table-service/ui/HostOrderComposerPageClient.tsx` (updated)
+  - `docs/restaurant-table-service-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx eslint "src/features/table-service/ui/HostOrderComposerPageClient.tsx" "src/features/table-service/server/order.service.ts" "app/actions/modules/table-service.ts" "src/features/table-service/shared/table-service.contracts.ts" "app/(dashboard)/service/kitchen/page.tsx" "src/features/table-service/ui/KitchenQueuePageClient.tsx"` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 4.
+  - Delta rationale: exact RTS-04-d scope (explicit close action and host wiring).
+- Unrelated-file check:
+  - Existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: pending (record after commit)
+  - Commit title: `feat(rts-04): add host done-paid close for order and session`
+
 ### 2026-02-28 - RTS-04-c completed: collapse queue when all items terminal
 
 - Suggested Commit Title: `feat(rts-04): collapse terminal-only orders from kitchen queue`

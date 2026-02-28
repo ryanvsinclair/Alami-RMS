@@ -2,6 +2,7 @@ import { serialize } from "@/domain/shared/serialize";
 import { prisma } from "@/server/db/prisma";
 import type {
   AppendKitchenOrderItemsInput,
+  CloseKitchenOrderInput,
   ConfirmKitchenOrderInput,
   KitchenOrderDraftItemInput,
   KitchenOrderItemStatusContract,
@@ -393,5 +394,55 @@ export async function updateKitchenOrderItemStatus(
   return serialize({
     id: updatedItem.id,
     status: updatedItem.status as KitchenOrderItemStatusContract,
+  });
+}
+
+export async function closeKitchenOrderAndSession(
+  businessId: string,
+  input: CloseKitchenOrderInput,
+) {
+  const kitchenOrderId = input.kitchenOrderId.trim();
+  if (!kitchenOrderId) {
+    throw new Error("Kitchen order id is required");
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const existingOrder = await tx.kitchenOrder.findFirst({
+      where: {
+        id: kitchenOrderId,
+        business_id: businessId,
+        closed_at: null,
+      },
+      include: {
+        items: {
+          orderBy: [{ created_at: "asc" }, { id: "asc" }],
+        },
+      },
+    });
+    if (!existingOrder) {
+      throw new Error("Active kitchen order not found");
+    }
+
+    const closedAt = new Date();
+    const closedOrder = await tx.kitchenOrder.update({
+      where: { id: existingOrder.id },
+      data: {
+        closed_at: closedAt,
+      },
+      include: {
+        items: {
+          orderBy: [{ created_at: "asc" }, { id: "asc" }],
+        },
+      },
+    });
+
+    await tx.tableSession.update({
+      where: { id: existingOrder.table_session_id },
+      data: {
+        closed_at: closedAt,
+      },
+    });
+
+    return serialize(toKitchenOrderSummary(closedOrder as KitchenOrderRecord));
   });
 }
