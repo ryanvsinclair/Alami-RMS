@@ -447,7 +447,7 @@ No additional missing plan docs were identified from the current chat scope afte
   - pre-existing unrelated local files remained untouched; this slice modified only canonical planning/changelog docs.
 - Dependency check: no new dependencies.
 - Env-var check: no new environment variables.
-- Commit checkpoint: pending (record after commit).
+- Commit checkpoint: `4490c7f` (`docs(img-launch): lock no-enrichment-run requirement for launch`).
 
 ### 2026-02-28 - IMG-L-00-b completed (IMG-01 storage/resolver wiring)
 
