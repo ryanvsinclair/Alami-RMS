@@ -1,6 +1,6 @@
 # Restaurant Table QR + Host/Kitchen Ops Plan (Restaurant-Only V1)
 
-Status: ACTIVE - RTS-00 through RTS-03 complete; RTS-04 in progress (a-e and g complete; f pending); RTS-05 pending
+Status: ACTIVE - RTS-00 through RTS-04 complete; RTS-05 pending
 Created: 2026-02-28
 Last Updated: 2026-02-28
 Primary Purpose: launch restaurant table service with QR routing, host order confirmation, and kitchen queue operations.
@@ -23,6 +23,11 @@ Primary Purpose: launch restaurant table service with QR routing, host order con
 Constitution source: `docs/execution-constitution.md`
 
 ## Latest Update
+
+- **2026-02-28 - RTS-04-f completed (overdue visual urgency without queue reorder).**
+  - Kitchen queue cards now surface overdue urgency label (`Xm overdue`) when `due_at` is past.
+  - Added overdue visual treatment on queue cards using existing danger tokens only.
+  - Preserved FIFO queue ordering by `confirmed_at`; no urgency-based reordering was introduced.
 
 - **2026-02-28 - RTS-04-g completed (host done/paid closes order + table session).**
   - Added close service/action path to set `KitchenOrder.closed_at` and `TableSession.closed_at` together.
@@ -140,8 +145,8 @@ Constitution source: `docs/execution-constitution.md`
 
 ## Pick Up Here
 
-- Current phase: `RTS-04`
-- Current task: `RTS-04-f`
+- Current phase: `RTS-05`
+- Current task: `RTS-05-a`
 - Status: `[ ]` pending
 
 ## Scope
@@ -243,7 +248,7 @@ This section is authoritative for RTS V1 Prisma modeling.
 - `RTS-01`: `[x]` completed
 - `RTS-02`: `[x]` completed
 - `RTS-03`: `[x]` completed
-- `RTS-04`: `[~]` in progress
+- `RTS-04`: `[x]` completed
 - `RTS-05`: `[ ]` pending
 
 ## Mandatory Restatement Before Phase Work
@@ -298,7 +303,7 @@ Before starting any checklist item in this plan:
 
 ## RTS-04 - Kitchen queue operations
 
-**Status:** `[~]` in progress
+**Status:** `[x]` completed
 
 - [x] RTS-04-0: Constitution restatement logged for this phase and no deviation required.
 - [x] RTS-04-a: Render queue in FIFO order by confirmation timestamp.
@@ -306,7 +311,7 @@ Before starting any checklist item in this plan:
 - [x] RTS-04-c: Collapse order from visible queue when all items are terminal (`served`/`cancelled`) while keeping order open.
 - [x] RTS-04-d: Re-surface collapsed order in queue when new items are appended post-confirm.
 - [x] RTS-04-e: Keep already-served items immutable when new items are appended.
-- [ ] RTS-04-f: Overdue visual urgency without queue reordering.
+- [x] RTS-04-f: Overdue visual urgency without queue reordering.
 - [x] RTS-04-g: Add explicit host close action (`done/paid`) that closes order and closes table session.
 
 ## RTS-05 - Profile mode toggle and launch hardening

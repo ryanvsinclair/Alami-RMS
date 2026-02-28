@@ -26,6 +26,22 @@ function formatDateTime(value: string | null) {
   return parsed.toLocaleString();
 }
 
+function parseDateMs(value: string | null) {
+  if (!value) return null;
+  const parsed = new Date(value).getTime();
+  if (Number.isNaN(parsed)) return null;
+  return parsed;
+}
+
+function getOverdueMinutesLabel(dueAt: string | null) {
+  const dueAtMs = parseDateMs(dueAt);
+  if (dueAtMs == null) return null;
+  const diffMs = Date.now() - dueAtMs;
+  if (diffMs <= 0) return null;
+  const minutes = Math.max(1, Math.floor(diffMs / 60000));
+  return `${minutes}m overdue`;
+}
+
 function toStatusLabel(status: KitchenOrderItemStatusContract) {
   return status.replace(/_/g, " ");
 }
@@ -113,58 +129,68 @@ export default function KitchenQueuePageClient({ initialQueue }: KitchenQueuePag
         {queue.length === 0 ? (
           <p className="text-sm text-muted">No confirmed orders in queue.</p>
         ) : (
-          queue.map((entry, index) => (
-            <div key={entry.orderId} className="rounded-2xl border border-border p-4 space-y-3">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-muted">
-                    Queue Position {index + 1}
-                  </p>
-                  <p className="text-lg font-semibold text-foreground">{entry.tableNumber}</p>
-                  <p className="text-xs text-muted">Order ID: {entry.orderId}</p>
-                </div>
-                <div className="text-right text-xs text-muted space-y-1">
-                  <p>Confirmed: {formatDateTime(entry.confirmedAt)}</p>
-                  <p>Due: {formatDateTime(entry.dueAt)}</p>
-                  <p>Items: {entry.itemCount}</p>
-                </div>
-              </div>
+          queue.map((entry, index) => {
+            const overdueLabel = getOverdueMinutesLabel(entry.dueAt);
 
-              {entry.orderNotes && (
-                <p className="text-sm text-muted">Notes: {entry.orderNotes}</p>
-              )}
-
-              <div className="rounded-2xl border border-border bg-foreground/[0.03] px-4 py-3 text-sm text-muted space-y-3">
-                {entry.items.map((item) => (
-                  <div key={item.id} className="rounded-xl border border-border/80 bg-card/30 p-3 space-y-2">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="font-semibold text-foreground">
-                          {item.menuItemName} x{item.quantity}
-                        </p>
-                        <p className="text-xs text-muted">
-                          Current status: {toStatusLabel(item.status)}
-                        </p>
-                        {item.notes && <p className="text-xs text-muted">Notes: {item.notes}</p>}
-                      </div>
-                    </div>
-                    <Select
-                      label="Set status"
-                      options={statusOptions}
-                      value={item.status}
-                      onChange={(event) =>
-                        void handleStatusChange(
-                          item.id,
-                          event.target.value as KitchenOrderItemStatusContract,
-                        )
-                      }
-                      disabled={updatingItemId === item.id}
-                    />
+            return (
+              <div
+                key={entry.orderId}
+                className={`rounded-2xl border p-4 space-y-3 ${
+                  overdueLabel ? "border-danger/40 bg-danger/5" : "border-border"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-muted">
+                      Queue Position {index + 1}
+                    </p>
+                    <p className="text-lg font-semibold text-foreground">{entry.tableNumber}</p>
+                    <p className="text-xs text-muted">Order ID: {entry.orderId}</p>
                   </div>
-                ))}
+                  <div className="text-right text-xs text-muted space-y-1">
+                    <p>Confirmed: {formatDateTime(entry.confirmedAt)}</p>
+                    <p>Due: {formatDateTime(entry.dueAt)}</p>
+                    {overdueLabel && <p className="font-semibold text-danger">{overdueLabel}</p>}
+                    <p>Items: {entry.itemCount}</p>
+                  </div>
+                </div>
+
+                {entry.orderNotes && (
+                  <p className="text-sm text-muted">Notes: {entry.orderNotes}</p>
+                )}
+
+                <div className="rounded-2xl border border-border bg-foreground/[0.03] px-4 py-3 text-sm text-muted space-y-3">
+                  {entry.items.map((item) => (
+                    <div key={item.id} className="rounded-xl border border-border/80 bg-card/30 p-3 space-y-2">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-semibold text-foreground">
+                            {item.menuItemName} x{item.quantity}
+                          </p>
+                          <p className="text-xs text-muted">
+                            Current status: {toStatusLabel(item.status)}
+                          </p>
+                          {item.notes && <p className="text-xs text-muted">Notes: {item.notes}</p>}
+                        </div>
+                      </div>
+                      <Select
+                        label="Set status"
+                        options={statusOptions}
+                        value={item.status}
+                        onChange={(event) =>
+                          void handleStatusChange(
+                            item.id,
+                            event.target.value as KitchenOrderItemStatusContract,
+                          )
+                        }
+                        disabled={updatingItemId === item.id}
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </Card>
     </main>

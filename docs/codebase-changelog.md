@@ -20,6 +20,41 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - RTS-04-e completed: overdue urgency visuals without queue reorder
+
+- Suggested Commit Title: `feat(rts-04): add overdue urgency visuals without queue reorder`
+- Scope: RTS phase `RTS-04-e` (overdue urgency rendering only).
+- Constitution Restatement:
+  - Task ID: `RTS-04-e`
+  - Scope sentence: display overdue urgency state in kitchen queue while preserving FIFO ordering.
+  - Invariants confirmed: queue ordering remains confirmation-based; no mutation of order/item states in this slice; no new design token system introduced.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: structural urgency treatment only, using existing danger tokens.
+- Deliverables:
+  - Added overdue helper derivation for elapsed minutes past `due_at`.
+  - Added overdue label (`Xm overdue`) in queue metadata.
+  - Added overdue card urgency styling while preserving queue order.
+- Touched Files (single-entry log):
+  - `src/features/table-service/ui/KitchenQueuePageClient.tsx` (updated)
+  - `docs/restaurant-table-service-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx eslint "src/features/table-service/ui/KitchenQueuePageClient.tsx" "app/(dashboard)/service/kitchen/page.tsx" "src/features/table-service/server/order.service.ts" "app/actions/modules/table-service.ts" "src/features/table-service/ui/HostOrderComposerPageClient.tsx" "src/features/table-service/shared/table-service.contracts.ts"` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 1.
+  - Delta rationale: exact RTS-04-e scope (overdue urgency display without reordering).
+- Unrelated-file check:
+  - Existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: pending (record after commit)
+  - Commit title: `feat(rts-04): add overdue urgency visuals without queue reorder`
+
 ### 2026-02-28 - RTS-04-d completed: host done/paid closes order and session
 
 - Suggested Commit Title: `feat(rts-04): add host done-paid close for order and session`

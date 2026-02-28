@@ -180,10 +180,10 @@ Use `Canonical Order Checklist` statuses as source of truth.
 Current snapshot (2026-02-28):
 
 - Launch-critical checklist items total: `50`
-- Launch-critical `[x]`: `34`
+- Launch-critical `[x]`: `35`
 - Launch-critical `[~]`: `0`
-- Strict completion: `68.00%`
-- Weighted progress: `68.00%`
+- Strict completion: `70.00%`
+- Weighted progress: `70.00%`
 - Parked post-launch checklist items (DI): `7` (excluded from launch completion %)
 
 Update rule after each slice:
@@ -226,11 +226,11 @@ Parked stream:
 
 ## Last Left Off Here
 
-- Current task ID: `RTS-04-e`
-- Current task: `Overdue visual urgency without queue reorder`
+- Current task ID: `RTS-05-a`
+- Current task: `Host/Kitchen mode toggle in profile`
 - Status: `NOT STARTED`
 - Last updated: `2026-02-28`
-- Note: RTS-04-d host done/paid close flow completed; continue deterministic order with RTS-04-e.
+- Note: RTS-04 phase completed through overdue urgency rendering; continue deterministic order with RTS-05-a.
 
 ## Canonical Order Checklist
 
@@ -315,7 +315,7 @@ Plan doc: `docs/restaurant-table-service-plan.md`
 - [x] RTS-04-b: Item status lifecycle includes `pending`, `preparing`, `ready_to_serve`, `served`, `cancelled`
 - [x] RTS-04-c: Collapse order from queue when all items are terminal (`served`/`cancelled`) while keeping order open
 - [x] RTS-04-d: Host `done/paid` action closes order and closes table session
-- [ ] RTS-04-e: Overdue visual urgency without queue reordering
+- [x] RTS-04-e: Overdue visual urgency without queue reordering
 
 #### Phase RTS-05 - Profile mode toggle and launch hardening
 
@@ -417,10 +417,41 @@ No additional missing plan docs were identified from the current chat scope afte
 ## Completion Snapshot
 
 - Launch-critical initiatives active: `5` (RPK, RTS, IMG-L, UX-L, LG)
-- Launch-critical items complete: `34`
+- Launch-critical items complete: `35`
 - Parked post-launch initiatives: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - RTS-04-e overdue urgency styling added without queue reorder
+
+- Constitution Restatement:
+  - Task ID: `RTS-04-e`
+  - Scope: add overdue urgency visual treatment in kitchen queue without changing FIFO order.
+  - Invariants confirmed: queue ordering remains `confirmed_at` FIFO; urgency cues are display-only; no status/closure side effects introduced.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: structural urgency styling only using existing token palette.
+- Preflight evidence:
+  - `Get-Content docs/restaurant-table-service-plan.md`
+  - `Get-Content src/features/table-service/ui/KitchenQueuePageClient.tsx`
+  - `Get-Content src/features/table-service/server/order.service.ts`
+  - `rg -n "overdue|due_at|FIFO|queue reorder|RTS-04-e" src/features/table-service app docs/restaurant-table-service-plan.md docs/master-plan-v2.md --glob '!**/generated/**'`
+- Implementation:
+  - Added overdue time-label derivation (`Xm overdue`) in `KitchenQueuePageClient`.
+  - Added overdue card urgency classes (`border-danger/40`, `bg-danger/5`) when `due_at` is past.
+  - Kept rendering order unchanged (array order from FIFO queue source is preserved).
+- Validation:
+  - `npx eslint "src/features/table-service/ui/KitchenQueuePageClient.tsx" "app/(dashboard)/service/kitchen/page.tsx" "src/features/table-service/server/order.service.ts" "app/actions/modules/table-service.ts" "src/features/table-service/ui/HostOrderComposerPageClient.tsx" "src/features/table-service/shared/table-service.contracts.ts"` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 1 (kitchen queue client overdue urgency rendering)
+  - changed docs: source/master/overview/changelog sync
+  - proportionality reason: exactly scoped to RTS-04-e urgency styling behavior.
+- Unrelated-file check:
+  - pre-existing unrelated local files remained untouched; this slice modified only RTS-04-e scope files plus required canonical docs.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+- Commit checkpoint: pending (record after commit).
 
 ### 2026-02-28 - RTS-04-d host done/paid close flow implemented
 

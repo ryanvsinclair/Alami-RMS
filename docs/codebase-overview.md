@@ -345,6 +345,7 @@ Implemented capabilities:
 - Kitchen workspace route `/service/kitchen` now renders confirmed open orders in FIFO order by `confirmed_at` (oldest first).
 - Kitchen queue now supports per-item lifecycle status updates (`pending`, `preparing`, `ready_to_serve`, `served`, `cancelled`) with immediate refresh after each change.
 - Kitchen queue now collapses orders from visible list when all items are terminal (`served`/`cancelled`) while keeping orders open until explicit close flow.
+- Kitchen queue now shows overdue urgency styling/labels when `due_at` is past, without changing FIFO ordering.
 
 Canonical paths:
 
