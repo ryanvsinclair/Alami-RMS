@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { signUpAction } from "@/app/actions/core/auth";
 import { INDUSTRY_LABELS, INDUSTRY_TYPES } from "@/lib/config/presets";
+import { RestaurantPlaceSearch } from "./RestaurantPlaceSearch";
 
 const INDUSTRY_CARD_NOTES: Record<(typeof INDUSTRY_TYPES)[number], string> = {
   restaurant: "POS + delivery source suggestions",
@@ -73,62 +74,7 @@ export default async function SignupPage({
           </div>
           <p className="text-xs text-muted/80">We use this to set module defaults and terminology.</p>
         </div>
-        <div className="space-y-2 rounded-2xl border border-border/70 bg-foreground/[0.02] p-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-            Restaurant place (optional)
-          </p>
-          <p className="text-xs text-muted/80">
-            If you selected Restaurant, you can attach Google Place metadata now or skip and add it later.
-          </p>
-          <div className="space-y-1.5">
-            <label htmlFor="google_place_id" className="text-xs font-semibold uppercase tracking-wide text-muted">
-              Google Place ID
-            </label>
-            <input
-              id="google_place_id"
-              name="google_place_id"
-              className="h-11 w-full rounded-2xl border border-border bg-foreground/[0.04] px-4 text-foreground placeholder:text-muted/70 outline-none focus:ring-2 focus:ring-primary/30"
-              placeholder="Optional place id"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <label htmlFor="formatted_address" className="text-xs font-semibold uppercase tracking-wide text-muted">
-              Address
-            </label>
-            <input
-              id="formatted_address"
-              name="formatted_address"
-              className="h-11 w-full rounded-2xl border border-border bg-foreground/[0.04] px-4 text-foreground placeholder:text-muted/70 outline-none focus:ring-2 focus:ring-primary/30"
-              placeholder="Optional formatted address"
-            />
-          </div>
-          <div className="grid gap-2 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <label htmlFor="place_latitude" className="text-xs font-semibold uppercase tracking-wide text-muted">
-                Latitude
-              </label>
-              <input
-                id="place_latitude"
-                name="place_latitude"
-                inputMode="decimal"
-                className="h-11 w-full rounded-2xl border border-border bg-foreground/[0.04] px-4 text-foreground placeholder:text-muted/70 outline-none focus:ring-2 focus:ring-primary/30"
-                placeholder="Optional"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label htmlFor="place_longitude" className="text-xs font-semibold uppercase tracking-wide text-muted">
-                Longitude
-              </label>
-              <input
-                id="place_longitude"
-                name="place_longitude"
-                inputMode="decimal"
-                className="h-11 w-full rounded-2xl border border-border bg-foreground/[0.04] px-4 text-foreground placeholder:text-muted/70 outline-none focus:ring-2 focus:ring-primary/30"
-                placeholder="Optional"
-              />
-            </div>
-          </div>
-        </div>
+        <RestaurantPlaceSearch />
         <div className="space-y-1.5">
           <label htmlFor="password" className="text-xs font-semibold uppercase tracking-wide text-muted">
             Password

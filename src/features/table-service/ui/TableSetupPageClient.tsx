@@ -13,6 +13,7 @@ import {
   updateDiningTable,
 } from "@/app/actions/modules/table-service";
 import type { TableServiceDiningTableSummary } from "@/features/table-service/shared";
+import { TableQrModal } from "./TableQrModal";
 
 type DiningTable = TableServiceDiningTableSummary;
 
@@ -25,6 +26,7 @@ export default function TableSetupPageClient() {
   const [newTableNumber, setNewTableNumber] = useState("");
   const [editingTableId, setEditingTableId] = useState<string | null>(null);
   const [editingTableNumber, setEditingTableNumber] = useState("");
+  const [qrTable, setQrTable] = useState<DiningTable | null>(null);
 
   const [origin, setOrigin] = useState("");
 
@@ -190,6 +192,13 @@ export default function TableSetupPageClient() {
                         <Button
                           size="sm"
                           variant="secondary"
+                          onClick={() => setQrTable(table)}
+                        >
+                          View QR
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
                           onClick={() => {
                             setEditingTableId(table.id);
                             setEditingTableNumber(table.tableNumber);
@@ -241,6 +250,14 @@ export default function TableSetupPageClient() {
           })
         )}
       </Card>
+
+      {qrTable && origin && (
+        <TableQrModal
+          tableNumber={qrTable.tableNumber}
+          scanUrl={`${origin}/scan/t/${qrTable.qrToken}`}
+          onClose={() => setQrTable(null)}
+        />
+      )}
     </div>
   );
 }

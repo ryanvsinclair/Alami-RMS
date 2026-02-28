@@ -323,6 +323,7 @@ Plan doc: `docs/restaurant-table-service-plan.md`
 - [x] RTS-05-b: Kitchen mode auto-redirects `/` to kitchen queue
 - [x] RTS-05-c: Add explicit temporary note for future role-based refactor
 - [x] RTS-05-d: Launch smoke tests for QR/host/kitchen core loop
+- [x] RTS-05-e: Add host/kitchen workspace exit control that clears mode and returns to app home
 
 ### Initiative IMG-L - Launch Slice from Item Image Enrichment
 
@@ -1161,6 +1162,42 @@ No additional missing plan docs were identified from the current chat scope afte
 - Dependency check: no new dependencies.
 - Env-var check: no new environment variables.
 - Commit checkpoint: `735adf3` (`feat(img-00): add item image schema and shared contracts baseline`).
+
+### 2026-02-28 - RTS-05-e workspace exit control added for host/kitchen modes
+
+- Constitution Restatement:
+  - Task ID: `RTS-05-e`
+  - Scope: add explicit workspace exit controls in host/kitchen surfaces to clear temporary mode preference and route back to app home.
+  - Invariants confirmed: temporary mode toggle remains preference-only; no role/permission redesign; no schema/env changes.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: structural-only header control additions using existing tokens/components.
+- Preflight evidence:
+  - `Get-Content docs/restaurant-table-service-plan.md`
+  - `Get-Content src/features/table-service/ui/KitchenQueuePageClient.tsx`
+  - `Get-Content src/features/table-service/ui/HostOrderComposerPageClient.tsx`
+  - `Get-Content src/features/table-service/ui/TableServiceModeToggleCard.tsx`
+  - `rg -n "TABLE_SERVICE_WORKSPACE_MODE_STORAGE_KEY|ExitServiceModeButton|workspace mode|service/host|service/kitchen" src/features/table-service docs/master-plan-v2.md docs/restaurant-table-service-plan.md`
+- Implementation:
+  - Added `src/features/table-service/ui/ExitServiceModeButton.tsx` client control.
+  - Exit action now clears `TABLE_SERVICE_WORKSPACE_MODE_STORAGE_KEY` from local storage and routes to `/`.
+  - Wired `ExitServiceModeButton` into both workspace headers:
+    - `src/features/table-service/ui/HostOrderComposerPageClient.tsx`
+    - `src/features/table-service/ui/KitchenQueuePageClient.tsx`
+  - Added launch-smoke coverage for exit-control behavior/wiring:
+    - `src/features/table-service/shared/table-service.launch-smoke.test.ts`
+- Validation:
+  - `npx eslint src/features/table-service/ui/ExitServiceModeButton.tsx src/features/table-service/ui/KitchenQueuePageClient.tsx src/features/table-service/ui/HostOrderComposerPageClient.tsx src/features/table-service/shared/table-service.launch-smoke.test.ts` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts src/features/table-service/shared/table-service.launch-smoke.test.ts` -> PASS
+- Diff proportionality:
+  - changed runtime files: 3 (new exit control + host/kitchen header wiring)
+  - changed test files: 1 (launch smoke assertion expansion)
+  - changed docs: source/master/overview/changelog sync
+  - proportionality reason: exactly scoped to RTS-05-e exit-mode capability.
+- Unrelated-file check:
+  - pre-existing unrelated local files remained untouched; this slice modified only RTS-05-e scope files plus required canonical docs.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+- Commit checkpoint: pending local commit (not created in this session).
 
 ### 2026-02-28 - RTS-05-d launch smoke suite added and executed
 

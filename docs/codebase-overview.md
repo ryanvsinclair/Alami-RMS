@@ -447,6 +447,7 @@ Implemented capabilities:
 - Kitchen queue now shows overdue urgency styling/labels when `due_at` is past, without changing FIFO ordering.
 - Profile page now includes table-service launch mode toggle (`Host` / `Kitchen`) for restaurant businesses with `table_service` enabled.
 - Home route now auto-redirects restaurant users to `/service/kitchen` when profile mode is set to `Kitchen`.
+- Host and kitchen workspace headers now include `Exit to App`, which clears the launch-mode local-storage key and routes to `/`.
 - Table-service launch smoke coverage now lives in `src/features/table-service/shared/table-service.launch-smoke.test.ts`.
 
 Canonical paths:
@@ -463,6 +464,7 @@ Canonical paths:
 - `src/features/table-service/server/menu.service.ts`
 - `src/features/table-service/server/order.service.ts`
 - `src/features/table-service/ui/KitchenQueuePageClient.tsx`
+- `src/features/table-service/ui/ExitServiceModeButton.tsx`
 - `src/features/table-service/server/table.service.ts`
 - `src/features/table-service/ui/HostOrderComposerPageClient.tsx`
 - `src/features/table-service/ui/MenuSetupPageClient.tsx`

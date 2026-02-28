@@ -20,6 +20,50 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - RTS-05-e completed: host/kitchen workspace exit control
+
+- Suggested Commit Title: `feat(rts-05): add host-kitchen workspace exit control`
+- Scope: RTS phase `RTS-05-e` (explicit exit flow for temporary workspace mode).
+- Constitution Restatement:
+  - Task ID: `RTS-05-e`
+  - Scope sentence: add an explicit exit action in host and kitchen workspaces that clears temporary mode preference and routes users back to `/`.
+  - Invariants confirmed: launch-mode toggle remains preference-only; no role-model redesign, schema change, or env change.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: structural-only header control additions using existing style tokens.
+- Deliverables:
+  - Added reusable exit control:
+    - `src/features/table-service/ui/ExitServiceModeButton.tsx`
+  - Wired exit control into workspace headers:
+    - `src/features/table-service/ui/HostOrderComposerPageClient.tsx`
+    - `src/features/table-service/ui/KitchenQueuePageClient.tsx`
+  - Added launch-smoke coverage for exit wiring:
+    - `src/features/table-service/shared/table-service.launch-smoke.test.ts`
+  - Synced RTS source/master/overview/changelog docs.
+- Touched Files (single-entry log):
+  - `src/features/table-service/ui/ExitServiceModeButton.tsx` (added)
+  - `src/features/table-service/ui/HostOrderComposerPageClient.tsx` (updated)
+  - `src/features/table-service/ui/KitchenQueuePageClient.tsx` (updated)
+  - `src/features/table-service/shared/table-service.launch-smoke.test.ts` (updated)
+  - `docs/restaurant-table-service-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx eslint src/features/table-service/ui/ExitServiceModeButton.tsx src/features/table-service/ui/KitchenQueuePageClient.tsx src/features/table-service/ui/HostOrderComposerPageClient.tsx src/features/table-service/shared/table-service.launch-smoke.test.ts` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts src/features/table-service/shared/table-service.launch-smoke.test.ts` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 3
+  - Changed tests: 1
+  - Changed docs: 4
+  - Delta rationale: exact RTS-05-e scope (workspace exit control + launch-smoke assertion + canonical doc sync).
+- Unrelated-file check:
+  - Pre-existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: pending local commit
+  - Commit title: `feat(rts-05): add host-kitchen workspace exit control`
+
 ### 2026-02-28 - DI-06 completed: analytics and insights layer
 
 - Suggested Commit Title: `feat(di-06): add document analytics layer services ui and tests`

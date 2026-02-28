@@ -24,6 +24,12 @@ Constitution source: `docs/execution-constitution.md`
 
 ## Latest Update
 
+- **2026-02-28 - RTS-05-e completed (host/kitchen workspace exit control).**
+  - Added a reusable workspace-exit control component at `src/features/table-service/ui/ExitServiceModeButton.tsx`.
+  - Host and kitchen workspace headers now include `Exit to App`.
+  - Exit action clears `TABLE_SERVICE_WORKSPACE_MODE_STORAGE_KEY` from local storage and routes to `/`.
+  - Added launch-smoke coverage for exit wiring in `src/features/table-service/shared/table-service.launch-smoke.test.ts`.
+
 - **2026-02-28 - RTS-05-d completed (launch smoke coverage for QR/host/kitchen loop).**
   - Added launch smoke test suite at `src/features/table-service/shared/table-service.launch-smoke.test.ts`.
   - Smoke coverage includes route presence, queue lifecycle collapse/resurface contract, timer window contract, and mode-toggle/redirect wiring checks.
@@ -183,6 +189,7 @@ In scope for V1:
 - kitchen queue with item actions (`pending`, `preparing`, `ready_to_serve`, `served`, `cancelled`)
 - 30-minute visual healthy-time timer
 - profile Host/Kitchen mode toggle + kitchen home redirect
+- explicit host/kitchen workspace exit control (clear mode + return to `/`)
 
 Out of scope for V1:
 
@@ -195,6 +202,7 @@ Out of scope for V1:
 
 - Profile mode toggle (`Host` / `Kitchen`) controls workflow emphasis.
 - Kitchen mode auto-redirects restaurant users from `/` to `/service/kitchen`.
+- Host and kitchen workspaces must expose an explicit exit control that clears mode and routes to `/`.
 - Explicit future refactor note must remain visible in code/docs: this is workflow preference, not long-term authorization.
 
 ## QR Routing Model
@@ -346,6 +354,7 @@ Before starting any checklist item in this plan:
 - [x] RTS-05-b: In Kitchen mode, redirect `/` to `/service/kitchen`.
 - [x] RTS-05-c: Add explicit note that this mode toggle is temporary until role model refactor.
 - [x] RTS-05-d: Run launch smoke suite for QR split, host flow, kitchen flow, and queue lifecycle.
+- [x] RTS-05-e: Add host/kitchen workspace exit control that clears mode and returns to app home.
 
 ## Validation Gate (Expanded)
 

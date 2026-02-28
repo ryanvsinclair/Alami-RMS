@@ -18,6 +18,7 @@ import type {
   TableServiceMenuItemSummary,
   TableServiceSessionSummary,
 } from "@/features/table-service/shared";
+import { ExitServiceModeButton } from "./ExitServiceModeButton";
 
 type DraftLineItem = {
   id: string;
@@ -248,18 +249,21 @@ export default function HostOrderComposerPageClient({
   return (
     <div className="space-y-4">
       <Card className="p-5">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-xs uppercase tracking-wide text-muted">Host Workspace</p>
-          <div className="flex items-center gap-3 text-xs font-semibold">
-            <Link href="/service/menu" className="text-primary hover:underline">
-              Menu Setup
-            </Link>
-            <Link href="/service/tables" className="text-primary hover:underline">
-              Table Setup
-            </Link>
-            <Link href="/service/kitchen" className="text-primary hover:underline">
-              Kitchen Queue
-            </Link>
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            <div className="flex flex-wrap items-center gap-3 text-xs font-semibold">
+              <Link href="/service/menu" className="text-primary hover:underline">
+                Menu Setup
+              </Link>
+              <Link href="/service/tables" className="text-primary hover:underline">
+                Table Setup
+              </Link>
+              <Link href="/service/kitchen" className="text-primary hover:underline">
+                Kitchen Queue
+              </Link>
+            </div>
+            <ExitServiceModeButton />
           </div>
         </div>
         <h1 className="mt-1 text-xl font-bold text-foreground">{table.tableNumber}</h1>

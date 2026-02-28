@@ -60,6 +60,27 @@ test("launch smoke: profile mode toggle wiring uses shared storage key and kitch
   assert.equal(typeof TABLE_SERVICE_WORKSPACE_MODE_STORAGE_KEY, "string");
 });
 
+test("launch smoke: host and kitchen workspaces expose exit action to clear mode and return home", () => {
+  const exitButton = fs.readFileSync(
+    path.join(repoRoot, "src/features/table-service/ui/ExitServiceModeButton.tsx"),
+    "utf8",
+  );
+  const hostComposer = fs.readFileSync(
+    path.join(repoRoot, "src/features/table-service/ui/HostOrderComposerPageClient.tsx"),
+    "utf8",
+  );
+  const kitchenQueueClient = fs.readFileSync(
+    path.join(repoRoot, "src/features/table-service/ui/KitchenQueuePageClient.tsx"),
+    "utf8",
+  );
+
+  assert.match(exitButton, /TABLE_SERVICE_WORKSPACE_MODE_STORAGE_KEY/);
+  assert.match(exitButton, /localStorage\.removeItem/);
+  assert.match(exitButton, /router\.replace\("\/"\)/);
+  assert.match(hostComposer, /<ExitServiceModeButton/);
+  assert.match(kitchenQueueClient, /<ExitServiceModeButton/);
+});
+
 test("launch smoke: scan router uses session-aware actor split (member->host, guest->public)", () => {
   const scanRouter = fs.readFileSync(path.join(repoRoot, "app/scan/t/[token]/page.tsx"), "utf8");
 

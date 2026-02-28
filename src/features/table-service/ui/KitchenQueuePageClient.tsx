@@ -14,6 +14,7 @@ import {
   type KitchenOrderItemStatusContract,
   type TableServiceKitchenQueueEntry,
 } from "@/features/table-service/shared";
+import { ExitServiceModeButton } from "./ExitServiceModeButton";
 
 interface KitchenQueuePageClientProps {
   initialQueue: TableServiceKitchenQueueEntry[];
@@ -95,15 +96,18 @@ export default function KitchenQueuePageClient({ initialQueue }: KitchenQueuePag
   return (
     <main className="mx-auto max-w-4xl p-4 pt-8 space-y-4">
       <Card className="p-5">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-xs uppercase tracking-wide text-muted">Kitchen Workspace</p>
-          <div className="flex items-center gap-3 text-xs font-semibold">
-            <Link href="/service/host" className="text-primary hover:underline">
-              Host Workspace
-            </Link>
-            <Link href="/service/tables" className="text-primary hover:underline">
-              Table Setup
-            </Link>
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            <div className="flex flex-wrap items-center gap-3 text-xs font-semibold">
+              <Link href="/service/host" className="text-primary hover:underline">
+                Host Workspace
+              </Link>
+              <Link href="/service/tables" className="text-primary hover:underline">
+                Table Setup
+              </Link>
+            </div>
+            <ExitServiceModeButton />
           </div>
         </div>
         <h1 className="mt-1 text-xl font-bold text-foreground">Kitchen Queue</h1>
