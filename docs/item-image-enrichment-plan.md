@@ -1,12 +1,17 @@
 ﻿# Item Image Enrichment Plan
 
 Last updated: February 28, 2026
-Status: ACTIVE - launch slice IMG-00/IMG-01 complete; IMG-02/IMG-03 post-launch queue
+Status: LAUNCH SLICE COMPLETE - IMG-00/IMG-01 done; IMG-02/IMG-03 post-launch queue
 Constitution source: `docs/execution-constitution.md`
 
 ---
 
 ## Latest Update
+
+- **2026-02-28 - Launch deferral lock confirmed (IMG-L-00-c).**
+  - Confirmed launch completion does not require running IMG-02 PLU enrichment or IMG-03 barcode mirror jobs.
+  - Confirmed no requirement to pre-populate produce images before launch gate.
+  - Kept IMG-02/IMG-03 explicitly queued as post-launch work.
 
 - **2026-02-28 - IMG-01 completed (storage service + resolver wiring).**
   - Added image storage service at `src/features/inventory/server/item-image-storage.service.ts`.
@@ -50,9 +55,9 @@ Constitution source: `docs/execution-constitution.md`
 
 ## Pick Up Here
 
-Launch path: **complete** for launch scope (IMG-00 + IMG-01).
+Launch path: **complete** for launch scope (IMG-00 + IMG-01 + launch deferral lock).
 
-Post-launch path: continue with IMG-02 and IMG-03.
+Post-launch path: resume at IMG-02, then IMG-03.
 
 ---
 

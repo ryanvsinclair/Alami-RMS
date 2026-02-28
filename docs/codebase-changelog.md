@@ -20,6 +20,38 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - IMG-L-00-c completed: launch enrichment deferral lock
+
+- Suggested Commit Title: `docs(img-launch): lock no-enrichment-run requirement for launch`
+- Scope: IMG launch phase `IMG-L-00-c` (launch does not require enrichment runs/pre-populated produce images).
+- Constitution Restatement:
+  - Task ID: `IMG-L-00-c`
+  - Scope sentence: formalize and checkpoint launch deferral for IMG-02/IMG-03 enrichment execution.
+  - Invariants confirmed: no runtime/schema changes; IMG-02/IMG-03 remain queued for post-launch.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: not a UI-touching slice.
+- Deliverables:
+  - Marked `IMG-L-00-c` complete in master checklist.
+  - Updated image-enrichment source plan status to `LAUNCH SLICE COMPLETE`.
+  - Explicitly reaffirmed that launch does not require IMG-02/IMG-03 runs or pre-populated produce imagery.
+  - Advanced canonical pickup pointer to `UX-L-00-a`.
+- Touched Files (single-entry log):
+  - `docs/item-image-enrichment-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 0.
+  - Delta rationale: exact IMG-L-00-c documentation/control closure scope.
+- Unrelated-file check:
+  - Existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: pending (record after commit)
+  - Commit title: `docs(img-launch): lock no-enrichment-run requirement for launch`
+
 ### 2026-02-28 - IMG-L-00-b completed: IMG-01 storage/resolver wiring
 
 - Suggested Commit Title: `feat(img-01): add item image resolver and storage services`

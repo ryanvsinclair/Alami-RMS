@@ -180,10 +180,10 @@ Use `Canonical Order Checklist` statuses as source of truth.
 Current snapshot (2026-02-28):
 
 - Launch-critical checklist items total: `50`
-- Launch-critical `[x]`: `41`
+- Launch-critical `[x]`: `42`
 - Launch-critical `[~]`: `0`
-- Strict completion: `82.00%`
-- Weighted progress: `82.00%`
+- Strict completion: `84.00%`
+- Weighted progress: `84.00%`
 - Parked post-launch checklist items (DI): `7` (excluded from launch completion %)
 
 Update rule after each slice:
@@ -226,11 +226,11 @@ Parked stream:
 
 ## Last Left Off Here
 
-- Current task ID: `IMG-L-00-c`
-- Current task: `IMG launch deferral lock for enrichment runs`
+- Current task ID: `UX-L-00-a`
+- Current task: `UX launch shared primitives implementation`
 - Status: `NOT STARTED`
 - Last updated: `2026-02-28`
-- Note: IMG-L-00-b is complete and checkpointed; continue deterministic order with IMG-L-00-c.
+- Note: IMG launch slice is complete through IMG-L-00-c; continue deterministic order into UX launch slice.
 
 ## Canonical Order Checklist
 
@@ -332,7 +332,7 @@ Launch scope only:
 
 - [x] IMG-L-00-a: Complete IMG-00 schema/contracts
 - [x] IMG-L-00-b: Complete IMG-01 resolver/storage service
-- [ ] IMG-L-00-c: Launch does not require enrichment runs or pre-populated produce images
+- [x] IMG-L-00-c: Launch does not require enrichment runs or pre-populated produce images
 
 Deferred post-launch:
 
@@ -417,10 +417,37 @@ No additional missing plan docs were identified from the current chat scope afte
 ## Completion Snapshot
 
 - Launch-critical initiatives active: `5` (RPK, RTS, IMG-L, UX-L, LG)
-- Launch-critical items complete: `41`
+- Launch-critical items complete: `42`
 - Parked post-launch initiatives: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - IMG-L-00-c completed (launch enrichment deferral lock)
+
+- Constitution Restatement:
+  - Task ID: `IMG-L-00-c`
+  - Scope: lock launch contract that IMG-02/IMG-03 enrichment runs and pre-populated produce images are not required for launch.
+  - Invariants confirmed: no runtime/schema changes; post-launch IMG-02/IMG-03 scope remains queued.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: not a UI-touching slice.
+- Preflight evidence:
+  - `Get-Content docs/item-image-enrichment-plan.md`
+  - `rg -n "launch requires IMG-00 and IMG-01 only|No IMG-02/IMG-03|no requirement to pre-populate|IMG-02|IMG-03" docs/item-image-enrichment-plan.md docs/master-plan-v2.md`
+- Implementation:
+  - Marked `IMG-L-00-c` complete in master checklist.
+  - Updated IMG source plan status and latest update to explicitly lock launch deferral for IMG-02/IMG-03 runs.
+  - Advanced canonical pickup pointer to `UX-L-00-a` based on sequence gates.
+- Validation:
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 0
+  - changed docs: source/master/changelog sync
+  - proportionality reason: IMG-L-00-c is a documentation/control checkpoint with no runtime implementation changes.
+- Unrelated-file check:
+  - pre-existing unrelated local files remained untouched; this slice modified only canonical planning/changelog docs.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+- Commit checkpoint: pending (record after commit).
 
 ### 2026-02-28 - IMG-L-00-b completed (IMG-01 storage/resolver wiring)
 
