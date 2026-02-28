@@ -72,7 +72,7 @@ Companion overview: `docs/codebase-overview.md`
 - Dependency change check: no new dependencies added.
 - Env-var change check: no new env vars introduced.
 - Commit checkpoint:
-  - Commit hash: pending (record after commit)
+  - Commit hash: `804b3eb`
   - Commit title: `feat(img-01): add item image resolver and storage services`
 
 ### 2026-02-28 - IMG-L-00-a completed: IMG-00 schema/contracts baseline

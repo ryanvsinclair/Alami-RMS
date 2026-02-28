@@ -466,7 +466,7 @@ No additional missing plan docs were identified from the current chat scope afte
   - pre-existing unrelated local files remained untouched; this slice modified only IMG-L-00-b scope files plus required canonical docs.
 - Dependency check: no new dependencies.
 - Env-var check: no new environment variables.
-- Commit checkpoint: pending (record after commit).
+- Commit checkpoint: `804b3eb` (`feat(img-01): add item image resolver and storage services`).
 
 ### 2026-02-28 - IMG-L-00-a completed (IMG-00 schema/contracts baseline)
 
