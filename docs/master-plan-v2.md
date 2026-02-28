@@ -447,7 +447,7 @@ No additional missing plan docs were identified from the current chat scope afte
   - pre-existing unrelated local files remained untouched; this slice modified only canonical planning/changelog docs.
 - Dependency check: no new dependencies.
 - Env-var check: no new environment variables.
-- Commit checkpoint: pending (record after commit).
+- Commit checkpoint: `0f251c8` (`docs(ux-launch): lock post-launch defer scope for ux-01+`).
 
 ### 2026-02-28 - UX-L-00-b completed (launch-surface primitive wiring)
 

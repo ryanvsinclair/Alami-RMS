@@ -48,7 +48,7 @@ Companion overview: `docs/codebase-overview.md`
 - Dependency change check: no new dependencies added.
 - Env-var change check: no new env vars introduced.
 - Commit checkpoint:
-  - Commit hash: pending (record after commit)
+  - Commit hash: `0f251c8`
   - Commit title: `docs(ux-launch): lock post-launch defer scope for ux-01+`
 
 ### 2026-02-28 - UX-L-00-b completed: launch-surface primitive wiring
