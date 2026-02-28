@@ -463,7 +463,7 @@ No additional missing plan docs were identified from the current chat scope afte
   - pre-existing unrelated local files remained untouched; this slice modified only IMG-L-00-a scope files plus required canonical docs.
 - Dependency check: no new dependencies.
 - Env-var check: no new environment variables.
-- Commit checkpoint: pending (record after commit).
+- Commit checkpoint: `735adf3` (`feat(img-00): add item image schema and shared contracts baseline`).
 
 ### 2026-02-28 - RTS-05-d launch smoke suite added and executed
 

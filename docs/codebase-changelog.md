@@ -67,7 +67,7 @@ Companion overview: `docs/codebase-overview.md`
 - Dependency change check: no new dependencies added.
 - Env-var change check: no new env vars introduced.
 - Commit checkpoint:
-  - Commit hash: pending (record after commit)
+  - Commit hash: `735adf3`
   - Commit title: `feat(img-00): add item image schema and shared contracts baseline`
 
 ### 2026-02-28 - RTS-05-d completed: launch smoke suite for QR/host/kitchen loop
