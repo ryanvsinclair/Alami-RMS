@@ -57,7 +57,7 @@ Companion overview: `docs/codebase-overview.md`
 - Dependency change check: no new dependencies added.
 - Env-var change check: no new env vars introduced.
 - Commit checkpoint:
-  - Commit hash: pending (record after commit)
+  - Commit hash: `2e2afc0`
   - Commit title: `feat(rpk-05): add view-photo CTA and harden receipt commit eligibility`
 
 ### 2026-02-28 - RPK-04 completed: Fix Later unresolved purchase-confirmation taxonomy and queue filter

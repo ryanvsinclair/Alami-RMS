@@ -457,6 +457,7 @@ No additional missing plan docs were identified from the current chat scope afte
   - pre-existing unrelated local files remained untouched; this slice changed only RPK-05 paths plus required canonical docs.
 - Dependency check: no new dependencies.
 - Env-var check: no new environment variables.
+- Commit checkpoint: `2e2afc0` (`feat(rpk-05): add view-photo CTA and harden receipt commit eligibility`).
 
 ### 2026-02-28 - RPK-04 Fix Later unresolved purchase-confirmation queue integration completed
 
