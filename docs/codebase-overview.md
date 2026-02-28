@@ -313,7 +313,7 @@ Canonical paths:
 - `prisma/migrations/20260228060000_business_profile_place_metadata/migration.sql`
 - `prisma/migrations/20260228130000_table_service_module_backfill/migration.sql`
 
-### Table Service Menu + Table Setup (RTS-01)
+### Table Service Menu + Table Setup + Host Composer (RTS-01/RTS-02/RTS-03-a)
 
 Implemented capabilities:
 
@@ -332,6 +332,12 @@ Implemented capabilities:
   - guest/non-member -> public landing (`/r/[publicSlug]`)
 - Public landing is now menu-first with category-grouped available items.
 - Public landing shows review CTA only when `google_place_id` exists.
+- Host workspace now renders a table/session-aware order composer draft surface with:
+  - menu item line add
+  - per-line quantity + notes editing
+  - line removal
+  - subtotal/quantity summary
+  - confirm CTA placeholder reserved for RTS-03-b
 
 Canonical paths:
 
@@ -345,6 +351,7 @@ Canonical paths:
 - `src/features/table-service/server/menu-csv.ts`
 - `src/features/table-service/server/menu.service.ts`
 - `src/features/table-service/server/table.service.ts`
+- `src/features/table-service/ui/HostOrderComposerPageClient.tsx`
 - `src/features/table-service/ui/MenuSetupPageClient.tsx`
 - `src/features/table-service/ui/TableSetupPageClient.tsx`
 

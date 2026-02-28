@@ -20,6 +20,44 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - RTS-03-a completed: host table order composer draft UI
+
+- Suggested Commit Title: `feat(rts-03): add host table order composer draft UI`
+- Scope: RTS phase `RTS-03-a` (host order composer baseline).
+- Constitution Restatement:
+  - Task ID: `RTS-03-a`
+  - Scope sentence: build host table order composer UI with item lines, quantity, and notes in active table session context.
+  - Invariants confirmed: no guest ordering/public-path changes; one-order-per-session invariant unchanged; no queue lifecycle behavior introduced in this slice.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: structural composition only; no new design token additions, no glow/gradient additions.
+- Deliverables:
+  - Replaced `/service/host` placeholder with active table/session composer surface.
+  - Added `HostOrderComposerPageClient` with menu item line drafting, quantity/notes editing, remove action, and subtotal summary.
+  - Wired host page to pass only available menu items (`isAvailable=true`) from existing menu setup data.
+  - Added disabled confirm CTA placeholder explicitly deferred to `RTS-03-b`.
+- Touched Files (single-entry log):
+  - `app/(dashboard)/service/host/page.tsx` (updated)
+  - `src/features/table-service/ui/HostOrderComposerPageClient.tsx` (added)
+  - `src/features/table-service/ui/index.ts` (updated)
+  - `docs/restaurant-table-service-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx eslint "app/(dashboard)/service/host/page.tsx" "src/features/table-service/ui/HostOrderComposerPageClient.tsx" "src/features/table-service/ui/index.ts"` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 3.
+  - Delta rationale: exact RTS-03-a scope (host composer construction and host route wiring).
+- Unrelated-file check:
+  - Existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: pending (record after commit)
+  - Commit title: `feat(rts-03): add host table order composer draft UI`
+
 ### 2026-02-28 - RTS-02-d completed: review CTA gated by google_place_id
 
 - Suggested Commit Title: `feat(rts-02): gate public review CTA on google_place_id`

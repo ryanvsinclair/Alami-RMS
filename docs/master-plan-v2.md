@@ -180,10 +180,10 @@ Use `Canonical Order Checklist` statuses as source of truth.
 Current snapshot (2026-02-28):
 
 - Launch-critical checklist items total: `50`
-- Launch-critical `[x]`: `26`
+- Launch-critical `[x]`: `27`
 - Launch-critical `[~]`: `0`
-- Strict completion: `52.00%`
-- Weighted progress: `52.00%`
+- Strict completion: `54.00%`
+- Weighted progress: `54.00%`
 - Parked post-launch checklist items (DI): `7` (excluded from launch completion %)
 
 Update rule after each slice:
@@ -226,11 +226,11 @@ Parked stream:
 
 ## Last Left Off Here
 
-- Current task ID: `RTS-03-a`
-- Current task: `Host table order composer`
+- Current task ID: `RTS-03-b`
+- Current task: `Confirm order and create kitchen ticket`
 - Status: `NOT STARTED`
 - Last updated: `2026-02-28`
-- Note: RTS-02 complete through resolver/branch/public landing/review gating; continue deterministic order with RTS-03-a.
+- Note: RTS-03-a host composer draft UI completed; continue deterministic order with RTS-03-b.
 
 ## Canonical Order Checklist
 
@@ -304,7 +304,7 @@ Plan doc: `docs/restaurant-table-service-plan.md`
 
 #### Phase RTS-03 - Host order confirmation flow
 
-- [ ] RTS-03-a: Host table order composer
+- [x] RTS-03-a: Host table order composer
 - [ ] RTS-03-b: Confirm order -> kitchen ticket creation
 - [ ] RTS-03-c: Start 30-minute due timer at confirmation
 - [ ] RTS-03-d: Post-confirm edits append new items on same order (no amendment table in V1)
@@ -417,10 +417,51 @@ No additional missing plan docs were identified from the current chat scope afte
 ## Completion Snapshot
 
 - Launch-critical initiatives active: `5` (RPK, RTS, IMG-L, UX-L, LG)
-- Launch-critical items complete: `26`
+- Launch-critical items complete: `27`
 - Parked post-launch initiatives: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - RTS-03-a host table order composer draft UI completed
+
+- Constitution Restatement:
+  - Task ID: `RTS-03-a`
+  - Scope: build host table order composer UI for table session context with item selection, quantity, and per-line notes.
+  - Invariants confirmed: one-order-per-session contract remains unchanged; no guest ordering or public-scan behavior changes; no queue lifecycle mutations introduced.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: structural workspace composition only; no new color tokens, no glow/gradient additions.
+- Preflight evidence:
+  - `Get-Content docs/restaurant-table-service-plan.md`
+  - `Get-Content app/(dashboard)/service/host/page.tsx`
+  - `Get-Content src/features/table-service/server/table.service.ts`
+  - `Get-Content src/features/table-service/server/menu.service.ts`
+  - `Get-Content prisma/schema.prisma`
+  - `Get-Content prisma/migrations/20260228130000_table_service_module_backfill/migration.sql`
+  - `rg -n "RTS-03|host|kitchen ticket|TableSession|KitchenOrder|order composer" docs/master-plan-v2.md docs/restaurant-table-service-plan.md`
+  - `rg -n "table-service|TableSession|KitchenOrder|service/host|scan/t|/r/" app src lib prisma --glob '!node_modules/**'`
+- Implementation:
+  - Replaced host placeholder with real composer surface at `app/(dashboard)/service/host/page.tsx`.
+  - Added `src/features/table-service/ui/HostOrderComposerPageClient.tsx` with:
+    - available menu-item line add
+    - per-line quantity and notes editing
+    - line removal
+    - subtotal and quantity summary
+    - disabled confirm CTA reserved for `RTS-03-b`
+  - Wired host page to pull menu setup data and pass only `isAvailable=true` menu items into composer.
+  - Exported new host composer UI from `src/features/table-service/ui/index.ts`.
+- Validation:
+  - `npx eslint "app/(dashboard)/service/host/page.tsx" "src/features/table-service/ui/HostOrderComposerPageClient.tsx" "src/features/table-service/ui/index.ts"` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 3 (host page wiring + new composer UI + UI index export)
+  - changed docs: source/master/overview/changelog sync
+  - proportionality reason: exactly scoped to RTS-03-a host composer construction.
+- Unrelated-file check:
+  - pre-existing unrelated local files remained untouched; this slice modified only RTS-03-a scope files plus required canonical docs.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+- Commit checkpoint: pending (record after commit).
 
 ### 2026-02-28 - RTS-02-d review CTA gating completed (RTS-02 phase closed)
 

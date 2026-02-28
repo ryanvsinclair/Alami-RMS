@@ -1,6 +1,6 @@
 # Restaurant Table QR + Host/Kitchen Ops Plan (Restaurant-Only V1)
 
-Status: ACTIVE - RTS-00 through RTS-02 complete; RTS-03 through RTS-05 pending
+Status: ACTIVE - RTS-00 through RTS-02 complete; RTS-03 in progress; RTS-04 through RTS-05 pending
 Created: 2026-02-28
 Last Updated: 2026-02-28
 Primary Purpose: launch restaurant table service with QR routing, host order confirmation, and kitchen queue operations.
@@ -23,6 +23,12 @@ Primary Purpose: launch restaurant table service with QR routing, host order con
 Constitution source: `docs/execution-constitution.md`
 
 ## Latest Update
+
+- **2026-02-28 - RTS-03-a completed (host table order composer draft UI).**
+  - Replaced host placeholder surface with table/session-aware order composer at `app/(dashboard)/service/host/page.tsx`.
+  - Added `HostOrderComposerPageClient` with menu-item line drafting (item selection, quantity, per-line notes), editable/removable lines, and subtotal summary.
+  - Wired host workspace to available menu items only (`isAvailable=true`) while preserving module and tenant guard path.
+  - Reserved order confirmation action as disabled CTA for `RTS-03-b` implementation scope.
 
 - **2026-02-28 - RTS-02-d/e/f completed (review CTA gating + public-scan constraints).**
   - Added public landing review CTA and gated it to businesses with `google_place_id` only.
@@ -92,7 +98,7 @@ Constitution source: `docs/execution-constitution.md`
 ## Pick Up Here
 
 - Current phase: `RTS-03`
-- Current task: `RTS-03-a`
+- Current task: `RTS-03-b`
 - Status: `[ ]` pending
 
 ## Scope
@@ -193,7 +199,7 @@ This section is authoritative for RTS V1 Prisma modeling.
 - `RTS-00`: `[x]` completed
 - `RTS-01`: `[x]` completed
 - `RTS-02`: `[x]` completed
-- `RTS-03`: `[ ]` pending
+- `RTS-03`: `[~]` in progress
 - `RTS-04`: `[ ]` pending
 - `RTS-05`: `[ ]` pending
 
@@ -239,10 +245,10 @@ Before starting any checklist item in this plan:
 
 ## RTS-03 - Host order confirmation flow
 
-**Status:** `[ ]` pending
+**Status:** `[~]` in progress
 
-- [ ] RTS-03-0: Constitution restatement logged for this phase and no deviation required.
-- [ ] RTS-03-a: Build host table order composer (items, qty, notes).
+- [x] RTS-03-0: Constitution restatement logged for this phase and no deviation required.
+- [x] RTS-03-a: Build host table order composer (items, qty, notes).
 - [ ] RTS-03-b: Confirm order -> create kitchen ticket immediately.
 - [ ] RTS-03-c: Set `confirmed_at` and `due_at = confirmed_at + 30 minutes`.
 - [ ] RTS-03-d: Route post-confirm edits to append new `KitchenOrderItem` rows on same `KitchenOrder` (no amendment table in V1).
