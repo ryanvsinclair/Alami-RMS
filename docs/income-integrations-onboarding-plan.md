@@ -969,6 +969,14 @@ Recommended checks:
 - OAuth callback tests (state validation, token exchange failure cases)
 - Playwright onboarding happy path (optional later)
 
+## Commit Checkpoint (Required For Any Reopened Slice)
+
+After each completed checklist step in this plan:
+
+- Create one scoped git commit to this repository before moving to the next step.
+- Include the relevant `IN-*` task ID in the commit message.
+- Record commit hash + title in job summary/changelog evidence.
+
 ## Open Decisions (Resolved In IN-00)
 
 1. MVP provider order:

@@ -20,6 +20,65 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - DI-03 completed: vendor mapping and trust setup baseline
+
+- Suggested Commit Title: `feat(di-03): add vendor mapping and trust setup baseline`
+- Scope: DI phase `DI-03` (vendor resolution/mapping/trust baseline only; no posting automation).
+- Constitution Restatement:
+  - Task ID: `DI-03`
+  - Scope sentence: add vendor profile/mapping repositories, trust-state orchestration, module actions, and vendor mapping UI baseline for document review workflows.
+  - Invariants confirmed: no financial posting side effects; tenant isolation preserved; trust-state promotion remains threshold-gated and blocked-vendor safe.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: structural-only panel UI; no new color tokens, gradients, glow, or decorative motion.
+- Deliverables:
+  - Added vendor profile repository:
+    - `src/features/documents/server/vendor-profile.repository.ts`
+  - Added vendor item-mapping repository:
+    - `src/features/documents/server/vendor-item-mapping.repository.ts`
+  - Added vendor mapping service:
+    - `src/features/documents/server/vendor-mapping.service.ts`
+  - Added DI-03 server actions:
+    - `app/actions/modules/documents.ts` (vendor profile/mapping operations)
+  - Added DI-03 UI baseline:
+    - `src/features/documents/ui/VendorMappingPanel.tsx`
+    - `src/features/documents/ui/index.ts`
+  - Added DI-03 repository tests:
+    - `src/features/documents/server/vendor-profile.repository.test.mjs` (8 tests)
+  - Updated documents server barrel exports:
+    - `src/features/documents/server/index.ts`
+  - Updated canonical docs to mark DI-03 complete and advance pointer to DI-04.
+  - Added explicit per-step repository commit checkpoint wording to `docs/income-integrations-onboarding-plan.md` for policy consistency.
+- Touched Files (single-entry log):
+  - `app/actions/modules/documents.ts` (updated)
+  - `src/features/documents/server/index.ts` (updated)
+  - `src/features/documents/server/vendor-profile.repository.ts` (added)
+  - `src/features/documents/server/vendor-item-mapping.repository.ts` (added)
+  - `src/features/documents/server/vendor-mapping.service.ts` (added)
+  - `src/features/documents/server/vendor-profile.repository.test.mjs` (added)
+  - `src/features/documents/ui/VendorMappingPanel.tsx` (added)
+  - `src/features/documents/ui/index.ts` (added)
+  - `docs/document-intake-pipeline-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+  - `docs/income-integrations-onboarding-plan.md` (updated)
+- Validation:
+  - `node --test src/features/documents/server/vendor-profile.repository.test.mjs` -> PASS (8/8)
+  - `npx eslint src/features/documents/server/vendor-mapping.service.ts src/features/documents/server/vendor-profile.repository.ts src/features/documents/server/vendor-item-mapping.repository.ts src/features/documents/server/index.ts src/features/documents/ui/VendorMappingPanel.tsx app/actions/modules/documents.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 7
+  - Changed tests: 1
+  - Changed docs: 5
+  - Delta rationale: exact DI-03 scope (vendor resolution/mapping/trust baseline + required canonical documentation sync).
+- Unrelated-file check:
+  - Pre-existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: `9e56d53`
+  - Commit title: `feat(di-03): add vendor mapping and trust setup baseline`
+
 ### 2026-02-28 - DI-02 completed: structured draft parse and confidence scoring layer
 
 - Suggested Commit Title: `feat(di-02): add document draft parse-score pipeline`

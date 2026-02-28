@@ -1,12 +1,35 @@
 # Document Intake Pipeline Plan
 
 Last updated: February 28, 2026
-Status: ACTIVE - DI-02 complete, DI-03 next
+Status: ACTIVE - DI-03 complete, DI-04 next
 Constitution source: `docs/execution-constitution.md`
 
 ---
 
 ## Latest Update
+
+- **2026-02-28 - DI-03 completed (vendor mapping + trust setup).**
+  - Added vendor profile repository:
+    - `src/features/documents/server/vendor-profile.repository.ts`
+  - Added vendor item mapping repository:
+    - `src/features/documents/server/vendor-item-mapping.repository.ts`
+  - Added vendor mapping service:
+    - `src/features/documents/server/vendor-mapping.service.ts`
+  - Added DI-03 server actions:
+    - `app/actions/modules/documents.ts` vendor profile/mapping action set
+  - Added vendor mapping UI panel:
+    - `src/features/documents/ui/VendorMappingPanel.tsx`
+    - `src/features/documents/ui/index.ts`
+  - Added DI-03 repository tests:
+    - `src/features/documents/server/vendor-profile.repository.test.mjs` (8 cases)
+  - Updated server barrel exports:
+    - `src/features/documents/server/index.ts`
+  - Validation passed:
+    - `node --test src/features/documents/server/vendor-profile.repository.test.mjs`
+    - `npx eslint src/features/documents/server/vendor-mapping.service.ts src/features/documents/server/vendor-profile.repository.ts`
+    - `npx tsc --noEmit --incremental false`
+  - DI resume pointer advanced to **DI-04**.
+  - Commit checkpoint: `9e56d53` (`feat(di-03): add vendor mapping and trust setup baseline`).
 
 - **2026-02-28 - DI-02 completed (structured parse + confidence layer).**
   - Added domain parser:
@@ -112,7 +135,7 @@ Constitution source: `docs/execution-constitution.md`
 
 ## Pick Up Here
 
-Next task: **DI-03** - Vendor Mapping and Trust Setup.
+Next task: **DI-04** - Review Inbox and User-Triggered Post Flow.
 
 ---
 
@@ -725,7 +748,7 @@ Validation:
 
 **Goal:** Let the user confirm or correct the parsed vendor name. Map the vendor to an existing supplier (if applicable). Set default category rules. Map vendor line item names to inventory items (if applicable). Persist vendor trust state so the system learns over time. Support per-vendor trust threshold override.
 
-**Status:** `[ ]` pending
+**Status:** `[x]` completed
 
 **Prerequisite:** DI-02 complete.
 
@@ -743,7 +766,7 @@ For Postmark-sourced documents, the sender email domain (e.g., `sysco.com` from 
 #### Checklist
 
 Vendor profile repository:
-- [ ] Create `src/features/documents/server/vendor-profile.repository.ts`:
+- [x] Create `src/features/documents/server/vendor-profile.repository.ts`:
   - `findVendorByExactName(businessId, vendorName)` → `VendorProfile | null`
   - `findVendorByAlias(businessId, aliasText)` → `VendorProfile | null`
     - Checks `vendor_aliases` jsonb array: `WHERE business_id = ? AND vendor_aliases @> ?::jsonb`
@@ -767,13 +790,13 @@ Vendor profile repository:
     - Never demotes below current state automatically
 
 Vendor item mapping repository:
-- [ ] Create `src/features/documents/server/vendor-item-mapping.repository.ts`:
+- [x] Create `src/features/documents/server/vendor-item-mapping.repository.ts`:
   - `findMappingByLineItemName(businessId, vendorProfileId, rawName)` → `DocumentVendorItemMapping | null`
   - `upsertItemMapping(businessId, vendorProfileId, rawName, inventoryItemId)` — create or `confirmed_count += 1`
   - `findAllMappingsForVendor(businessId, vendorProfileId)` → mapping list
 
 Vendor mapping service:
-- [ ] Create `src/features/documents/server/vendor-mapping.service.ts`:
+- [x] Create `src/features/documents/server/vendor-mapping.service.ts`:
   - `resolveVendorForDraft(businessId, { parsedVendorName, senderEmail? })`:
     - Run exact → alias → fuzzy in order
     - If `senderEmail` provided: also try matching sender domain against aliases
@@ -786,15 +809,15 @@ Vendor mapping service:
   - `resolveLineItemMappings(businessId, vendorProfileId, parsedLineItems)` → per-item suggestions
 
 Server action additions to `app/actions/modules/documents.ts`:
-- [ ] `getVendorProfiles(businessId)`
-- [ ] `createVendorProfile(businessId, payload)` — supports `trustThresholdOverride` in payload
-- [ ] `updateVendorTrustThreshold(businessId, vendorProfileId, threshold: number | null)` — owner/manager only
-- [ ] `confirmVendorForDraft(businessId, draftId, vendorProfileId)`
-- [ ] `updateVendorDefaults(businessId, vendorProfileId, { defaultCategoryId, supplierId })`
-- [ ] `confirmLineItemMapping(businessId, vendorProfileId, rawName, inventoryItemId)`
+- [x] `getVendorProfiles(businessId)`
+- [x] `createVendorProfile(businessId, payload)` — supports `trustThresholdOverride` in payload
+- [x] `updateVendorTrustThreshold(businessId, vendorProfileId, threshold: number | null)` — owner/manager only
+- [x] `confirmVendorForDraft(businessId, draftId, vendorProfileId)`
+- [x] `updateVendorDefaults(businessId, vendorProfileId, { defaultCategoryId, supplierId })`
+- [x] `confirmLineItemMapping(businessId, vendorProfileId, rawName, inventoryItemId)`
 
 Vendor mapping UI:
-- [ ] Create `src/features/documents/ui/VendorMappingPanel.tsx`:
+- [x] Create `src/features/documents/ui/VendorMappingPanel.tsx`:
   - Shows parsed vendor name + sender email (for Postmark sourced drafts)
   - Shows matched/suggested vendor profile (confidence badge if fuzzy match)
   - "Confirm" / "Create Vendor" / "Map to Existing" controls
@@ -803,7 +826,7 @@ Vendor mapping UI:
   - Line item mapping table: raw name → inventory item dropdown
 
 Unit tests:
-- [ ] Create `src/features/documents/server/vendor-profile.repository.test.mjs`:
+- [x] Create `src/features/documents/server/vendor-profile.repository.test.mjs`:
   - Test: exact match by name
   - Test: alias match via jsonb array
   - Test: no match → returns null
@@ -815,9 +838,9 @@ Unit tests:
   - Minimum 8 test cases
 
 Validation:
-- [ ] `node --test src/features/documents/server/vendor-profile.repository.test.mjs` → PASS (8+/8+)
-- [ ] `npx tsc --noEmit --incremental false` → PASS
-- [ ] `npx eslint src/features/documents/server/vendor-mapping.service.ts src/features/documents/server/vendor-profile.repository.ts` → PASS
+- [x] `node --test src/features/documents/server/vendor-profile.repository.test.mjs` → PASS (8+/8+)
+- [x] `npx tsc --noEmit --incremental false` → PASS
+- [x] `npx eslint src/features/documents/server/vendor-mapping.service.ts src/features/documents/server/vendor-profile.repository.ts` → PASS
 
 ---
 
@@ -934,7 +957,7 @@ Unit tests:
 
 Validation:
 - [ ] `node --test src/features/documents/server/document-post.service.test.mjs` → PASS (8+/8+)
-- [ ] `npx tsc --noEmit --incremental false` → PASS
+- [x] `npx tsc --noEmit --incremental false` → PASS
 - [ ] `npx eslint app/(dashboard)/documents/ src/features/documents/ components/nav/bottom-nav.tsx` → PASS
 - [ ] Manual smoke: send email → review in inbox → Post → `financial_transactions` row has `source = 'document_intake'`, draft `status = 'posted'`
 - [ ] Manual smoke: nav badge shows correct pending count; clears after posting all pending
@@ -1014,7 +1037,7 @@ Unit tests:
 
 Validation:
 - [ ] `node --test src/features/documents/server/trust.service.test.mjs` → PASS (10+/10+)
-- [ ] `npx tsc --noEmit --incremental false` → PASS
+- [x] `npx tsc --noEmit --incremental false` → PASS
 - [ ] `npx eslint src/features/documents/server/trust.service.ts` → PASS
 - [ ] Manual smoke: vendor with `total_posted >= effective_threshold` + high-confidence email → auto-posts, no inbox appearance, `auto_posted = true` on draft
 - [ ] Manual smoke: same vendor + email with large total anomaly → appears in inbox with `large_total` flag displayed
@@ -1053,7 +1076,7 @@ UI:
 - [ ] Create `app/(dashboard)/documents/analytics/page.tsx` — thin route wrapper
 
 Validation:
-- [ ] `npx tsc --noEmit --incremental false` → PASS
+- [x] `npx tsc --noEmit --incremental false` → PASS
 - [ ] `npx eslint src/features/documents/` → PASS
 - [ ] Manual: post 5+ documents across 2+ vendors → analytics page shows spend breakdown
 
@@ -1135,5 +1158,6 @@ Tracked as initiative **DI** in `docs/master-plan-v2.md`.
 - DI-06: deferrable independently
 - No dependencies on any completed plan
 - Fully additive — no existing module, table, route, or service is modified (except `FinancialSource` enum value addition in DI-00)
+
 
 

@@ -314,7 +314,7 @@ Canonical paths:
 - `prisma/migrations/20260228060000_business_profile_place_metadata/migration.sql`
 - `prisma/migrations/20260228130000_table_service_module_backfill/migration.sql`
 
-### Document Intake (DI-02 parse/score baseline)
+### Document Intake (DI-03 vendor mapping/trust baseline)
 
 Implemented capabilities:
 
@@ -346,6 +346,12 @@ Implemented capabilities:
   - confidence scoring (`score`, `band`, parser flags) with totals-consistency checks
   - parse service updates draft rows to `pending_review` and preserves structured parse metadata
   - parse-service failure path sets draft status to `draft` with `parser_error` payload
+- DI-03 vendor-mapping and trust layer now active:
+  - vendor profile repository supports exact/alias/fuzzy resolution and trust-state transitions
+  - vendor mapping service supports draft vendor confirmation and sender-domain alias capture
+  - line-item mapping repository supports per-vendor raw-name to inventory-item mapping upsert
+  - module-gated server actions expose vendor profile/mapping controls
+  - vendor mapping panel component exists for inbox review composition in DI-04 integration
 
 Canonical paths:
 
@@ -362,6 +368,12 @@ Canonical paths:
 - `src/domain/parsers/document-draft.test.mjs`
 - `src/features/documents/server/document-parse.service.ts`
 - `src/features/documents/server/document-storage.service.ts`
+- `src/features/documents/server/vendor-profile.repository.ts`
+- `src/features/documents/server/vendor-item-mapping.repository.ts`
+- `src/features/documents/server/vendor-mapping.service.ts`
+- `src/features/documents/server/vendor-profile.repository.test.mjs`
+- `src/features/documents/ui/VendorMappingPanel.tsx`
+- `src/features/documents/ui/index.ts`
 - `app/api/documents/inbound/route.ts`
 - `app/actions/modules/documents.ts`
 - `lib/modules/documents/index.ts`

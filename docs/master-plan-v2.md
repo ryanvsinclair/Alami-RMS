@@ -226,11 +226,11 @@ Post-launch stream:
 
 ## Last Left Off Here
 
-- Current task ID: `DI-03`
-- Current task: `Document intake vendor mapping/trust setup`
+- Current task ID: `DI-04`
+- Current task: `Review inbox and user-triggered post flow`
 - Status: `NOT STARTED`
 - Last updated: `2026-02-28`
-- Note: DI-02 is complete; continue deterministic DI sequence at DI-03.
+- Note: DI-03 is complete; continue deterministic DI sequence at DI-04.
 
 ## Canonical Order Checklist
 
@@ -374,14 +374,14 @@ Test format lock:
 Plan doc: `docs/document-intake-pipeline-plan.md`
 Current state: active, resumed after launch-gate completion.
 Re-entry trigger: satisfied (`LG-00` fully complete).
-Resume point: `DI-03`.
+Resume point: `DI-04`.
 
 High-level DI checklist:
 
 - [x] DI-00 schema/contracts
 - [x] DI-01 capture/isolation
 - [x] DI-02 parse/score
-- [ ] DI-03 vendor mapping/trust setup
+- [x] DI-03 vendor mapping/trust setup
 - [ ] DI-04 inbox/post flow
 - [ ] DI-05 trust-gated auto-post
 - [ ] DI-06 analytics layer
@@ -412,7 +412,7 @@ No additional missing plan docs were identified from the current chat scope afte
 - [ ] `docs/codebase-changelog.md` appended with newest entry at top.
 - [ ] Single touched-files log included in that changelog entry (all files touched this slice).
 - [ ] `docs/codebase-overview.md` updated when behavior/architecture/canonical paths changed.
-- [ ] Scoped git commit to this repository created for the completed step and commit hash recorded in job summary/changelog.
+- [ ] Scoped git commit to this repository created after each completed step before advancing, and commit hash recorded in job summary/changelog.
 
 ## Completion Snapshot
 
@@ -421,6 +421,49 @@ No additional missing plan docs were identified from the current chat scope afte
 - Post-launch initiatives in progress: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - DI-03 completed (vendor mapping and trust setup baseline)
+
+- Constitution Restatement:
+  - Task ID: `DI-03`
+  - Scope: implement vendor-resolution repositories/services, trust-state update rules, and vendor-mapping UI baseline without introducing posting automation.
+  - Invariants confirmed: no financial posting side effects; trust promotions remain threshold-gated and blocked-vendor safe; tenant scoping preserved on all vendor/draft/mapping operations.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: structural-only panel UI; no new colors/tokens, no glow/gradient/decorative motion.
+- Preflight evidence:
+  - `Get-Content docs/document-intake-pipeline-plan.md`
+  - `rg -n "vendor profile|vendor mapping|trust_threshold_override|resolveVendorForDraft|confirmVendorMapping" src app docs`
+  - `Get-Content src/features/documents/server/document-draft.repository.ts`
+- Implementation:
+  - Added vendor-profile repository with exact/alias/fuzzy resolution and trust-state transitions:
+    - `src/features/documents/server/vendor-profile.repository.ts`
+  - Added vendor-item mapping repository:
+    - `src/features/documents/server/vendor-item-mapping.repository.ts`
+  - Added vendor-mapping service orchestration for draft vendor confirmation and line-item mapping:
+    - `src/features/documents/server/vendor-mapping.service.ts`
+  - Added server-action wrappers for vendor profile and mapping operations:
+    - `app/actions/modules/documents.ts`
+  - Added vendor mapping UI baseline:
+    - `src/features/documents/ui/VendorMappingPanel.tsx`
+    - `src/features/documents/ui/index.ts`
+  - Added repository test coverage:
+    - `src/features/documents/server/vendor-profile.repository.test.mjs` (8 tests)
+  - Updated server barrel exports and advanced deterministic DI pointer to DI-04 in canonical docs.
+  - Added explicit per-step repository commit-checkpoint wording in `docs/income-integrations-onboarding-plan.md` for consistency with active execution governance.
+- Validation:
+  - `node --test src/features/documents/server/vendor-profile.repository.test.mjs` -> PASS (8 tests)
+  - `npx eslint src/features/documents/server/vendor-mapping.service.ts src/features/documents/server/vendor-profile.repository.ts src/features/documents/server/vendor-item-mapping.repository.ts src/features/documents/server/index.ts src/features/documents/ui/VendorMappingPanel.tsx app/actions/modules/documents.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 7
+  - changed tests: 1
+  - changed docs: source/master/changelog/overview sync
+  - proportionality reason: exact DI-03 scope (vendor resolution + trust + mapping baseline only).
+- Unrelated-file check:
+  - pre-existing unrelated local files remained unchanged by this slice (`.claude/settings.local.json`, `docs/MASTER_BACKEND_ARCHITECTURE.md`).
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables introduced.
+- Commit checkpoint: `9e56d53` (`feat(di-03): add vendor mapping and trust setup baseline`).
 
 ### 2026-02-28 - DI-02 completed (structured draft parse/score pipeline)
 
