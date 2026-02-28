@@ -111,3 +111,27 @@ export async function regenerateDiningTableQrToken(businessId: string, tableId: 
 
   return serialize(toDiningTableSummary(table));
 }
+
+export async function resolveDiningTableByQrToken(qrToken: string) {
+  const normalizedToken = qrToken.trim();
+  if (!normalizedToken) return null;
+
+  const table = await prisma.diningTable.findUnique({
+    where: { qr_token: normalizedToken },
+    select: {
+      id: true,
+      table_number: true,
+      qr_token: true,
+      business: {
+        select: {
+          id: true,
+          name: true,
+          industry_type: true,
+          google_place_id: true,
+        },
+      },
+    },
+  });
+
+  return serialize(table);
+}

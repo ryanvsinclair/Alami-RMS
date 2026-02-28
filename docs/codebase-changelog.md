@@ -20,6 +20,41 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - RTS-02-a completed: `/scan/t/[token]` resolver baseline
+
+- Suggested Commit Title: `feat(rts-02): add table scan token resolver route baseline`
+- Scope: RTS phase `RTS-02-a` (scan token resolver).
+- Constitution Restatement:
+  - Task ID: `RTS-02-a`
+  - Scope sentence: resolve `DiningTable.qr_token` from public scan route and return table/business context baseline.
+  - Invariants confirmed: static token model preserved, no forced login in scan flow, no guest-ordering behavior added.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+- Deliverables:
+  - Added server resolver `resolveDiningTableByQrToken(...)`.
+  - Added public route `app/scan/t/[token]/page.tsx`.
+  - Resolver path now returns 404 for unknown tokens.
+- Touched Files (single-entry log):
+  - `src/features/table-service/server/table.service.ts` (updated)
+  - `app/scan/t/[token]/page.tsx` (added)
+  - `docs/restaurant-table-service-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx eslint src/features/table-service/server/table.service.ts "app/scan/t/[token]/page.tsx" src/features/table-service/server/index.ts` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 2.
+  - Delta rationale: exact RTS-02-a scope (token resolver + route baseline).
+- Unrelated-file check:
+  - Existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: pending (record after commit)
+  - Commit title: `feat(rts-02): add table scan token resolver route baseline`
+
 ### 2026-02-28 - RTS-01-b completed: dining-table CRUD + static scan-token generation
 
 - Suggested Commit Title: `feat(rts-01): add dining-table CRUD and static scan-token setup route`

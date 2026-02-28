@@ -180,10 +180,10 @@ Use `Canonical Order Checklist` statuses as source of truth.
 Current snapshot (2026-02-28):
 
 - Launch-critical checklist items total: `50`
-- Launch-critical `[x]`: `22`
+- Launch-critical `[x]`: `23`
 - Launch-critical `[~]`: `0`
-- Strict completion: `44.00%`
-- Weighted progress: `44.00%`
+- Strict completion: `46.00%`
+- Weighted progress: `46.00%`
 - Parked post-launch checklist items (DI): `7` (excluded from launch completion %)
 
 Update rule after each slice:
@@ -226,11 +226,11 @@ Parked stream:
 
 ## Last Left Off Here
 
-- Current task ID: `RTS-02-a`
-- Current task: `Implement /scan/t/[token] resolver`
-- Status: `NOT STARTED`
+- Current task ID: `RTS-02-b`
+- Current task: `Session-aware branch (member->host, otherwise public)`
+- Status: `IN PROGRESS`
 - Last updated: `2026-02-28`
-- Note: RTS-01 complete through menu/table setup; continue deterministic order with RTS-02-a.
+- Note: RTS-02-a resolver baseline completed; continue deterministic order with RTS-02-b.
 
 ## Canonical Order Checklist
 
@@ -297,7 +297,7 @@ Plan doc: `docs/restaurant-table-service-plan.md`
 
 #### Phase RTS-02 - QR router and diner landing
 
-- [ ] RTS-02-a: Implement `/scan/t/[token]` resolver
+- [x] RTS-02-a: Implement `/scan/t/[token]` resolver
 - [ ] RTS-02-b: Session-aware branch (member->host, otherwise public)
 - [ ] RTS-02-c: Implement `/r/[publicSlug]` diner landing with menu-first UX
 - [ ] RTS-02-d: Show review CTA only when `google_place_id` exists
@@ -417,10 +417,44 @@ No additional missing plan docs were identified from the current chat scope afte
 ## Completion Snapshot
 
 - Launch-critical initiatives active: `5` (RPK, RTS, IMG-L, UX-L, LG)
-- Launch-critical items complete: `22`
+- Launch-critical items complete: `23`
 - Parked post-launch initiatives: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - RTS-02-a scan-token resolver baseline completed
+
+- Constitution Restatement:
+  - Task ID: `RTS-02-a`
+  - Scope: implement `/scan/t/[token]` resolver route and server-side token resolution primitive only.
+  - Invariants confirmed: static `DiningTable.qr_token` mapping preserved; no login-forcing behavior introduced; no guest-ordering behavior introduced.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: structural resolver page only.
+- Preflight evidence:
+  - `Get-Content docs/restaurant-table-service-plan.md`
+  - `Get-Content src/features/table-service/server/table.service.ts`
+  - `Get-Content app/(dashboard)/service/tables/page.tsx`
+  - `rg -n "scan/t|qr_token|resolveDiningTableByQrToken|DiningTable" app src prisma docs`
+- Implementation:
+  - Added `resolveDiningTableByQrToken(...)` in table-service server service.
+  - Added public route `app/scan/t/[token]/page.tsx`:
+    - resolves token to table + business context
+    - returns 404 when token is unknown
+    - shows baseline resolver confirmation payload
+  - Kept member/public branching for follow-on RTS-02-b/c tasks.
+- Validation:
+  - `npx eslint src/features/table-service/server/table.service.ts "app/scan/t/[token]/page.tsx" src/features/table-service/server/index.ts` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 2 (resolver service extension + scan route)
+  - changed docs: source/master/overview/changelog sync
+  - proportionality reason: exactly scoped to RTS-02-a resolver baseline.
+- Unrelated-file check:
+  - pre-existing unrelated local files remained untouched; this slice modified only RTS-02-a paths plus required canonical docs.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+- Commit checkpoint: pending (record after commit).
 
 ### 2026-02-28 - RTS-01-b dining-table CRUD and static scan-token generation completed
 
