@@ -1,6 +1,6 @@
 # Restaurant Table QR + Host/Kitchen Ops Plan (Restaurant-Only V1)
 
-Status: ACTIVE - RTS-00 through RTS-02 complete; RTS-03 in progress; RTS-04 through RTS-05 pending
+Status: ACTIVE - RTS-00 through RTS-02 complete; RTS-03 in progress (a-b complete); RTS-04 through RTS-05 pending
 Created: 2026-02-28
 Last Updated: 2026-02-28
 Primary Purpose: launch restaurant table service with QR routing, host order confirmation, and kitchen queue operations.
@@ -23,6 +23,12 @@ Primary Purpose: launch restaurant table service with QR routing, host order con
 Constitution source: `docs/execution-constitution.md`
 
 ## Latest Update
+
+- **2026-02-28 - RTS-03-b completed (confirm creates kitchen ticket immediately).**
+  - Added server-side order confirmation flow that creates `KitchenOrder` plus `KitchenOrderItem` rows in one transaction.
+  - Enforced business/session/menu validation at confirmation time (active table session + business-scoped available menu items).
+  - Enabled host workspace confirm action to create ticket immediately and display created ticket state.
+  - Preserved timer fields for follow-on `RTS-03-c` scope and append behavior for `RTS-03-d`.
 
 - **2026-02-28 - RTS-03-a completed (host table order composer draft UI).**
   - Replaced host placeholder surface with table/session-aware order composer at `app/(dashboard)/service/host/page.tsx`.
@@ -98,7 +104,7 @@ Constitution source: `docs/execution-constitution.md`
 ## Pick Up Here
 
 - Current phase: `RTS-03`
-- Current task: `RTS-03-b`
+- Current task: `RTS-03-c`
 - Status: `[ ]` pending
 
 ## Scope
@@ -249,7 +255,7 @@ Before starting any checklist item in this plan:
 
 - [x] RTS-03-0: Constitution restatement logged for this phase and no deviation required.
 - [x] RTS-03-a: Build host table order composer (items, qty, notes).
-- [ ] RTS-03-b: Confirm order -> create kitchen ticket immediately.
+- [x] RTS-03-b: Confirm order -> create kitchen ticket immediately.
 - [ ] RTS-03-c: Set `confirmed_at` and `due_at = confirmed_at + 30 minutes`.
 - [ ] RTS-03-d: Route post-confirm edits to append new `KitchenOrderItem` rows on same `KitchenOrder` (no amendment table in V1).
 

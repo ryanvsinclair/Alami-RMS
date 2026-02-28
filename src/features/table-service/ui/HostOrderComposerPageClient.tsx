@@ -2,12 +2,14 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { confirmKitchenOrder } from "@/app/actions/modules/table-service";
 import { Button } from "@/shared/ui/button";
 import { Card } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
 import { Select } from "@/shared/ui/select";
 import type {
   TableServiceDiningTableSummary,
+  TableServiceKitchenOrderSummary,
   TableServiceMenuCategorySummary,
   TableServiceMenuItemSummary,
   TableServiceSessionSummary,
@@ -44,6 +46,7 @@ function makeDraftId() {
 interface HostOrderComposerPageClientProps {
   table: TableServiceDiningTableSummary;
   session: TableServiceSessionSummary;
+  kitchenOrder: TableServiceKitchenOrderSummary | null;
   categories: TableServiceMenuCategorySummary[];
   items: TableServiceMenuItemSummary[];
 }
@@ -51,13 +54,19 @@ interface HostOrderComposerPageClientProps {
 export default function HostOrderComposerPageClient({
   table,
   session,
+  kitchenOrder,
   categories,
   items,
 }: HostOrderComposerPageClientProps) {
   const [selectedMenuItemId, setSelectedMenuItemId] = useState("");
   const [draftItems, setDraftItems] = useState<DraftLineItem[]>([]);
   const [orderNotes, setOrderNotes] = useState("");
+  const [confirming, setConfirming] = useState(false);
+  const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
+  const [confirmedOrder, setConfirmedOrder] = useState<TableServiceKitchenOrderSummary | null>(
+    kitchenOrder,
+  );
 
   const categoryById = useMemo(() => {
     return new Map(categories.map((category) => [category.id, category.name]));
@@ -102,8 +111,15 @@ export default function HostOrderComposerPageClient({
     );
   }, [draftItems, itemsById]);
 
+  const hasConfirmedOrder = confirmedOrder !== null;
+
   function handleAddLine() {
     setError("");
+    setSuccess("");
+    if (hasConfirmedOrder) {
+      setError("Kitchen ticket already exists for this session.");
+      return;
+    }
     if (!selectedMenuItemId) {
       setError("Select a menu item first.");
       return;
@@ -129,6 +145,7 @@ export default function HostOrderComposerPageClient({
     lineId: string,
     updates: Partial<Pick<DraftLineItem, "menuItemId" | "quantity" | "notes">>,
   ) {
+    if (hasConfirmedOrder) return;
     setDraftItems((previous) =>
       previous.map((line) => {
         if (line.id !== lineId) return line;
@@ -138,7 +155,46 @@ export default function HostOrderComposerPageClient({
   }
 
   function removeLine(lineId: string) {
+    if (hasConfirmedOrder) return;
     setDraftItems((previous) => previous.filter((line) => line.id !== lineId));
+  }
+
+  async function handleConfirmOrder() {
+    setError("");
+    setSuccess("");
+
+    if (hasConfirmedOrder) {
+      setError("Kitchen ticket already exists for this session.");
+      return;
+    }
+
+    if (draftItems.length === 0) {
+      setError("Add at least one order line before confirming.");
+      return;
+    }
+
+    const payloadItems = draftItems.map((line) => ({
+      menuItemId: line.menuItemId,
+      quantity: toQuantity(line.quantity),
+      notes: line.notes.trim() ? line.notes.trim() : null,
+    }));
+
+    setConfirming(true);
+    try {
+      const createdOrder = (await confirmKitchenOrder({
+        tableSessionId: session.id,
+        notes: orderNotes.trim() ? orderNotes.trim() : null,
+        items: payloadItems,
+      })) as TableServiceKitchenOrderSummary;
+
+      setConfirmedOrder(createdOrder);
+      setDraftItems([]);
+      setSuccess("Kitchen ticket created and visible to kitchen workflow.");
+    } catch {
+      setError("Failed to create kitchen ticket.");
+    } finally {
+      setConfirming(false);
+    }
   }
 
   return (
@@ -159,17 +215,41 @@ export default function HostOrderComposerPageClient({
         <p className="mt-2 text-sm text-muted">Active session: {session.id}</p>
       </Card>
 
+      {success && (
+        <div className="rounded-2xl border border-success/20 bg-success/10 px-4 py-3 text-sm text-success">
+          {success}
+        </div>
+      )}
+
       {error && (
         <div className="rounded-2xl border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">
           {error}
         </div>
       )}
 
+      {hasConfirmedOrder && confirmedOrder && (
+        <Card className="p-5 space-y-3">
+          <p className="text-sm font-semibold">Kitchen Ticket Created</p>
+          <div className="rounded-2xl border border-border bg-foreground/[0.03] px-4 py-3 text-sm text-muted space-y-1">
+            <p className="font-semibold text-foreground">Ticket ID: {confirmedOrder.id}</p>
+            <p>Item lines: {confirmedOrder.items.length}</p>
+            <p>Order notes: {confirmedOrder.notes ?? "None"}</p>
+          </div>
+          <p className="text-xs text-muted">
+            Post-confirm append behavior is implemented in `RTS-03-d`. Timer fields are added in `RTS-03-c`.
+          </p>
+        </Card>
+      )}
+
       <Card className="p-5 space-y-3">
         <p className="text-sm font-semibold">Add Order Item</p>
         {itemOptions.length === 0 ? (
           <p className="text-sm text-muted">
-            No available menu items yet. Add menu items in <Link href="/service/menu" className="text-primary hover:underline">Menu Setup</Link>.
+            No available menu items yet. Add menu items in{" "}
+            <Link href="/service/menu" className="text-primary hover:underline">
+              Menu Setup
+            </Link>
+            .
           </p>
         ) : (
           <>
@@ -179,8 +259,9 @@ export default function HostOrderComposerPageClient({
               value={selectedMenuItemId}
               placeholder="Choose menu item"
               onChange={(event) => setSelectedMenuItemId(event.target.value)}
+              disabled={hasConfirmedOrder}
             />
-            <Button onClick={handleAddLine} disabled={!selectedMenuItemId}>
+            <Button onClick={handleAddLine} disabled={!selectedMenuItemId || hasConfirmedOrder}>
               Add Item Line
             </Button>
           </>
@@ -262,13 +343,21 @@ export default function HostOrderComposerPageClient({
           label="Order notes"
           placeholder="Allergy note or pacing instruction"
           value={orderNotes}
+          disabled={hasConfirmedOrder}
           onChange={(event) => setOrderNotes(event.target.value)}
         />
-        <Button disabled className="w-full">
-          Confirm Order (RTS-03-b)
+        <Button
+          className="w-full"
+          onClick={handleConfirmOrder}
+          loading={confirming}
+          disabled={hasConfirmedOrder || draftItems.length === 0}
+        >
+          {hasConfirmedOrder ? "Kitchen Ticket Created" : "Confirm Order"}
         </Button>
         <p className="text-xs text-muted">
-          Confirmation and kitchen ticket creation are enabled in RTS-03-b. This slice builds the host composer draft UI only.
+          {hasConfirmedOrder
+            ? "This session already has a kitchen ticket. Use upcoming RTS-03-d append flow for post-confirm changes."
+            : "Confirm creates a kitchen ticket immediately. Timer fields are added in RTS-03-c."}
         </p>
       </Card>
     </div>

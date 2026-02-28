@@ -20,6 +20,48 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - RTS-03-b completed: host confirm creates kitchen ticket immediately
+
+- Suggested Commit Title: `feat(rts-03): create kitchen ticket immediately on host confirm`
+- Scope: RTS phase `RTS-03-b` (host confirmation write path).
+- Constitution Restatement:
+  - Task ID: `RTS-03-b`
+  - Scope sentence: convert host confirm action from placeholder into transactional kitchen-ticket creation from draft order lines.
+  - Invariants confirmed: one-order-per-session preserved; no guest/public path changes; no timer/append queue behavior changes in this slice.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: structural host workflow update only; no new visual token system.
+- Deliverables:
+  - Added `order.service.ts` with `confirmKitchenOrder(...)` + `getKitchenOrderForSession(...)`.
+  - Added business/session/menu validation for confirmation payload and available menu item enforcement.
+  - Wired new table-service actions for confirm/read kitchen order state.
+  - Enabled host composer confirm button to create ticket immediately and show created-ticket state.
+  - Extended `ConfirmKitchenOrderInput` contracts to include order-item payload lines.
+- Touched Files (single-entry log):
+  - `src/features/table-service/server/order.service.ts` (added)
+  - `src/features/table-service/server/index.ts` (updated)
+  - `src/features/table-service/shared/table-service.contracts.ts` (updated)
+  - `app/actions/modules/table-service.ts` (updated)
+  - `app/(dashboard)/service/host/page.tsx` (updated)
+  - `src/features/table-service/ui/HostOrderComposerPageClient.tsx` (updated)
+  - `docs/restaurant-table-service-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx eslint "app/(dashboard)/service/host/page.tsx" "app/actions/modules/table-service.ts" "src/features/table-service/server/order.service.ts" "src/features/table-service/server/index.ts" "src/features/table-service/shared/table-service.contracts.ts" "src/features/table-service/ui/HostOrderComposerPageClient.tsx"` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 6.
+  - Delta rationale: exact RTS-03-b scope (confirm write-path and host confirm wiring).
+- Unrelated-file check:
+  - Existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: pending (record after commit)
+  - Commit title: `feat(rts-03): create kitchen ticket immediately on host confirm`
+
 ### 2026-02-28 - RTS-03-a completed: host table order composer draft UI
 
 - Suggested Commit Title: `feat(rts-03): add host table order composer draft UI`

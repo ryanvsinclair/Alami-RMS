@@ -337,7 +337,8 @@ Implemented capabilities:
   - per-line quantity + notes editing
   - line removal
   - subtotal/quantity summary
-  - confirm CTA placeholder reserved for RTS-03-b
+  - confirm action that immediately creates kitchen ticket (`KitchenOrder` + `KitchenOrderItem` rows)
+  - existing ticket state surfaced in host workspace to prevent duplicate order creation
 
 Canonical paths:
 
@@ -350,6 +351,7 @@ Canonical paths:
 - `app/actions/modules/table-service.ts`
 - `src/features/table-service/server/menu-csv.ts`
 - `src/features/table-service/server/menu.service.ts`
+- `src/features/table-service/server/order.service.ts`
 - `src/features/table-service/server/table.service.ts`
 - `src/features/table-service/ui/HostOrderComposerPageClient.tsx`
 - `src/features/table-service/ui/MenuSetupPageClient.tsx`

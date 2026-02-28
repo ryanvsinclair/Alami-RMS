@@ -180,10 +180,10 @@ Use `Canonical Order Checklist` statuses as source of truth.
 Current snapshot (2026-02-28):
 
 - Launch-critical checklist items total: `50`
-- Launch-critical `[x]`: `27`
+- Launch-critical `[x]`: `28`
 - Launch-critical `[~]`: `0`
-- Strict completion: `54.00%`
-- Weighted progress: `54.00%`
+- Strict completion: `56.00%`
+- Weighted progress: `56.00%`
 - Parked post-launch checklist items (DI): `7` (excluded from launch completion %)
 
 Update rule after each slice:
@@ -226,11 +226,11 @@ Parked stream:
 
 ## Last Left Off Here
 
-- Current task ID: `RTS-03-b`
-- Current task: `Confirm order and create kitchen ticket`
+- Current task ID: `RTS-03-c`
+- Current task: `Start 30-minute due timer at confirmation`
 - Status: `NOT STARTED`
 - Last updated: `2026-02-28`
-- Note: RTS-03-a host composer draft UI completed; continue deterministic order with RTS-03-b.
+- Note: RTS-03-b immediate kitchen-ticket creation completed; continue deterministic order with RTS-03-c.
 
 ## Canonical Order Checklist
 
@@ -305,7 +305,7 @@ Plan doc: `docs/restaurant-table-service-plan.md`
 #### Phase RTS-03 - Host order confirmation flow
 
 - [x] RTS-03-a: Host table order composer
-- [ ] RTS-03-b: Confirm order -> kitchen ticket creation
+- [x] RTS-03-b: Confirm order -> kitchen ticket creation
 - [ ] RTS-03-c: Start 30-minute due timer at confirmation
 - [ ] RTS-03-d: Post-confirm edits append new items on same order (no amendment table in V1)
 
@@ -417,10 +417,55 @@ No additional missing plan docs were identified from the current chat scope afte
 ## Completion Snapshot
 
 - Launch-critical initiatives active: `5` (RPK, RTS, IMG-L, UX-L, LG)
-- Launch-critical items complete: `27`
+- Launch-critical items complete: `28`
 - Parked post-launch initiatives: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - RTS-03-b confirm action now creates kitchen ticket immediately
+
+- Constitution Restatement:
+  - Task ID: `RTS-03-b`
+  - Scope: implement host confirm action that immediately creates kitchen ticket records from current draft lines.
+  - Invariants confirmed: one-order-per-session preserved via unique `table_session_id`; no guest-ordering/public-path changes; no queue/timer lifecycle scope expansion in this slice.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: structural host workflow updates only, no new design token additions.
+- Preflight evidence:
+  - `Get-Content docs/restaurant-table-service-plan.md`
+  - `Get-Content prisma/schema.prisma`
+  - `Get-Content app/actions/modules/table-service.ts`
+  - `Get-Content app/(dashboard)/service/host/page.tsx`
+  - `Get-Content src/features/table-service/ui/HostOrderComposerPageClient.tsx`
+  - `Get-Content src/features/table-service/shared/table-service.contracts.ts`
+  - `rg -n "ConfirmKitchenOrderInput|AppendKitchenOrderItemsInput|kitchenOrder|KitchenOrder|confirm" app src/features/table-service docs/master-plan-v2.md docs/restaurant-table-service-plan.md --glob '!**/generated/**'`
+- Implementation:
+  - Added `src/features/table-service/server/order.service.ts`:
+    - `confirmKitchenOrder(...)` transactional create of `KitchenOrder` and nested `KitchenOrderItem` rows
+    - `getKitchenOrderForSession(...)` read path for host workspace
+    - active-session and available-menu-item validation during confirmation
+  - Exported order service via `src/features/table-service/server/index.ts`.
+  - Extended table-service action wrapper (`app/actions/modules/table-service.ts`) with:
+    - `confirmKitchenOrder(...)`
+    - `getKitchenOrderForSession(...)`
+  - Updated host route (`app/(dashboard)/service/host/page.tsx`) to load existing kitchen ticket state for the active session.
+  - Updated host composer UI to:
+    - call confirm action
+    - create ticket immediately from draft lines
+    - render created-ticket state and prevent duplicate confirmation
+  - Updated shared order contracts so `ConfirmKitchenOrderInput` carries item lines.
+- Validation:
+  - `npx eslint "app/(dashboard)/service/host/page.tsx" "app/actions/modules/table-service.ts" "src/features/table-service/server/order.service.ts" "src/features/table-service/server/index.ts" "src/features/table-service/shared/table-service.contracts.ts" "src/features/table-service/ui/HostOrderComposerPageClient.tsx"` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 6 (host route + host UI + action wrapper + order service + server barrel + shared contract update)
+  - changed docs: source/master/overview/changelog sync
+  - proportionality reason: exactly scoped to RTS-03-b immediate ticket-creation behavior.
+- Unrelated-file check:
+  - pre-existing unrelated local files remained untouched; this slice modified only RTS-03-b scope files plus required canonical docs.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+- Commit checkpoint: pending (record after commit).
 
 ### 2026-02-28 - RTS-03-a host table order composer draft UI completed
 

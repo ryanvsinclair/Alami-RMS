@@ -1,0 +1,168 @@
+import { serialize } from "@/domain/shared/serialize";
+import { prisma } from "@/server/db/prisma";
+import type {
+  ConfirmKitchenOrderInput,
+  KitchenOrderDraftItemInput,
+  KitchenOrderItemStatusContract,
+  TableServiceKitchenOrderSummary,
+} from "../shared/table-service.contracts";
+
+type KitchenOrderRecord = {
+  id: string;
+  business_id: string;
+  table_session_id: string;
+  notes: string | null;
+  confirmed_at: Date | null;
+  due_at: Date | null;
+  closed_at: Date | null;
+  items: Array<{
+    id: string;
+    business_id: string;
+    kitchen_order_id: string;
+    menu_item_id: string;
+    quantity: number;
+    notes: string | null;
+    status: KitchenOrderItemStatusContract;
+  }>;
+};
+
+function normalizeOptionalText(value: string | null | undefined) {
+  const trimmed = value?.trim();
+  return trimmed && trimmed.length > 0 ? trimmed : null;
+}
+
+function normalizeConfirmItems(items: KitchenOrderDraftItemInput[]) {
+  if (!Array.isArray(items) || items.length === 0) {
+    throw new Error("At least one order item is required to confirm");
+  }
+
+  return items.map((item, index) => {
+    const menuItemId = item.menuItemId.trim();
+    if (!menuItemId) {
+      throw new Error(`Order item ${index + 1} is missing menu item id`);
+    }
+
+    const quantity = Math.trunc(Number(item.quantity));
+    if (!Number.isFinite(quantity) || quantity < 1) {
+      throw new Error(`Order item ${index + 1} has invalid quantity`);
+    }
+
+    return {
+      menuItemId,
+      quantity,
+      notes: normalizeOptionalText(item.notes),
+    };
+  });
+}
+
+function toKitchenOrderSummary(order: KitchenOrderRecord): TableServiceKitchenOrderSummary {
+  return {
+    id: order.id,
+    businessId: order.business_id,
+    tableSessionId: order.table_session_id,
+    notes: order.notes,
+    confirmedAt: order.confirmed_at ? order.confirmed_at.toISOString() : null,
+    dueAt: order.due_at ? order.due_at.toISOString() : null,
+    closedAt: order.closed_at ? order.closed_at.toISOString() : null,
+    items: order.items.map((item) => ({
+      id: item.id,
+      businessId: item.business_id,
+      kitchenOrderId: item.kitchen_order_id,
+      menuItemId: item.menu_item_id,
+      quantity: item.quantity,
+      notes: item.notes,
+      status: item.status,
+    })),
+  };
+}
+
+export async function getKitchenOrderForSession(businessId: string, tableSessionId: string) {
+  const order = await prisma.kitchenOrder.findFirst({
+    where: {
+      business_id: businessId,
+      table_session_id: tableSessionId,
+    },
+    include: {
+      items: {
+        orderBy: [{ created_at: "asc" }, { id: "asc" }],
+      },
+    },
+  });
+
+  if (!order) return null;
+  return serialize(toKitchenOrderSummary(order as KitchenOrderRecord));
+}
+
+export async function confirmKitchenOrder(
+  businessId: string,
+  input: ConfirmKitchenOrderInput,
+) {
+  const normalizedItems = normalizeConfirmItems(input.items);
+
+  return prisma.$transaction(async (tx) => {
+    const session = await tx.tableSession.findFirst({
+      where: {
+        id: input.tableSessionId,
+        business_id: businessId,
+        closed_at: null,
+      },
+      select: { id: true },
+    });
+    if (!session) {
+      throw new Error("Active table session not found");
+    }
+
+    const existingOrder = await tx.kitchenOrder.findFirst({
+      where: {
+        business_id: businessId,
+        table_session_id: session.id,
+      },
+      include: {
+        items: {
+          orderBy: [{ created_at: "asc" }, { id: "asc" }],
+        },
+      },
+    });
+    if (existingOrder) {
+      return serialize(toKitchenOrderSummary(existingOrder as KitchenOrderRecord));
+    }
+
+    const uniqueMenuItemIds = Array.from(
+      new Set(normalizedItems.map((item) => item.menuItemId)),
+    );
+    const availableMenuItems = await tx.menuItem.findMany({
+      where: {
+        id: { in: uniqueMenuItemIds },
+        business_id: businessId,
+        is_available: true,
+      },
+      select: { id: true },
+    });
+    if (availableMenuItems.length !== uniqueMenuItemIds.length) {
+      throw new Error("One or more menu items are unavailable for confirmation");
+    }
+
+    const createdOrder = await tx.kitchenOrder.create({
+      data: {
+        business_id: businessId,
+        table_session_id: session.id,
+        notes: normalizeOptionalText(input.notes),
+        items: {
+          create: normalizedItems.map((item) => ({
+            business_id: businessId,
+            menu_item_id: item.menuItemId,
+            quantity: item.quantity,
+            notes: item.notes,
+          })),
+        },
+      },
+      include: {
+        items: {
+          orderBy: [{ created_at: "asc" }, { id: "asc" }],
+        },
+      },
+    });
+
+    return serialize(toKitchenOrderSummary(createdOrder as KitchenOrderRecord));
+  });
+}

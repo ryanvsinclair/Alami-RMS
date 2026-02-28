@@ -116,15 +116,18 @@ export interface StartTableSessionInput {
 export interface ConfirmKitchenOrderInput {
   tableSessionId: string;
   notes?: string | null;
+  items: KitchenOrderDraftItemInput[];
+}
+
+export interface KitchenOrderDraftItemInput {
+  menuItemId: string;
+  quantity: number;
+  notes?: string | null;
 }
 
 export interface AppendKitchenOrderItemsInput {
   kitchenOrderId: string;
-  items: Array<{
-    menuItemId: string;
-    quantity: number;
-    notes?: string | null;
-  }>;
+  items: KitchenOrderDraftItemInput[];
 }
 
 export interface MenuCsvImportReport {

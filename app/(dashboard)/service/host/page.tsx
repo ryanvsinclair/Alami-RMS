@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { HostOrderComposerPageClient } from "@/features/table-service/ui";
 import {
   getDiningTableById,
+  getKitchenOrderForSession,
   getMenuSetupData,
   getOrCreateActiveTableSession,
   requireTableServiceAccess,
@@ -24,6 +25,7 @@ export default async function TableServiceHostPage({
   }
 
   const session = await getOrCreateActiveTableSession(businessId, table.id);
+  const kitchenOrder = await getKitchenOrderForSession(businessId, session.id);
   const menuSetup = await getMenuSetupData(businessId);
   const availableMenuItems = menuSetup.items.filter((item) => item.isAvailable);
 
@@ -32,6 +34,7 @@ export default async function TableServiceHostPage({
       <HostOrderComposerPageClient
         table={table}
         session={session}
+        kitchenOrder={kitchenOrder}
         categories={menuSetup.categories}
         items={availableMenuItems}
       />

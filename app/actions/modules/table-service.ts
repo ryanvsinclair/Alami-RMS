@@ -4,6 +4,7 @@
 "use server";
 
 import {
+  confirmKitchenOrder as _confirmKitchenOrder,
   createMenuCategory as _createMenuCategory,
   createMenuItem as _createMenuItem,
   createDiningTable as _createDiningTable,
@@ -11,6 +12,7 @@ import {
   deleteDiningTable as _deleteDiningTable,
   deleteMenuItem as _deleteMenuItem,
   getDiningTables as _getDiningTables,
+  getKitchenOrderForSession as _getKitchenOrderForSession,
   getMenuSetupData as _getMenuSetupData,
   importMenuItemsFromCsv as _importMenuItemsFromCsv,
   regenerateDiningTableQrToken as _regenerateDiningTableQrToken,
@@ -20,6 +22,7 @@ import {
   updateMenuItem as _updateMenuItem,
 } from "@/features/table-service/server";
 import type {
+  ConfirmKitchenOrderInput,
   UpsertMenuCategoryInput,
   UpsertMenuItemInput,
 } from "@/features/table-service/shared";
@@ -96,4 +99,14 @@ export async function deleteDiningTable(tableId: string) {
 export async function regenerateDiningTableQrToken(tableId: string) {
   const { businessId } = await requireTableServiceAccess();
   return _regenerateDiningTableQrToken(businessId, tableId);
+}
+
+export async function getKitchenOrderForSession(tableSessionId: string) {
+  const { businessId } = await requireTableServiceAccess();
+  return _getKitchenOrderForSession(businessId, tableSessionId);
+}
+
+export async function confirmKitchenOrder(input: ConfirmKitchenOrderInput) {
+  const { businessId } = await requireTableServiceAccess();
+  return _confirmKitchenOrder(businessId, input);
 }
