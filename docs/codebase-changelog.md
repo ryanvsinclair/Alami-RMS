@@ -52,7 +52,7 @@ Companion overview: `docs/codebase-overview.md`
 - Dependency change check: no new dependencies added.
 - Env-var change check: no new env vars introduced.
 - Commit checkpoint:
-  - Commit hash: pending (record after commit)
+  - Commit hash: `94962a6`
   - Commit title: `feat(rts-02): add table scan token resolver route baseline`
 
 ### 2026-02-28 - RTS-01-b completed: dining-table CRUD + static scan-token generation
