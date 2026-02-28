@@ -226,6 +226,9 @@ export default function HostOrderComposerPageClient({
             <Link href="/service/tables" className="text-primary hover:underline">
               Table Setup
             </Link>
+            <Link href="/service/kitchen" className="text-primary hover:underline">
+              Kitchen Queue
+            </Link>
           </div>
         </div>
         <h1 className="mt-1 text-xl font-bold text-foreground">{table.tableNumber}</h1>

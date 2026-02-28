@@ -1,6 +1,6 @@
 # Restaurant Table QR + Host/Kitchen Ops Plan (Restaurant-Only V1)
 
-Status: ACTIVE - RTS-00 through RTS-03 complete; RTS-04 through RTS-05 pending
+Status: ACTIVE - RTS-00 through RTS-03 complete; RTS-04 in progress; RTS-05 pending
 Created: 2026-02-28
 Last Updated: 2026-02-28
 Primary Purpose: launch restaurant table service with QR routing, host order confirmation, and kitchen queue operations.
@@ -23,6 +23,12 @@ Primary Purpose: launch restaurant table service with QR routing, host order con
 Constitution source: `docs/execution-constitution.md`
 
 ## Latest Update
+
+- **2026-02-28 - RTS-04-a completed (FIFO kitchen queue rendering by confirmation time).**
+  - Added module-gated kitchen route at `app/(dashboard)/service/kitchen/page.tsx`.
+  - Added queue read service that returns confirmed, open orders sorted by `confirmed_at ASC` (FIFO).
+  - Kitchen queue surface now renders table/session ticket cards in queue-order sequence with item/status visibility.
+  - Added host workspace link to kitchen queue for cross-workspace navigation.
 
 - **2026-02-28 - RTS-03-d completed (post-confirm edits append to same order).**
   - Added append service path to write new `KitchenOrderItem` rows onto existing active `KitchenOrder`.
@@ -116,7 +122,7 @@ Constitution source: `docs/execution-constitution.md`
 ## Pick Up Here
 
 - Current phase: `RTS-04`
-- Current task: `RTS-04-a`
+- Current task: `RTS-04-b`
 - Status: `[ ]` pending
 
 ## Scope
@@ -218,7 +224,7 @@ This section is authoritative for RTS V1 Prisma modeling.
 - `RTS-01`: `[x]` completed
 - `RTS-02`: `[x]` completed
 - `RTS-03`: `[x]` completed
-- `RTS-04`: `[ ]` pending
+- `RTS-04`: `[~]` in progress
 - `RTS-05`: `[ ]` pending
 
 ## Mandatory Restatement Before Phase Work
@@ -273,10 +279,10 @@ Before starting any checklist item in this plan:
 
 ## RTS-04 - Kitchen queue operations
 
-**Status:** `[ ]` pending
+**Status:** `[~]` in progress
 
-- [ ] RTS-04-0: Constitution restatement logged for this phase and no deviation required.
-- [ ] RTS-04-a: Render queue in FIFO order by confirmation timestamp.
+- [x] RTS-04-0: Constitution restatement logged for this phase and no deviation required.
+- [x] RTS-04-a: Render queue in FIFO order by confirmation timestamp.
 - [ ] RTS-04-b: Add item status/actions for `pending`, `preparing`, `ready_to_serve`, `served`, and `cancelled`.
 - [ ] RTS-04-c: Collapse order from visible queue when all items are terminal (`served`/`cancelled`) while keeping order open.
 - [ ] RTS-04-d: Re-surface collapsed order in queue when new items are appended post-confirm.

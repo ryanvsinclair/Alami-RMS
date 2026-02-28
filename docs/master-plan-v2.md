@@ -180,10 +180,10 @@ Use `Canonical Order Checklist` statuses as source of truth.
 Current snapshot (2026-02-28):
 
 - Launch-critical checklist items total: `50`
-- Launch-critical `[x]`: `30`
+- Launch-critical `[x]`: `31`
 - Launch-critical `[~]`: `0`
-- Strict completion: `60.00%`
-- Weighted progress: `60.00%`
+- Strict completion: `62.00%`
+- Weighted progress: `62.00%`
 - Parked post-launch checklist items (DI): `7` (excluded from launch completion %)
 
 Update rule after each slice:
@@ -226,11 +226,11 @@ Parked stream:
 
 ## Last Left Off Here
 
-- Current task ID: `RTS-04-a`
-- Current task: `FIFO kitchen queue by confirmation time`
+- Current task ID: `RTS-04-b`
+- Current task: `Kitchen item status lifecycle actions`
 - Status: `NOT STARTED`
 - Last updated: `2026-02-28`
-- Note: RTS-03 phase completed through same-order append flow; advance to RTS-04-a per gate order.
+- Note: RTS-04-a FIFO queue rendering completed; continue deterministic order with RTS-04-b.
 
 ## Canonical Order Checklist
 
@@ -311,7 +311,7 @@ Plan doc: `docs/restaurant-table-service-plan.md`
 
 #### Phase RTS-04 - Kitchen queue operations
 
-- [ ] RTS-04-a: FIFO queue by confirmation time
+- [x] RTS-04-a: FIFO queue by confirmation time
 - [ ] RTS-04-b: Item status lifecycle includes `pending`, `preparing`, `ready_to_serve`, `served`, `cancelled`
 - [ ] RTS-04-c: Collapse order from queue when all items are terminal (`served`/`cancelled`) while keeping order open
 - [ ] RTS-04-d: Host `done/paid` action closes order and closes table session
@@ -417,10 +417,45 @@ No additional missing plan docs were identified from the current chat scope afte
 ## Completion Snapshot
 
 - Launch-critical initiatives active: `5` (RPK, RTS, IMG-L, UX-L, LG)
-- Launch-critical items complete: `30`
+- Launch-critical items complete: `31`
 - Parked post-launch initiatives: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - RTS-04-a FIFO kitchen queue rendering implemented
+
+- Constitution Restatement:
+  - Task ID: `RTS-04-a`
+  - Scope: render kitchen queue ordered by confirmation timestamp (FIFO).
+  - Invariants confirmed: queue ordering tied to `confirmed_at`; one-order-per-session preserved; no item status mutation/terminal-collapse logic added in this slice.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: structural queue page only, no new visual token additions.
+- Preflight evidence:
+  - `Get-Content docs/restaurant-table-service-plan.md`
+  - `Get-Content src/features/table-service/server/order.service.ts`
+  - `Get-Content app/(dashboard)/service/layout.tsx`
+  - `rg -n "service/kitchen|kitchen queue|FIFO|confirmed_at|RTS-04" app src/features docs/restaurant-table-service-plan.md docs/master-plan-v2.md --glob '!**/generated/**'`
+- Implementation:
+  - Added server queue read path `getKitchenQueue(...)` in `src/features/table-service/server/order.service.ts`:
+    - filters to open orders with non-null `confirmed_at`
+    - sorts by `confirmed_at ASC` then `created_at ASC` for deterministic FIFO
+    - includes table metadata and item/status lines for rendering
+  - Added route `app/(dashboard)/service/kitchen/page.tsx` to render kitchen queue cards in FIFO sequence.
+  - Added host workspace quick-link to kitchen queue.
+  - Added shared queue contract types for kitchen queue entry/item summaries.
+- Validation:
+  - `npx eslint "app/(dashboard)/service/kitchen/page.tsx" "src/features/table-service/server/order.service.ts" "src/features/table-service/shared/table-service.contracts.ts" "src/features/table-service/ui/HostOrderComposerPageClient.tsx" "app/actions/modules/table-service.ts"` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 4 (kitchen route + queue read service + queue contracts + host navigation link)
+  - changed docs: source/master/overview/changelog sync
+  - proportionality reason: exactly scoped to RTS-04-a FIFO queue rendering.
+- Unrelated-file check:
+  - pre-existing unrelated local files remained untouched; this slice modified only RTS-04-a scope files plus required canonical docs.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+- Commit checkpoint: pending (record after commit).
 
 ### 2026-02-28 - RTS-03-d post-confirm append-to-same-order flow completed
 

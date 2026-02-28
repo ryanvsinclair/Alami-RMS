@@ -79,6 +79,28 @@ export interface TableServiceKitchenOrderSummary {
   items: TableServiceKitchenOrderItemSummary[];
 }
 
+export interface TableServiceKitchenQueueItemSummary {
+  id: string;
+  menuItemId: string;
+  menuItemName: string;
+  quantity: number;
+  notes: string | null;
+  status: KitchenOrderItemStatusContract;
+}
+
+export interface TableServiceKitchenQueueEntry {
+  orderId: string;
+  businessId: string;
+  tableSessionId: string;
+  tableId: string;
+  tableNumber: string;
+  orderNotes: string | null;
+  confirmedAt: string;
+  dueAt: string | null;
+  itemCount: number;
+  items: TableServiceKitchenQueueItemSummary[];
+}
+
 export interface TableServiceMenuSetupData {
   categories: TableServiceMenuCategorySummary[];
   items: TableServiceMenuItemSummary[];

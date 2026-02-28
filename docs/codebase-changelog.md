@@ -20,6 +20,45 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - RTS-04-a completed: FIFO kitchen queue by confirmation time
+
+- Suggested Commit Title: `feat(rts-04): render kitchen queue FIFO by confirmed_at`
+- Scope: RTS phase `RTS-04-a` (kitchen queue ordering baseline).
+- Constitution Restatement:
+  - Task ID: `RTS-04-a`
+  - Scope sentence: render kitchen queue in FIFO order using order confirmation timestamps.
+  - Invariants confirmed: no status transition actions introduced yet; one-order-per-session contract unchanged; no terminal-collapse behavior introduced in this slice.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: structural queue workspace only.
+- Deliverables:
+  - Added `getKitchenQueue(...)` read path with `confirmed_at ASC` FIFO ordering and open-order filtering.
+  - Added `/service/kitchen` route to render queue cards in FIFO sequence.
+  - Added shared queue summary contract types for queue entry/item payloads.
+  - Added kitchen queue link in host workspace navigation.
+- Touched Files (single-entry log):
+  - `app/(dashboard)/service/kitchen/page.tsx` (added)
+  - `src/features/table-service/server/order.service.ts` (updated)
+  - `src/features/table-service/shared/table-service.contracts.ts` (updated)
+  - `src/features/table-service/ui/HostOrderComposerPageClient.tsx` (updated)
+  - `docs/restaurant-table-service-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx eslint "app/(dashboard)/service/kitchen/page.tsx" "src/features/table-service/server/order.service.ts" "src/features/table-service/shared/table-service.contracts.ts" "src/features/table-service/ui/HostOrderComposerPageClient.tsx" "app/actions/modules/table-service.ts"` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 4.
+  - Delta rationale: exact RTS-04-a scope (FIFO queue read + queue route render).
+- Unrelated-file check:
+  - Existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: pending (record after commit)
+  - Commit title: `feat(rts-04): render kitchen queue FIFO by confirmed_at`
+
 ### 2026-02-28 - RTS-03-d completed: post-confirm item append on same kitchen order
 
 - Suggested Commit Title: `feat(rts-03): append post-confirm items on same kitchen order`

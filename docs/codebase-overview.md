@@ -341,6 +341,7 @@ Implemented capabilities:
   - `confirmed_at` + `due_at` timer fields set at confirm time (`due_at = confirmed_at + 30 minutes`)
   - post-confirm append action that adds new `KitchenOrderItem` rows onto the same `KitchenOrder`
   - existing ticket state surfaced in host workspace to prevent duplicate order creation
+- Kitchen workspace route `/service/kitchen` now renders confirmed open orders in FIFO order by `confirmed_at` (oldest first).
 
 Canonical paths:
 
@@ -348,6 +349,7 @@ Canonical paths:
 - `app/(dashboard)/service/menu/page.tsx`
 - `app/(dashboard)/service/tables/page.tsx`
 - `app/(dashboard)/service/host/page.tsx`
+- `app/(dashboard)/service/kitchen/page.tsx`
 - `app/r/[publicSlug]/page.tsx`
 - `app/scan/t/[token]/page.tsx`
 - `app/actions/modules/table-service.ts`

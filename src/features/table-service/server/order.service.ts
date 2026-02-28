@@ -4,6 +4,7 @@ import type {
   AppendKitchenOrderItemsInput,
   ConfirmKitchenOrderInput,
   KitchenOrderDraftItemInput,
+  TableServiceKitchenQueueEntry,
   KitchenOrderItemStatusContract,
   TableServiceKitchenOrderSummary,
 } from "../shared/table-service.contracts";
@@ -98,6 +99,76 @@ export async function getKitchenOrderForSession(businessId: string, tableSession
 
   if (!order) return null;
   return serialize(toKitchenOrderSummary(order as KitchenOrderRecord));
+}
+
+export async function getKitchenQueue(businessId: string) {
+  const orders = await prisma.kitchenOrder.findMany({
+    where: {
+      business_id: businessId,
+      closed_at: null,
+      confirmed_at: {
+        not: null,
+      },
+    },
+    orderBy: [{ confirmed_at: "asc" }, { created_at: "asc" }],
+    select: {
+      id: true,
+      business_id: true,
+      table_session_id: true,
+      notes: true,
+      confirmed_at: true,
+      due_at: true,
+      table_session: {
+        select: {
+          dining_table_id: true,
+          dining_table: {
+            select: {
+              table_number: true,
+            },
+          },
+        },
+      },
+      items: {
+        orderBy: [{ created_at: "asc" }, { id: "asc" }],
+        select: {
+          id: true,
+          menu_item_id: true,
+          quantity: true,
+          notes: true,
+          status: true,
+          menu_item: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const queue: TableServiceKitchenQueueEntry[] = orders
+    .filter((order) => order.confirmed_at !== null)
+    .map((order) => ({
+      orderId: order.id,
+      businessId: order.business_id,
+      tableSessionId: order.table_session_id,
+      tableId: order.table_session.dining_table_id,
+      tableNumber: order.table_session.dining_table.table_number,
+      orderNotes: order.notes,
+      confirmedAt: (order.confirmed_at as Date).toISOString(),
+      dueAt: order.due_at ? order.due_at.toISOString() : null,
+      itemCount: order.items.length,
+      items: order.items.map((item) => ({
+        id: item.id,
+        menuItemId: item.menu_item_id,
+        menuItemName: item.menu_item.name,
+        quantity: item.quantity,
+        notes: item.notes,
+        status: item.status,
+      })),
+    }));
+
+  return serialize(queue);
 }
 
 export async function confirmKitchenOrder(
