@@ -462,7 +462,7 @@ No additional missing plan docs were identified from the current chat scope afte
   - pre-existing unrelated local files remained untouched; this slice modified only RTS-01-b paths plus required canonical docs.
 - Dependency check: no new dependencies.
 - Env-var check: no new environment variables.
-- Commit checkpoint: pending (record after commit).
+- Commit checkpoint: `d5b8ab0` (`feat(rts-01): add dining-table CRUD and static scan-token setup route`).
 
 ### 2026-02-28 - RTS-01-a menu CRUD and CSV import completed
 

@@ -60,7 +60,7 @@ Companion overview: `docs/codebase-overview.md`
 - Dependency change check: no new dependencies added.
 - Env-var change check: no new env vars introduced.
 - Commit checkpoint:
-  - Commit hash: pending (record after commit)
+  - Commit hash: `d5b8ab0`
   - Commit title: `feat(rts-01): add dining-table CRUD and static scan-token setup route`
 
 ### 2026-02-28 - RTS-01-a completed: menu CRUD + CSV import setup surface
