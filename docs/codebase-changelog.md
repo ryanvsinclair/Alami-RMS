@@ -59,7 +59,7 @@ Companion overview: `docs/codebase-overview.md`
 - Dependency change check: no new dependencies added.
 - Env-var change check: no new env vars introduced.
 - Commit checkpoint:
-  - Commit hash: pending (record after commit)
+  - Commit hash: `d1d0a35`
   - Commit title: `feat(rts-03): create kitchen ticket immediately on host confirm`
 
 ### 2026-02-28 - RTS-03-a completed: host table order composer draft UI

@@ -465,7 +465,7 @@ No additional missing plan docs were identified from the current chat scope afte
   - pre-existing unrelated local files remained untouched; this slice modified only RTS-03-b scope files plus required canonical docs.
 - Dependency check: no new dependencies.
 - Env-var check: no new environment variables.
-- Commit checkpoint: pending (record after commit).
+- Commit checkpoint: `d1d0a35` (`feat(rts-03): create kitchen ticket immediately on host confirm`).
 
 ### 2026-02-28 - RTS-03-a host table order composer draft UI completed
 
