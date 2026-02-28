@@ -50,7 +50,7 @@ Companion overview: `docs/codebase-overview.md`
 - Dependency change check: no new dependencies added.
 - Env-var change check: no new env vars introduced.
 - Commit checkpoint:
-  - Commit hash: pending (record after commit)
+  - Commit hash: `a194ade`
   - Commit title: `docs(rts-05): mark temporary mode note requirement complete`
 
 ### 2026-02-28 - RTS-05-b completed: kitchen mode redirect from home
