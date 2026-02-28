@@ -226,11 +226,11 @@ Post-launch stream:
 
 ## Last Left Off Here
 
-- Current task ID: `DI-04`
-- Current task: `Review inbox and user-triggered post flow`
+- Current task ID: `DI-05`
+- Current task: `Controlled automation (trust-gated auto-post)`
 - Status: `NOT STARTED`
 - Last updated: `2026-02-28`
-- Note: DI-03 is complete; continue deterministic DI sequence at DI-04.
+- Note: DI-04 is complete; continue deterministic DI sequence at DI-05.
 
 ## Canonical Order Checklist
 
@@ -374,7 +374,7 @@ Test format lock:
 Plan doc: `docs/document-intake-pipeline-plan.md`
 Current state: active, resumed after launch-gate completion.
 Re-entry trigger: satisfied (`LG-00` fully complete).
-Resume point: `DI-04`.
+Resume point: `DI-05`.
 
 High-level DI checklist:
 
@@ -382,7 +382,7 @@ High-level DI checklist:
 - [x] DI-01 capture/isolation
 - [x] DI-02 parse/score
 - [x] DI-03 vendor mapping/trust setup
-- [ ] DI-04 inbox/post flow
+- [x] DI-04 inbox/post flow
 - [ ] DI-05 trust-gated auto-post
 - [ ] DI-06 analytics layer
 
@@ -421,6 +421,55 @@ No additional missing plan docs were identified from the current chat scope afte
 - Post-launch initiatives in progress: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - DI-04 completed (review inbox and user-triggered post flow)
+
+- Constitution Restatement:
+  - Task ID: `DI-04`
+  - Scope: implement documents inbox/detail review surfaces, user-triggered document posting, and nav badge plumbing with module guards.
+  - Invariants confirmed: post is status-gated and idempotent; financial source is `document_intake`; inventory writes are mapping-driven and explicit; tenant boundaries remain business-scoped.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: structural-only additive UI; no new color tokens or gradient/glow additions.
+- Preflight evidence:
+  - `Get-Content docs/document-intake-pipeline-plan.md`
+  - `rg -n "document-post|draft-review|getDraftInboxBadgeCount|DocumentInboxClient|DocumentDraftDetailClient|bottom-nav" src app docs`
+  - `Get-Content src/features/documents/server/document-draft.repository.ts`
+- Implementation:
+  - Added DI-04 server services:
+    - `src/features/documents/server/document-post.service.ts`
+    - `src/features/documents/server/draft-review.service.ts`
+  - Added DI-04 service tests:
+    - `src/features/documents/server/document-post.service.test.mjs` (8 tests)
+  - Added DI-04 documents routes:
+    - `app/(dashboard)/documents/layout.tsx`
+    - `app/(dashboard)/documents/page.tsx`
+    - `app/(dashboard)/documents/[draftId]/page.tsx`
+  - Added DI-04 UI clients:
+    - `src/features/documents/ui/DocumentInboxClient.tsx`
+    - `src/features/documents/ui/DocumentDraftDetailClient.tsx`
+  - Updated module actions and barrel exports:
+    - `app/actions/modules/documents.ts`
+    - `src/features/documents/server/index.ts`
+    - `src/features/documents/ui/index.ts`
+  - Updated bottom nav with module-gated Documents entry and badge fetch:
+    - `components/nav/bottom-nav.tsx`
+  - Marked DI-04 complete in source/master plans and advanced deterministic pointer to DI-05.
+- Validation:
+  - `node --test src/features/documents/server/document-post.service.test.mjs` -> PASS (8 tests)
+  - `npx eslint app/actions/modules/documents.ts src/features/documents/server/document-post.service.ts src/features/documents/server/draft-review.service.ts src/features/documents/server/document-post.service.test.mjs src/features/documents/server/index.ts src/features/documents/ui/DocumentInboxClient.tsx src/features/documents/ui/DocumentDraftDetailClient.tsx src/features/documents/ui/index.ts components/nav/bottom-nav.tsx app/(dashboard)/documents/layout.tsx app/(dashboard)/documents/page.tsx app/(dashboard)/documents/[draftId]/page.tsx` -> PASS (1 non-blocking Next `no-img-element` warning in draft preview)
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 11
+  - changed tests: 1
+  - changed docs: source/master/changelog/overview sync
+  - proportionality reason: exact DI-04 scope (post + review + nav badge + dashboard route surfaces).
+- Unrelated-file check:
+  - pre-existing unrelated local files remained unchanged by this slice (`.claude/settings.local.json`, `docs/MASTER_BACKEND_ARCHITECTURE.md`).
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables introduced.
+- Manual smoke note:
+  - interactive browser-based DI-04 manual smoke was not executed in this non-interactive session; carry as residual risk for next interactive pass.
+- Commit checkpoint: `8111f2f` (`feat(di-04): add document inbox and user-triggered post flow`).
 
 ### 2026-02-28 - DI-03 completed (vendor mapping and trust setup baseline)
 

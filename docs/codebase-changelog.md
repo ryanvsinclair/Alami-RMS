@@ -20,6 +20,73 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - DI-04 completed: review inbox and user-triggered document post flow
+
+- Suggested Commit Title: `feat(di-04): add document inbox and user-triggered post flow`
+- Scope: DI phase `DI-04` (draft review inbox/detail, user-triggered posting, nav badge integration).
+- Constitution Restatement:
+  - Task ID: `DI-04`
+  - Scope sentence: add draft review/post server services, module actions, dashboard routes/UI, and documents nav badge for pending drafts.
+  - Invariants confirmed: posting remains `pending_review` gated and idempotent; `FinancialTransaction.source` is `document_intake`; mapping-driven inventory writes remain explicit.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: structural-only additive UI; no new color token or unauthorized style experimentation.
+- Deliverables:
+  - Added post service:
+    - `src/features/documents/server/document-post.service.ts`
+  - Added draft review service:
+    - `src/features/documents/server/draft-review.service.ts`
+  - Added DI-04 unit tests:
+    - `src/features/documents/server/document-post.service.test.mjs` (8 tests)
+  - Added dashboard routes:
+    - `app/(dashboard)/documents/layout.tsx`
+    - `app/(dashboard)/documents/page.tsx`
+    - `app/(dashboard)/documents/[draftId]/page.tsx`
+  - Added documents UI clients:
+    - `src/features/documents/ui/DocumentInboxClient.tsx`
+    - `src/features/documents/ui/DocumentDraftDetailClient.tsx`
+    - `src/features/documents/ui/index.ts` export updates
+  - Updated documents actions/barrel:
+    - `app/actions/modules/documents.ts`
+    - `src/features/documents/server/index.ts`
+  - Updated bottom nav with module-gated Documents entry + pending-draft badge:
+    - `components/nav/bottom-nav.tsx`
+  - Synced DI source/master/changelog/overview docs and advanced DI pointer to `DI-05`.
+- Touched Files (single-entry log):
+  - `app/actions/modules/documents.ts` (updated)
+  - `components/nav/bottom-nav.tsx` (updated)
+  - `src/features/documents/server/index.ts` (updated)
+  - `src/features/documents/server/document-post.service.ts` (added)
+  - `src/features/documents/server/draft-review.service.ts` (added)
+  - `src/features/documents/server/document-post.service.test.mjs` (added)
+  - `src/features/documents/ui/DocumentInboxClient.tsx` (added)
+  - `src/features/documents/ui/DocumentDraftDetailClient.tsx` (added)
+  - `src/features/documents/ui/index.ts` (updated)
+  - `app/(dashboard)/documents/layout.tsx` (added)
+  - `app/(dashboard)/documents/page.tsx` (added)
+  - `app/(dashboard)/documents/[draftId]/page.tsx` (added)
+  - `docs/document-intake-pipeline-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `node --test src/features/documents/server/document-post.service.test.mjs` -> PASS (8/8)
+  - `npx eslint app/actions/modules/documents.ts src/features/documents/server/document-post.service.ts src/features/documents/server/draft-review.service.ts src/features/documents/server/document-post.service.test.mjs src/features/documents/server/index.ts src/features/documents/ui/DocumentInboxClient.tsx src/features/documents/ui/DocumentDraftDetailClient.tsx src/features/documents/ui/index.ts components/nav/bottom-nav.tsx app/(dashboard)/documents/layout.tsx app/(dashboard)/documents/page.tsx app/(dashboard)/documents/[draftId]/page.tsx` -> PASS (1 non-blocking Next `no-img-element` warning in detail preview)
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 11
+  - Changed tests: 1
+  - Changed docs: 4
+  - Delta rationale: exact DI-04 scope (review/post flow + nav badge + route/UI wiring + canonical sync).
+- Unrelated-file check:
+  - Pre-existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+- Manual smoke note:
+  - Interactive browser-based DI-04 smoke is pending (non-interactive session); carry as residual risk to next interactive pass.
+- Commit checkpoint:
+  - Commit hash: `8111f2f`
+  - Commit title: `feat(di-04): add document inbox and user-triggered post flow`
+
 ### 2026-02-28 - DI-03 completed: vendor mapping and trust setup baseline
 
 - Suggested Commit Title: `feat(di-03): add vendor mapping and trust setup baseline`

@@ -1,12 +1,42 @@
 # Document Intake Pipeline Plan
 
 Last updated: February 28, 2026
-Status: ACTIVE - DI-03 complete, DI-04 next
+Status: ACTIVE - DI-04 complete, DI-05 next
 Constitution source: `docs/execution-constitution.md`
 
 ---
 
 ## Latest Update
+
+- **2026-02-28 - DI-04 completed (review inbox + user-triggered post flow).**
+  - Added post service:
+    - `src/features/documents/server/document-post.service.ts`
+  - Added draft review service:
+    - `src/features/documents/server/draft-review.service.ts`
+  - Added DI-04 test coverage:
+    - `src/features/documents/server/document-post.service.test.mjs` (8 cases)
+  - Added dashboard documents routes:
+    - `app/(dashboard)/documents/layout.tsx`
+    - `app/(dashboard)/documents/page.tsx`
+    - `app/(dashboard)/documents/[draftId]/page.tsx`
+  - Added DI-04 UI:
+    - `src/features/documents/ui/DocumentInboxClient.tsx`
+    - `src/features/documents/ui/DocumentDraftDetailClient.tsx`
+    - `src/features/documents/ui/index.ts` export updates
+  - Updated documents module server actions:
+    - `app/actions/modules/documents.ts`
+  - Updated documents server barrel:
+    - `src/features/documents/server/index.ts`
+  - Updated bottom nav:
+    - module-gated `Documents` entry + badge count from `getDraftInboxBadgeCount`
+    - `components/nav/bottom-nav.tsx`
+  - Validation passed:
+    - `node --test src/features/documents/server/document-post.service.test.mjs`
+    - `npx eslint app/actions/modules/documents.ts src/features/documents/server/document-post.service.ts src/features/documents/server/draft-review.service.ts src/features/documents/server/document-post.service.test.mjs src/features/documents/server/index.ts src/features/documents/ui/DocumentInboxClient.tsx src/features/documents/ui/DocumentDraftDetailClient.tsx src/features/documents/ui/index.ts components/nav/bottom-nav.tsx app/(dashboard)/documents/layout.tsx app/(dashboard)/documents/page.tsx app/(dashboard)/documents/[draftId]/page.tsx`
+    - `npx tsc --noEmit --incremental false`
+  - Manual UI smoke not executed in this non-interactive session (residual risk noted for next interactive pass).
+  - DI resume pointer advanced to **DI-05**.
+  - Commit checkpoint: `8111f2f` (`feat(di-04): add document inbox and user-triggered post flow`).
 
 - **2026-02-28 - DI-03 completed (vendor mapping + trust setup).**
   - Added vendor profile repository:
@@ -135,7 +165,7 @@ Constitution source: `docs/execution-constitution.md`
 
 ## Pick Up Here
 
-Next task: **DI-04** - Review Inbox and User-Triggered Post Flow.
+Next task: **DI-05** - Controlled Automation (Trust-Gated Auto-Post).
 
 ---
 
@@ -848,7 +878,7 @@ Validation:
 
 **Goal:** Surface a document inbox screen with a nav badge count. User reviews a draft. User clicks "Post". System atomically creates the `FinancialTransaction` (source: `document_intake`), optional `InventoryTransaction` entries for mapped line items, increments vendor trust, and marks the draft as `posted`. User can also reject a draft.
 
-**Status:** `[ ]` pending
+**Status:** `[x]` completed
 
 **Prerequisite:** DI-03 complete.
 
@@ -864,7 +894,7 @@ Validation:
 #### Checklist
 
 Post service:
-- [ ] Create `src/features/documents/server/document-post.service.ts`:
+- [x] Create `src/features/documents/server/document-post.service.ts`:
   - `postDraft(businessId, draftId, userId, options?: { autoPosted?: boolean })`:
     1. Load draft; guard `business_id` + `status === "pending_review"`
     2. Idempotency: if `financial_transaction_id` already set → return `{ financialTransactionId, inventoryTransactionsCreated: 0 }`
@@ -894,7 +924,7 @@ Post service:
     - Does NOT touch vendor trust count
 
 Draft review service:
-- [ ] Create `src/features/documents/server/draft-review.service.ts`:
+- [x] Create `src/features/documents/server/draft-review.service.ts`:
   - `getDraftInbox(businessId, { page, pageSize, statusFilter })` → `{ drafts: DocumentDraftSummary[], total: number }`
     - Default filter: `status IN ('pending_review', 'draft')`
     - Includes vendor name if linked
@@ -906,33 +936,33 @@ Draft review service:
   - `getDraftDocumentUrl(businessId, draftId)` → signed URL for raw document from Supabase Storage
 
 Server action additions:
-- [ ] `getDraftInbox(businessId, filters)` in `app/actions/modules/documents.ts`
-- [ ] `getDraftInboxBadgeCount(businessId)` — called from nav load path
-- [ ] `getDraftDetail(businessId, draftId)`
-- [ ] `getDraftDocumentUrl(businessId, draftId)`
-- [ ] `postDraft(businessId, draftId)` — user-triggered
-- [ ] `rejectDraft(businessId, draftId)`
+- [x] `getDraftInbox(businessId, filters)` in `app/actions/modules/documents.ts`
+- [x] `getDraftInboxBadgeCount(businessId)` — called from nav load path
+- [x] `getDraftDetail(businessId, draftId)`
+- [x] `getDraftDocumentUrl(businessId, draftId)`
+- [x] `postDraft(businessId, draftId)` — user-triggered
+- [x] `rejectDraft(businessId, draftId)`
 
 Route pages:
-- [ ] Create `app/(dashboard)/documents/page.tsx` — thin wrapper for `DocumentInboxClient`
-- [ ] Create `app/(dashboard)/documents/[draftId]/page.tsx` — thin wrapper for `DocumentDraftDetailClient`
-- [ ] Create `app/(dashboard)/documents/layout.tsx` — module guard: redirect to `/` if `documents` module not enabled
+- [x] Create `app/(dashboard)/documents/page.tsx` — thin wrapper for `DocumentInboxClient`
+- [x] Create `app/(dashboard)/documents/[draftId]/page.tsx` — thin wrapper for `DocumentDraftDetailClient`
+- [x] Create `app/(dashboard)/documents/layout.tsx` — module guard: redirect to `/` if `documents` module not enabled
 
 Nav badge:
-- [ ] Update `components/nav/bottom-nav.tsx`:
+- [x] Update `components/nav/bottom-nav.tsx`:
   - Add `documents` nav entry (module-gated: only shown when `documents` module enabled)
   - Load `getDraftInboxBadgeCount(businessId)` in the nav data fetch
   - Render numeric badge on the documents icon when count > 0
   - Badge display: show exact count up to 99, then `99+`
 
 UI components:
-- [ ] Create `src/features/documents/ui/DocumentInboxClient.tsx`:
+- [x] Create `src/features/documents/ui/DocumentInboxClient.tsx`:
   - Draft cards: vendor name (or "Unknown Vendor"), date, total, confidence badge (`MatchConfidence` reuse), status badge
   - Filter tabs: All | Pending Review | Draft | Posted | Rejected
   - Each card links to `/documents/{draftId}`
   - "Auto-posted" indicator on cards where `auto_posted = true`
   - Empty state per filter tab
-- [ ] Create `src/features/documents/ui/DocumentDraftDetailClient.tsx`:
+- [x] Create `src/features/documents/ui/DocumentDraftDetailClient.tsx`:
   - Raw document section: signed URL iframe for PDF/image, or scrollable text block for JSON/text
   - Parsed fields panel: vendor name, date, total, tax, confidence score with band badge
   - Parse flags section (collapsible): shows structured diagnostic flags
@@ -944,7 +974,7 @@ UI components:
   - Posted state: "Posted as document_intake expense on {date}" + link to financial record
 
 Unit tests:
-- [ ] Create `src/features/documents/server/document-post.service.test.mjs`:
+- [x] Create `src/features/documents/server/document-post.service.test.mjs`:
   - Test: `postDraft` on `pending_review` draft → `FinancialTransaction` created with `source: "document_intake"`, status → `posted`, `auto_posted: false`
   - Test: `postDraft` idempotency — second call returns same `financialTransactionId`, no duplicate created
   - Test: `postDraft` with 2 confirmed line item mappings → 2 `InventoryTransaction` records created
@@ -956,9 +986,9 @@ Unit tests:
   - Minimum 8 test cases
 
 Validation:
-- [ ] `node --test src/features/documents/server/document-post.service.test.mjs` → PASS (8+/8+)
+- [x] `node --test src/features/documents/server/document-post.service.test.mjs` → PASS (8+/8+)
 - [x] `npx tsc --noEmit --incremental false` → PASS
-- [ ] `npx eslint app/(dashboard)/documents/ src/features/documents/ components/nav/bottom-nav.tsx` → PASS
+- [x] `npx eslint app/(dashboard)/documents/ src/features/documents/ components/nav/bottom-nav.tsx` → PASS
 - [ ] Manual smoke: send email → review in inbox → Post → `financial_transactions` row has `source = 'document_intake'`, draft `status = 'posted'`
 - [ ] Manual smoke: nav badge shows correct pending count; clears after posting all pending
 

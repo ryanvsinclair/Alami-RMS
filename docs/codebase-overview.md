@@ -314,7 +314,7 @@ Canonical paths:
 - `prisma/migrations/20260228060000_business_profile_place_metadata/migration.sql`
 - `prisma/migrations/20260228130000_table_service_module_backfill/migration.sql`
 
-### Document Intake (DI-03 vendor mapping/trust baseline)
+### Document Intake (DI-04 review/post baseline)
 
 Implemented capabilities:
 
@@ -351,7 +351,14 @@ Implemented capabilities:
   - vendor mapping service supports draft vendor confirmation and sender-domain alias capture
   - line-item mapping repository supports per-vendor raw-name to inventory-item mapping upsert
   - module-gated server actions expose vendor profile/mapping controls
-  - vendor mapping panel component exists for inbox review composition in DI-04 integration
+  - vendor mapping panel component is available in document draft review
+- DI-04 review/post layer now active:
+  - document post service enforces `pending_review` guard, idempotent posting, and `document_intake` financial source writes
+  - mapped line items can create explicit inventory purchase transactions during post
+  - draft review service provides inbox listing, badge count, detail payloads, and signed document URL fetches
+  - module-gated dashboard routes now exist at `/documents` and `/documents/[draftId]`
+  - bottom nav includes module-gated Documents entry with pending-draft badge count
+  - inbox and detail clients provide review, mapping, post, and reject workflows
 
 Canonical paths:
 
@@ -372,10 +379,19 @@ Canonical paths:
 - `src/features/documents/server/vendor-item-mapping.repository.ts`
 - `src/features/documents/server/vendor-mapping.service.ts`
 - `src/features/documents/server/vendor-profile.repository.test.mjs`
+- `src/features/documents/server/document-post.service.ts`
+- `src/features/documents/server/document-post.service.test.mjs`
+- `src/features/documents/server/draft-review.service.ts`
 - `src/features/documents/ui/VendorMappingPanel.tsx`
+- `src/features/documents/ui/DocumentInboxClient.tsx`
+- `src/features/documents/ui/DocumentDraftDetailClient.tsx`
 - `src/features/documents/ui/index.ts`
 - `app/api/documents/inbound/route.ts`
+- `app/(dashboard)/documents/layout.tsx`
+- `app/(dashboard)/documents/page.tsx`
+- `app/(dashboard)/documents/[draftId]/page.tsx`
 - `app/actions/modules/documents.ts`
+- `components/nav/bottom-nav.tsx`
 - `lib/modules/documents/index.ts`
 - `lib/modules/registry.ts`
 
