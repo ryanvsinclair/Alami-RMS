@@ -51,6 +51,9 @@ Companion overview: `docs/codebase-overview.md`
   - Existing unrelated local files remained unchanged by this slice.
 - Dependency change check: no new dependencies added.
 - Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: `1eaae2d`
+  - Commit title: `test(lg-00-d): extend timer and queue-advancement launch smoke coverage`
 
 ### 2026-02-28 - LG-00-c completed: host->kitchen queue lifecycle regression pass
 
