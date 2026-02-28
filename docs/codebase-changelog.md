@@ -20,6 +20,48 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - UX-L-00-a completed: UX-00 shared primitives baseline
+
+- Suggested Commit Title: `feat(ux-00): add launch shared ui primitives and view hook`
+- Scope: UX launch phase `UX-L-00-a` (implement UX-00 shared primitives needed by launch workflows).
+- Constitution Restatement:
+  - Task ID: `UX-L-00-a`
+  - Scope sentence: add launch-safe shared UI primitives plus inventory view-preference hook without layout redesign.
+  - Invariants confirmed: structural UI only; no glow/gradient/ad-hoc colors; no schema/dependency/env changes.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: token-governed baseline primitives only.
+- Deliverables:
+  - Added `src/shared/ui/item-image.tsx`.
+  - Added `src/shared/ui/quantity-badge.tsx`.
+  - Added `src/shared/ui/view-mode-toggle.tsx`.
+  - Added `src/shared/ui/sort-select.tsx`.
+  - Added `src/features/inventory/ui/use-inventory-view.ts`.
+  - Updated UX source plan to mark UX-00 checklist complete.
+  - Advanced master pointer/checklist to `UX-L-00-b`.
+- Touched Files (single-entry log):
+  - `src/shared/ui/item-image.tsx` (added)
+  - `src/shared/ui/quantity-badge.tsx` (added)
+  - `src/shared/ui/view-mode-toggle.tsx` (added)
+  - `src/shared/ui/sort-select.tsx` (added)
+  - `src/features/inventory/ui/use-inventory-view.ts` (added)
+  - `docs/inventory-shopping-ux-redesign-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx eslint src/shared/ui/item-image.tsx src/shared/ui/quantity-badge.tsx src/shared/ui/view-mode-toggle.tsx src/shared/ui/sort-select.tsx src/features/inventory/ui/use-inventory-view.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 5.
+  - Delta rationale: exact UX-L-00-a scope (shared primitives + preference hook).
+- Unrelated-file check:
+  - Existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: pending (record after commit)
+  - Commit title: `feat(ux-00): add launch shared ui primitives and view hook`
+
 ### 2026-02-28 - IMG-L-00-c completed: launch enrichment deferral lock
 
 - Suggested Commit Title: `docs(img-launch): lock no-enrichment-run requirement for launch`

@@ -645,6 +645,12 @@ Implemented capabilities:
   - produce image repository: `src/features/inventory/server/produce-image.repository.ts`
   - resolver modules: `src/features/inventory/server/item-image.resolver.core.ts` + `src/features/inventory/server/item-image.resolver.ts`
 - Inventory projections now expose resolved image metadata (`image_url` + source priority own -> produce -> barcode -> none) in list/detail payloads.
+- Shared UX primitives baseline for launch is now in `src/shared/ui`:
+  - `item-image.tsx`
+  - `quantity-badge.tsx`
+  - `view-mode-toggle.tsx`
+  - `sort-select.tsx`
+- Inventory view preference hook now exists at `src/features/inventory/ui/use-inventory-view.ts`.
 - Derived non-blocking "Fix Later Queue" surfaced in Inventory UI
 - Persistent task actions via client-side localStorage:
   - complete

@@ -180,10 +180,10 @@ Use `Canonical Order Checklist` statuses as source of truth.
 Current snapshot (2026-02-28):
 
 - Launch-critical checklist items total: `50`
-- Launch-critical `[x]`: `42`
+- Launch-critical `[x]`: `43`
 - Launch-critical `[~]`: `0`
-- Strict completion: `84.00%`
-- Weighted progress: `84.00%`
+- Strict completion: `86.00%`
+- Weighted progress: `86.00%`
 - Parked post-launch checklist items (DI): `7` (excluded from launch completion %)
 
 Update rule after each slice:
@@ -226,11 +226,11 @@ Parked stream:
 
 ## Last Left Off Here
 
-- Current task ID: `UX-L-00-a`
-- Current task: `UX launch shared primitives implementation`
+- Current task ID: `UX-L-00-b`
+- Current task: `UX launch primitive wiring into required surfaces`
 - Status: `NOT STARTED`
 - Last updated: `2026-02-28`
-- Note: IMG launch slice is complete through IMG-L-00-c; continue deterministic order into UX launch slice.
+- Note: UX-L-00-a is complete and checkpointed; continue deterministic order with UX-L-00-b.
 
 ## Canonical Order Checklist
 
@@ -345,7 +345,7 @@ Source plan: `docs/inventory-shopping-ux-redesign-plan.md`
 
 Launch scope only:
 
-- [ ] UX-L-00-a: Implement UX-00 shared primitives needed by launch workflows
+- [x] UX-L-00-a: Implement UX-00 shared primitives needed by launch workflows
 - [ ] UX-L-00-b: Wire UX-00 primitives into required restaurant launch surfaces only
 - [ ] UX-L-00-c: Defer UX-01 and UX-02 (plus remaining UX backlog) to post-launch
 
@@ -417,10 +417,47 @@ No additional missing plan docs were identified from the current chat scope afte
 ## Completion Snapshot
 
 - Launch-critical initiatives active: `5` (RPK, RTS, IMG-L, UX-L, LG)
-- Launch-critical items complete: `42`
+- Launch-critical items complete: `43`
 - Parked post-launch initiatives: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - UX-L-00-a completed (UX-00 shared primitives baseline)
+
+- Constitution Restatement:
+  - Task ID: `UX-L-00-a`
+  - Scope: implement UX-00 shared primitives and inventory view-preference hook needed for launch workflows.
+  - Invariants confirmed: structural UI only; no glow/gradient/ad-hoc color additions; no schema/dependency/env changes.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: existing hierarchy preserved; primitives added without wholesale layout redesign.
+- Preflight evidence:
+  - `Get-Content docs/inventory-shopping-ux-redesign-plan.md`
+  - `Get-ChildItem -Recurse src/shared/ui`
+  - `rg -n "UX-00|item-image|quantity-badge|view-mode-toggle|sort-select|use-inventory-view|getAllInventoryLevels|image_url" docs/inventory-shopping-ux-redesign-plan.md src/shared/ui src/features/inventory app/actions/core/transactions.ts`
+- Implementation:
+  - Added shared primitives:
+    - `src/shared/ui/item-image.tsx`
+    - `src/shared/ui/quantity-badge.tsx`
+    - `src/shared/ui/view-mode-toggle.tsx`
+    - `src/shared/ui/sort-select.tsx`
+  - Added view persistence hook:
+    - `src/features/inventory/ui/use-inventory-view.ts`
+  - Confirmed UX-00 data-layer prerequisites satisfied in active launch code path:
+    - `getAllInventoryLevels` projection returns resolved `image_url` and source metadata
+    - `InventoryLevel` type in active launch surface includes image fields
+  - Marked UX source-plan UX-00 checklist complete and moved canonical pickup pointer to UX launch wiring slice.
+- Validation:
+  - `npx eslint src/shared/ui/item-image.tsx src/shared/ui/quantity-badge.tsx src/shared/ui/view-mode-toggle.tsx src/shared/ui/sort-select.tsx src/features/inventory/ui/use-inventory-view.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 5 (4 new shared UI primitives + 1 new inventory view hook)
+  - changed docs: source/master/changelog sync
+  - proportionality reason: exactly scoped to UX-L-00-a primitive/hook baseline.
+- Unrelated-file check:
+  - pre-existing unrelated local files remained untouched; this slice modified only UX-L-00-a scope files plus required canonical docs.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+- Commit checkpoint: pending (record after commit).
 
 ### 2026-02-28 - IMG-L-00-c completed (launch enrichment deferral lock)
 
