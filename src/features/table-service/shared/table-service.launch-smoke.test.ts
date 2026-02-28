@@ -135,3 +135,39 @@ test("launch smoke: overdue timer urgency remains visual and does not reorder qu
   assert.match(kitchenQueueClient, /FIFO by confirmation time\. Orders are rendered oldest confirmed first\./);
   assert.match(kitchenQueueClient, /overdueLabel \? "border-danger\/40 bg-danger\/5" : "border-border"/);
 });
+
+test("launch smoke: table-service guard enforces membership, restaurant industry, and module gate", () => {
+  const guard = fs.readFileSync(path.join(repoRoot, "src/features/table-service/server/guard.ts"), "utf8");
+
+  assert.match(guard, /requireBusinessMembership/);
+  assert.match(guard, /business\.industry_type !== "restaurant"/);
+  assert.match(guard, /requireModule\("table_service"\)/);
+  assert.match(guard, /return \{ businessId: business\.id \}/);
+});
+
+test("launch smoke: table-service action wrappers require access before business-scoped service calls", () => {
+  const actionsModule = fs.readFileSync(
+    path.join(repoRoot, "app/actions/modules/table-service.ts"),
+    "utf8",
+  );
+
+  const accessChecks = actionsModule.match(/const \{ businessId \} = await requireTableServiceAccess\(\);/g) ?? [];
+  assert.ok(accessChecks.length >= 10);
+  assert.match(actionsModule, /return _getKitchenQueue\(businessId\)/);
+  assert.match(actionsModule, /return _confirmKitchenOrder\(businessId, input\)/);
+  assert.match(actionsModule, /return _appendKitchenOrderItems\(businessId, input\)/);
+  assert.match(actionsModule, /return _closeKitchenOrderAndSession\(businessId, input\)/);
+  assert.match(actionsModule, /return _updateKitchenOrderItemStatus\(businessId, input\)/);
+});
+
+test("launch smoke: table-service services keep business_id filters for tenant isolation", () => {
+  const tableService = fs.readFileSync(path.join(repoRoot, "src/features/table-service/server/table.service.ts"), "utf8");
+  const menuService = fs.readFileSync(path.join(repoRoot, "src/features/table-service/server/menu.service.ts"), "utf8");
+  const orderService = fs.readFileSync(path.join(repoRoot, "src/features/table-service/server/order.service.ts"), "utf8");
+
+  assert.match(tableService, /business_id:\s*businessId/);
+  assert.match(menuService, /business_id:\s*businessId/);
+  assert.match(orderService, /business_id:\s*businessId/);
+  assert.match(orderService, /id:\s*kitchenOrderId/);
+  assert.match(orderService, /findFirst\(\{/);
+});

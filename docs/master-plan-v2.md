@@ -180,10 +180,10 @@ Use `Canonical Order Checklist` statuses as source of truth.
 Current snapshot (2026-02-28):
 
 - Launch-critical checklist items total: `50`
-- Launch-critical `[x]`: `49`
+- Launch-critical `[x]`: `50`
 - Launch-critical `[~]`: `0`
-- Strict completion: `98.00%`
-- Weighted progress: `98.00%`
+- Strict completion: `100.00%`
+- Weighted progress: `100.00%`
 - Parked post-launch checklist items (DI): `7` (excluded from launch completion %)
 
 Update rule after each slice:
@@ -222,15 +222,15 @@ Current active launch streams:
 
 Parked stream:
 
-- DI (document intake), post-launch queue
+- DI (document intake), post-launch queue (resume gate unlocked after `LG-00` completion)
 
 ## Last Left Off Here
 
-- Current task ID: `LG-00-e`
-- Current task: `Integrated launch gate multi-tenant isolation and permission checks pass`
+- Current task ID: `DI-00`
+- Current task: `Document intake schema/contracts`
 - Status: `NOT STARTED`
 - Last updated: `2026-02-28`
-- Note: LG-00-d timer and queue-advancement pass is complete; continue deterministic LG gate sequence.
+- Note: LG-00 launch gate is fully complete; deterministic flow now resumes DI stream at DI-00.
 
 ## Canonical Order Checklist
 
@@ -365,7 +365,7 @@ Test format lock:
 - [x] LG-00-b: End-to-end QR actor split pass
 - [x] LG-00-c: Host->kitchen queue lifecycle pass
 - [x] LG-00-d: Timer and queue advancement behavior pass
-- [ ] LG-00-e: Multi-tenant isolation and permission checks pass
+- [x] LG-00-e: Multi-tenant isolation and permission checks pass
 
 ## Post-Launch Queue (Parked)
 
@@ -417,10 +417,45 @@ No additional missing plan docs were identified from the current chat scope afte
 ## Completion Snapshot
 
 - Launch-critical initiatives active: `5` (RPK, RTS, IMG-L, UX-L, LG)
-- Launch-critical items complete: `49`
+- Launch-critical items complete: `50`
 - Parked post-launch initiatives: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - LG-00-e completed (multi-tenant isolation and permission checks pass)
+
+- Constitution Restatement:
+  - Task ID: `LG-00-e`
+  - Scope: run launch-gate isolation/permission regression coverage for table-service tenant guards and business-scoped server access patterns.
+  - Invariants confirmed: membership + module gates remain required; restaurant-only guard preserved; business-scoped filtering retained.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: no UI implementation changes in this slice.
+- Preflight evidence:
+  - `Get-Content src/features/table-service/server/guard.ts`
+  - `Get-Content app/actions/modules/table-service.ts`
+  - `Get-Content src/features/table-service/server/order.service.ts`
+  - `Get-Content src/features/table-service/server/menu.service.ts`
+  - `Get-Content src/features/table-service/server/table.service.ts`
+  - `rg -n "requireBusinessMembership|requireModule|requireTableServiceAccess|business_id: businessId|industry_type" src/features/table-service app/actions/modules/table-service.ts docs/master-plan-v2.md`
+- Implementation:
+  - Extended `src/features/table-service/shared/table-service.launch-smoke.test.ts` with LG-00-e assertions for:
+    - guard enforcement (`requireBusinessMembership`, restaurant-only check, `requireModule(\"table_service\")`)
+    - action-wrapper access checks before service invocation
+    - business-scoped `business_id` filtering across table/menu/order services
+  - Marked `LG-00-e` complete, closing integrated launch gate and unlocking deterministic DI resume point (`DI-00`).
+- Validation:
+  - `npx eslint src/features/table-service/shared/table-service.launch-smoke.test.ts` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts src/features/table-service/shared/table-service.launch-smoke.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 0
+  - changed test files: 1
+  - changed docs: master/changelog sync
+  - proportionality reason: exact LG-00-e gate scope (tenant/permission smoke assertions + gate completion sync).
+- Unrelated-file check:
+  - pre-existing unrelated local files remained untouched; this slice modified only LG-00-e test+docs scope files.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
 
 ### 2026-02-28 - LG-00-d completed (timer and queue-advancement regression pass)
 

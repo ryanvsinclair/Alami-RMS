@@ -20,6 +20,39 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - LG-00-e completed: multi-tenant isolation and permission checks pass
+
+- Suggested Commit Title: `test(lg-00-e): extend tenant-isolation and permission launch smoke coverage`
+- Scope: Integrated launch gate `LG-00-e` (multi-tenant isolation and permission checks) via additive smoke assertions.
+- Constitution Restatement:
+  - Task ID: `LG-00-e`
+  - Scope sentence: extend launch smoke suite to verify membership/module/industry guards and business-scoped table-service query/action patterns.
+  - Invariants confirmed: tenant boundaries remain business-scoped; `table_service` module gate remains enforced; restaurant-only access remains enforced.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: no UI implementation changes in this slice.
+- Deliverables:
+  - Extended `src/features/table-service/shared/table-service.launch-smoke.test.ts`:
+    - validates table-service guard requirements (`requireBusinessMembership`, industry check, module gate)
+    - validates action-wrapper access checks before business-scoped service invocations
+    - validates business-scoped `business_id` filtering patterns across table/menu/order services
+  - Marked `LG-00-e` complete in master checklist, closing `LG-00` and unlocking DI resume point (`DI-00`).
+- Touched Files (single-entry log):
+  - `src/features/table-service/shared/table-service.launch-smoke.test.ts` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx eslint src/features/table-service/shared/table-service.launch-smoke.test.ts` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts src/features/table-service/shared/table-service.launch-smoke.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 0.
+  - Changed test files: 1.
+  - Delta rationale: exact LG-00-e gate scope (tenant/permission smoke assertions + launch-gate closure sync).
+- Unrelated-file check:
+  - Existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+
 ### 2026-02-28 - LG-00-d completed: timer and queue-advancement regression pass
 
 - Suggested Commit Title: `test(lg-00-d): extend timer and queue-advancement launch smoke coverage`
