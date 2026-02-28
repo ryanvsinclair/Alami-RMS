@@ -180,10 +180,10 @@ Use `Canonical Order Checklist` statuses as source of truth.
 Current snapshot (2026-02-28):
 
 - Launch-critical checklist items total: `50`
-- Launch-critical `[x]`: `19`
+- Launch-critical `[x]`: `20`
 - Launch-critical `[~]`: `0`
-- Strict completion: `38.00%`
-- Weighted progress: `38.00%`
+- Strict completion: `40.00%`
+- Weighted progress: `40.00%`
 - Parked post-launch checklist items (DI): `7` (excluded from launch completion %)
 
 Update rule after each slice:
@@ -226,11 +226,11 @@ Parked stream:
 
 ## Last Left Off Here
 
-- Current task ID: `RTS-00-c`
-- Current task: `Core shared contracts for menu/table/order flows`
-- Status: `IN PROGRESS`
+- Current task ID: `RTS-01-a`
+- Current task: `Menu CRUD (manual) + CSV import`
+- Status: `NOT STARTED`
 - Last updated: `2026-02-28`
-- Note: RTS-00-b module registration + guard baseline completed; continue deterministic order with RTS-00-c.
+- Note: RTS-00 complete through schema/module/contracts; auto-advance gate satisfied for RTS-01.
 
 ## Canonical Order Checklist
 
@@ -288,7 +288,7 @@ Plan doc: `docs/restaurant-table-service-plan.md`
 
 - [x] RTS-00-a: Add table-service models/enums
 - [x] RTS-00-b: Add `table_service` module and guards
-- [ ] RTS-00-c: Add core shared contracts for menu/table/order flows
+- [x] RTS-00-c: Add core shared contracts for menu/table/order flows
 
 #### Phase RTS-01 - Menu and table setup
 
@@ -417,10 +417,46 @@ No additional missing plan docs were identified from the current chat scope afte
 ## Completion Snapshot
 
 - Launch-critical initiatives active: `5` (RPK, RTS, IMG-L, UX-L, LG)
-- Launch-critical items complete: `19`
+- Launch-critical items complete: `20`
 - Parked post-launch initiatives: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - RTS-00-c shared contracts baseline completed (RTS-00 phase closed)
+
+- Constitution Restatement:
+  - Task ID: `RTS-00-c`
+  - Scope: add shared table-service contracts for menu/table/session/order flows and lock one-order-per-session append semantics.
+  - Invariants confirmed: one order per table session, post-confirm edits append items on same order, no amendment table in V1, restaurant-only launch posture preserved.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: no UI changes in this slice.
+- Preflight evidence:
+  - `Get-Content docs/restaurant-table-service-plan.md`
+  - `Get-Content src/features/receiving/shared/contracts.ts`
+  - `Get-Content src/features/shopping/server/contracts.ts`
+  - `rg -n "contracts|one_order_per_session|append|KitchenOrderItemStatus|table_service" src/features/table-service src/features`
+- Implementation:
+  - Added `src/features/table-service/shared/table-service.contracts.ts` with:
+    - module and status constants
+    - terminal-status constants
+    - one-order-per-session and same-order-append invariant lock constants
+    - menu/table/session/order DTO contracts
+  - Added `src/features/table-service/shared/index.ts` re-export surface.
+  - Added `src/features/table-service/shared/table-service.contracts.test.ts` contract invariant coverage.
+  - Closed RTS-00-d in source plan based on explicit tenant/authorization boundary guard baseline from RTS-00-b (`requireTableServiceAccess` with restaurant + module checks).
+- Validation:
+  - `npx eslint src/features/table-service/shared/table-service.contracts.ts src/features/table-service/shared/index.ts src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 3 (shared contracts + index + invariant test)
+  - changed docs: source/master/overview/changelog sync
+  - proportionality reason: exactly scoped to RTS-00-c shared contracts and phase closeout documentation.
+- Unrelated-file check:
+  - pre-existing unrelated local files remained untouched; this slice modified only RTS-00-c code/doc paths.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+- Commit checkpoint: pending (record after commit).
 
 ### 2026-02-28 - RTS-00-b table_service module registration and guard baseline completed
 

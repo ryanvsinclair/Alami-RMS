@@ -20,6 +20,43 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - RTS-00-c completed: shared contract baseline and RTS-00 phase closeout
+
+- Suggested Commit Title: `feat(rts-00): add shared table-service contracts and lock order-flow invariants`
+- Scope: RTS schema/module/contracts phase step `RTS-00-c` (shared contracts for menu/table/session/order flows).
+- Constitution Restatement:
+  - Task ID: `RTS-00-c`
+  - Scope sentence: add canonical shared contracts for table-service flows and lock same-order append behavior.
+  - Invariants confirmed: one order per table session; post-confirm edits append items on same order; no amendment table in V1.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+- Deliverables:
+  - Added `src/features/table-service/shared/table-service.contracts.ts`.
+  - Added `src/features/table-service/shared/index.ts` export surface.
+  - Added `src/features/table-service/shared/table-service.contracts.test.ts` invariant coverage.
+  - Closed RTS-00 in source plan (`RTS-00-d` validated via existing restaurant+module guard baseline from RTS-00-b).
+- Touched Files (single-entry log):
+  - `src/features/table-service/shared/table-service.contracts.ts` (added)
+  - `src/features/table-service/shared/index.ts` (added)
+  - `src/features/table-service/shared/table-service.contracts.test.ts` (added)
+  - `docs/restaurant-table-service-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx eslint src/features/table-service/shared/table-service.contracts.ts src/features/table-service/shared/index.ts src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 3.
+  - Delta rationale: exact RTS-00-c scope (shared contracts + invariant lock test).
+- Unrelated-file check:
+  - Existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: pending (record after commit)
+  - Commit title: `feat(rts-00): add shared table-service contracts and lock order-flow invariants`
+
 ### 2026-02-28 - RTS-00-b completed: table_service module registration + guard baseline
 
 - Suggested Commit Title: `feat(rts-00): register table_service module and add access guard baseline`

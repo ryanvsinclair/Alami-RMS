@@ -651,6 +651,7 @@ Restaurant table-service entities (RTS baseline):
 - `TableSession` (includes `party_size`; one active session per table via DB partial unique index)
 - `KitchenOrder` (exactly one order per table session; `confirmed_at`/`due_at`/`closed_at` lifecycle anchors)
 - `KitchenOrderItem` (status enum: `pending`, `preparing`, `ready_to_serve`, `served`, `cancelled`)
+- Shared contract baseline: `src/features/table-service/shared/table-service.contracts.ts` locks one-order-per-session and same-order append invariants.
 
 Barcode intelligence entities:
 
