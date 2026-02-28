@@ -56,7 +56,7 @@ Companion overview: `docs/codebase-overview.md`
 - Dependency change check: no new dependencies added.
 - Env-var change check: no new env vars introduced.
 - Commit checkpoint:
-  - Commit hash: pending (record after commit)
+  - Commit hash: `97575b4`
   - Commit title: `feat(ux-launch): wire primitives into inventory and shopping surfaces`
 
 ### 2026-02-28 - UX-L-00-a completed: UX-00 shared primitives baseline
