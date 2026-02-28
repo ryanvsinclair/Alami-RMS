@@ -59,7 +59,7 @@ Companion overview: `docs/codebase-overview.md`
 - Dependency change check: no new dependencies added.
 - Env-var change check: no new env vars introduced.
 - Commit checkpoint:
-  - Commit hash: pending (record after commit)
+  - Commit hash: `c120099`
   - Commit title: `test(rts-05): add launch smoke suite for qr-host-kitchen loop`
 
 ### 2026-02-28 - RTS-05-c completed: temporary mode note confirmed

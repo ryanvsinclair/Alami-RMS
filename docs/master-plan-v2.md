@@ -461,7 +461,7 @@ No additional missing plan docs were identified from the current chat scope afte
   - pre-existing unrelated local files remained untouched; this slice modified only RTS-05-d scope files plus required canonical docs.
 - Dependency check: no new dependencies.
 - Env-var check: no new environment variables.
-- Commit checkpoint: pending (record after commit).
+- Commit checkpoint: `c120099` (`test(rts-05): add launch smoke suite for qr-host-kitchen loop`).
 
 ### 2026-02-28 - RTS-05-c temporary mode note requirement verified complete
 
