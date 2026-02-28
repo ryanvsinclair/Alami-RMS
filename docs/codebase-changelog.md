@@ -52,7 +52,7 @@ Companion overview: `docs/codebase-overview.md`
 - Dependency change check: no new dependencies added.
 - Env-var change check: no new env vars introduced.
 - Commit checkpoint:
-  - Commit hash: pending (record after commit)
+  - Commit hash: `af90e8e`
   - Commit title: `feat(rts-04): collapse terminal-only orders from kitchen queue`
 
 ### 2026-02-28 - RTS-04-b completed: kitchen item lifecycle status controls
