@@ -56,7 +56,7 @@ Companion overview: `docs/codebase-overview.md`
 - Dependency change check: no new dependencies added.
 - Env-var change check: no new env vars introduced.
 - Commit checkpoint:
-  - Commit hash: pending (record after commit)
+  - Commit hash: `33833ef`
   - Commit title: `feat(rts-00): add table-service schema baseline models and indexes`
 
 ### 2026-02-28 - RPK-05 completed: explicit view-photo CTA + commit-eligibility hardening
