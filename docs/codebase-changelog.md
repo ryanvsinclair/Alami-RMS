@@ -55,7 +55,7 @@ Companion overview: `docs/codebase-overview.md`
 - Dependency change check: no new dependencies added.
 - Env-var change check: no new env vars introduced.
 - Commit checkpoint:
-  - Commit hash: pending (record after commit)
+  - Commit hash: `0350abb`
   - Commit title: `feat(rts-02): add member-vs-public scan routing branches`
 
 ### 2026-02-28 - RTS-02-a completed: `/scan/t/[token]` resolver baseline

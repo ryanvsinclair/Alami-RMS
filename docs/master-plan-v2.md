@@ -454,7 +454,7 @@ No additional missing plan docs were identified from the current chat scope afte
   - pre-existing unrelated local files remained untouched; this slice modified only RTS-02-b paths plus required canonical docs.
 - Dependency check: no new dependencies.
 - Env-var check: no new environment variables.
-- Commit checkpoint: pending (record after commit).
+- Commit checkpoint: `0350abb` (`feat(rts-02): add member-vs-public scan routing branches`).
 
 ### 2026-02-28 - RTS-02-a scan-token resolver baseline completed
 
