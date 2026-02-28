@@ -1,12 +1,17 @@
 ﻿# Inventory & Shopping UX Redesign Plan
 
 Last updated: February 28, 2026
-Status: ACTIVE - UX launch primitive wiring complete; defer lock pending; full UX-01 through UX-04 remains post-launch continuation
+Status: LAUNCH SLICE COMPLETE - UX launch primitive baseline/wiring done; UX-01 through UX-04 post-launch continuation
 Constitution source: `docs/execution-constitution.md`
 
 ---
 
 ## Latest Update
+
+- **2026-02-28 - UX-L-00-c completed (post-launch defer lock).**
+  - Confirmed UX-01 and UX-02 are deferred for post-launch execution.
+  - Confirmed full UX-03/UX-04 backlog remains post-launch scope as well.
+  - Launch UX slice is complete with UX-00 primitives + targeted launch-surface wiring only.
 
 - **2026-02-28 - UX-L-00-b completed (launch-surface primitive wiring).**
   - Wired UX-00 primitives into required launch surfaces only:
@@ -52,9 +57,9 @@ Constitution source: `docs/execution-constitution.md`
  
 ## Pick Up Here
 
-Launch path: UX primitives are wired on required launch surfaces; finalize launch defer lock next.
+Launch path: complete for launch slice.
 
-Then continue full UX backlog post-launch.
+Then continue full UX backlog post-launch, starting at UX-01.
 
 ---
 

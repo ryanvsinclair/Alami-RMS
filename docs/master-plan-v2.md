@@ -180,10 +180,10 @@ Use `Canonical Order Checklist` statuses as source of truth.
 Current snapshot (2026-02-28):
 
 - Launch-critical checklist items total: `50`
-- Launch-critical `[x]`: `44`
+- Launch-critical `[x]`: `45`
 - Launch-critical `[~]`: `0`
-- Strict completion: `88.00%`
-- Weighted progress: `88.00%`
+- Strict completion: `90.00%`
+- Weighted progress: `90.00%`
 - Parked post-launch checklist items (DI): `7` (excluded from launch completion %)
 
 Update rule after each slice:
@@ -226,11 +226,11 @@ Parked stream:
 
 ## Last Left Off Here
 
-- Current task ID: `UX-L-00-c`
-- Current task: `UX launch defer-lock confirmation`
+- Current task ID: `LG-00-a`
+- Current task: `Integrated launch gate intake regression pass`
 - Status: `NOT STARTED`
 - Last updated: `2026-02-28`
-- Note: UX-L-00-b is complete and checkpointed; continue deterministic order with UX-L-00-c.
+- Note: UX launch slice is complete through UX-L-00-c; continue deterministic order into LG launch gate.
 
 ## Canonical Order Checklist
 
@@ -347,7 +347,7 @@ Launch scope only:
 
 - [x] UX-L-00-a: Implement UX-00 shared primitives needed by launch workflows
 - [x] UX-L-00-b: Wire UX-00 primitives into required restaurant launch surfaces only
-- [ ] UX-L-00-c: Defer UX-01 and UX-02 (plus remaining UX backlog) to post-launch
+- [x] UX-L-00-c: Defer UX-01 and UX-02 (plus remaining UX backlog) to post-launch
 
 Deferred post-launch:
 
@@ -417,10 +417,37 @@ No additional missing plan docs were identified from the current chat scope afte
 ## Completion Snapshot
 
 - Launch-critical initiatives active: `5` (RPK, RTS, IMG-L, UX-L, LG)
-- Launch-critical items complete: `44`
+- Launch-critical items complete: `45`
 - Parked post-launch initiatives: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - UX-L-00-c completed (launch defer-lock confirmation)
+
+- Constitution Restatement:
+  - Task ID: `UX-L-00-c`
+  - Scope: confirm and checkpoint post-launch deferral for UX-01/UX-02 (and remaining UX backlog) after launch-slice wiring.
+  - Invariants confirmed: no runtime/schema changes; launch UX slice remains intentionally limited.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: not a UI-touching implementation slice.
+- Preflight evidence:
+  - `Get-Content docs/inventory-shopping-ux-redesign-plan.md`
+  - `rg -n "UX-01|UX-02|defer|post-launch|launch slice" docs/inventory-shopping-ux-redesign-plan.md docs/master-plan-v2.md`
+- Implementation:
+  - Marked `UX-L-00-c` complete in master checklist.
+  - Updated UX source plan status/Latest Update/Pick Up Here to lock post-launch defer posture.
+  - Advanced canonical pickup pointer to `LG-00-a` (integrated launch gate sequence).
+- Validation:
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 0
+  - changed docs: source/master/changelog sync
+  - proportionality reason: exact UX-L-00-c docs/control closure with no runtime implementation.
+- Unrelated-file check:
+  - pre-existing unrelated local files remained untouched; this slice modified only canonical planning/changelog docs.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+- Commit checkpoint: pending (record after commit).
 
 ### 2026-02-28 - UX-L-00-b completed (launch-surface primitive wiring)
 

@@ -20,6 +20,37 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - UX-L-00-c completed: launch defer-lock confirmation
+
+- Suggested Commit Title: `docs(ux-launch): lock post-launch defer scope for ux-01+`
+- Scope: UX launch phase `UX-L-00-c` (defer UX-01/UX-02 plus remaining UX backlog to post-launch).
+- Constitution Restatement:
+  - Task ID: `UX-L-00-c`
+  - Scope sentence: checkpoint launch deferral boundaries for UX redesign backlog.
+  - Invariants confirmed: no runtime/schema changes; launch scope remains UX-00 primitives + targeted wiring only.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: not a UI-touching implementation slice.
+- Deliverables:
+  - Marked `UX-L-00-c` complete in master checklist.
+  - Updated UX source plan status/pickup guidance to reflect launch-slice completion and UX-01+ post-launch queue.
+  - Advanced canonical pointer to integrated launch gate (`LG-00-a`).
+- Touched Files (single-entry log):
+  - `docs/inventory-shopping-ux-redesign-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 0.
+  - Delta rationale: exact UX-L-00-c docs/control closure scope.
+- Unrelated-file check:
+  - Existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: pending (record after commit)
+  - Commit title: `docs(ux-launch): lock post-launch defer scope for ux-01+`
+
 ### 2026-02-28 - UX-L-00-b completed: launch-surface primitive wiring
 
 - Suggested Commit Title: `feat(ux-launch): wire primitives into inventory and shopping surfaces`
