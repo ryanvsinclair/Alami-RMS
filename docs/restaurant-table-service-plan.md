@@ -1,6 +1,6 @@
 # Restaurant Table QR + Host/Kitchen Ops Plan (Restaurant-Only V1)
 
-Status: ACTIVE - RTS-00 through RTS-05 pending
+Status: ACTIVE - RTS-00 in progress; RTS-01 through RTS-05 pending
 Created: 2026-02-28
 Last Updated: 2026-02-28
 Primary Purpose: launch restaurant table service with QR routing, host order confirmation, and kitchen queue operations.
@@ -24,6 +24,12 @@ Constitution source: `docs/execution-constitution.md`
 
 ## Latest Update
 
+- **2026-02-28 - RTS-00-a completed (table-service schema baseline + additive migration).**
+  - Added Prisma enum `KitchenOrderItemStatus` and models `DiningTable`, `MenuCategory`, `MenuItem`, `TableSession`, `KitchenOrder`, `KitchenOrderItem`.
+  - Added required constraints/indexes, including per-business table uniqueness and one-order-per-session (`kitchen_orders.table_session_id` unique).
+  - Added DB-level partial unique index for one active session per table (`table_sessions_dining_table_id_active_key` where `closed_at IS NULL`).
+  - Applied additive migration `20260228123000_rts00_table_service_schema` and regenerated Prisma client.
+
 - **2026-02-28 - RTS schema and lifecycle decisions locked.**
   - Added authoritative RTS schema decisions for `DiningTable`, `MenuCategory`, `MenuItem`, `TableSession`, `KitchenOrder`, and `KitchenOrderItem`.
   - Replaced amendment-ticket assumption with same-order item append behavior.
@@ -39,8 +45,8 @@ Constitution source: `docs/execution-constitution.md`
 ## Pick Up Here
 
 - Current phase: `RTS-00`
-- Current task: `RTS-00-a`
-- Status: `[ ]` pending
+- Current task: `RTS-00-b`
+- Status: `[~]` in progress
 
 ## Scope
 
@@ -137,7 +143,7 @@ This section is authoritative for RTS V1 Prisma modeling.
 
 ## Phase Status Ledger
 
-- `RTS-00`: `[ ]` pending
+- `RTS-00`: `[~]` in progress
 - `RTS-01`: `[ ]` pending
 - `RTS-02`: `[ ]` pending
 - `RTS-03`: `[ ]` pending
@@ -153,10 +159,10 @@ Before starting any checklist item in this plan:
 
 ## RTS-00 - Schema, module, and contracts baseline
 
-**Status:** `[ ]` pending
+**Status:** `[~]` in progress
 
-- [ ] RTS-00-0: Constitution restatement logged for this phase and no deviation required.
-- [ ] RTS-00-a: Add table-service models/enums and required indexes per decision lock (`DiningTable`, `MenuCategory`, `MenuItem`, `TableSession`, `KitchenOrder`, `KitchenOrderItem`).
+- [x] RTS-00-0: Constitution restatement logged for this phase and no deviation required.
+- [x] RTS-00-a: Add table-service models/enums and required indexes per decision lock (`DiningTable`, `MenuCategory`, `MenuItem`, `TableSession`, `KitchenOrder`, `KitchenOrderItem`).
 - [ ] RTS-00-b: Add `table_service` module registration and guards.
 - [ ] RTS-00-c: Add shared contracts for menu/table/session/order flows (including one-order-per-session and same-order item append behavior).
 - [ ] RTS-00-d: Validate tenant scoping and authorization boundaries in contract layer.

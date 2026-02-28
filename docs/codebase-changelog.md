@@ -20,6 +20,45 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - RTS-00-a completed: table-service schema baseline + additive migration
+
+- Suggested Commit Title: `feat(rts-00): add table-service schema baseline models and indexes`
+- Scope: RTS schema/module/contracts phase step `RTS-00-a` (schema + migration baseline only).
+- Constitution Restatement:
+  - Task ID: `RTS-00-a`
+  - Scope sentence: add additive Prisma/DB schema support for table service with no UI/runtime workflow implementation yet.
+  - Invariants confirmed: one active `TableSession` per `DiningTable`; one `KitchenOrder` per `TableSession`; post-confirm edits remain same-order append model.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+- Deliverables:
+  - Added enum `KitchenOrderItemStatus`.
+  - Added models `DiningTable`, `MenuCategory`, `MenuItem`, `TableSession`, `KitchenOrder`, and `KitchenOrderItem`.
+  - Added additive migration `20260228123000_rts00_table_service_schema`.
+  - Enforced DB partial unique index for one active session per table (`table_sessions_dining_table_id_active_key` where `closed_at IS NULL`).
+  - Applied migration and regenerated Prisma client.
+- Touched Files (single-entry log):
+  - `prisma/schema.prisma` (updated)
+  - `prisma/migrations/20260228123000_rts00_table_service_schema/migration.sql` (added)
+  - `docs/restaurant-table-service-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx prisma migrate deploy` -> PASS
+  - `npx prisma validate` -> PASS
+  - `npx prisma migrate status` -> PASS
+  - `npx prisma generate` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 2.
+  - Delta rationale: exact RTS-00-a scope (schema + migration baseline only).
+- Unrelated-file check:
+  - Existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: pending (record after commit)
+  - Commit title: `feat(rts-00): add table-service schema baseline models and indexes`
+
 ### 2026-02-28 - RPK-05 completed: explicit view-photo CTA + commit-eligibility hardening
 
 - Suggested Commit Title: `feat(rpk-05): add view-photo CTA and harden receipt commit eligibility`

@@ -180,10 +180,10 @@ Use `Canonical Order Checklist` statuses as source of truth.
 Current snapshot (2026-02-28):
 
 - Launch-critical checklist items total: `50`
-- Launch-critical `[x]`: `17`
+- Launch-critical `[x]`: `18`
 - Launch-critical `[~]`: `0`
-- Strict completion: `34.00%`
-- Weighted progress: `34.00%`
+- Strict completion: `36.00%`
+- Weighted progress: `36.00%`
 - Parked post-launch checklist items (DI): `7` (excluded from launch completion %)
 
 Update rule after each slice:
@@ -226,11 +226,11 @@ Parked stream:
 
 ## Last Left Off Here
 
-- Current task ID: `RTS-00`
-- Current task: `Schema/module/contracts`
-- Status: `NOT STARTED`
+- Current task ID: `RTS-00-b`
+- Current task: `table_service module and guards`
+- Status: `IN PROGRESS`
 - Last updated: `2026-02-28`
-- Note: RPK initiative complete through RPK-05; continue deterministic order with RTS-00.
+- Note: RTS-00-a schema baseline completed; continue deterministic order with RTS-00-b.
 
 ## Canonical Order Checklist
 
@@ -286,7 +286,7 @@ Plan doc: `docs/restaurant-table-service-plan.md`
 
 #### Phase RTS-00 - Schema/module/contracts
 
-- [ ] RTS-00-a: Add table-service models/enums
+- [x] RTS-00-a: Add table-service models/enums
 - [ ] RTS-00-b: Add `table_service` module and guards
 - [ ] RTS-00-c: Add core shared contracts for menu/table/order flows
 
@@ -417,10 +417,48 @@ No additional missing plan docs were identified from the current chat scope afte
 ## Completion Snapshot
 
 - Launch-critical initiatives active: `5` (RPK, RTS, IMG-L, UX-L, LG)
-- Launch-critical items complete: `17`
+- Launch-critical items complete: `18`
 - Parked post-launch initiatives: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - RTS-00-a table-service schema baseline completed
+
+- Constitution Restatement:
+  - Task ID: `RTS-00-a`
+  - Scope: add additive table-service models/enums/indexes in Prisma and DB migrations only.
+  - Invariants confirmed: restaurant-only launch scope, one active table session at a time, one order per session, post-confirm edits append items to same order.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: no UI changes in this slice.
+- Preflight evidence:
+  - `Get-Content docs/restaurant-table-service-plan.md`
+  - `Get-Content prisma/schema.prisma`
+  - `Get-Content prisma/migrations/20260228102000_receipt_inventory_decisions/migration.sql`
+  - `rg -n "table_service|table session|kitchen|menu|qr_token|DiningTable|KitchenOrder" src app test docs prisma`
+- Implementation:
+  - Added Prisma enum `KitchenOrderItemStatus` with values `pending|preparing|ready_to_serve|served|cancelled`.
+  - Added Prisma models: `DiningTable`, `MenuCategory`, `MenuItem`, `TableSession`, `KitchenOrder`, `KitchenOrderItem`.
+  - Added required constraints/indexes:
+    - `DiningTable`: per-business table-number uniqueness + global `qr_token` uniqueness
+    - `KitchenOrder`: one order per table session (`table_session_id` unique)
+    - `TableSession`: DB partial unique index for one active session per table (`closed_at IS NULL`)
+  - Created and applied additive migration `20260228123000_rts00_table_service_schema`.
+  - Regenerated Prisma client after schema/migration updates.
+- Validation:
+  - `npx prisma migrate deploy` -> PASS
+  - `npx prisma validate` -> PASS
+  - `npx prisma migrate status` -> PASS
+  - `npx prisma generate` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 2 (`prisma/schema.prisma`, new migration SQL)
+  - changed docs: source/master/overview/changelog sync
+  - proportionality reason: exactly scoped to RTS-00-a schema and additive migration baseline.
+- Unrelated-file check:
+  - pre-existing unrelated local files remained untouched; this slice modified only RTS schema/migration and required canonical docs.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+- Commit checkpoint: pending (record after commit).
 
 ### 2026-02-28 - RPK-05 receipt photo CTA and commit guardrails completed
 

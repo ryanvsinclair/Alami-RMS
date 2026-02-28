@@ -637,6 +637,15 @@ Shopping entities:
 - `ShoppingSession`
 - `ShoppingSessionItem` (includes `resolution_audit`)
 
+Restaurant table-service entities (RTS baseline):
+
+- `DiningTable` (global unique `qr_token`; per-business unique `table_number`)
+- `MenuCategory` (seeded/custom category support via `is_seeded`)
+- `MenuItem` (includes `description`, `price`, and `is_available` 86 toggle)
+- `TableSession` (includes `party_size`; one active session per table via DB partial unique index)
+- `KitchenOrder` (exactly one order per table session; `confirmed_at`/`due_at`/`closed_at` lifecycle anchors)
+- `KitchenOrderItem` (status enum: `pending`, `preparing`, `ready_to_serve`, `served`, `cancelled`)
+
 Barcode intelligence entities:
 
 - `GlobalBarcodeCatalog`
