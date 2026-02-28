@@ -142,9 +142,12 @@ export function HomeTransactionsLayer({
                       )}
                     </p>
                     {receiptId && (
-                      <svg className="h-4 w-4 shrink-0 text-foreground/20" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
-                      </svg>
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-foreground/35">
+                        View Photo
+                        <svg className="h-3 w-3 shrink-0 text-foreground/25" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                        </svg>
+                      </span>
                     )}
                   </div>
                 );

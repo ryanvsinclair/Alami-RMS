@@ -233,6 +233,7 @@ export async function commitShoppingSession(
           shopping_session_id: refreshed.id,
           metadata: {
             item_count: committableItems.length,
+            inventory_transaction_count: transactions.length,
             ineligible_inventory_item_count: ineligibleInventoryItems.length,
             ineligible_inventory_item_ids: ineligibleInventoryItems.map((entry) => entry.shopping_session_item_id),
             receipt_total: toNumber(refreshed.receipt_total),

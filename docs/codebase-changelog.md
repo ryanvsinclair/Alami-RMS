@@ -20,6 +20,46 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - RPK-05 completed: explicit view-photo CTA + commit-eligibility hardening
+
+- Suggested Commit Title: `feat(rpk-05): add view-photo CTA and harden receipt commit eligibility`
+- Scope: Receipt photo visibility and commit guardrails (`RPK-05`) while preserving expense-ledger behavior.
+- Constitution Restatement:
+  - Task ID: `RPK-05`
+  - Scope sentence: add explicit `View Photo` affordances and tighten commit eligibility checks without changing intended accounting outcomes.
+  - Invariants confirmed: no product fork; receipts do not auto-create inventory; inventory writes remain explicit/eligibility-gated.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+- Deliverables:
+  - Added explicit `View Photo` CTA in receipt detail (`signed_image_url` open-in-new-tab link).
+  - Added explicit receipt-linked `View Photo` cues in home transactions and shopping order detail.
+  - Hardened `commitReceiptTransactions` to reject stale line-to-inventory mappings at commit time.
+  - Preserved idempotent receipt commit behavior.
+  - Preserved shopping expense-ledger behavior and extended metadata with `inventory_transaction_count`.
+- Touched Files (single-entry log):
+  - `src/features/receiving/receipt/ui/ReceiptDetailPageClient.tsx` (updated)
+  - `src/features/home/ui/HomeTransactionsLayer.tsx` (updated)
+  - `app/(dashboard)/shopping/orders/[id]/page.tsx` (updated)
+  - `app/actions/core/transactions.ts` (updated)
+  - `src/features/shopping/server/commit.service.ts` (updated)
+  - `docs/business-industry-packaging-refactor-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx eslint src/features/receiving/receipt/ui/ReceiptDetailPageClient.tsx src/features/home/ui/HomeTransactionsLayer.tsx app/actions/core/transactions.ts src/features/shopping/server/commit.service.ts "app/(dashboard)/shopping/orders/[id]/page.tsx"` -> PASS (no errors; existing Next `<img>` warning remains for shopping order receipt preview)
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `node --test src/domain/parsers/receipt.test.mjs src/domain/parsers/receipt-correction-core.test.mjs` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 5.
+  - Delta rationale: exact RPK-05 scope (photo visibility + commit guardrails + expense-ledger preservation metadata).
+- Unrelated-file check:
+  - Existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: pending (record after commit)
+  - Commit title: `feat(rpk-05): add view-photo CTA and harden receipt commit eligibility`
+
 ### 2026-02-28 - RPK-04 completed: Fix Later unresolved purchase-confirmation taxonomy and queue filter
 
 - Suggested Commit Title: `feat(rpk-04): add unresolved purchase confirmation queue taxonomy and filter`

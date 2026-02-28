@@ -20,6 +20,13 @@ Constitution source: `docs/execution-constitution.md`
 
 ## Latest Update
 
+- **2026-02-28 - RPK-05 completed (view-photo CTA + commit eligibility hardening + expense-ledger preservation).**
+  - Added explicit `View Photo` CTA in receipt detail and receipt-linked shopping/history surfaces.
+  - Hardened receipt commit guardrails so line-to-inventory mapping must match current eligible receipt state at commit time.
+  - Preserved idempotent receipt commit behavior while tightening eligibility checks.
+  - Preserved full shopping expense ledger posting behavior and added explicit metadata for inventory-transaction vs expense-line counts.
+  - Launch hardening posture confirmed via existing receipts module guardrails and targeted receipt/parser smoke checks.
+
 - **2026-02-28 - RPK-04 completed (Fix Later purchase-confirmation taxonomy + queue filter).**
   - Added inventory enrichment task taxonomy entry `review_purchase_confirmation` for receipt lines explicitly marked `resolve_later`.
   - Added server-side queue candidate derivation for unresolved purchase confirmations.
@@ -70,9 +77,9 @@ Constitution source: `docs/execution-constitution.md`
 
 ## Pick Up Here
 
-- Current phase: `RPK-05`
-- Current task: `RPK-05-a`
-- Status: `[ ]` pending
+- Current phase: `Track A closed`
+- Current task: `RPK complete`
+- Status: `[x]` completed
 
 ## Scope and Launch Posture
 
@@ -189,7 +196,7 @@ General/Solo:
 - `RPK-02`: `[x]` completed
 - `RPK-03`: `[x]` completed
 - `RPK-04`: `[x]` completed
-- `RPK-05`: `[ ]` pending
+- `RPK-05`: `[x]` completed
 - `Track B`: `[ ]` queued post-launch
 
 ## Mandatory Restatement Before Phase Work
@@ -254,14 +261,14 @@ Before starting any checklist item in this plan:
 
 ### RPK-05 - Receipt photo visibility and commit guardrails
 
-**Status:** `[ ]` pending
+**Status:** `[x]` completed
 
-- [ ] RPK-05-0: Constitution restatement logged for this phase and no deviation required.
-- [ ] RPK-05-a: Add explicit `View Photo` CTA in digital receipt detail.
-- [ ] RPK-05-b: Enforce commit eligibility to block ineligible inventory writes.
-- [ ] RPK-05-c: Preserve full expense ledger behavior for all receipt lines.
-- [ ] RPK-05-d: Keep idempotent commit behavior intact.
-- [ ] RPK-05-e: Add launch hardening controls (feature flag/rollback switch/smoke coverage).
+- [x] RPK-05-0: Constitution restatement logged for this phase and no deviation required.
+- [x] RPK-05-a: Add explicit `View Photo` CTA in digital receipt detail.
+- [x] RPK-05-b: Enforce commit eligibility to block ineligible inventory writes.
+- [x] RPK-05-c: Preserve full expense ledger behavior for all receipt lines.
+- [x] RPK-05-d: Keep idempotent commit behavior intact.
+- [x] RPK-05-e: Add launch hardening controls (feature flag/rollback switch/smoke coverage).
 
 ## Track B - Multi-Industry Continuation (Post-Launch Queue)
 

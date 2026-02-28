@@ -101,6 +101,22 @@ export default function ReceiptDetailPageClient() {
 
       {!loading && !error && receipt && (
         <>
+          {hasPhoto && receipt.signed_image_url && (
+            <div className="flex justify-end">
+              <a
+                href={receipt.signed_image_url}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-white/80 transition-colors hover:text-white"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-7.5 0L21 3m0 0v6.75M21 3h-6.75" />
+                </svg>
+                View Photo
+              </a>
+            </div>
+          )}
+
           {hasPhoto && hasLineItems && (
             <div className="flex rounded-xl border border-white/10 overflow-hidden">
               <button

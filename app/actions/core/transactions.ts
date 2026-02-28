@@ -84,6 +84,7 @@ export async function commitReceiptTransactions(
   }[]
 ) {
   const businessId = await requireBusinessId();
+  const requestedLineById = new Map(lines.map((line) => [line.receipt_line_item_id, line]));
   const requestedLineIds = Array.from(
     new Set(lines.map((line) => line.receipt_line_item_id))
   );
@@ -208,6 +209,14 @@ export async function commitReceiptTransactions(
       }
       return line;
     });
+
+    const invalidInventoryMappings = orderedLineItems.filter((line) => {
+      const requested = requestedLineById.get(line.id);
+      return !requested || requested.inventory_item_id !== line.matched_item_id;
+    });
+    if (invalidInventoryMappings.length > 0) {
+      throw new Error("Receipt line mapping no longer matches eligible inventory item");
+    }
 
     const transactions = await Promise.all(
       orderedLineItems.map((line) =>

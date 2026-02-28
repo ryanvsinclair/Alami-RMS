@@ -353,6 +353,7 @@ Implemented capabilities:
 - Income-layer tap interaction collapses the transactions sheet to reveal income-source breakdown
 - Expense-focused transactions sheet (recent expense activity only)
 - Business-type-aware income source ordering (for example restaurant POS + delivery channels first)
+- Receipt-linked expense rows now include explicit `View Photo` cue when navigating to receipt detail
 
 Canonical paths:
 
@@ -516,6 +517,8 @@ Implemented capabilities:
 - Receipt review UI now includes a parsed-produce checklist (`yes/no/select all/resolve later`) with auto-advance highlighting
 - Receipt finalize flow now gates commit until produce decisions are explicit; only produce lines marked `add_to_inventory` can create inventory transactions
 - Receipt lines marked `resolve_later` now flow into Inventory Fix Later queue as purchase-confirmation tasks
+- Receipt detail now exposes an explicit `View Photo` CTA (signed URL) when a receipt image is available
+- Receipt commit guardrails now validate line-to-inventory mapping eligibility at commit time to block stale/ineligible mappings
 - Store-specific parse-profile memory is active via `ReceiptParseProfile` (dedicated table): correction summaries now accumulate province/tax/parse signals per store profile key (`place:<google_place_id>` preferred, fallback `supplier:<supplier_id>`)
 - Profile priors are now consumed in receipt workflows when Google Place province hints are unavailable, and line-review `confirmed`/`skipped` actions feed profile stats for continuous store adaptation
 - Raw-text receipt parsing now uses a hybrid section-aware parser (`src/domain/parsers/receipt.ts`) instead of regex-only extraction:
@@ -556,6 +559,7 @@ Implemented capabilities:
 - Audit metadata persistence for fallback evidence and pairing decisions
 - Intake-source eligibility metadata persisted per shopping item (`resolution_audit.intake_source` + `inventory_eligibility`)
 - Commit guardrail: manual and shelf-label sources are expense-only at commit time (no inventory writes)
+- Expense-ledger metadata now includes `inventory_transaction_count` alongside `item_count` and ineligible-item counts
 - Web fallback hardening and observability
 
 Canonical paths:

@@ -180,10 +180,10 @@ Use `Canonical Order Checklist` statuses as source of truth.
 Current snapshot (2026-02-28):
 
 - Launch-critical checklist items total: `50`
-- Launch-critical `[x]`: `14`
+- Launch-critical `[x]`: `17`
 - Launch-critical `[~]`: `0`
-- Strict completion: `28.00%`
-- Weighted progress: `28.00%`
+- Strict completion: `34.00%`
+- Weighted progress: `34.00%`
 - Parked post-launch checklist items (DI): `7` (excluded from launch completion %)
 
 Update rule after each slice:
@@ -226,11 +226,11 @@ Parked stream:
 
 ## Last Left Off Here
 
-- Current task ID: `RPK-05`
-- Current task: `Receipt detail and commit guardrails`
+- Current task ID: `RTS-00`
+- Current task: `Schema/module/contracts`
 - Status: `NOT STARTED`
 - Last updated: `2026-02-28`
-- Note: RPK-04 complete; continue deterministic order with RPK-05.
+- Note: RPK initiative complete through RPK-05; continue deterministic order with RTS-00.
 
 ## Canonical Order Checklist
 
@@ -276,9 +276,9 @@ Plan doc: `docs/business-industry-packaging-refactor-plan.md`
 
 #### Phase RPK-05 - Receipt detail and commit guardrails
 
-- [ ] RPK-05-a: Add explicit `View Photo` CTA in digital receipt detail
-- [ ] RPK-05-b: Enforce commit eligibility to prevent ineligible inventory writes
-- [ ] RPK-05-c: Preserve full expense ledger recording behavior
+- [x] RPK-05-a: Add explicit `View Photo` CTA in digital receipt detail
+- [x] RPK-05-b: Enforce commit eligibility to prevent ineligible inventory writes
+- [x] RPK-05-c: Preserve full expense ledger recording behavior
 
 ### Initiative RTS - Restaurant Table QR + Host/Kitchen Ops
 
@@ -417,10 +417,46 @@ No additional missing plan docs were identified from the current chat scope afte
 ## Completion Snapshot
 
 - Launch-critical initiatives active: `5` (RPK, RTS, IMG-L, UX-L, LG)
-- Launch-critical items complete: `14`
+- Launch-critical items complete: `17`
 - Parked post-launch initiatives: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - RPK-05 receipt photo CTA and commit guardrails completed
+
+- Constitution Restatement:
+  - Task ID: `RPK-05`
+  - Scope: add explicit `View Photo` CTA and harden commit eligibility while preserving expense-ledger behavior.
+  - Invariants confirmed: no product fork, receipts do not auto-create inventory, inventory writes explicit/eligibility-gated, unresolved produce remains routed to Fix Later.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: structural UI updates only, no unauthorized theme/layout redesign.
+- Preflight evidence:
+  - `Get-Content src/features/receiving/receipt/ui/ReceiptDetailPageClient.tsx`
+  - `Get-Content src/features/home/ui/HomeTransactionsLayer.tsx`
+  - `Get-Content app/actions/core/transactions.ts`
+  - `Get-Content src/features/shopping/server/commit.service.ts`
+  - `Get-Content -LiteralPath 'app/(dashboard)/shopping/orders/[id]/page.tsx'`
+  - `rg -n "View Photo|commit|inventory_decision|expense|receipt" src app`
+- Implementation:
+  - Added explicit `View Photo` CTA in receipt detail (`signed_image_url`) with direct open-in-new-tab link.
+  - Added explicit receipt-linked `View Photo` cues in home transactions and shopping order detail.
+  - Hardened `commitReceiptTransactions` eligibility guardrails:
+    - line->inventory mapping must still match receipt line eligibility at commit time
+    - pending/ineligible produce lines are blocked from inventory commit
+  - Preserved shopping expense-ledger behavior and added explicit metadata `inventory_transaction_count` for commit observability.
+  - Preserved idempotent receipt commit behavior.
+- Validation:
+  - `npx eslint src/features/receiving/receipt/ui/ReceiptDetailPageClient.tsx src/features/home/ui/HomeTransactionsLayer.tsx app/actions/core/transactions.ts src/features/shopping/server/commit.service.ts "app/(dashboard)/shopping/orders/[id]/page.tsx"` -> PASS (no errors; existing Next `<img>` warning remains on shopping order detail image)
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `node --test src/domain/parsers/receipt.test.mjs src/domain/parsers/receipt-correction-core.test.mjs` -> PASS
+- Diff proportionality:
+  - changed runtime files: 5 (receipt detail/home/order UI + commit guardrails + expense metadata)
+  - changed docs: canonical source/master/overview/changelog sync
+  - proportionality reason: exactly aligned to RPK-05 checklist scope.
+- Unrelated-file check:
+  - pre-existing unrelated local files remained untouched; this slice changed only RPK-05 paths plus required canonical docs.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
 
 ### 2026-02-28 - RPK-04 Fix Later unresolved purchase-confirmation queue integration completed
 

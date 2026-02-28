@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   getShoppingSession,
@@ -147,7 +147,17 @@ export default function OrderDetailPage() {
         {/* Receipt Image */}
         {session.receipt?.image_url && (
           <Card className="p-5">
-            <p className="text-xs text-muted uppercase tracking-wide mb-2">Receipt</p>
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <p className="text-xs text-muted uppercase tracking-wide">Receipt</p>
+              {session.receipt?.id && (
+                <Link
+                  href={`/receive/receipt/${session.receipt.id}`}
+                  className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] text-muted hover:text-foreground transition-colors"
+                >
+                  View Photo
+                </Link>
+              )}
+            </div>
             <img
               src={session.receipt.image_url}
               alt="Receipt"
