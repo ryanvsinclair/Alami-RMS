@@ -1,6 +1,6 @@
 # Master Plan v2 - Canonical Restaurant Launch Refactor Tracker
 
-Status: ACTIVE - restaurant launch major refactor in progress
+Status: COMPLETE - launch + post-launch DI checklist executed (manual smoke follow-up pending)
 Created: 2026-02-27
 Last Updated: 2026-02-28
 Primary Purpose: canonical sequencing and progress tracker for launch-critical restaurant refactor work.
@@ -196,7 +196,7 @@ Update rule after each slice:
 
 - `docs/master-plan-v1.md` is archived and complete.
 - v2 is rebased from DI-first to restaurant-launch-first.
-- DI remains important but is parked until launch-critical restaurant work is complete.
+- DI resumed after launch-gate completion and is complete through DI-06.
 
 Canonical source plans in this cycle:
 
@@ -222,15 +222,15 @@ Current active launch streams:
 
 Post-launch stream:
 
-- DI (document intake), post-launch queue (resume gate unlocked after `LG-00` completion)
+- DI (document intake), completed through `DI-06` after launch-gate unlock
 
 ## Last Left Off Here
 
 - Current task ID: `DI-06`
 - Current task: `Intelligence layer (analytics and insights)`
-- Status: `NOT STARTED`
+- Status: `COMPLETED`
 - Last updated: `2026-02-28`
-- Note: DI-05 is complete; continue deterministic DI sequence at DI-06.
+- Note: DI sequence is complete through DI-06; continue with manual interactive smoke checks only.
 
 ## Canonical Order Checklist
 
@@ -367,14 +367,14 @@ Test format lock:
 - [x] LG-00-d: Timer and queue advancement behavior pass
 - [x] LG-00-e: Multi-tenant isolation and permission checks pass
 
-## Post-Launch Queue (Resumed)
+## Post-Launch Queue (Complete)
 
-### Initiative DI - Document Intake Pipeline (Active)
+### Initiative DI - Document Intake Pipeline (Complete)
 
 Plan doc: `docs/document-intake-pipeline-plan.md`
-Current state: active, resumed after launch-gate completion.
+Current state: complete (all DI checklist items implemented).
 Re-entry trigger: satisfied (`LG-00` fully complete).
-Resume point: `DI-06`.
+Resume point: `COMPLETE`.
 
 High-level DI checklist:
 
@@ -384,7 +384,7 @@ High-level DI checklist:
 - [x] DI-03 vendor mapping/trust setup
 - [x] DI-04 inbox/post flow
 - [x] DI-05 trust-gated auto-post
-- [ ] DI-06 analytics layer
+- [x] DI-06 analytics layer
 
 ## Chat Pass-Through Coverage Audit (2026-02-28)
 
@@ -418,9 +418,62 @@ No additional missing plan docs were identified from the current chat scope afte
 
 - Launch-critical initiatives active: `5` (RPK, RTS, IMG-L, UX-L, LG)
 - Launch-critical items complete: `50`
-- Post-launch initiatives in progress: `1` (DI)
+- Post-launch initiatives complete: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - DI-06 completed (analytics and insights layer)
+
+- Constitution Restatement:
+  - Task ID: `DI-06`
+  - Scope: implement read-only document analytics service/action/UI route coverage with threshold gating and no schema changes.
+  - Invariants confirmed: additive-only implementation; no destructive DB changes; analytics remains read-only and module-gated.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: structural UI only; no glow/gradient/new ad-hoc color systems.
+- Preflight evidence:
+  - `Get-Content docs/document-intake-pipeline-plan.md`
+  - `rg -n "DI-06|analytics|getVendorSpendSummary|getPriceTrends|getReorderSignals|getTaxSummary|getCogsSummary" src app docs`
+  - `Get-Content app/actions/modules/documents.ts`
+  - `Get-Content src/features/documents/server/index.ts`
+- Implementation:
+  - Added analytics service:
+    - `src/features/documents/server/document-analytics.service.ts`
+  - Added analytics unit tests:
+    - `src/features/documents/server/document-analytics.service.test.mjs` (6 tests)
+  - Added module-gated analytics actions:
+    - `getVendorSpendSummary`
+    - `getPriceTrends`
+    - `getReorderSignals`
+    - `getTaxSummary`
+    - `getCogsSummary`
+    - `app/actions/modules/documents.ts`
+  - Added analytics route + UI:
+    - `app/(dashboard)/documents/analytics/page.tsx`
+    - `src/features/documents/ui/DocumentAnalyticsClient.tsx`
+    - `src/features/documents/ui/index.ts`
+  - Added analytics entry link in documents inbox:
+    - `src/features/documents/ui/DocumentInboxClient.tsx`
+  - Updated documents server barrel:
+    - `src/features/documents/server/index.ts`
+  - Added analytics shared contracts constants/types:
+    - `src/features/documents/shared/documents.contracts.ts`
+  - Marked DI-06 complete and DI checklist fully closed.
+- Validation:
+  - `node --test src/features/documents/server/document-post.service.test.mjs src/features/documents/server/trust.service.test.mjs src/features/documents/server/document-analytics.service.test.mjs` -> PASS (24 tests total)
+  - `npx eslint app/actions/modules/documents.ts src/features/documents/server/document-analytics.service.ts src/features/documents/server/document-analytics.service.test.mjs src/features/documents/server/index.ts src/features/documents/ui/DocumentAnalyticsClient.tsx src/features/documents/ui/DocumentInboxClient.tsx src/features/documents/ui/index.ts app/(dashboard)/documents/analytics/page.tsx src/features/documents/shared/documents.contracts.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 9
+  - changed tests: 1
+  - changed docs: source/master/changelog/overview sync
+  - proportionality reason: exact DI-06 scope (analytics service + action wiring + analytics route/ui + tests + canonical sync).
+- Unrelated-file check:
+  - pre-existing unrelated local files remained unchanged by this slice (`.claude/settings.local.json`, `docs/MASTER_BACKEND_ARCHITECTURE.md`).
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables introduced.
+- Manual smoke note:
+  - interactive analytics smoke remains pending in this non-interactive session.
+- Commit checkpoint: `c4cfdf1` (`feat(di-06): add document analytics layer services ui and tests`).
 
 ### 2026-02-28 - DI-05 completed (trust-gated auto-post and anomaly controls)
 

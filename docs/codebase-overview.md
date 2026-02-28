@@ -314,7 +314,7 @@ Canonical paths:
 - `prisma/migrations/20260228060000_business_profile_place_metadata/migration.sql`
 - `prisma/migrations/20260228130000_table_service_module_backfill/migration.sql`
 
-### Document Intake (DI-05 trust-gated auto-post baseline)
+### Document Intake (DI-06 analytics complete baseline)
 
 Implemented capabilities:
 
@@ -364,6 +364,12 @@ Implemented capabilities:
   - auto-post eligibility checks enforce vendor toggle/state, threshold, confidence, and anomaly gates
   - parse pipeline now attempts trust-gated auto-post after parse and vendor resolution when vendor auto-post is enabled
   - manager-only actions and UI controls support disabling auto-post and blocking vendors from trust automation
+- DI-06 analytics layer now active:
+  - read-only analytics service for vendor spend, price trends, reorder signals, tax summary, and COGS summary
+  - analytics threshold gate requires at least 20 posted document drafts before non-summary analytics calls execute
+  - tax analytics now filters by `financial_transactions.source = document_intake`
+  - module-gated analytics route available at `/documents/analytics`
+  - inbox header includes direct analytics entry link
 
 Canonical paths:
 
@@ -389,14 +395,18 @@ Canonical paths:
 - `src/features/documents/server/draft-review.service.ts`
 - `src/features/documents/server/trust.service.ts`
 - `src/features/documents/server/trust.service.test.mjs`
+- `src/features/documents/server/document-analytics.service.ts`
+- `src/features/documents/server/document-analytics.service.test.mjs`
 - `src/features/documents/ui/VendorMappingPanel.tsx`
 - `src/features/documents/ui/DocumentInboxClient.tsx`
 - `src/features/documents/ui/DocumentDraftDetailClient.tsx`
+- `src/features/documents/ui/DocumentAnalyticsClient.tsx`
 - `src/features/documents/ui/index.ts`
 - `app/api/documents/inbound/route.ts`
 - `app/(dashboard)/documents/layout.tsx`
 - `app/(dashboard)/documents/page.tsx`
 - `app/(dashboard)/documents/[draftId]/page.tsx`
+- `app/(dashboard)/documents/analytics/page.tsx`
 - `app/actions/modules/documents.ts`
 - `components/nav/bottom-nav.tsx`
 - `lib/modules/documents/index.ts`

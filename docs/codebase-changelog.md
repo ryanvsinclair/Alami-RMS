@@ -20,6 +20,71 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - DI-06 completed: analytics and insights layer
+
+- Suggested Commit Title: `feat(di-06): add document analytics layer services ui and tests`
+- Scope: DI phase `DI-06` (read-only analytics service/actions/UI route + validation coverage).
+- Constitution Restatement:
+  - Task ID: `DI-06`
+  - Scope sentence: implement vendor spend, price trend, reorder signal, tax, and COGS analytics with module-gated actions and dashboard route wiring.
+  - Invariants confirmed: additive-only changes, no destructive schema migration, analytics remains read-only.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: structural-only analytics surface; no unauthorized glow/gradient/ad-hoc color systems.
+- Deliverables:
+  - Added analytics service:
+    - `src/features/documents/server/document-analytics.service.ts`
+  - Added analytics tests:
+    - `src/features/documents/server/document-analytics.service.test.mjs` (6 tests)
+  - Added analytics action wrappers:
+    - `getVendorSpendSummary`
+    - `getPriceTrends`
+    - `getReorderSignals`
+    - `getTaxSummary`
+    - `getCogsSummary`
+    - `app/actions/modules/documents.ts`
+  - Added analytics UI route and client:
+    - `app/(dashboard)/documents/analytics/page.tsx`
+    - `src/features/documents/ui/DocumentAnalyticsClient.tsx`
+  - Added analytics link in inbox header:
+    - `src/features/documents/ui/DocumentInboxClient.tsx`
+  - Updated shared analytics contracts and server/ui exports:
+    - `src/features/documents/shared/documents.contracts.ts`
+    - `src/features/documents/server/index.ts`
+    - `src/features/documents/ui/index.ts`
+  - Synced DI source/master/changelog/overview docs and closed DI-06 checklist.
+- Touched Files (single-entry log):
+  - `app/(dashboard)/documents/analytics/page.tsx` (added)
+  - `app/actions/modules/documents.ts` (updated)
+  - `src/features/documents/server/document-analytics.service.ts` (added)
+  - `src/features/documents/server/document-analytics.service.test.mjs` (added)
+  - `src/features/documents/server/index.ts` (updated)
+  - `src/features/documents/shared/documents.contracts.ts` (updated)
+  - `src/features/documents/ui/DocumentAnalyticsClient.tsx` (added)
+  - `src/features/documents/ui/DocumentInboxClient.tsx` (updated)
+  - `src/features/documents/ui/index.ts` (updated)
+  - `docs/document-intake-pipeline-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `node --test src/features/documents/server/document-post.service.test.mjs src/features/documents/server/trust.service.test.mjs src/features/documents/server/document-analytics.service.test.mjs` -> PASS (24 tests)
+  - `npx eslint app/actions/modules/documents.ts src/features/documents/server/document-analytics.service.ts src/features/documents/server/document-analytics.service.test.mjs src/features/documents/server/index.ts src/features/documents/ui/DocumentAnalyticsClient.tsx src/features/documents/ui/DocumentInboxClient.tsx src/features/documents/ui/index.ts app/(dashboard)/documents/analytics/page.tsx src/features/documents/shared/documents.contracts.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 9
+  - Changed tests: 1
+  - Changed docs: 4
+  - Delta rationale: exact DI-06 scope (analytics service/action/UI coverage + canonical doc sync).
+- Unrelated-file check:
+  - Pre-existing unrelated local files remained unchanged by this slice (`.claude/settings.local.json`, `docs/MASTER_BACKEND_ARCHITECTURE.md`).
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+- Manual smoke note:
+  - Interactive analytics smoke remains pending in this non-interactive session.
+- Commit checkpoint:
+  - Commit hash: `c4cfdf1`
+  - Commit title: `feat(di-06): add document analytics layer services ui and tests`
+
 ### 2026-02-28 - DI-05 completed: trust-gated auto-post and anomaly controls
 
 - Suggested Commit Title: `feat(di-05): add trust-gated auto-post service and controls`

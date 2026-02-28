@@ -1,12 +1,42 @@
 # Document Intake Pipeline Plan
 
 Last updated: February 28, 2026
-Status: ACTIVE - DI-05 complete, DI-06 next
+Status: COMPLETE - DI-06 complete
 Constitution source: `docs/execution-constitution.md`
 
 ---
 
 ## Latest Update
+
+- **2026-02-28 - DI-06 completed (analytics and insights layer).**
+  - Added analytics service:
+    - `src/features/documents/server/document-analytics.service.ts`
+  - Added analytics service tests:
+    - `src/features/documents/server/document-analytics.service.test.mjs` (6 cases)
+  - Added analytics server action wrappers:
+    - `getVendorSpendSummary`
+    - `getPriceTrends`
+    - `getReorderSignals`
+    - `getTaxSummary`
+    - `getCogsSummary`
+    - `app/actions/modules/documents.ts`
+  - Added analytics route and UI:
+    - `app/(dashboard)/documents/analytics/page.tsx`
+    - `src/features/documents/ui/DocumentAnalyticsClient.tsx`
+    - `src/features/documents/ui/index.ts`
+  - Updated documents inbox header with analytics entry link:
+    - `src/features/documents/ui/DocumentInboxClient.tsx`
+  - Updated documents server barrel:
+    - `src/features/documents/server/index.ts`
+  - Added shared analytics contracts/types:
+    - `src/features/documents/shared/documents.contracts.ts`
+  - Validation passed:
+    - `node --test src/features/documents/server/document-post.service.test.mjs src/features/documents/server/trust.service.test.mjs src/features/documents/server/document-analytics.service.test.mjs`
+    - `npx eslint app/actions/modules/documents.ts src/features/documents/server/document-analytics.service.ts src/features/documents/server/document-analytics.service.test.mjs src/features/documents/server/index.ts src/features/documents/ui/DocumentAnalyticsClient.tsx src/features/documents/ui/DocumentInboxClient.tsx src/features/documents/ui/index.ts app/(dashboard)/documents/analytics/page.tsx src/features/documents/shared/documents.contracts.ts`
+    - `npx tsc --noEmit --incremental false`
+  - Manual DI-06 analytics smoke remains pending for interactive verification.
+  - DI plan status moved to **COMPLETE**.
+  - Commit checkpoint: `c4cfdf1` (`feat(di-06): add document analytics layer services ui and tests`).
 
 - **2026-02-28 - DI-05 completed (trust-gated auto-post + anomaly checks baseline).**
   - Added trust service:
@@ -194,7 +224,7 @@ Constitution source: `docs/execution-constitution.md`
 
 ## Pick Up Here
 
-Next task: **DI-06** - Intelligence Layer (Analytics and Insights).
+Next task: **PLAN COMPLETE** (run remaining manual DI-04/DI-05/DI-06 interactive smoke checks).
 
 ---
 
@@ -1107,14 +1137,14 @@ Validation:
 
 **Goal:** Surface vendor spend tracking, price trend analysis, reorder prediction signals, tax summaries, and cost-of-goods analytics. Read-only. No new schema migrations.
 
-**Status:** `[ ]` pending
+**Status:** `[x]` completed
 
 **Prerequisite:** DI-04 complete. Do not execute if fewer than 20 posted document drafts exist for the business.
 
 #### Checklist
 
 Analytics service:
-- [ ] Create `src/features/documents/server/document-analytics.service.ts`:
+- [x] Create `src/features/documents/server/document-analytics.service.ts`:
   - `getVendorSpendSummary(businessId, { period })` — queries `document_drafts` (status: `posted`) + `vendor_profiles`
   - `getPriceTrends(businessId, vendorProfileId, { inventoryItemId?, rawLineItemName? })` — from `parsed_line_items` jsonb
   - `getReorderSignals(businessId)` — items where `estimatedDaysUntilReorder <= 7`
@@ -1122,21 +1152,22 @@ Analytics service:
   - `getCogsSummary(businessId, { period })` — joins `financial_transactions (source: "document_intake", type: "expense")` + vendor default category
 
 Server action additions:
-- [ ] `getVendorSpendSummary`, `getPriceTrends`, `getReorderSignals`, `getTaxSummary`, `getCogsSummary` in `app/actions/modules/documents.ts`
+- [x] `getVendorSpendSummary`, `getPriceTrends`, `getReorderSignals`, `getTaxSummary`, `getCogsSummary` in `app/actions/modules/documents.ts`
 
 UI:
-- [ ] Create `src/features/documents/ui/DocumentAnalyticsClient.tsx`:
+- [x] Create `src/features/documents/ui/DocumentAnalyticsClient.tsx`:
   - Vendor spend bar chart (top 10 by spend for selected period)
   - Price trend line chart per vendor + item
   - Reorder signal cards (≤7 days)
   - Tax summary total + vendor breakdown
   - COGS breakdown by category
   - Period selector: 30 / 60 / 90 days / Custom
-- [ ] Create `app/(dashboard)/documents/analytics/page.tsx` — thin route wrapper
+- [x] Create `app/(dashboard)/documents/analytics/page.tsx` — thin route wrapper
 
 Validation:
+- [x] `node --test src/features/documents/server/document-post.service.test.mjs src/features/documents/server/trust.service.test.mjs src/features/documents/server/document-analytics.service.test.mjs` → PASS
 - [x] `npx tsc --noEmit --incremental false` → PASS
-- [ ] `npx eslint src/features/documents/` → PASS
+- [x] `npx eslint app/actions/modules/documents.ts src/features/documents/server/document-analytics.service.ts src/features/documents/server/document-analytics.service.test.mjs src/features/documents/server/index.ts src/features/documents/ui/DocumentAnalyticsClient.tsx src/features/documents/ui/DocumentInboxClient.tsx src/features/documents/ui/index.ts app/(dashboard)/documents/analytics/page.tsx src/features/documents/shared/documents.contracts.ts` → PASS
 - [ ] Manual: post 5+ documents across 2+ vendors → analytics page shows spend breakdown
 
 ---
@@ -1191,6 +1222,7 @@ node --test src/domain/parsers/document-draft.test.mjs
 node --test src/features/documents/server/vendor-profile.repository.test.mjs
 node --test src/features/documents/server/document-post.service.test.mjs
 node --test src/features/documents/server/trust.service.test.mjs
+node --test src/features/documents/server/document-analytics.service.test.mjs
 ```
 
 ---
@@ -1214,7 +1246,7 @@ After each phase is complete:
 Tracked as initiative **DI** in `docs/master-plan-v2.md`.
 
 - DI-00 through DI-05: sequentially dependent
-- DI-06: deferrable independently
+- DI-06: complete
 - No dependencies on any completed plan
 - Fully additive — no existing module, table, route, or service is modified (except `FinancialSource` enum value addition in DI-00)
 
