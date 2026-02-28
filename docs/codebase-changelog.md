@@ -20,6 +20,65 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - DI-05 completed: trust-gated auto-post and anomaly controls
+
+- Suggested Commit Title: `feat(di-05): add trust-gated auto-post service and controls`
+- Scope: DI phase `DI-05` (trust service, parse hook, manager controls, anomaly gating, tests).
+- Constitution Restatement:
+  - Task ID: `DI-05`
+  - Scope sentence: add controlled auto-post service and manager trust controls while preserving vendor-scoped automation and anomaly safety gates.
+  - Invariants confirmed: auto-post remains per-vendor; confidence/anomaly checks gate posting; ineligible drafts remain in inbox.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: additive structural trust controls only; no unauthorized design-token changes.
+- Deliverables:
+  - Added trust service:
+    - `src/features/documents/server/trust.service.ts`
+  - Added trust service tests:
+    - `src/features/documents/server/trust.service.test.mjs` (10 tests)
+  - Updated parse flow to attempt trust-gated auto-post when vendor auto-post is enabled:
+    - `src/features/documents/server/document-parse.service.ts`
+  - Added manager trust actions:
+    - `disableAutoPost`
+    - `blockVendor`
+    - `app/actions/modules/documents.ts`
+  - Added trust control helper methods:
+    - `src/features/documents/server/vendor-mapping.service.ts`
+  - Updated document detail UI with trust status + manager controls:
+    - `src/features/documents/ui/DocumentDraftDetailClient.tsx`
+  - Updated server barrel exports:
+    - `src/features/documents/server/index.ts`
+  - Synced DI source/master/changelog/overview docs and advanced DI pointer to `DI-06`.
+- Touched Files (single-entry log):
+  - `app/actions/modules/documents.ts` (updated)
+  - `src/features/documents/server/document-parse.service.ts` (updated)
+  - `src/features/documents/server/index.ts` (updated)
+  - `src/features/documents/server/vendor-mapping.service.ts` (updated)
+  - `src/features/documents/server/trust.service.ts` (added)
+  - `src/features/documents/server/trust.service.test.mjs` (added)
+  - `src/features/documents/ui/DocumentDraftDetailClient.tsx` (updated)
+  - `docs/document-intake-pipeline-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `node --test src/features/documents/server/trust.service.test.mjs` -> PASS (10/10)
+  - `npx eslint src/features/documents/server/trust.service.ts src/features/documents/server/trust.service.test.mjs src/features/documents/server/document-post.service.ts src/features/documents/server/document-post.service.test.mjs src/features/documents/server/document-parse.service.ts src/features/documents/server/vendor-mapping.service.ts app/actions/modules/documents.ts src/features/documents/ui/DocumentDraftDetailClient.tsx src/features/documents/server/index.ts` -> PASS (1 non-blocking Next `no-img-element` warning in draft preview)
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 6
+  - Changed tests: 1
+  - Changed docs: 4
+  - Delta rationale: exact DI-05 scope (trust-gated automation controls and safeguards + canonical sync).
+- Unrelated-file check:
+  - Pre-existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+- Manual smoke note:
+  - Interactive DI-05 smoke remains pending in this non-interactive session.
+- Commit checkpoint:
+  - Commit hash: `735172e`
+  - Commit title: `feat(di-05): add trust-gated auto-post service and controls`
+
 ### 2026-02-28 - DI-04 completed: review inbox and user-triggered document post flow
 
 - Suggested Commit Title: `feat(di-04): add document inbox and user-triggered post flow`

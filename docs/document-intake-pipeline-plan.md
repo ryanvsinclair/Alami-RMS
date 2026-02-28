@@ -1,12 +1,41 @@
 # Document Intake Pipeline Plan
 
 Last updated: February 28, 2026
-Status: ACTIVE - DI-04 complete, DI-05 next
+Status: ACTIVE - DI-05 complete, DI-06 next
 Constitution source: `docs/execution-constitution.md`
 
 ---
 
 ## Latest Update
+
+- **2026-02-28 - DI-05 completed (trust-gated auto-post + anomaly checks baseline).**
+  - Added trust service:
+    - `src/features/documents/server/trust.service.ts`
+  - Added trust service tests:
+    - `src/features/documents/server/trust.service.test.mjs` (10 cases)
+  - Updated parse flow:
+    - `src/features/documents/server/document-parse.service.ts` now calls trust auto-post attempt after parse + vendor resolution when vendor auto-post is enabled
+  - Added DI-05 manager controls in actions:
+    - `disableAutoPost`
+    - `blockVendor`
+    - `app/actions/modules/documents.ts`
+  - Added server helper methods:
+    - `disableAutoPost`
+    - `blockVendor`
+    - `src/features/documents/server/vendor-mapping.service.ts`
+  - Added trust controls to draft detail UI:
+    - trust status/threshold/posted counters
+    - manager-only disable/block actions
+    - `src/features/documents/ui/DocumentDraftDetailClient.tsx`
+  - Updated server barrel exports:
+    - `src/features/documents/server/index.ts`
+  - Validation passed:
+    - `node --test src/features/documents/server/trust.service.test.mjs`
+    - `npx eslint src/features/documents/server/trust.service.ts src/features/documents/server/trust.service.test.mjs src/features/documents/server/document-post.service.ts src/features/documents/server/document-post.service.test.mjs src/features/documents/server/document-parse.service.ts src/features/documents/server/vendor-mapping.service.ts app/actions/modules/documents.ts src/features/documents/ui/DocumentDraftDetailClient.tsx src/features/documents/server/index.ts`
+    - `npx tsc --noEmit --incremental false`
+  - Manual DI-05 UI smoke not executed in this non-interactive session (residual risk noted for next interactive pass).
+  - DI resume pointer advanced to **DI-06**.
+  - Commit checkpoint: `735172e` (`feat(di-05): add trust-gated auto-post service and controls`).
 
 - **2026-02-28 - DI-04 completed (review inbox + user-triggered post flow).**
   - Added post service:
@@ -165,7 +194,7 @@ Constitution source: `docs/execution-constitution.md`
 
 ## Pick Up Here
 
-Next task: **DI-05** - Controlled Automation (Trust-Gated Auto-Post).
+Next task: **DI-06** - Intelligence Layer (Analytics and Insights).
 
 ---
 
@@ -998,7 +1027,7 @@ Validation:
 
 **Goal:** Track vendor posting accuracy history. When the effective trust threshold is reached (respecting per-vendor override), enable auto-post for high-confidence documents from that vendor. Apply anomaly checks. Auto-post is per-vendor, not global.
 
-**Status:** `[ ]` pending
+**Status:** `[x]` completed
 
 **Prerequisite:** DI-04 complete.
 
@@ -1024,7 +1053,7 @@ For `duplicate_suspected`: this now operates on `raw_content_hash` as a primary 
 #### Checklist
 
 Trust service:
-- [ ] Create `src/features/documents/server/trust.service.ts`:
+- [x] Create `src/features/documents/server/trust.service.ts`:
   - `computeAnomalyFlags(businessId, vendorProfileId, parsedFields)` → `DocumentAnomalyFlag[]`
   - `evaluateAutoPostEligibility(vendorProfile, draft)` → `{ eligible: boolean, reason: string | null }`:
     - Uses `getEffectiveTrustThreshold(vendorProfile)` for threshold check
@@ -1037,22 +1066,22 @@ Trust service:
     6. Structured log: `{ event: 'auto_post_attempt', businessId, draftId, eligible, reason, anomalyFlags }`
 
 Update parse flow:
-- [ ] Modify `document-parse.service.ts::parseAndSaveDraft` to call `attemptAutoPost` after parse when `vendor.auto_post_enabled = true`
-- [ ] If auto-post not eligible → `pending_review` (inbox)
-- [ ] If auto-post succeeds → `posted` (skips inbox)
+- [x] Modify `document-parse.service.ts::parseAndSaveDraft` to call `attemptAutoPost` after parse when `vendor.auto_post_enabled = true`
+- [x] If auto-post not eligible → `pending_review` (inbox)
+- [x] If auto-post succeeds → `posted` (skips inbox)
 
 Server action additions:
-- [ ] `disableAutoPost(businessId, vendorProfileId)` — owner/manager only
-- [ ] `blockVendor(businessId, vendorProfileId)` — owner/manager only
-- [ ] `updateVendorTrustThreshold(businessId, vendorProfileId, threshold)` — already added in DI-03; ensure it re-evaluates trust state after change
+- [x] `disableAutoPost(businessId, vendorProfileId)` — owner/manager only
+- [x] `blockVendor(businessId, vendorProfileId)` — owner/manager only
+- [x] `updateVendorTrustThreshold(businessId, vendorProfileId, threshold)` — already added in DI-03; ensure it re-evaluates trust state after change
 
 Admin UI additions to `DocumentDraftDetailClient`:
-- [ ] Vendor trust section: `trust_state` badge, `total_posted` count, effective threshold, `auto_post_enabled` toggle
-- [ ] Owner/manager only: disable auto-post toggle, block vendor button
-- [ ] Anomaly flags: each flag name with plain-English explanation
+- [x] Vendor trust section: `trust_state` badge, `total_posted` count, effective threshold, `auto_post_enabled` toggle
+- [x] Owner/manager only: disable auto-post toggle, block vendor button
+- [x] Anomaly flags: each flag name with plain-English explanation
 
 Unit tests:
-- [ ] Create `src/features/documents/server/trust.service.test.mjs`:
+- [x] Create `src/features/documents/server/trust.service.test.mjs`:
   - Test: eligible vendor + confidence ≥ 0.85 + no anomalies → `eligible: true`
   - Test: `auto_post_enabled = false` → `eligible: false, reason: "auto_post_disabled"`
   - Test: `confidence_score < 0.85` → `eligible: false, reason: "low_confidence"`
@@ -1066,9 +1095,9 @@ Unit tests:
   - Minimum 10 test cases
 
 Validation:
-- [ ] `node --test src/features/documents/server/trust.service.test.mjs` → PASS (10+/10+)
+- [x] `node --test src/features/documents/server/trust.service.test.mjs` → PASS (10+/10+)
 - [x] `npx tsc --noEmit --incremental false` → PASS
-- [ ] `npx eslint src/features/documents/server/trust.service.ts` → PASS
+- [x] `npx eslint src/features/documents/server/trust.service.ts` → PASS
 - [ ] Manual smoke: vendor with `total_posted >= effective_threshold` + high-confidence email → auto-posts, no inbox appearance, `auto_posted = true` on draft
 - [ ] Manual smoke: same vendor + email with large total anomaly → appears in inbox with `large_total` flag displayed
 

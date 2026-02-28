@@ -226,11 +226,11 @@ Post-launch stream:
 
 ## Last Left Off Here
 
-- Current task ID: `DI-05`
-- Current task: `Controlled automation (trust-gated auto-post)`
+- Current task ID: `DI-06`
+- Current task: `Intelligence layer (analytics and insights)`
 - Status: `NOT STARTED`
 - Last updated: `2026-02-28`
-- Note: DI-04 is complete; continue deterministic DI sequence at DI-05.
+- Note: DI-05 is complete; continue deterministic DI sequence at DI-06.
 
 ## Canonical Order Checklist
 
@@ -374,7 +374,7 @@ Test format lock:
 Plan doc: `docs/document-intake-pipeline-plan.md`
 Current state: active, resumed after launch-gate completion.
 Re-entry trigger: satisfied (`LG-00` fully complete).
-Resume point: `DI-05`.
+Resume point: `DI-06`.
 
 High-level DI checklist:
 
@@ -383,7 +383,7 @@ High-level DI checklist:
 - [x] DI-02 parse/score
 - [x] DI-03 vendor mapping/trust setup
 - [x] DI-04 inbox/post flow
-- [ ] DI-05 trust-gated auto-post
+- [x] DI-05 trust-gated auto-post
 - [ ] DI-06 analytics layer
 
 ## Chat Pass-Through Coverage Audit (2026-02-28)
@@ -421,6 +421,55 @@ No additional missing plan docs were identified from the current chat scope afte
 - Post-launch initiatives in progress: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - DI-05 completed (trust-gated auto-post and anomaly controls)
+
+- Constitution Restatement:
+  - Task ID: `DI-05`
+  - Scope: implement trust-service anomaly/eligibility logic, parse-flow auto-post hook, manager controls, and trust test coverage.
+  - Invariants confirmed: auto-post remains per-vendor; confidence/anomaly gates enforce safe fallback to inbox; blocked vendors cannot auto-post.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: additive structural controls only; no unauthorized visual style changes.
+- Preflight evidence:
+  - `Get-Content docs/document-intake-pipeline-plan.md`
+  - `rg -n "attemptAutoPost|computeAnomalyFlags|disableAutoPost|blockVendor|auto_post_enabled|anomaly_flags" src app docs`
+  - `Get-Content src/features/documents/server/document-parse.service.ts`
+- Implementation:
+  - Added trust service and anomaly/eligibility flow:
+    - `src/features/documents/server/trust.service.ts`
+  - Added trust service tests:
+    - `src/features/documents/server/trust.service.test.mjs` (10 tests)
+  - Updated parse pipeline:
+    - `src/features/documents/server/document-parse.service.ts` now attempts auto-post after parse+vendor resolution when vendor auto-post is enabled
+  - Added manager-only trust actions:
+    - `disableAutoPost`
+    - `blockVendor`
+    - `app/actions/modules/documents.ts`
+  - Added helper methods in vendor mapping service:
+    - `disableAutoPost`
+    - `blockVendor`
+    - `src/features/documents/server/vendor-mapping.service.ts`
+  - Added trust controls in draft detail UI:
+    - `src/features/documents/ui/DocumentDraftDetailClient.tsx`
+  - Updated server barrel exports:
+    - `src/features/documents/server/index.ts`
+  - Marked DI-05 complete and advanced deterministic DI pointer to DI-06.
+- Validation:
+  - `node --test src/features/documents/server/trust.service.test.mjs` -> PASS (10 tests)
+  - `npx eslint src/features/documents/server/trust.service.ts src/features/documents/server/trust.service.test.mjs src/features/documents/server/document-post.service.ts src/features/documents/server/document-post.service.test.mjs src/features/documents/server/document-parse.service.ts src/features/documents/server/vendor-mapping.service.ts app/actions/modules/documents.ts src/features/documents/ui/DocumentDraftDetailClient.tsx src/features/documents/server/index.ts` -> PASS (1 non-blocking Next `no-img-element` warning in draft preview)
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 6
+  - changed tests: 1
+  - changed docs: source/master/changelog/overview sync
+  - proportionality reason: exact DI-05 scope (trust-gated auto-post + controls + tests).
+- Unrelated-file check:
+  - pre-existing unrelated local files remained unchanged by this slice (`.claude/settings.local.json`, `docs/MASTER_BACKEND_ARCHITECTURE.md`).
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables introduced.
+- Manual smoke note:
+  - interactive DI-05 manual smoke remains pending in this non-interactive session; carry as residual risk to next interactive pass.
+- Commit checkpoint: `735172e` (`feat(di-05): add trust-gated auto-post service and controls`).
 
 ### 2026-02-28 - DI-04 completed (review inbox and user-triggered post flow)
 

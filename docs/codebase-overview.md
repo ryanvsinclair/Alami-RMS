@@ -314,7 +314,7 @@ Canonical paths:
 - `prisma/migrations/20260228060000_business_profile_place_metadata/migration.sql`
 - `prisma/migrations/20260228130000_table_service_module_backfill/migration.sql`
 
-### Document Intake (DI-04 review/post baseline)
+### Document Intake (DI-05 trust-gated auto-post baseline)
 
 Implemented capabilities:
 
@@ -359,6 +359,11 @@ Implemented capabilities:
   - module-gated dashboard routes now exist at `/documents` and `/documents/[draftId]`
   - bottom nav includes module-gated Documents entry with pending-draft badge count
   - inbox and detail clients provide review, mapping, post, and reject workflows
+- DI-05 trust automation layer now active:
+  - trust service computes anomaly flags (`large_total`, `new_format`, `vendor_name_mismatch`, `unusual_line_count`, `duplicate_suspected`)
+  - auto-post eligibility checks enforce vendor toggle/state, threshold, confidence, and anomaly gates
+  - parse pipeline now attempts trust-gated auto-post after parse and vendor resolution when vendor auto-post is enabled
+  - manager-only actions and UI controls support disabling auto-post and blocking vendors from trust automation
 
 Canonical paths:
 
@@ -382,6 +387,8 @@ Canonical paths:
 - `src/features/documents/server/document-post.service.ts`
 - `src/features/documents/server/document-post.service.test.mjs`
 - `src/features/documents/server/draft-review.service.ts`
+- `src/features/documents/server/trust.service.ts`
+- `src/features/documents/server/trust.service.test.mjs`
 - `src/features/documents/ui/VendorMappingPanel.tsx`
 - `src/features/documents/ui/DocumentInboxClient.tsx`
 - `src/features/documents/ui/DocumentDraftDetailClient.tsx`
