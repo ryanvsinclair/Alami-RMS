@@ -453,6 +453,7 @@ No additional missing plan docs were identified from the current chat scope afte
   - pre-existing unrelated local changes remained untouched; this slice modified only inventory queue paths and required canonical docs.
 - Dependency check: no new dependencies.
 - Env-var check: no new environment variables.
+- Commit checkpoint: `6b2af75` (`feat(rpk-04): add unresolved purchase confirmation queue taxonomy and filter`).
 
 ### 2026-02-28 - RPK-03 receipt decoupling and produce decision gate completed
 

@@ -55,7 +55,7 @@ Companion overview: `docs/codebase-overview.md`
 - Dependency change check: no new dependencies added.
 - Env-var change check: no new env vars introduced.
 - Commit checkpoint:
-  - Commit hash: pending (record after commit)
+  - Commit hash: `6b2af75`
   - Commit title: `feat(rpk-04): add unresolved purchase confirmation queue taxonomy and filter`
 
 ### 2026-02-28 - RPK-03 completed: receipt commit gate + parsed-produce decision checklist
