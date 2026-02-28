@@ -20,6 +20,76 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - DI-01 completed: document capture/isolation inbound pipeline
+
+- Suggested Commit Title: `feat(di-01): implement postmark capture-isolation inbound pipeline`
+- Scope: DI phase `DI-01` (safe ingest only: address tokening, webhook capture, dedup, raw storage, draft creation, no posting).
+- Constitution Restatement:
+  - Task ID: `DI-01`
+  - Scope sentence: implement Postmark inbound capture/isolation path with strict deduplication and tenant isolation, preserving capture-only invariants.
+  - Invariants confirmed: no financial posting in DI-01; dedup by `(business_id, raw_content_hash)`; async parse enqueue after response.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: no UI implementation changes in this slice.
+- Deliverables:
+  - Added server ingest layer:
+    - `src/features/documents/server/inbound-address.repository.ts`
+    - `src/features/documents/server/postmark-inbound.adapter.ts`
+    - `src/features/documents/server/document-storage.service.ts`
+    - `src/features/documents/server/document-draft.repository.ts`
+    - `src/features/documents/server/index.ts`
+  - Added inbound webhook route:
+    - `app/api/documents/inbound/route.ts`
+  - Added module action wrapper:
+    - `app/actions/modules/documents.ts` (`getInboundAddress`)
+  - Registered `documents` module in registry:
+    - `lib/modules/documents/index.ts`
+    - `lib/modules/registry.ts`
+  - Added DI-01 tests:
+    - `src/features/documents/server/postmark-inbound.adapter.test.mjs`
+    - `src/features/documents/server/inbound-address.repository.test.mjs`
+  - Manual webhook verification executed against local Next dev route with real env auth/token:
+    - first POST -> `{ received: true, draftId }`
+    - second POST same payload -> `{ received: true, draftId: <same>, duplicate: true }`
+    - persisted `raw_storage_path` format confirmed (`{businessId}/{draftId}/raw.json`)
+    - `financial_transactions` count for created `draftId` remained `0`
+- Touched Files (single-entry log):
+  - `src/features/documents/server/inbound-address.repository.ts` (added)
+  - `src/features/documents/server/postmark-inbound.adapter.ts` (added)
+  - `src/features/documents/server/document-storage.service.ts` (added)
+  - `src/features/documents/server/document-draft.repository.ts` (added)
+  - `src/features/documents/server/index.ts` (added)
+  - `src/features/documents/server/postmark-inbound.adapter.test.mjs` (added)
+  - `src/features/documents/server/inbound-address.repository.test.mjs` (added)
+  - `app/api/documents/inbound/route.ts` (added)
+  - `app/actions/modules/documents.ts` (added)
+  - `lib/modules/documents/index.ts` (added)
+  - `lib/modules/registry.ts` (updated)
+  - `docs/document-intake-pipeline-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `node --test src/features/documents/server/postmark-inbound.adapter.test.mjs` -> PASS
+  - `node --test src/features/documents/server/inbound-address.repository.test.mjs` -> PASS
+  - `npx eslint app/api/documents/ src/features/documents/server/ app/actions/modules/documents.ts lib/modules/registry.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - Manual:
+    - local webhook POST pass 1 -> PASS (`received: true`, `draftId` returned)
+    - local webhook POST pass 2 same payload -> PASS (`duplicate: true`, same `draftId`)
+    - DB check for `financial_transactions` with `external_id=draftId`, `source='document_intake'` -> `0`
+- Diff proportionality:
+  - Changed runtime files: 8 (DI-01 server + route/action + registry wiring)
+  - Changed tests: 2
+  - Changed docs: 4
+  - Delta rationale: exact DI-01 scope (capture/isolation implementation, test coverage, and canonical sync).
+- Unrelated-file check:
+  - Pre-existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: `TBD`
+  - Commit title: `feat(di-01): implement postmark capture-isolation inbound pipeline`
+
 ### 2026-02-28 - DI-00 completed: document-intake schema and contracts baseline
 
 - Suggested Commit Title: `feat(di-00): add document intake schema and shared contracts baseline`

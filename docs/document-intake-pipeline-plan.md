@@ -1,12 +1,43 @@
 # Document Intake Pipeline Plan
 
 Last updated: February 28, 2026
-Status: ACTIVE - DI-00 complete, DI-01 next
+Status: ACTIVE - DI-01 complete, DI-02 next
 Constitution source: `docs/execution-constitution.md`
 
 ---
 
 ## Latest Update
+
+- **2026-02-28 - DI-01 completed (capture and isolation pipeline).**
+  - Added DI-01 server layer under `src/features/documents/server/`:
+    - `inbound-address.repository.ts` (idempotent token generation/lookup/deactivation/display helpers)
+    - `postmark-inbound.adapter.ts` (payload parsing + SHA-256 content hashing)
+    - `document-storage.service.ts` (private Supabase `documents` bucket upload + signed URL helper)
+    - `document-draft.repository.ts` (create/find/status/update helpers with business-scoped guards)
+    - `index.ts` server barrel export
+  - Added inbound webhook route:
+    - `app/api/documents/inbound/route.ts`
+    - Enforces HTTP Basic Auth with `timingSafeEqual` before body read
+    - Resolves tenant by `MailboxHash`
+    - Applies deduplication by `raw_content_hash`
+    - Stores raw payload at `{businessId}/{draftId}/raw.json`
+    - Returns duplicate response shape `{ received: true, draftId, duplicate: true }` on replay
+    - Maintains async parse enqueue via `setTimeout(..., 0)` without creating financial records
+  - Added documents module action:
+    - `app/actions/modules/documents.ts#getInboundAddress` (module-gated)
+  - Added module registry wiring:
+    - `lib/modules/documents/index.ts`
+    - `lib/modules/registry.ts` includes `documents`
+  - Added DI-01 unit tests:
+    - `src/features/documents/server/postmark-inbound.adapter.test.mjs`
+    - `src/features/documents/server/inbound-address.repository.test.mjs`
+  - Validation passed: node tests, `eslint`, and `tsc`.
+  - Manual webhook check passed:
+    - first POST -> `{ received: true, draftId }`
+    - second POST same payload -> `{ received: true, draftId, duplicate: true }`
+    - `document_drafts.raw_storage_path` persisted as `{businessId}/{draftId}/raw.json`
+    - `financial_transactions` count for that `draftId` remained `0`
+  - DI resume pointer advanced to **DI-02**.
 
 - **2026-02-28 - DI-00 completed (schema + contracts baseline).**
   - Added additive schema/enums for `documents` domain:
@@ -50,7 +81,7 @@ Constitution source: `docs/execution-constitution.md`
 
 ## Pick Up Here
 
-Next task: **DI-01** - Capture and Isolation (Safe Ingest Pipeline).
+Next task: **DI-02** - Structured Draft Layer (Parse and Score).
 
 ---
 
@@ -425,7 +456,7 @@ Validation:
 
 **Goal:** Generate a unique inbound address per business (Postmark MailboxHash token). Accept Postmark inbound webhook POSTs. Immediately verify HTTP Basic Auth, identify the tenant via MailboxHash, compute the content hash, deduplicate if seen before, store the raw Postmark payload privately in Supabase Storage, and create a `document_draft` record in `received` status. No parsing. No financial records.
 
-**Status:** `[ ]` pending
+**Status:** `[x]` completed
 
 **Prerequisite:** DI-00 complete.
 
@@ -478,7 +509,7 @@ interface IngestableAttachment {
 #### Checklist
 
 Inbound address management:
-- [ ] Create `src/features/documents/server/inbound-address.repository.ts`:
+- [x] Create `src/features/documents/server/inbound-address.repository.ts`:
   - `findOrCreateInboundAddress(businessId)` → `{ addressToken: string, isActive: boolean }`:
     - Upsert on `[business_id]`
     - On create: generate `address_token` via `crypto.randomBytes(16).toString('hex')`
@@ -490,10 +521,10 @@ Inbound address management:
     - Returns `` `${process.env.POSTMARK_SERVER_INBOUND_HASH}+${addressToken}` `` or custom domain variant
 
 Postmark inbound adapter:
-- [ ] Create `src/features/documents/server/postmark-inbound.adapter.ts` with full `IngestableDocument` shape and `parsePostmarkPayload` + `computeContentHash` functions as specified above
+- [x] Create `src/features/documents/server/postmark-inbound.adapter.ts` with full `IngestableDocument` shape and `parsePostmarkPayload` + `computeContentHash` functions as specified above
 
 Raw document storage:
-- [ ] Create `src/features/documents/server/document-storage.service.ts`:
+- [x] Create `src/features/documents/server/document-storage.service.ts`:
   - Bucket: `documents` (confirmed private in Supabase — `SUPABASE_STORAGE_BUCKET_DOCUMENTS=documents`)
   - Storage path convention: `{businessId}/{draftId}/raw.json` for Postmark payloads; `{businessId}/{draftId}/attachment-{n}.{ext}` for attachments
   - `storeRawDocument({ businessId, draftId, content: Buffer, contentType, filename })` → `{ storagePath: string }`
@@ -504,7 +535,7 @@ Raw document storage:
     - Uses Supabase Storage `createSignedUrl`
 
 Draft repository:
-- [ ] Create `src/features/documents/server/document-draft.repository.ts`:
+- [x] Create `src/features/documents/server/document-draft.repository.ts`:
   - `createDraft({ businessId, inboundChannel, rawStoragePath, rawContentType, rawContentHash, postmarkMessageId? })` → `DocumentDraft`
     - status: `received`
     - If `[business_id, raw_content_hash]` unique constraint fails: catch and return existing draft (deduplication path)
@@ -517,7 +548,7 @@ Draft repository:
   - `updateDraftPostedState(businessId, draftId, { financialTransactionId, postedByUserId, autoPosted })`
 
 Inbound webhook route:
-- [ ] Create `app/api/documents/inbound/route.ts`:
+- [x] Create `app/api/documents/inbound/route.ts`:
 
   ```
   POST /api/documents/inbound
@@ -555,12 +586,12 @@ Inbound webhook route:
   Rate limiting: In-memory counter per `address_token` — reject with 429 if > 20 requests per 60 seconds.
 
 Action wrapper:
-- [ ] Create `app/actions/modules/documents.ts`:
+- [x] Create `app/actions/modules/documents.ts`:
   - `getInboundAddress(businessId)` — calls `findOrCreateInboundAddress` + `getAddressDisplayString`; returns full email address string to show in settings UI
   - All actions: `await requireModule(businessId, "documents")` first
 
 Unit tests:
-- [ ] Create `src/features/documents/server/postmark-inbound.adapter.test.mjs`:
+- [x] Create `src/features/documents/server/postmark-inbound.adapter.test.mjs`:
   - Test: valid Postmark payload → `IngestableDocument` with correct field mapping
   - Test: `MailboxHash` correctly extracted from top-level field
   - Test: attachment base64 decoded to Buffer correctly
@@ -568,16 +599,16 @@ Unit tests:
   - Test: missing `MailboxHash` → throws `PostmarkPayloadError`
   - Test: `computeContentHash` → deterministic SHA-256 for same input
   - Minimum 6 test cases
-- [ ] Create `src/features/documents/server/inbound-address.repository.test.mjs`:
+- [x] Create `src/features/documents/server/inbound-address.repository.test.mjs`:
   - Test: `findOrCreateInboundAddress` idempotency — second call returns same token
 
 Validation:
-- [ ] `node --test src/features/documents/server/postmark-inbound.adapter.test.mjs` → PASS (6+/6+)
-- [ ] `node --test src/features/documents/server/inbound-address.repository.test.mjs` → PASS
-- [ ] `npx tsc --noEmit --incremental false` → PASS
-- [ ] `npx eslint app/api/documents/ src/features/documents/server/` → PASS
-- [ ] Manual: POST a real Postmark inbound payload to `/api/documents/inbound` with correct Basic Auth → `{ received: true, draftId }`, raw JSON stored in Supabase `documents` bucket, no `FinancialTransaction` created
-- [ ] Manual: POST same payload twice → second response is `{ received: true, draftId: <same>, duplicate: true }`
+- [x] `node --test src/features/documents/server/postmark-inbound.adapter.test.mjs` → PASS (6+/6+)
+- [x] `node --test src/features/documents/server/inbound-address.repository.test.mjs` → PASS
+- [x] `npx tsc --noEmit --incremental false` → PASS
+- [x] `npx eslint app/api/documents/ src/features/documents/server/` → PASS
+- [x] Manual: POST a real Postmark inbound payload to `/api/documents/inbound` with correct Basic Auth → `{ received: true, draftId }`, raw JSON stored in Supabase `documents` bucket, no `FinancialTransaction` created
+- [x] Manual: POST same payload twice → second response is `{ received: true, draftId: <same>, duplicate: true }`
 
 ---
 

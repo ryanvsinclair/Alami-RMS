@@ -226,11 +226,11 @@ Post-launch stream:
 
 ## Last Left Off Here
 
-- Current task ID: `DI-01`
-- Current task: `Document intake capture/isolation pipeline`
+- Current task ID: `DI-02`
+- Current task: `Document intake parse/score pipeline`
 - Status: `NOT STARTED`
 - Last updated: `2026-02-28`
-- Note: DI-00 is complete; continue deterministic DI sequence at DI-01.
+- Note: DI-01 is complete; continue deterministic DI sequence at DI-02.
 
 ## Canonical Order Checklist
 
@@ -374,12 +374,12 @@ Test format lock:
 Plan doc: `docs/document-intake-pipeline-plan.md`
 Current state: active, resumed after launch-gate completion.
 Re-entry trigger: satisfied (`LG-00` fully complete).
-Resume point: `DI-01`.
+Resume point: `DI-02`.
 
 High-level DI checklist:
 
 - [x] DI-00 schema/contracts
-- [ ] DI-01 capture/isolation
+- [x] DI-01 capture/isolation
 - [ ] DI-02 parse/score
 - [ ] DI-03 vendor mapping/trust setup
 - [ ] DI-04 inbox/post flow
@@ -421,6 +421,52 @@ No additional missing plan docs were identified from the current chat scope afte
 - Post-launch initiatives in progress: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - DI-01 completed (capture/isolation webhook ingest baseline)
+
+- Constitution Restatement:
+  - Task ID: `DI-01`
+  - Scope: implement Postmark inbound capture/isolation pipeline (address token repo, payload adapter, draft/storage repositories, webhook route, module action, tests).
+  - Invariants confirmed: capture-only (no financial posting); tenant routing by active address token; dedup by `raw_content_hash`; async parse enqueue remains post-response.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: no UI implementation changes in this slice.
+- Preflight evidence:
+  - `Get-Content docs/document-intake-pipeline-plan.md`
+  - `rg -n "documents|inbound|MailboxHash|requireModule|storage|document_drafts" app src lib docs`
+  - `Get-Content lib/modules/registry.ts`
+- Implementation:
+  - Added DI-01 server files:
+    - `src/features/documents/server/inbound-address.repository.ts`
+    - `src/features/documents/server/postmark-inbound.adapter.ts`
+    - `src/features/documents/server/document-storage.service.ts`
+    - `src/features/documents/server/document-draft.repository.ts`
+    - `src/features/documents/server/index.ts`
+  - Added webhook route: `app/api/documents/inbound/route.ts` (Basic Auth gate, MailboxHash tenant lookup, deduplication, storage write, duplicate replay response, async enqueue hook).
+  - Added module action: `app/actions/modules/documents.ts#getInboundAddress`.
+  - Registered `documents` module in registry (`lib/modules/registry.ts`) and tracked module definition (`lib/modules/documents/index.ts`).
+  - Added DI-01 unit tests:
+    - `src/features/documents/server/postmark-inbound.adapter.test.mjs`
+    - `src/features/documents/server/inbound-address.repository.test.mjs`
+  - Marked DI-01 complete in source/master plans and advanced pointer to DI-02.
+- Validation:
+  - `node --test src/features/documents/server/postmark-inbound.adapter.test.mjs` -> PASS
+  - `node --test src/features/documents/server/inbound-address.repository.test.mjs` -> PASS
+  - `npx eslint app/api/documents/ src/features/documents/server/ app/actions/modules/documents.ts lib/modules/registry.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - Manual webhook check (local dev endpoint with real env auth/token): PASS
+    - first POST -> `{ received: true, draftId }`
+    - second POST same payload -> `{ received: true, draftId: <same>, duplicate: true }`
+    - `document_drafts.raw_storage_path` persisted as `{businessId}/{draftId}/raw.json`
+    - `financial_transactions` rows for `external_id = draftId` and `source='document_intake'` remained `0`
+- Diff proportionality:
+  - changed runtime files: 7
+  - changed tests: 2
+  - changed docs: source/master/changelog/overview sync
+  - proportionality reason: exact DI-01 scope (capture + isolation ingest path and required module/action wiring).
+- Unrelated-file check:
+  - pre-existing local unrelated files remained unchanged by this slice (`.claude/settings.local.json`, `docs/MASTER_BACKEND_ARCHITECTURE.md`).
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables introduced.
 
 ### 2026-02-28 - DI-00 completed (document-intake schema + contracts baseline)
 

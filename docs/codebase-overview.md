@@ -314,7 +314,7 @@ Canonical paths:
 - `prisma/migrations/20260228060000_business_profile_place_metadata/migration.sql`
 - `prisma/migrations/20260228130000_table_service_module_backfill/migration.sql`
 
-### Document Intake (DI-00 baseline)
+### Document Intake (DI-01 capture/isolation baseline)
 
 Implemented capabilities:
 
@@ -329,6 +329,18 @@ Implemented capabilities:
   - `VendorTrustState`
 - `FinancialSource` now includes `document_intake`.
 - Shared contracts baseline added under `src/features/documents/shared/` for inbound payloads, parsed-document DTOs, draft/vendor summaries, and trust constants.
+- DI-01 server ingest layer now active:
+  - inbound address token lifecycle repository
+  - Postmark payload adapter + SHA-256 content hash helper
+  - private documents-bucket storage service (`raw.json` + attachment paths)
+  - document draft repository with business-scoped status/update helpers
+- Inbound webhook route `/api/documents/inbound` now supports:
+  - HTTP Basic Auth verification (`timingSafeEqual`) before body read
+  - tenant routing by `MailboxHash` / `address_token`
+  - strict deduplication on `(business_id, raw_content_hash)` with duplicate replay response
+  - capture-only persistence (`DocumentDraft.status = received`) and no financial posting
+  - asynchronous parse enqueue hook after `200` response
+- `documents` module is registered in module registry and documents actions are module-gated.
 
 Canonical paths:
 
@@ -336,6 +348,15 @@ Canonical paths:
 - `prisma/migrations/20260228190000_document_intake_core_schema/migration.sql`
 - `src/features/documents/shared/documents.contracts.ts`
 - `src/features/documents/shared/index.ts`
+- `src/features/documents/server/inbound-address.repository.ts`
+- `src/features/documents/server/postmark-inbound.adapter.ts`
+- `src/features/documents/server/document-storage.service.ts`
+- `src/features/documents/server/document-draft.repository.ts`
+- `src/features/documents/server/index.ts`
+- `app/api/documents/inbound/route.ts`
+- `app/actions/modules/documents.ts`
+- `lib/modules/documents/index.ts`
+- `lib/modules/registry.ts`
 
 ### Table Service Menu + Table Setup + Host Composer (RTS-01/RTS-02/RTS-03-a)
 
