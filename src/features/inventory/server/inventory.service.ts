@@ -31,6 +31,7 @@ import {
   findUnresolvedShoppingItems,
   updateInventoryItemForBusiness,
 } from "./inventory.repository";
+import { resolveItemImageUrlFromDb } from "./item-image.resolver";
 
 export interface GetInventoryItemsOptions {
   activeOnly?: boolean;
@@ -514,7 +515,14 @@ export async function getInventoryEnrichmentQueue(
 
 export async function getInventoryItem(businessId: string, id: string) {
   const item = await findInventoryItemById(id, businessId);
-  return item ? serialize(item) : null;
+  if (!item) return null;
+
+  const resolvedImage = await resolveItemImageUrlFromDb(id, businessId);
+  return serialize({
+    ...item,
+    resolved_image_url: resolvedImage.imageUrl,
+    resolved_image_source: resolvedImage.source,
+  });
 }
 
 export async function createInventoryItem(businessId: string, data: CreateInventoryItemInput) {

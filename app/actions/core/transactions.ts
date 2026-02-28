@@ -3,6 +3,10 @@
 import { prisma } from "@/core/prisma";
 import { serialize } from "@/core/utils/serialize";
 import { requireBusinessId } from "@/core/auth/tenant";
+import {
+  extractCanonicalPluCodeFromBarcode,
+  resolveItemImageUrl,
+} from "@/features/inventory/server";
 import type {
   InputMethod,
   TransactionType,
@@ -295,6 +299,11 @@ export async function getAllInventoryLevels() {
       include: {
         category: true,
         supplier: true,
+        barcodes: {
+          select: {
+            barcode: true,
+          },
+        },
       },
       orderBy: { name: "asc" },
     }),
@@ -306,6 +315,62 @@ export async function getAllInventoryLevels() {
       _max: { created_at: true },
     }),
   ]);
+
+  const allBarcodes = Array.from(
+    new Set(items.flatMap((item) => item.barcodes.map((barcode) => barcode.barcode))),
+  );
+
+  const pluCandidates = Array.from(
+    new Set(
+      allBarcodes
+        .map((barcode) => extractCanonicalPluCodeFromBarcode(barcode))
+        .filter((pluCode): pluCode is number => pluCode != null),
+    ),
+  );
+
+  const [barcodeCatalogRows, produceImageRows] = await Promise.all([
+    allBarcodes.length > 0
+      ? prisma.globalBarcodeCatalog.findMany({
+          where: {
+            barcode_normalized: { in: allBarcodes },
+            image_url: { not: null },
+          },
+          select: {
+            barcode_normalized: true,
+            image_url: true,
+            last_seen_at: true,
+          },
+          orderBy: { last_seen_at: "desc" },
+        })
+      : Promise.resolve([]),
+    pluCandidates.length > 0
+      ? prisma.produceItemImage.findMany({
+          where: {
+            plu_code: { in: pluCandidates },
+          },
+          select: {
+            plu_code: true,
+            image_url: true,
+            enriched_at: true,
+          },
+          orderBy: { enriched_at: "desc" },
+        })
+      : Promise.resolve([]),
+  ]);
+
+  const barcodeImageByBarcode = new Map<string, string>();
+  for (const row of barcodeCatalogRows) {
+    if (!row.image_url) continue;
+    if (barcodeImageByBarcode.has(row.barcode_normalized)) continue;
+    barcodeImageByBarcode.set(row.barcode_normalized, row.image_url);
+  }
+
+  const produceImageByPlu = new Map<number, string>();
+  for (const row of produceImageRows) {
+    if (!row.image_url) continue;
+    if (produceImageByPlu.has(row.plu_code)) continue;
+    produceImageByPlu.set(row.plu_code, row.image_url);
+  }
 
   const statsByItemId = new Map(
     stats.map((row) => [
@@ -319,6 +384,36 @@ export async function getAllInventoryLevels() {
   );
 
   return serialize(items.map((item) => {
+    const barcodeWithImage =
+      item.barcodes
+        .map((barcode) => ({
+          normalizedBarcode: barcode.barcode,
+          imageUrl: barcodeImageByBarcode.get(barcode.barcode) ?? null,
+        }))
+        .find((entry) => entry.imageUrl != null) ?? null;
+
+    const produceWithImage =
+      item.barcodes
+        .map((barcode) => {
+          const pluCode = extractCanonicalPluCodeFromBarcode(barcode.barcode);
+          if (pluCode == null) {
+            return null;
+          }
+          return {
+            pluCode,
+            imageUrl: produceImageByPlu.get(pluCode) ?? null,
+          };
+        })
+        .find((entry) => entry?.imageUrl != null) ?? null;
+
+    const resolvedImage = resolveItemImageUrl({
+      inventoryItemImageUrl: item.image_url,
+      pluCode: produceWithImage?.pluCode ?? null,
+      produceImageUrl: produceWithImage?.imageUrl ?? null,
+      barcodeNormalized: barcodeWithImage?.normalizedBarcode ?? null,
+      barcodeImageUrl: barcodeWithImage?.imageUrl ?? null,
+    });
+
     const itemStats = statsByItemId.get(item.id);
     return {
       id: item.id,
@@ -329,6 +424,8 @@ export async function getAllInventoryLevels() {
       current_quantity: itemStats?.current_quantity ?? 0,
       transaction_count: itemStats?.transaction_count ?? 0,
       last_transaction_at: itemStats?.last_transaction_at ?? null,
+      image_url: resolvedImage.imageUrl,
+      image_source: resolvedImage.source,
     };
   }));
 }

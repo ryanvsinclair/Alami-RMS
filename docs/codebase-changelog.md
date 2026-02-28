@@ -20,6 +20,61 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - IMG-L-00-b completed: IMG-01 storage/resolver wiring
+
+- Suggested Commit Title: `feat(img-01): add item image resolver and storage services`
+- Scope: IMG launch phase `IMG-L-00-b` (complete IMG-01 resolver/storage service).
+- Constitution Restatement:
+  - Task ID: `IMG-L-00-b`
+  - Scope sentence: implement launch-required item image storage, resolver logic, and inventory projection wiring.
+  - Invariants confirmed: additive runtime-only implementation; no destructive schema/migration changes in this slice.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: structural metadata pass-through only; no unauthorized style-token/layout changes.
+- Deliverables:
+  - Added image storage service:
+    - `src/features/inventory/server/item-image-storage.service.ts`
+  - Added produce image repository:
+    - `src/features/inventory/server/produce-image.repository.ts`
+  - Added resolver modules:
+    - `src/features/inventory/server/item-image.resolver.core.ts`
+    - `src/features/inventory/server/item-image.resolver.ts`
+  - Added resolver tests:
+    - `src/features/inventory/server/item-image.resolver.test.mjs` (6 cases)
+  - Wired resolver outputs into inventory projections:
+    - list projection in `app/actions/core/transactions.ts`
+    - detail payload enrichment in `src/features/inventory/server/inventory.service.ts`
+    - pass-through on list cards in `src/features/inventory/ui/InventoryListPageClient.tsx`
+  - Updated inventory server exports in `src/features/inventory/server/index.ts`.
+- Touched Files (single-entry log):
+  - `app/actions/core/transactions.ts` (updated)
+  - `src/features/inventory/server/index.ts` (updated)
+  - `src/features/inventory/server/inventory.service.ts` (updated)
+  - `src/features/inventory/ui/InventoryListPageClient.tsx` (updated)
+  - `src/features/inventory/server/item-image-storage.service.ts` (added)
+  - `src/features/inventory/server/produce-image.repository.ts` (added)
+  - `src/features/inventory/server/item-image.resolver.core.ts` (added)
+  - `src/features/inventory/server/item-image.resolver.ts` (added)
+  - `src/features/inventory/server/item-image.resolver.test.mjs` (added)
+  - `docs/item-image-enrichment-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx eslint app/actions/core/transactions.ts src/features/inventory/server/item-image-storage.service.ts src/features/inventory/server/produce-image.repository.ts src/features/inventory/server/item-image.resolver.core.ts src/features/inventory/server/item-image.resolver.ts src/features/inventory/server/inventory.service.ts src/features/inventory/server/index.ts src/features/inventory/ui/InventoryListPageClient.tsx src/features/inventory/server/item-image.resolver.test.mjs` -> PASS
+  - `node --test --experimental-transform-types src/features/inventory/server/item-image.resolver.test.mjs` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 8.
+  - Changed test files: 1.
+  - Delta rationale: exact IMG-L-00-b scope (storage/resolver modules + projection wiring).
+- Unrelated-file check:
+  - Existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: pending (record after commit)
+  - Commit title: `feat(img-01): add item image resolver and storage services`
+
 ### 2026-02-28 - IMG-L-00-a completed: IMG-00 schema/contracts baseline
 
 - Suggested Commit Title: `feat(img-00): add item image schema and shared contracts baseline`

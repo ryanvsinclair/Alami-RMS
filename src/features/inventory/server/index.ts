@@ -17,6 +17,8 @@ export type {
   UpdateInventoryItemInput,
 } from "./inventory.service";
 
+export type { ResolveItemImageUrlParams } from "./item-image.resolver";
+
 export { ENRICHMENT_SNOOZE_HOURS } from "./inventory.service";
 
 export {
@@ -31,6 +33,27 @@ export {
   addAlias,
   removeAlias,
 } from "./inventory.service";
+
+export {
+  extractCanonicalPluCodeFromBarcode,
+  resolveItemImageUrl,
+  resolveItemImageUrlFromDb,
+} from "./item-image.resolver";
+
+export {
+  getImageSignedUrl,
+  imageExistsInStorage,
+  uploadImageFromBuffer,
+  uploadImageFromUrl,
+  ImageFetchError,
+  ImageStorageError,
+} from "./item-image-storage.service";
+
+export {
+  findProduceImage,
+  listUnenrichedPluCodes,
+  upsertProduceImage,
+} from "./produce-image.repository";
 
 export {
   buildInventoryItemWhere,

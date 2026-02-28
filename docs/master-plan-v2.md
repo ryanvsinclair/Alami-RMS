@@ -180,10 +180,10 @@ Use `Canonical Order Checklist` statuses as source of truth.
 Current snapshot (2026-02-28):
 
 - Launch-critical checklist items total: `50`
-- Launch-critical `[x]`: `40`
+- Launch-critical `[x]`: `41`
 - Launch-critical `[~]`: `0`
-- Strict completion: `80.00%`
-- Weighted progress: `80.00%`
+- Strict completion: `82.00%`
+- Weighted progress: `82.00%`
 - Parked post-launch checklist items (DI): `7` (excluded from launch completion %)
 
 Update rule after each slice:
@@ -226,11 +226,11 @@ Parked stream:
 
 ## Last Left Off Here
 
-- Current task ID: `IMG-L-00-b`
-- Current task: `IMG launch resolver/storage completion`
+- Current task ID: `IMG-L-00-c`
+- Current task: `IMG launch deferral lock for enrichment runs`
 - Status: `NOT STARTED`
 - Last updated: `2026-02-28`
-- Note: IMG-L-00-a is complete and checkpointed; continue deterministic order with IMG-L-00-b.
+- Note: IMG-L-00-b is complete and checkpointed; continue deterministic order with IMG-L-00-c.
 
 ## Canonical Order Checklist
 
@@ -331,7 +331,7 @@ Source plan: `docs/item-image-enrichment-plan.md`
 Launch scope only:
 
 - [x] IMG-L-00-a: Complete IMG-00 schema/contracts
-- [ ] IMG-L-00-b: Complete IMG-01 resolver/storage service
+- [x] IMG-L-00-b: Complete IMG-01 resolver/storage service
 - [ ] IMG-L-00-c: Launch does not require enrichment runs or pre-populated produce images
 
 Deferred post-launch:
@@ -417,10 +417,56 @@ No additional missing plan docs were identified from the current chat scope afte
 ## Completion Snapshot
 
 - Launch-critical initiatives active: `5` (RPK, RTS, IMG-L, UX-L, LG)
-- Launch-critical items complete: `40`
+- Launch-critical items complete: `41`
 - Parked post-launch initiatives: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - IMG-L-00-b completed (IMG-01 storage/resolver wiring)
+
+- Constitution Restatement:
+  - Task ID: `IMG-L-00-b`
+  - Scope: complete IMG-01 storage service, resolver, and launch-required wiring into inventory projections.
+  - Invariants confirmed: additive runtime-only implementation; no destructive schema actions; no launch-scope expansion into IMG-02/IMG-03 execution.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: structural pass-through only for image metadata on existing item cards (no design-token expansion).
+- Preflight evidence:
+  - `Get-Content docs/item-image-enrichment-plan.md`
+  - `rg -n "item-image|image_url|produce_item_images|GlobalBarcodeCatalog|getAllInventoryLevels" src app docs`
+  - `Get-Content lib/supabase/storage.ts`
+  - `Get-Content app/actions/core/transactions.ts`
+  - `Get-Content src/features/inventory/server/inventory.service.ts`
+- Implementation:
+  - Added image storage service:
+    - `src/features/inventory/server/item-image-storage.service.ts`
+    - `uploadImageFromUrl`, `uploadImageFromBuffer`, `getImageSignedUrl`, `imageExistsInStorage`, `ImageFetchError`, `ImageStorageError`
+  - Added produce image repository:
+    - `src/features/inventory/server/produce-image.repository.ts`
+  - Added resolver modules:
+    - `src/features/inventory/server/item-image.resolver.core.ts`
+    - `src/features/inventory/server/item-image.resolver.ts`
+    - includes pure priority resolver and DB-aware variant for item detail payloads
+  - Added tests:
+    - `src/features/inventory/server/item-image.resolver.test.mjs` (6 coverage cases)
+  - Wired inventory projections:
+    - `app/actions/core/transactions.ts` now resolves `image_url`/`image_source` for inventory list rows
+    - `src/features/inventory/server/inventory.service.ts` now returns `resolved_image_url`/`resolved_image_source` for detail payloads
+    - `src/features/inventory/ui/InventoryListPageClient.tsx` now passes image metadata through item-card containers
+  - Updated inventory server barrel exports for new IMG services/resolvers/repository.
+- Validation:
+  - `npx eslint app/actions/core/transactions.ts src/features/inventory/server/item-image-storage.service.ts src/features/inventory/server/produce-image.repository.ts src/features/inventory/server/item-image.resolver.core.ts src/features/inventory/server/item-image.resolver.ts src/features/inventory/server/inventory.service.ts src/features/inventory/server/index.ts src/features/inventory/ui/InventoryListPageClient.tsx src/features/inventory/server/item-image.resolver.test.mjs` -> PASS
+  - `node --test --experimental-transform-types src/features/inventory/server/item-image.resolver.test.mjs` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 8 (new storage/repository/resolver modules + list/detail wiring + server barrel exports)
+  - changed test files: 1
+  - changed docs: source/master/overview/changelog sync
+  - proportionality reason: exactly scoped to IMG-L-00-b deliverables (service/repository/resolver plus projection wiring).
+- Unrelated-file check:
+  - pre-existing unrelated local files remained untouched; this slice modified only IMG-L-00-b scope files plus required canonical docs.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+- Commit checkpoint: pending (record after commit).
 
 ### 2026-02-28 - IMG-L-00-a completed (IMG-00 schema/contracts baseline)
 

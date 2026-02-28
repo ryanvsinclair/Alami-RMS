@@ -1,12 +1,25 @@
 ﻿# Item Image Enrichment Plan
 
 Last updated: February 28, 2026
-Status: ACTIVE - launch slice IMG-01 prioritized (IMG-00 complete); IMG-02/IMG-03 post-launch queue
+Status: ACTIVE - launch slice IMG-00/IMG-01 complete; IMG-02/IMG-03 post-launch queue
 Constitution source: `docs/execution-constitution.md`
 
 ---
 
 ## Latest Update
+
+- **2026-02-28 - IMG-01 completed (storage service + resolver wiring).**
+  - Added image storage service at `src/features/inventory/server/item-image-storage.service.ts`.
+  - Added produce image repository at `src/features/inventory/server/produce-image.repository.ts`.
+  - Added resolver modules:
+    - `src/features/inventory/server/item-image.resolver.core.ts`
+    - `src/features/inventory/server/item-image.resolver.ts`
+  - Added resolver tests at `src/features/inventory/server/item-image.resolver.test.mjs` (6 cases).
+  - Wired resolver into inventory projections:
+    - `app/actions/core/transactions.ts` now resolves `image_url`/`image_source` for inventory list rows.
+    - `src/features/inventory/server/inventory.service.ts` now returns `resolved_image_url`/`resolved_image_source` for item detail payloads.
+    - `src/features/inventory/ui/InventoryListPageClient.tsx` now carries image fields through item cards.
+  - Ran targeted eslint, resolver tests, and `npx tsc --noEmit --incremental false`; all pass.
 
 - **2026-02-28 - IMG-00 completed (schema/contracts baseline).**
   - Added additive Prisma schema updates:
@@ -37,7 +50,7 @@ Constitution source: `docs/execution-constitution.md`
 
 ## Pick Up Here
 
-Launch path: continue at **IMG-01** (IMG-00 complete).
+Launch path: **complete** for launch scope (IMG-00 + IMG-01).
 
 Post-launch path: continue with IMG-02 and IMG-03.
 
@@ -230,14 +243,14 @@ Validation:
 
 **Goal:** Implement the image storage service (upload + signed URL) and the unified item image resolver. Wire resolver into inventory item projections.
 
-**Status:** `[ ]` pending
+**Status:** `[x]` completed
 
 **Prerequisite:** IMG-00 complete. `item-images` bucket created in Supabase Storage (private).
 
 #### Checklist
 
 Image storage service:
-- [ ] Create `src/features/inventory/server/item-image-storage.service.ts`:
+- [x] Create `src/features/inventory/server/item-image-storage.service.ts`:
   - `uploadImageFromUrl(sourceUrl: string, storagePath: string)` â†’ `{ storagePath: string, publicUrl: string }`:
     - Fetches image bytes from `sourceUrl` (with timeout 10s, max 5MB)
     - Uploads to `item-images` bucket at `storagePath`
@@ -249,27 +262,27 @@ Image storage service:
     - Used by enrichment scripts to skip already-stored items (idempotency)
 
 Produce image repository:
-- [ ] Create `src/features/inventory/server/produce-image.repository.ts`:
+- [x] Create `src/features/inventory/server/produce-image.repository.ts`:
   - `upsertProduceImage(pluCode: number, record: { imageUrl, storagePath, sourceProvider })` â†’ `ProduceItemImage`
   - `findProduceImage(pluCode: number)` â†’ `ProduceItemImage | null`
   - `listUnenrichedPluCodes()` â†’ `number[]`
     - Returns all `plu_code` values from `produce_items` (EN rows) where no `produce_item_images` row exists
 
 Unified image resolver:
-- [ ] Create `src/features/inventory/server/item-image.resolver.ts`:
+- [x] Create `src/features/inventory/server/item-image.resolver.ts`:
   - `resolveItemImageUrl(params: { inventoryItemImageUrl?: string | null, pluCode?: number | null, barcodeNormalized?: string | null })` â†’ `ItemImageResolution`
     - Priority chain as defined in Architecture section
     - Pure function â€” no DB calls (caller pre-fetches what's needed)
   - `resolveItemImageUrlFromDb(inventoryItemId: string, businessId: string)` â†’ `ItemImageResolution`
-    - DB-aware variant: loads item + produce image + barcode catalog in one query
+    - DB-aware variant: loads item + produce image + barcode catalog using scoped DB reads
     - Used for single-item detail views
 
 Wire into inventory projections:
-- [ ] Update inventory item list query (wherever `InventoryItem` rows are projected for UI) to include `image_url` field
-- [ ] Pass `image_url` through to item card components
+- [x] Update inventory item list query (wherever `InventoryItem` rows are projected for UI) to include `image_url` field
+- [x] Pass `image_url` through to item card components
 
 Unit tests:
-- [ ] Create `src/features/inventory/server/item-image.resolver.test.mjs`:
+- [x] Create `src/features/inventory/server/item-image.resolver.test.mjs`:
   - Test: own `image_url` present â†’ returns `{ source: 'own', imageUrl }`
   - Test: no own, plu code present, produce image exists â†’ returns `{ source: 'produce', imageUrl }`
   - Test: no own, no plu, barcode catalog has image â†’ returns `{ source: 'barcode', imageUrl }`
@@ -278,8 +291,8 @@ Unit tests:
   - Minimum 5 test cases
 
 Validation:
-- [ ] `node --test src/features/inventory/server/item-image.resolver.test.mjs` â†’ PASS
-- [ ] `npx tsc --noEmit --incremental false` â†’ PASS
+- [x] `node --test --experimental-transform-types src/features/inventory/server/item-image.resolver.test.mjs` â†’ PASS
+- [x] `npx tsc --noEmit --incremental false` â†’ PASS
 
 ---
 

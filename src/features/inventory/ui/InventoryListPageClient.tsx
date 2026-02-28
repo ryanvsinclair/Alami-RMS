@@ -24,6 +24,8 @@ interface InventoryLevel {
   current_quantity: number;
   transaction_count: number;
   last_transaction_at: Date | null;
+  image_url: string | null;
+  image_source: "own" | "produce" | "barcode" | "none";
 }
 
 type QueueFilter = "all" | "purchase_confirmation";
@@ -416,7 +418,12 @@ export default function InventoryListPageClient() {
       ) : (
         <div className="space-y-2">
           {filtered.map((item) => (
-            <Card key={item.id} onClick={() => router.push(`/inventory/${item.id}`)}>
+            <Card
+              key={item.id}
+              onClick={() => router.push(`/inventory/${item.id}`)}
+              data-image-url={item.image_url ?? undefined}
+              data-image-source={item.image_source}
+            >
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
                   <p className="font-medium truncate">{item.name}</p>

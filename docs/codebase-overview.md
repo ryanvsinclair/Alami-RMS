@@ -640,6 +640,11 @@ Implemented capabilities:
 
 - Inventory CRUD (items, barcodes, aliases)
 - Inventory list/detail pages
+- Item image resolver stack is now in place for launch:
+  - storage service: `src/features/inventory/server/item-image-storage.service.ts`
+  - produce image repository: `src/features/inventory/server/produce-image.repository.ts`
+  - resolver modules: `src/features/inventory/server/item-image.resolver.core.ts` + `src/features/inventory/server/item-image.resolver.ts`
+- Inventory projections now expose resolved image metadata (`image_url` + source priority own -> produce -> barcode -> none) in list/detail payloads.
 - Derived non-blocking "Fix Later Queue" surfaced in Inventory UI
 - Persistent task actions via client-side localStorage:
   - complete
