@@ -55,7 +55,7 @@ Companion overview: `docs/codebase-overview.md`
 - Dependency change check: no new dependencies added.
 - Env-var change check: no new env vars introduced.
 - Commit checkpoint:
-  - Commit hash: pending (record after commit)
+  - Commit hash: `a98490b`
   - Commit title: `feat(rts-05): redirect home to kitchen queue in kitchen mode`
 
 ### 2026-02-28 - RTS-05-a completed: profile Host/Kitchen mode toggle
