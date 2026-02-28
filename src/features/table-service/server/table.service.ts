@@ -1,7 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { prisma } from "@/server/db/prisma";
 import { serialize } from "@/domain/shared/serialize";
-import type { TableServiceDiningTableSummary } from "../shared/table-service.contracts";
+import type {
+  TableServiceDiningTableSummary,
+  TableServiceSessionSummary,
+} from "../shared/table-service.contracts";
 
 function generateQrToken() {
   return `tbl_${randomUUID().replace(/-/g, "")}`;
@@ -27,6 +30,26 @@ function toDiningTableSummary(table: {
   };
 }
 
+function toTableSessionSummary(session: {
+  id: string;
+  business_id: string;
+  dining_table_id: string;
+  party_size: number | null;
+  notes: string | null;
+  opened_at: Date;
+  closed_at: Date | null;
+}): TableServiceSessionSummary {
+  return {
+    id: session.id,
+    businessId: session.business_id,
+    diningTableId: session.dining_table_id,
+    partySize: session.party_size,
+    notes: session.notes,
+    openedAt: session.opened_at.toISOString(),
+    closedAt: session.closed_at ? session.closed_at.toISOString() : null,
+  };
+}
+
 async function createUniqueQrToken() {
   for (let attempt = 0; attempt < 5; attempt += 1) {
     const token = generateQrToken();
@@ -46,6 +69,13 @@ export async function getDiningTables(businessId: string) {
   });
 
   return serialize(tables.map(toDiningTableSummary));
+}
+
+export async function getDiningTableById(businessId: string, tableId: string) {
+  const table = await prisma.diningTable.findFirst({
+    where: { id: tableId, business_id: businessId },
+  });
+  return table ? serialize(toDiningTableSummary(table)) : null;
 }
 
 export async function createDiningTable(businessId: string, input: { tableNumber: string }) {
@@ -134,4 +164,36 @@ export async function resolveDiningTableByQrToken(qrToken: string) {
   });
 
   return serialize(table);
+}
+
+export async function getOrCreateActiveTableSession(
+  businessId: string,
+  diningTableId: string,
+) {
+  const table = await prisma.diningTable.findFirst({
+    where: { id: diningTableId, business_id: businessId },
+    select: { id: true },
+  });
+  if (!table) throw new Error("Dining table not found");
+
+  const existing = await prisma.tableSession.findFirst({
+    where: {
+      business_id: businessId,
+      dining_table_id: diningTableId,
+      closed_at: null,
+    },
+    orderBy: { opened_at: "desc" },
+  });
+  if (existing) {
+    return serialize(toTableSessionSummary(existing));
+  }
+
+  const created = await prisma.tableSession.create({
+    data: {
+      business_id: businessId,
+      dining_table_id: diningTableId,
+    },
+  });
+
+  return serialize(toTableSessionSummary(created));
 }

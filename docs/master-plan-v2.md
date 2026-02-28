@@ -180,10 +180,10 @@ Use `Canonical Order Checklist` statuses as source of truth.
 Current snapshot (2026-02-28):
 
 - Launch-critical checklist items total: `50`
-- Launch-critical `[x]`: `23`
+- Launch-critical `[x]`: `24`
 - Launch-critical `[~]`: `0`
-- Strict completion: `46.00%`
-- Weighted progress: `46.00%`
+- Strict completion: `48.00%`
+- Weighted progress: `48.00%`
 - Parked post-launch checklist items (DI): `7` (excluded from launch completion %)
 
 Update rule after each slice:
@@ -226,11 +226,11 @@ Parked stream:
 
 ## Last Left Off Here
 
-- Current task ID: `RTS-02-b`
-- Current task: `Session-aware branch (member->host, otherwise public)`
+- Current task ID: `RTS-02-c`
+- Current task: `Implement /r/[publicSlug] diner landing with menu-first UX`
 - Status: `IN PROGRESS`
 - Last updated: `2026-02-28`
-- Note: RTS-02-a resolver baseline completed; continue deterministic order with RTS-02-b.
+- Note: RTS-02-b session-aware branching completed; continue deterministic order with RTS-02-c.
 
 ## Canonical Order Checklist
 
@@ -298,7 +298,7 @@ Plan doc: `docs/restaurant-table-service-plan.md`
 #### Phase RTS-02 - QR router and diner landing
 
 - [x] RTS-02-a: Implement `/scan/t/[token]` resolver
-- [ ] RTS-02-b: Session-aware branch (member->host, otherwise public)
+- [x] RTS-02-b: Session-aware branch (member->host, otherwise public)
 - [ ] RTS-02-c: Implement `/r/[publicSlug]` diner landing with menu-first UX
 - [ ] RTS-02-d: Show review CTA only when `google_place_id` exists
 
@@ -417,10 +417,44 @@ No additional missing plan docs were identified from the current chat scope afte
 ## Completion Snapshot
 
 - Launch-critical initiatives active: `5` (RPK, RTS, IMG-L, UX-L, LG)
-- Launch-critical items complete: `23`
+- Launch-critical items complete: `24`
 - Parked post-launch initiatives: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - RTS-02-b session-aware branch implemented
+
+- Constitution Restatement:
+  - Task ID: `RTS-02-b`
+  - Scope: add scan-path branching so members route to host workflow and guests/non-members route to public landing.
+  - Invariants confirmed: no forced login from scan route; session-aware host routing preserved; guest flow remains non-ordering in this baseline.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: structural routing pages only.
+- Preflight evidence:
+  - `Get-Content app/scan/t/[token]/page.tsx`
+  - `Get-Content src/features/table-service/server/table.service.ts`
+  - `Get-Content app/(dashboard)/service/layout.tsx`
+  - `rg -n "scan/t|service/host|/r/|getOrCreateActiveTableSession|membership" app src docs`
+- Implementation:
+  - Updated scan resolver route:
+    - member of scanned business -> redirect to `/service/host` and open/create active table session
+    - non-member/guest -> redirect to `/r/[publicSlug]`
+  - Added `getOrCreateActiveTableSession(...)` server helper.
+  - Added host workspace baseline page at `app/(dashboard)/service/host/page.tsx`.
+  - Added public landing continuity route at `app/r/[publicSlug]/page.tsx` (menu-first UX delivered in RTS-02-c).
+- Validation:
+  - `npx eslint "app/scan/t/[token]/page.tsx" "app/(dashboard)/service/host/page.tsx" "app/r/[publicSlug]/page.tsx" src/features/table-service/server/table.service.ts src/features/table-service/server/index.ts` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 4 (scan branch logic + session helper + host/public branch route baselines)
+  - changed docs: source/master/overview/changelog sync
+  - proportionality reason: exactly scoped to RTS-02-b branch behavior.
+- Unrelated-file check:
+  - pre-existing unrelated local files remained untouched; this slice modified only RTS-02-b paths plus required canonical docs.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+- Commit checkpoint: pending (record after commit).
 
 ### 2026-02-28 - RTS-02-a scan-token resolver baseline completed
 

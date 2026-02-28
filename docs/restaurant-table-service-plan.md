@@ -24,6 +24,13 @@ Constitution source: `docs/execution-constitution.md`
 
 ## Latest Update
 
+- **2026-02-28 - RTS-02-b completed (session-aware scan branching baseline).**
+  - Updated `/scan/t/[token]` route to branch by membership context:
+    - authenticated business member -> host workspace path (`/service/host?...`) with active session open/create
+    - non-member/guest -> public landing path (`/r/[publicSlug]`)
+  - Added host workspace baseline route at `app/(dashboard)/service/host/page.tsx`.
+  - Added placeholder public landing route at `app/r/[publicSlug]/page.tsx` for non-member scan path continuity.
+
 - **2026-02-28 - RTS-02-a completed (`/scan/t/[token]` resolver baseline).**
   - Added public scan resolver route at `app/scan/t/[token]/page.tsx`.
   - Added server resolver `resolveDiningTableByQrToken(...)` on table-service server layer.
@@ -75,7 +82,7 @@ Constitution source: `docs/execution-constitution.md`
 ## Pick Up Here
 
 - Current phase: `RTS-02`
-- Current task: `RTS-02-b`
+- Current task: `RTS-02-c`
 - Status: `[~]` in progress
 
 ## Scope
@@ -214,7 +221,7 @@ Before starting any checklist item in this plan:
 
 - [x] RTS-02-0: Constitution restatement logged for this phase and no deviation required.
 - [x] RTS-02-a: Implement `/scan/t/[token]` resolver.
-- [ ] RTS-02-b: Implement session-aware branch (member -> host open/start session; otherwise public).
+- [x] RTS-02-b: Implement session-aware branch (member -> host open/start session; otherwise public).
 - [ ] RTS-02-c: Implement `/r/[publicSlug]` diner landing with menu-first UX.
 - [ ] RTS-02-d: Show review CTA only when `google_place_id` exists.
 - [ ] RTS-02-e: Ensure no login page is shown from public scan flow.

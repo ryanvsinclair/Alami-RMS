@@ -327,12 +327,17 @@ Implemented capabilities:
 - Dining-table CRUD in setup surface (`create`, `update`, `delete`).
 - Static per-table scan-token generation and regeneration (`DiningTable.qr_token`) with copyable `/scan/t/[token]` URLs.
 - Public scan resolver route `/scan/t/[token]` now resolves token->table/business context and returns 404 for unknown tokens.
+- Session-aware scan branching baseline:
+  - member of scanned business -> host workspace (`/service/host`)
+  - guest/non-member -> public landing (`/r/[publicSlug]`)
 
 Canonical paths:
 
 - `app/(dashboard)/service/layout.tsx`
 - `app/(dashboard)/service/menu/page.tsx`
 - `app/(dashboard)/service/tables/page.tsx`
+- `app/(dashboard)/service/host/page.tsx`
+- `app/r/[publicSlug]/page.tsx`
 - `app/scan/t/[token]/page.tsx`
 - `app/actions/modules/table-service.ts`
 - `src/features/table-service/server/menu-csv.ts`

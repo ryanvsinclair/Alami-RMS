@@ -20,6 +20,44 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - RTS-02-b completed: session-aware scan branching baseline
+
+- Suggested Commit Title: `feat(rts-02): add member-vs-public scan routing branches`
+- Scope: RTS phase `RTS-02-b` (session-aware branch logic).
+- Constitution Restatement:
+  - Task ID: `RTS-02-b`
+  - Scope sentence: route scan requests to host workflow for members and to public landing for guests/non-members.
+  - Invariants confirmed: no forced login at scan entry, guest/public path remains non-ordering baseline, host branch uses table-session open/create semantics.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+- Deliverables:
+  - Added session-aware branch logic in `app/scan/t/[token]/page.tsx`.
+  - Added `getOrCreateActiveTableSession(...)` server helper.
+  - Added host workspace baseline page (`/service/host`).
+  - Added public landing continuity page (`/r/[publicSlug]`) for non-member branch path.
+- Touched Files (single-entry log):
+  - `app/scan/t/[token]/page.tsx` (updated)
+  - `app/(dashboard)/service/host/page.tsx` (added)
+  - `app/r/[publicSlug]/page.tsx` (added)
+  - `src/features/table-service/server/table.service.ts` (updated)
+  - `docs/restaurant-table-service-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx eslint "app/scan/t/[token]/page.tsx" "app/(dashboard)/service/host/page.tsx" "app/r/[publicSlug]/page.tsx" src/features/table-service/server/table.service.ts src/features/table-service/server/index.ts` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 4.
+  - Delta rationale: exact RTS-02-b scope (member/public branch + host/public baseline routes).
+- Unrelated-file check:
+  - Existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: pending (record after commit)
+  - Commit title: `feat(rts-02): add member-vs-public scan routing branches`
+
 ### 2026-02-28 - RTS-02-a completed: `/scan/t/[token]` resolver baseline
 
 - Suggested Commit Title: `feat(rts-02): add table scan token resolver route baseline`
