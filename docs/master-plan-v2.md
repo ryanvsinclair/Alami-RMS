@@ -180,10 +180,10 @@ Use `Canonical Order Checklist` statuses as source of truth.
 Current snapshot (2026-02-28):
 
 - Launch-critical checklist items total: `50`
-- Launch-critical `[x]`: `37`
+- Launch-critical `[x]`: `38`
 - Launch-critical `[~]`: `0`
-- Strict completion: `74.00%`
-- Weighted progress: `74.00%`
+- Strict completion: `76.00%`
+- Weighted progress: `76.00%`
 - Parked post-launch checklist items (DI): `7` (excluded from launch completion %)
 
 Update rule after each slice:
@@ -226,11 +226,11 @@ Parked stream:
 
 ## Last Left Off Here
 
-- Current task ID: `RTS-05-c`
-- Current task: `Temporary-mode note for role-refactor follow-up`
+- Current task ID: `RTS-05-d`
+- Current task: `Launch smoke coverage for QR/host/kitchen loop`
 - Status: `NOT STARTED`
 - Last updated: `2026-02-28`
-- Note: RTS-05-b kitchen-mode home redirect completed; continue deterministic order with RTS-05-c.
+- Note: RTS-05-c temporary-note requirement confirmed complete; continue deterministic order with RTS-05-d.
 
 ## Canonical Order Checklist
 
@@ -321,7 +321,7 @@ Plan doc: `docs/restaurant-table-service-plan.md`
 
 - [x] RTS-05-a: Add Host/Kitchen mode toggle in profile
 - [x] RTS-05-b: Kitchen mode auto-redirects `/` to kitchen queue
-- [ ] RTS-05-c: Add explicit temporary note for future role-based refactor
+- [x] RTS-05-c: Add explicit temporary note for future role-based refactor
 - [ ] RTS-05-d: Launch smoke tests for QR/host/kitchen core loop
 
 ### Initiative IMG-L - Launch Slice from Item Image Enrichment
@@ -417,10 +417,40 @@ No additional missing plan docs were identified from the current chat scope afte
 ## Completion Snapshot
 
 - Launch-critical initiatives active: `5` (RPK, RTS, IMG-L, UX-L, LG)
-- Launch-critical items complete: `37`
+- Launch-critical items complete: `38`
 - Parked post-launch initiatives: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - RTS-05-c temporary mode note requirement verified complete
+
+- Constitution Restatement:
+  - Task ID: `RTS-05-c`
+  - Scope: ensure explicit temporary note exists for launch mode toggle pending role-model refactor.
+  - Invariants confirmed: no role-model expansion in this slice; no schema/dependency/env changes required.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: note already present in existing toggle card; no new UI behavior required.
+- Preflight evidence:
+  - `Get-Content docs/restaurant-table-service-plan.md`
+  - `Get-Content src/features/table-service/ui/TableServiceModeToggleCard.tsx`
+  - `rg -n "temporary|role-based|mode toggle" src/features/table-service/ui/TableServiceModeToggleCard.tsx docs/restaurant-table-service-plan.md docs/master-plan-v2.md`
+- Implementation:
+  - Verified explicit note text exists in shipped toggle card.
+  - Marked source/master/changelog checklist records complete for contractual note requirement.
+  - No runtime code modifications required in this slice.
+- Validation:
+  - `npx eslint "src/features/table-service/ui/TableServiceModeToggleCard.tsx"` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 0
+  - changed docs: source/master/changelog sync
+  - proportionality reason: RTS-05-c is a documentation/control checkpoint; runtime note was already implemented in RTS-05-a.
+- Unrelated-file check:
+  - pre-existing unrelated local files remained untouched; this slice modified only canonical planning/changelog docs.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+- Commit checkpoint: pending (record after commit).
 
 ### 2026-02-28 - RTS-05-b kitchen-mode redirect from home route implemented
 

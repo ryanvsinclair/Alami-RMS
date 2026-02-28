@@ -20,6 +20,39 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - RTS-05-c completed: temporary mode note confirmed
+
+- Suggested Commit Title: `docs(rts-05): mark temporary mode note requirement complete`
+- Scope: RTS phase `RTS-05-c` (temporary-note contractual requirement).
+- Constitution Restatement:
+  - Task ID: `RTS-05-c`
+  - Scope sentence: verify and record explicit temporary-note text for launch mode toggle.
+  - Invariants confirmed: no role-model scope expansion; no runtime behavior change required in this slice.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: note is already present in existing profile toggle UI.
+- Deliverables:
+  - Confirmed explicit note text exists in `TableServiceModeToggleCard`.
+  - Marked source/master checklist entries complete for RTS-05-c.
+  - Added changelog + checkpoint evidence for contractual closure.
+- Touched Files (single-entry log):
+  - `docs/restaurant-table-service-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx eslint "src/features/table-service/ui/TableServiceModeToggleCard.tsx"` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 0.
+  - Delta rationale: RTS-05-c is a docs/control validation checkpoint with no new runtime changes.
+- Unrelated-file check:
+  - Existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: pending (record after commit)
+  - Commit title: `docs(rts-05): mark temporary mode note requirement complete`
+
 ### 2026-02-28 - RTS-05-b completed: kitchen mode redirect from home
 
 - Suggested Commit Title: `feat(rts-05): redirect home to kitchen queue in kitchen mode`

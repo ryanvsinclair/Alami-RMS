@@ -1,6 +1,6 @@
 # Restaurant Table QR + Host/Kitchen Ops Plan (Restaurant-Only V1)
 
-Status: ACTIVE - RTS-00 through RTS-04 complete; RTS-05 in progress (a-b complete)
+Status: ACTIVE - RTS-00 through RTS-04 complete; RTS-05 in progress (a-c complete)
 Created: 2026-02-28
 Last Updated: 2026-02-28
 Primary Purpose: launch restaurant table service with QR routing, host order confirmation, and kitchen queue operations.
@@ -23,6 +23,12 @@ Primary Purpose: launch restaurant table service with QR routing, host order con
 Constitution source: `docs/execution-constitution.md`
 
 ## Latest Update
+
+- **2026-02-28 - RTS-05-c completed (temporary-mode note explicitly present).**
+  - Verified explicit temporary-note text is present in profile mode toggle UI:
+    "This launch toggle is temporary and will be replaced by role-based access in a future refactor."
+  - No additional runtime code required beyond RTS-05-a implementation.
+  - Source and master trackers updated to mark this contractual documentation/control requirement complete.
 
 - **2026-02-28 - RTS-05-b completed (Kitchen mode redirect from `/` to `/service/kitchen`).**
   - Home route now checks table-service workspace mode preference from local storage.
@@ -157,7 +163,7 @@ Constitution source: `docs/execution-constitution.md`
 ## Pick Up Here
 
 - Current phase: `RTS-05`
-- Current task: `RTS-05-c`
+- Current task: `RTS-05-d`
 - Status: `[ ]` pending
 
 ## Scope
@@ -332,7 +338,7 @@ Before starting any checklist item in this plan:
 - [x] RTS-05-0: Constitution restatement logged for this phase and no deviation required.
 - [x] RTS-05-a: Add Host/Kitchen mode toggle in profile.
 - [x] RTS-05-b: In Kitchen mode, redirect `/` to `/service/kitchen`.
-- [ ] RTS-05-c: Add explicit note that this mode toggle is temporary until role model refactor.
+- [x] RTS-05-c: Add explicit note that this mode toggle is temporary until role model refactor.
 - [ ] RTS-05-d: Run launch smoke suite for QR split, host flow, kitchen flow, and queue lifecycle.
 
 ## Validation Gate (Expanded)
