@@ -180,10 +180,10 @@ Use `Canonical Order Checklist` statuses as source of truth.
 Current snapshot (2026-02-28):
 
 - Launch-critical checklist items total: `50`
-- Launch-critical `[x]`: `46`
+- Launch-critical `[x]`: `47`
 - Launch-critical `[~]`: `0`
-- Strict completion: `92.00%`
-- Weighted progress: `92.00%`
+- Strict completion: `94.00%`
+- Weighted progress: `94.00%`
 - Parked post-launch checklist items (DI): `7` (excluded from launch completion %)
 
 Update rule after each slice:
@@ -226,11 +226,11 @@ Parked stream:
 
 ## Last Left Off Here
 
-- Current task ID: `LG-00-b`
-- Current task: `Integrated launch gate QR actor split pass`
+- Current task ID: `LG-00-c`
+- Current task: `Integrated launch gate host->kitchen queue lifecycle pass`
 - Status: `NOT STARTED`
 - Last updated: `2026-02-28`
-- Note: LG-00-a intake regression is complete; continue deterministic LG gate sequence.
+- Note: LG-00-b QR actor split pass is complete; continue deterministic LG gate sequence.
 
 ## Canonical Order Checklist
 
@@ -362,7 +362,7 @@ Test format lock:
 - Use Playwright only where browser-only behavior cannot be validated otherwise.
 
 - [x] LG-00-a: End-to-end intake 1-8 regression pass
-- [ ] LG-00-b: End-to-end QR actor split pass
+- [x] LG-00-b: End-to-end QR actor split pass
 - [ ] LG-00-c: Host->kitchen queue lifecycle pass
 - [ ] LG-00-d: Timer and queue advancement behavior pass
 - [ ] LG-00-e: Multi-tenant isolation and permission checks pass
@@ -417,10 +417,42 @@ No additional missing plan docs were identified from the current chat scope afte
 ## Completion Snapshot
 
 - Launch-critical initiatives active: `5` (RPK, RTS, IMG-L, UX-L, LG)
-- Launch-critical items complete: `46`
+- Launch-critical items complete: `47`
 - Parked post-launch initiatives: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - LG-00-b completed (launch QR actor split regression pass)
+
+- Constitution Restatement:
+  - Task ID: `LG-00-b`
+  - Scope: run launch-gate QR actor-split regression coverage (member scan path, guest scan path, public landing review CTA gating).
+  - Invariants confirmed: one-order-per-session model unchanged; guest path remains non-ordering; no schema/dependency/env changes.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: no UI implementation changes in this slice.
+- Preflight evidence:
+  - `Get-Content -LiteralPath app/scan/t/[token]/page.tsx`
+  - `Get-Content -LiteralPath app/r/[publicSlug]/page.tsx`
+  - `Get-Content src/features/table-service/shared/table-service.launch-smoke.test.ts`
+  - `rg -n "scan/t|service/host|/r/|google_place_id|writereview|session-aware" app src/features/table-service docs/restaurant-table-service-plan.md docs/master-plan-v2.md`
+- Implementation:
+  - Extended `src/features/table-service/shared/table-service.launch-smoke.test.ts` with LG-00-b assertions for:
+    - session-aware scan router actor split (`member -> /service/host`, `guest -> /r/[publicSlug]`)
+    - public landing menu-first path with review CTA gated by `google_place_id`
+  - Marked `LG-00-b` complete and advanced canonical pointer to `LG-00-c`.
+- Validation:
+  - `npx eslint src/features/table-service/shared/table-service.launch-smoke.test.ts` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts src/features/table-service/shared/table-service.launch-smoke.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 0
+  - changed test files: 1
+  - changed docs: master/changelog sync
+  - proportionality reason: exact LG-00-b gate scope (QR actor split smoke assertions + canonical status sync).
+- Unrelated-file check:
+  - pre-existing unrelated local files remained untouched; this slice modified only LG-00-b test+docs scope files.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
 
 ### 2026-02-28 - LG-00-a completed (launch intake 1-8 regression pass)
 

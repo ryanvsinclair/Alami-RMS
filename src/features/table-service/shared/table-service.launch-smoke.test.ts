@@ -59,3 +59,24 @@ test("launch smoke: profile mode toggle wiring uses shared storage key and kitch
   assert.match(profileToggle, /Kitchen/);
   assert.equal(typeof TABLE_SERVICE_WORKSPACE_MODE_STORAGE_KEY, "string");
 });
+
+test("launch smoke: scan router uses session-aware actor split (member->host, guest->public)", () => {
+  const scanRouter = fs.readFileSync(path.join(repoRoot, "app/scan/t/[token]/page.tsx"), "utf8");
+
+  assert.match(scanRouter, /getOptionalUserId/);
+  assert.match(scanRouter, /prisma\.userBusiness\.findFirst/);
+  assert.match(scanRouter, /getOrCreateActiveTableSession/);
+  assert.match(scanRouter, /\/service\/host\?table=/);
+  assert.match(scanRouter, /&session=/);
+  assert.match(scanRouter, /redirect\(`\/r\/\$\{encodeURIComponent\(resolved\.business\.id\)\}`\)/);
+});
+
+test("launch smoke: public diner landing remains menu-first with google-review CTA gating", () => {
+  const publicLanding = fs.readFileSync(path.join(repoRoot, "app/r/[publicSlug]/page.tsx"), "utf8");
+
+  assert.match(publicLanding, /prisma\.menuCategory\.findMany/);
+  assert.match(publicLanding, /prisma\.menuItem\.findMany/);
+  assert.match(publicLanding, /business\.google_place_id &&/);
+  assert.match(publicLanding, /writereview\?placeid=/);
+  assert.doesNotMatch(publicLanding, /service\/host/);
+});

@@ -20,6 +20,38 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - LG-00-b completed: launch QR actor split regression pass
+
+- Suggested Commit Title: `test(lg-00-b): extend qr actor-split launch smoke coverage`
+- Scope: Integrated launch gate `LG-00-b` (end-to-end QR actor split pass) with launch smoke assertions.
+- Constitution Restatement:
+  - Task ID: `LG-00-b`
+  - Scope sentence: extend launch smoke suite to lock member-vs-guest scan routing and public landing review CTA gating.
+  - Invariants confirmed: no guest ordering/session join in public path; no schema/runtime behavior changes.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: no UI implementation changes in this slice.
+- Deliverables:
+  - Extended `src/features/table-service/shared/table-service.launch-smoke.test.ts`:
+    - validates session-aware `/scan/t/[token]` branch (`member -> /service/host`, guest -> `/r/[publicSlug]`)
+    - validates public landing remains menu-first and review CTA appears only when `google_place_id` exists
+  - Marked `LG-00-b` complete in master checklist and advanced pointer to `LG-00-c`.
+- Touched Files (single-entry log):
+  - `src/features/table-service/shared/table-service.launch-smoke.test.ts` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx eslint src/features/table-service/shared/table-service.launch-smoke.test.ts` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts src/features/table-service/shared/table-service.launch-smoke.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 0.
+  - Changed test files: 1.
+  - Delta rationale: exact LG-00-b gate scope (QR actor split assertions + canonical status sync).
+- Unrelated-file check:
+  - Existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+
 ### 2026-02-28 - LG-00-a completed: launch intake 1-8 regression pass
 
 - Suggested Commit Title: `test(lg-00-a): add launch intake regression smoke coverage`
