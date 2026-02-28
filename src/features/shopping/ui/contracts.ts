@@ -11,6 +11,12 @@ export interface ShoppingItem {
   id: string;
   origin: "staged" | "receipt";
   inventory_item_id?: string | null;
+  inventory_item?: {
+    id: string;
+    name: string;
+    image_url: string | null;
+    category?: { name: string } | null;
+  } | null;
   receipt_line_item_id?: string | null;
   scanned_barcode?: string | null;
   raw_name: string;

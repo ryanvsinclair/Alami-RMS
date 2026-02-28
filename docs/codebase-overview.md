@@ -623,6 +623,7 @@ Implemented capabilities:
 - Commit guardrail: manual and shelf-label sources are expense-only at commit time (no inventory writes)
 - Expense-ledger metadata now includes `inventory_transaction_count` alongside `item_count` and ineligible-item counts
 - Web fallback hardening and observability
+- Shopping basket rows now include shared image + quantity primitives (`ItemImage`, `QuantityBadge`) on the launch surface in `app/(dashboard)/shopping/page.tsx`.
 
 Canonical paths:
 
@@ -651,6 +652,7 @@ Implemented capabilities:
   - `view-mode-toggle.tsx`
   - `sort-select.tsx`
 - Inventory view preference hook now exists at `src/features/inventory/ui/use-inventory-view.ts`.
+- Inventory list now wires launch primitives directly (view toggle, sort select, image tiles/rows, quantity badges) via `src/features/inventory/ui/InventoryListPageClient.tsx`.
 - Derived non-blocking "Fix Later Queue" surfaced in Inventory UI
 - Persistent task actions via client-side localStorage:
   - complete

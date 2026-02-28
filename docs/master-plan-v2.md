@@ -180,10 +180,10 @@ Use `Canonical Order Checklist` statuses as source of truth.
 Current snapshot (2026-02-28):
 
 - Launch-critical checklist items total: `50`
-- Launch-critical `[x]`: `43`
+- Launch-critical `[x]`: `44`
 - Launch-critical `[~]`: `0`
-- Strict completion: `86.00%`
-- Weighted progress: `86.00%`
+- Strict completion: `88.00%`
+- Weighted progress: `88.00%`
 - Parked post-launch checklist items (DI): `7` (excluded from launch completion %)
 
 Update rule after each slice:
@@ -226,11 +226,11 @@ Parked stream:
 
 ## Last Left Off Here
 
-- Current task ID: `UX-L-00-b`
-- Current task: `UX launch primitive wiring into required surfaces`
+- Current task ID: `UX-L-00-c`
+- Current task: `UX launch defer-lock confirmation`
 - Status: `NOT STARTED`
 - Last updated: `2026-02-28`
-- Note: UX-L-00-a is complete and checkpointed; continue deterministic order with UX-L-00-b.
+- Note: UX-L-00-b is complete and checkpointed; continue deterministic order with UX-L-00-c.
 
 ## Canonical Order Checklist
 
@@ -346,7 +346,7 @@ Source plan: `docs/inventory-shopping-ux-redesign-plan.md`
 Launch scope only:
 
 - [x] UX-L-00-a: Implement UX-00 shared primitives needed by launch workflows
-- [ ] UX-L-00-b: Wire UX-00 primitives into required restaurant launch surfaces only
+- [x] UX-L-00-b: Wire UX-00 primitives into required restaurant launch surfaces only
 - [ ] UX-L-00-c: Defer UX-01 and UX-02 (plus remaining UX backlog) to post-launch
 
 Deferred post-launch:
@@ -417,10 +417,45 @@ No additional missing plan docs were identified from the current chat scope afte
 ## Completion Snapshot
 
 - Launch-critical initiatives active: `5` (RPK, RTS, IMG-L, UX-L, LG)
-- Launch-critical items complete: `43`
+- Launch-critical items complete: `44`
 - Parked post-launch initiatives: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - UX-L-00-b completed (launch-surface primitive wiring)
+
+- Constitution Restatement:
+  - Task ID: `UX-L-00-b`
+  - Scope: wire UX-00 primitives into required launch surfaces without entering full UX-01/UX-02 redesign scope.
+  - Invariants confirmed: structural UI only; no unauthorized token additions; no schema/dependency/env changes.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: intentional targeted wiring only (inventory list + shopping basket rows), no full layout overhaul.
+- Preflight evidence:
+  - `Get-Content docs/inventory-shopping-ux-redesign-plan.md`
+  - `Get-Content src/features/inventory/ui/InventoryListPageClient.tsx`
+  - `Get-Content app/(dashboard)/shopping/page.tsx`
+  - `Get-Content src/features/shopping/ui/contracts.ts`
+  - `rg -n "ItemImage|QuantityBadge|ViewModeToggle|SortSelect|useInventoryView" src/features/inventory src/features/shopping app/(dashboard)/shopping/page.tsx`
+- Implementation:
+  - Wired primitives into inventory launch surface:
+    - `InventoryListPageClient` now uses `ItemImage`, `QuantityBadge`, `ViewModeToggle`, `SortSelect`, and `useInventoryView`.
+    - Added launch-safe sorting/view-mode controls with no new visual token system.
+  - Wired primitives into shopping launch surface:
+    - shopping basket rows now render `ItemImage` and `QuantityBadge`.
+    - shopping item contract now carries optional `inventory_item.image_url` metadata for image rendering.
+  - Updated UX source plan latest-update/pickup guidance for launch wiring completion.
+- Validation:
+  - `npx eslint 'app/(dashboard)/shopping/page.tsx' src/features/inventory/ui/InventoryListPageClient.tsx src/features/shopping/ui/contracts.ts src/shared/ui/item-image.tsx src/shared/ui/quantity-badge.tsx src/shared/ui/sort-select.tsx src/shared/ui/view-mode-toggle.tsx src/features/inventory/ui/use-inventory-view.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 3 (`InventoryListPageClient`, shopping page, shopping contracts)
+  - changed docs: source/master/changelog sync
+  - proportionality reason: exactly scoped to UX-L-00-b primitive wiring on required launch surfaces.
+- Unrelated-file check:
+  - pre-existing unrelated local files remained untouched; this slice modified only UX-L-00-b scope files plus required canonical docs.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+- Commit checkpoint: pending (record after commit).
 
 ### 2026-02-28 - UX-L-00-a completed (UX-00 shared primitives baseline)
 

@@ -1,12 +1,20 @@
 ﻿# Inventory & Shopping UX Redesign Plan
 
 Last updated: February 28, 2026
-Status: ACTIVE - UX-00 primitives complete for launch; targeted launch wiring next; full UX-01 through UX-04 remains post-launch continuation
+Status: ACTIVE - UX launch primitive wiring complete; defer lock pending; full UX-01 through UX-04 remains post-launch continuation
 Constitution source: `docs/execution-constitution.md`
 
 ---
 
 ## Latest Update
+
+- **2026-02-28 - UX-L-00-b completed (launch-surface primitive wiring).**
+  - Wired UX-00 primitives into required launch surfaces only:
+    - `src/features/inventory/ui/InventoryListPageClient.tsx` now uses `ItemImage`, `QuantityBadge`, `SortSelect`, `ViewModeToggle`, and `useInventoryView`.
+    - `app/(dashboard)/shopping/page.tsx` basket rows now use `ItemImage` + `QuantityBadge`.
+  - Updated shopping UI contracts to carry optional `inventory_item.image_url` metadata for item image rendering.
+  - Kept full UX-01/UX-02 redesign scope deferred for post-launch.
+  - Ran targeted eslint + `npx tsc --noEmit --incremental false`; pass.
 
 - **2026-02-28 - UX-L-00-a completed (UX-00 primitive baseline).**
   - Added shared primitives:
@@ -44,7 +52,7 @@ Constitution source: `docs/execution-constitution.md`
  
 ## Pick Up Here
 
-Launch path: UX-00 primitives complete; continue with launch-only wiring slice.
+Launch path: UX primitives are wired on required launch surfaces; finalize launch defer lock next.
 
 Then continue full UX backlog post-launch.
 

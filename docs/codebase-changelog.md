@@ -20,6 +20,45 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - UX-L-00-b completed: launch-surface primitive wiring
+
+- Suggested Commit Title: `feat(ux-launch): wire primitives into inventory and shopping surfaces`
+- Scope: UX launch phase `UX-L-00-b` (wire UX-00 primitives into required restaurant launch surfaces only).
+- Constitution Restatement:
+  - Task ID: `UX-L-00-b`
+  - Scope sentence: apply existing UX-00 primitives to launch-critical surfaces without full UX-01/UX-02 redesign scope.
+  - Invariants confirmed: structural UI only; no schema/dependency/env changes; no unauthorized style-system expansion.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: focused wiring only (inventory list + shopping basket rows).
+- Deliverables:
+  - Inventory launch surface wiring:
+    - `InventoryListPageClient` now uses `ItemImage`, `QuantityBadge`, `ViewModeToggle`, `SortSelect`, and `useInventoryView`.
+  - Shopping launch surface wiring:
+    - basket rows in `app/(dashboard)/shopping/page.tsx` now use `ItemImage` + `QuantityBadge`.
+    - shopping contracts updated to carry optional `inventory_item.image_url` metadata for rendering.
+  - Updated UX source plan/master pointer for next deterministic step (`UX-L-00-c`).
+- Touched Files (single-entry log):
+  - `src/features/inventory/ui/InventoryListPageClient.tsx` (updated)
+  - `app/(dashboard)/shopping/page.tsx` (updated)
+  - `src/features/shopping/ui/contracts.ts` (updated)
+  - `docs/inventory-shopping-ux-redesign-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx eslint 'app/(dashboard)/shopping/page.tsx' src/features/inventory/ui/InventoryListPageClient.tsx src/features/shopping/ui/contracts.ts src/shared/ui/item-image.tsx src/shared/ui/quantity-badge.tsx src/shared/ui/sort-select.tsx src/shared/ui/view-mode-toggle.tsx src/features/inventory/ui/use-inventory-view.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 3.
+  - Delta rationale: exact UX-L-00-b scope (primitive wiring into launch surfaces).
+- Unrelated-file check:
+  - Existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: pending (record after commit)
+  - Commit title: `feat(ux-launch): wire primitives into inventory and shopping surfaces`
+
 ### 2026-02-28 - UX-L-00-a completed: UX-00 shared primitives baseline
 
 - Suggested Commit Title: `feat(ux-00): add launch shared ui primitives and view hook`

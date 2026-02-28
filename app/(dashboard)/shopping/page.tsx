@@ -13,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ItemNotFound } from "@/components/flows/item-not-found";
 import { useShoppingSession } from "@/features/shopping/ui/use-shopping-session";
+import { ItemImage } from "@/shared/ui/item-image";
+import { QuantityBadge } from "@/shared/ui/quantity-badge";
 import {
   asNumber,
   formatMoney,
@@ -416,17 +418,26 @@ export default function ShoppingPage() {
         <div className="space-y-2">
           {(session.items ?? []).map((item) => (
             <Card key={item.id} className="p-4">
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="font-semibold truncate">{displayShoppingItemName(item.raw_name)}</p>
-                  <div className="flex gap-1 mt-1">
-                    <Badge variant={item.origin === "staged" ? "info" : "default"}>{item.origin}</Badge>
-                    <Badge variant={reconVariant[item.reconciliation_status]}>
-                      {reconLabel[item.reconciliation_status]}
-                    </Badge>
-                    {getItemBarcodeBadgeValue(item) && (
-                      <Badge variant="warning">UPC {getItemBarcodeBadgeValue(item)}</Badge>
-                    )}
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex items-start gap-3">
+                  <ItemImage
+                    src={item.inventory_item?.image_url ?? null}
+                    name={displayShoppingItemName(item.raw_name)}
+                    category={item.inventory_item?.category?.name ?? null}
+                    size="md"
+                  />
+                  <div className="min-w-0">
+                    <p className="font-semibold truncate">{displayShoppingItemName(item.raw_name)}</p>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      <QuantityBadge quantity={asNumber(item.quantity) || 1} unit={item.unit} size="sm" />
+                      <Badge variant={item.origin === "staged" ? "info" : "default"}>{item.origin}</Badge>
+                      <Badge variant={reconVariant[item.reconciliation_status]}>
+                        {reconLabel[item.reconciliation_status]}
+                      </Badge>
+                      {getItemBarcodeBadgeValue(item) && (
+                        <Badge variant="warning">UPC {getItemBarcodeBadgeValue(item)}</Badge>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <button

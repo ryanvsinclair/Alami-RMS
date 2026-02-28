@@ -1,11 +1,15 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/shared/ui/input";
 import { Card } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
+import { ItemImage } from "@/shared/ui/item-image";
+import { QuantityBadge } from "@/shared/ui/quantity-badge";
+import { SortSelect } from "@/shared/ui/sort-select";
+import { ViewModeToggle } from "@/shared/ui/view-mode-toggle";
 import { getAllInventoryLevels } from "@/app/actions/core/transactions";
 import { getInventoryEnrichmentQueue } from "@/app/actions/core/inventory";
 import type {
@@ -14,6 +18,7 @@ import type {
   InventoryEnrichmentTaskType,
 } from "@/features/inventory/shared/enrichment-queue.contracts";
 import { useEnrichmentDismissals } from "./use-enrichment-dismissals";
+import { useInventoryView } from "./use-inventory-view";
 
 interface InventoryLevel {
   id: string;
@@ -41,6 +46,12 @@ const enrichmentTaskLabel: Record<InventoryEnrichmentTaskType, string> = {
   resolve_shopping_pairing: "Shopping pairing",
 };
 
+function getComparableTimestamp(value: Date | string | null) {
+  if (!value) return 0;
+  const parsed = new Date(value).getTime();
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 export default function InventoryListPageClient() {
   const router = useRouter();
   const [items, setItems] = useState<InventoryLevel[]>([]);
@@ -50,6 +61,7 @@ export default function InventoryListPageClient() {
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
   const [showStats, setShowStats] = useState(false);
   const [queueFilter, setQueueFilter] = useState<QueueFilter>("all");
+  const { viewMode, setViewMode, sortKey, setSortKey } = useInventoryView();
 
   const {
     filteredQueue: enrichmentQueue,
@@ -115,11 +127,36 @@ export default function InventoryListPageClient() {
     }
   }, [lastDismissed, undoDismissal]);
 
-  const filtered = items.filter(
-    (item) =>
-      item.name.toLowerCase().includes(search.toLowerCase()) ||
-      item.category?.name.toLowerCase().includes(search.toLowerCase())
+  const filtered = useMemo(
+    () =>
+      items.filter(
+        (item) =>
+          item.name.toLowerCase().includes(search.toLowerCase()) ||
+          item.category?.name.toLowerCase().includes(search.toLowerCase()),
+      ),
+    [items, search],
   );
+
+  const visibleInventoryItems = useMemo(() => {
+    const sorted = [...filtered];
+    sorted.sort((a, b) => {
+      switch (sortKey) {
+        case "name_desc":
+          return b.name.localeCompare(a.name);
+        case "qty_asc":
+        case "low_stock":
+          return a.current_quantity - b.current_quantity;
+        case "qty_desc":
+          return b.current_quantity - a.current_quantity;
+        case "last_updated":
+          return getComparableTimestamp(b.last_transaction_at) - getComparableTimestamp(a.last_transaction_at);
+        case "name_asc":
+        default:
+          return a.name.localeCompare(b.name);
+      }
+    });
+    return sorted;
+  }, [filtered, sortKey]);
 
   const purchaseConfirmationCount =
     enrichmentQueue?.summary.task_type_counts.review_purchase_confirmation ?? 0;
@@ -403,39 +440,76 @@ export default function InventoryListPageClient() {
         </div>
       )}
 
-      <Input
-        placeholder="Search inventory..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-      />
+      <div className="flex items-end gap-2">
+        <div className="flex-1">
+          <Input
+            placeholder="Search inventory..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <SortSelect value={sortKey} onChange={setSortKey} className="w-36 shrink-0" />
+        <ViewModeToggle value={viewMode} onChange={setViewMode} />
+      </div>
 
       {loading ? (
         <div className="text-center py-8 text-muted text-sm">Loading...</div>
-      ) : filtered.length === 0 ? (
+      ) : visibleInventoryItems.length === 0 ? (
         <div className="text-center py-8 text-muted text-sm">
           {items.length === 0 ? "No inventory items yet" : "No items match your search"}
         </div>
-      ) : (
-        <div className="space-y-2">
-          {filtered.map((item) => (
+      ) : viewMode === "grid" ? (
+        <div className="grid grid-cols-2 gap-2">
+          {visibleInventoryItems.map((item) => (
             <Card
               key={item.id}
               onClick={() => router.push(`/inventory/${item.id}`)}
               data-image-url={item.image_url ?? undefined}
               data-image-source={item.image_source}
+              className="p-3"
             >
-              <div className="flex items-center justify-between">
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">{item.name}</p>
-                  <div className="flex gap-1 mt-0.5">
-                    {item.category && <Badge>{item.category.name}</Badge>}
-                    {item.supplier && <Badge variant="info">{item.supplier.name}</Badge>}
+              <ItemImage
+                src={item.image_url}
+                name={item.name}
+                category={item.category?.name ?? null}
+                size="xl"
+                className="mb-2"
+              />
+              <p className="truncate text-sm font-medium">{item.name}</p>
+              <div className="mt-1 flex items-center justify-between gap-2">
+                <QuantityBadge quantity={item.current_quantity} unit={item.unit} size="sm" />
+                {item.category && <Badge>{item.category.name}</Badge>}
+              </div>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {visibleInventoryItems.map((item) => (
+            <Card
+              key={item.id}
+              onClick={() => router.push(`/inventory/${item.id}`)}
+              data-image-url={item.image_url ?? undefined}
+              data-image-source={item.image_source}
+              className="p-3"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <ItemImage
+                    src={item.image_url}
+                    name={item.name}
+                    category={item.category?.name ?? null}
+                    size="sm"
+                  />
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{item.name}</p>
+                    <div className="flex flex-wrap gap-1 mt-0.5">
+                      {item.category && <Badge>{item.category.name}</Badge>}
+                      {item.supplier && <Badge variant="info">{item.supplier.name}</Badge>}
+                    </div>
                   </div>
                 </div>
-                <div className="text-right shrink-0 ml-3">
-                  <p className="text-lg font-semibold">{item.current_quantity}</p>
-                  <p className="text-xs text-muted">{item.unit}</p>
-                </div>
+                <QuantityBadge quantity={item.current_quantity} unit={item.unit} size="md" />
               </div>
             </Card>
           ))}
