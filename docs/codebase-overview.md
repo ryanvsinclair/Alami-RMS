@@ -338,6 +338,7 @@ Implemented capabilities:
   - line removal
   - subtotal/quantity summary
   - confirm action that immediately creates kitchen ticket (`KitchenOrder` + `KitchenOrderItem` rows)
+  - `confirmed_at` + `due_at` timer fields set at confirm time (`due_at = confirmed_at + 30 minutes`)
   - existing ticket state surfaced in host workspace to prevent duplicate order creation
 
 Canonical paths:

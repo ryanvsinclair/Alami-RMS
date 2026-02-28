@@ -43,6 +43,13 @@ function makeDraftId() {
   return `line_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function formatDateTimeLabel(value: string | null) {
+  if (!value) return "Not set";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "Not set";
+  return parsed.toLocaleString();
+}
+
 interface HostOrderComposerPageClientProps {
   table: TableServiceDiningTableSummary;
   session: TableServiceSessionSummary;
@@ -234,9 +241,11 @@ export default function HostOrderComposerPageClient({
             <p className="font-semibold text-foreground">Ticket ID: {confirmedOrder.id}</p>
             <p>Item lines: {confirmedOrder.items.length}</p>
             <p>Order notes: {confirmedOrder.notes ?? "None"}</p>
+            <p>Confirmed at: {formatDateTimeLabel(confirmedOrder.confirmedAt)}</p>
+            <p>Due at: {formatDateTimeLabel(confirmedOrder.dueAt)}</p>
           </div>
           <p className="text-xs text-muted">
-            Post-confirm append behavior is implemented in `RTS-03-d`. Timer fields are added in `RTS-03-c`.
+            Post-confirm append behavior is implemented in `RTS-03-d`.
           </p>
         </Card>
       )}
@@ -357,7 +366,7 @@ export default function HostOrderComposerPageClient({
         <p className="text-xs text-muted">
           {hasConfirmedOrder
             ? "This session already has a kitchen ticket. Use upcoming RTS-03-d append flow for post-confirm changes."
-            : "Confirm creates a kitchen ticket immediately. Timer fields are added in RTS-03-c."}
+            : "Confirm creates a kitchen ticket immediately and starts the 30-minute due timer."}
         </p>
       </Card>
     </div>

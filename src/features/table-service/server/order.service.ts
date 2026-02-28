@@ -26,6 +26,8 @@ type KitchenOrderRecord = {
   }>;
 };
 
+const CONFIRMATION_WINDOW_MS = 30 * 60 * 1000;
+
 function normalizeOptionalText(value: string | null | undefined) {
   const trimmed = value?.trim();
   return trimmed && trimmed.length > 0 ? trimmed : null;
@@ -76,6 +78,10 @@ function toKitchenOrderSummary(order: KitchenOrderRecord): TableServiceKitchenOr
   };
 }
 
+function withDueAt(confirmedAt: Date) {
+  return new Date(confirmedAt.getTime() + CONFIRMATION_WINDOW_MS);
+}
+
 export async function getKitchenOrderForSession(businessId: string, tableSessionId: string) {
   const order = await prisma.kitchenOrder.findFirst({
     where: {
@@ -124,7 +130,25 @@ export async function confirmKitchenOrder(
       },
     });
     if (existingOrder) {
-      return serialize(toKitchenOrderSummary(existingOrder as KitchenOrderRecord));
+      if (existingOrder.confirmed_at && existingOrder.due_at) {
+        return serialize(toKitchenOrderSummary(existingOrder as KitchenOrderRecord));
+      }
+
+      const confirmedAt = existingOrder.confirmed_at ?? new Date();
+      const dueAt = existingOrder.due_at ?? withDueAt(confirmedAt);
+      const backfilledOrder = await tx.kitchenOrder.update({
+        where: { id: existingOrder.id },
+        data: {
+          confirmed_at: confirmedAt,
+          due_at: dueAt,
+        },
+        include: {
+          items: {
+            orderBy: [{ created_at: "asc" }, { id: "asc" }],
+          },
+        },
+      });
+      return serialize(toKitchenOrderSummary(backfilledOrder as KitchenOrderRecord));
     }
 
     const uniqueMenuItemIds = Array.from(
@@ -142,11 +166,16 @@ export async function confirmKitchenOrder(
       throw new Error("One or more menu items are unavailable for confirmation");
     }
 
+    const confirmedAt = new Date();
+    const dueAt = withDueAt(confirmedAt);
+
     const createdOrder = await tx.kitchenOrder.create({
       data: {
         business_id: businessId,
         table_session_id: session.id,
         notes: normalizeOptionalText(input.notes),
+        confirmed_at: confirmedAt,
+        due_at: dueAt,
         items: {
           create: normalizedItems.map((item) => ({
             business_id: businessId,

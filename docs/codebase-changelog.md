@@ -20,6 +20,42 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - RTS-03-c completed: confirm timestamps and 30-minute due timer
+
+- Suggested Commit Title: `feat(rts-03): set confirmed_at and 30-minute due_at on confirm`
+- Scope: RTS phase `RTS-03-c` (confirmation timer fields).
+- Constitution Restatement:
+  - Task ID: `RTS-03-c`
+  - Scope sentence: write `confirmed_at` and computed `due_at` timestamps during host confirmation flow.
+  - Invariants confirmed: one-order-per-session preserved; no guest/public path changes; no post-confirm append behavior introduced in this slice.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: structural host ticket detail messaging only.
+- Deliverables:
+  - Confirmation service now writes `confirmed_at` and `due_at = confirmed_at + 30 minutes` on new kitchen ticket creation.
+  - Existing-ticket fallback path now backfills missing timer fields for older rows.
+  - Host ticket UI now surfaces confirmation and due timestamps.
+- Touched Files (single-entry log):
+  - `src/features/table-service/server/order.service.ts` (updated)
+  - `src/features/table-service/ui/HostOrderComposerPageClient.tsx` (updated)
+  - `docs/restaurant-table-service-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx eslint "src/features/table-service/server/order.service.ts" "src/features/table-service/ui/HostOrderComposerPageClient.tsx" "app/(dashboard)/service/host/page.tsx" "app/actions/modules/table-service.ts"` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 2.
+  - Delta rationale: exact RTS-03-c scope (confirmation timestamps + due timer wiring).
+- Unrelated-file check:
+  - Existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: pending (record after commit)
+  - Commit title: `feat(rts-03): set confirmed_at and 30-minute due_at on confirm`
+
 ### 2026-02-28 - RTS-03-b completed: host confirm creates kitchen ticket immediately
 
 - Suggested Commit Title: `feat(rts-03): create kitchen ticket immediately on host confirm`
