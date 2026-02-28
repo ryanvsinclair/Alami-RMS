@@ -1,12 +1,25 @@
 # Document Intake Pipeline Plan
 
 Last updated: February 28, 2026
-Status: PARKED POST-LAUNCH - DI-00 through DI-06 pending
+Status: ACTIVE - DI-00 complete, DI-01 next
 Constitution source: `docs/execution-constitution.md`
 
 ---
 
 ## Latest Update
+
+- **2026-02-28 - DI-00 completed (schema + contracts baseline).**
+  - Added additive schema/enums for `documents` domain:
+    - enums: `DocumentInboundChannel`, `DocumentDraftStatus`, `VendorTrustState`
+    - models: `InboundAddress`, `VendorProfile`, `DocumentDraft`, `DocumentVendorItemMapping`
+    - enum addition: `FinancialSource.document_intake`
+  - Added shared contracts baseline at `src/features/documents/shared/documents.contracts.ts` + `index.ts`.
+  - Applied additive migration via deploy-safe path:
+    - `npx prisma migrate dev` hit existing shadow-db chain issue (`P3006/P1014`) unrelated to this slice
+    - generated/curated additive migration SQL in `prisma/migrations/20260228190000_document_intake_core_schema/migration.sql`
+    - applied with `npx prisma migrate deploy`
+  - Validation passed: `prisma validate`, `prisma migrate status`, `prisma generate`, `eslint`, and `tsc`.
+  - DI resume pointer advanced to **DI-01**.
 
 - **2026-02-28 - Mandatory execution restatement gate added (resume-ready).**
   - Added explicit "Mandatory Restatement Before Phase Work" section for DI resume.
@@ -37,15 +50,13 @@ Constitution source: `docs/execution-constitution.md`
 
 ## Pick Up Here
 
-This plan is currently parked.
-
-When unparked, start at **DI-00**: schema design and contract vocabulary.
+Next task: **DI-01** - Capture and Isolation (Safe Ingest Pipeline).
 
 ---
 
-## Mandatory Restatement Before Phase Work (On Resume)
+## Mandatory Restatement Before Phase Work
 
-Before starting any checklist item in this plan after unpark:
+Before starting any checklist item in this plan:
 
 - [ ] Paste `Constitution Restatement` template from `docs/execution-constitution.md` into session/job summary.
 - [ ] Confirm scope sentence references exact `DI-*` task ID.
@@ -53,7 +64,7 @@ Before starting any checklist item in this plan after unpark:
 
 ---
 
-## Commit Checkpoint (Required On Resume)
+## Commit Checkpoint (Required)
 
 After each completed checklist step in this plan:
 
@@ -348,65 +359,65 @@ This is done in DI-00, not deferred. Posted document drafts use `source: "docume
 
 **Goal:** Define all new database models, enums, and TypeScript contracts. No services, no UI, no API routes yet. Only the vocabulary layer.
 
-**Status:** `[ ]` pending
+**Status:** `[x]` completed
 
 #### Checklist
 
 Schema additions to `prisma/schema.prisma`:
 
-- [ ] Add `DocumentInboundChannel` enum (`email`, `webhook`, `manual_upload`)
-- [ ] Add `DocumentDraftStatus` enum (`received`, `parsing`, `draft`, `pending_review`, `posted`, `rejected`)
-- [ ] Add `VendorTrustState` enum (`unverified`, `learning`, `trusted`, `blocked`)
-- [ ] Add `InboundAddress` model:
+- [x] Add `DocumentInboundChannel` enum (`email`, `webhook`, `manual_upload`)
+- [x] Add `DocumentDraftStatus` enum (`received`, `parsing`, `draft`, `pending_review`, `posted`, `rejected`)
+- [x] Add `VendorTrustState` enum (`unverified`, `learning`, `trusted`, `blocked`)
+- [x] Add `InboundAddress` model:
   - `id String @id @default(cuid())`
   - `business_id String` (FK → `businesses`, CASCADE)
   - `address_token String @unique`
   - `is_active Boolean @default(true)`
   - `created_at DateTime @default(now())`
   - Index: `@@unique([business_id])` (one address per business)
-- [ ] Add `VendorProfile` model:
+- [x] Add `VendorProfile` model:
   - All fields as specified in Data Model Overview
   - `trust_threshold_override Int?` — nullable, overrides global threshold
   - Indexes: `@@index([business_id])`, `@@unique([business_id, vendor_name])`
-- [ ] Add `DocumentDraft` model:
+- [x] Add `DocumentDraft` model:
   - All fields as specified in Data Model Overview
   - `raw_content_hash String` — SHA-256 hex of raw stored content
   - `postmark_message_id String?` — from Postmark `MessageID` field
   - Indexes: `@@index([business_id])`, `@@index([status])`, `@@index([vendor_profile_id])`, `@@index([business_id, created_at(sort: Desc)])`
   - Unique: `@@unique([business_id, raw_content_hash])` — strict deduplication
-- [ ] Add `DocumentVendorItemMapping` model:
+- [x] Add `DocumentVendorItemMapping` model:
   - `@@unique([business_id, vendor_profile_id, raw_line_item_name])`
-- [ ] Add reverse relations on `Business`, `Supplier`, `Category`, `InventoryItem` as needed
+- [x] Add reverse relations on `Business`, `Supplier`, `Category`, `InventoryItem` as needed
 
 Migration:
-- [ ] Run `npx prisma migrate dev --name document_intake_core_schema`
-- [ ] Confirm migration SQL includes:
+- [x] Attempt `npx prisma migrate dev --name document_intake_core_schema` (shadow-db chain issue `P3006/P1014`; additive-safe migration SQL path used with `migrate deploy`)
+- [x] Confirm migration SQL includes:
   - `ALTER TYPE "FinancialSource" ADD VALUE 'document_intake';`
   - `CREATE UNIQUE INDEX "document_drafts_business_id_raw_content_hash_key" ON "document_drafts"("business_id", "raw_content_hash");`
-- [ ] Run `npx prisma generate`
+- [x] Run `npx prisma generate`
 
 TypeScript contracts at `src/features/documents/shared/documents.contracts.ts`:
-- [ ] `DOCUMENT_INBOUND_CHANNELS` tuple + `DocumentInboundChannel` type
-- [ ] `DOCUMENT_DRAFT_STATUSES` tuple + `DocumentDraftStatus` type
-- [ ] `DOCUMENT_TERMINAL_STATUSES` set (`posted`, `rejected`)
-- [ ] `VENDOR_TRUST_STATES` tuple + `VendorTrustState` type
-- [ ] `VENDOR_TRUST_THRESHOLD` constant (default: `5`) — global fallback
-- [ ] `DOCUMENT_AUTO_POST_CONFIDENCE_MIN` constant (default: `0.85`)
-- [ ] `DocumentDraftSummary` DTO — lightweight projection for inbox UI (id, status, confidence_band, parsed_vendor_name, parsed_total, parsed_date, auto_posted, created_at, vendor_profile name if linked)
-- [ ] `ParsedDocumentFields` type — `{ vendor_name: string | null, date: string | null, total: number | null, tax: number | null, line_items: ParsedLineItem[] }`
-- [ ] `ParsedLineItem` type — `{ description: string, quantity: number | null, unit_cost: number | null, line_total: number | null }`
-- [ ] `VendorProfileSummary` DTO — projection for vendor card UI
-- [ ] `DocumentAnomalyFlag` union type — `'large_total' | 'new_format' | 'vendor_name_mismatch' | 'unusual_line_count' | 'duplicate_suspected'`
-- [ ] `PostmarkInboundPayload` type — full typed shape of Postmark inbound JSON (as documented in Infrastructure section above)
-- [ ] `POSTMARK_INBOUND_CHANNEL = 'email' as const`
+- [x] `DOCUMENT_INBOUND_CHANNELS` tuple + `DocumentInboundChannel` type
+- [x] `DOCUMENT_DRAFT_STATUSES` tuple + `DocumentDraftStatus` type
+- [x] `DOCUMENT_TERMINAL_STATUSES` set (`posted`, `rejected`)
+- [x] `VENDOR_TRUST_STATES` tuple + `VendorTrustState` type
+- [x] `VENDOR_TRUST_THRESHOLD` constant (default: `5`) — global fallback
+- [x] `DOCUMENT_AUTO_POST_CONFIDENCE_MIN` constant (default: `0.85`)
+- [x] `DocumentDraftSummary` DTO — lightweight projection for inbox UI (id, status, confidence_band, parsed_vendor_name, parsed_total, parsed_date, auto_posted, created_at, vendor_profile name if linked)
+- [x] `ParsedDocumentFields` type — `{ vendor_name: string | null, date: string | null, total: number | null, tax: number | null, line_items: ParsedLineItem[] }`
+- [x] `ParsedLineItem` type — `{ description: string, quantity: number | null, unit_cost: number | null, line_total: number | null }`
+- [x] `VendorProfileSummary` DTO — projection for vendor card UI
+- [x] `DocumentAnomalyFlag` union type — `'large_total' | 'new_format' | 'vendor_name_mismatch' | 'unusual_line_count' | 'duplicate_suspected'`
+- [x] `PostmarkInboundPayload` type — full typed shape of Postmark inbound JSON (as documented in Infrastructure section above)
+- [x] `POSTMARK_INBOUND_CHANNEL = 'email' as const`
 
 Create `src/features/documents/shared/index.ts` — re-exports all contracts.
 
 Validation:
-- [ ] `npx tsc --noEmit --incremental false` → PASS
-- [ ] `npx eslint src/features/documents/shared/` → PASS
-- [ ] `npx prisma validate` → PASS
-- [ ] `npx prisma migrate status` → all applied, 0 pending
+- [x] `npx tsc --noEmit --incremental false` → PASS
+- [x] `npx eslint src/features/documents/shared/` → PASS
+- [x] `npx prisma validate` → PASS
+- [x] `npx prisma migrate status` → all applied, 0 pending
 
 ---
 

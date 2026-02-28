@@ -167,6 +167,7 @@ Current feature folders:
 - `src/features/finance`
 - `src/features/home`
 - `src/features/intake` (new — Unified Inventory Intake refactor; Phase 0 contracts only)
+- `src/features/documents` (new - Document Intake DI-00 schema/contracts baseline)
 - `src/features/integrations`
 - `src/features/inventory`
 - `src/features/modules`
@@ -312,6 +313,29 @@ Canonical paths:
 - `prisma/schema.prisma`
 - `prisma/migrations/20260228060000_business_profile_place_metadata/migration.sql`
 - `prisma/migrations/20260228130000_table_service_module_backfill/migration.sql`
+
+### Document Intake (DI-00 baseline)
+
+Implemented capabilities:
+
+- Additive schema baseline for document-intake domain:
+  - `InboundAddress`
+  - `VendorProfile`
+  - `DocumentDraft`
+  - `DocumentVendorItemMapping`
+- New enums for document-intake lifecycle and trust state:
+  - `DocumentInboundChannel`
+  - `DocumentDraftStatus`
+  - `VendorTrustState`
+- `FinancialSource` now includes `document_intake`.
+- Shared contracts baseline added under `src/features/documents/shared/` for inbound payloads, parsed-document DTOs, draft/vendor summaries, and trust constants.
+
+Canonical paths:
+
+- `prisma/schema.prisma`
+- `prisma/migrations/20260228190000_document_intake_core_schema/migration.sql`
+- `src/features/documents/shared/documents.contracts.ts`
+- `src/features/documents/shared/index.ts`
 
 ### Table Service Menu + Table Setup + Host Composer (RTS-01/RTS-02/RTS-03-a)
 
@@ -731,6 +755,13 @@ Item image enrichment entities:
 
 - `ProduceItem` (seeded PLU reference rows)
 - `ProduceItemImage` (one image metadata row per `plu_code`)
+
+Document intake entities (DI-00 baseline):
+
+- `InboundAddress` (one inbound token per business)
+- `VendorProfile` (tenant-scoped vendor trust state + defaults)
+- `DocumentDraft` (raw-content hash dedupe + parse/confidence/posting state)
+- `DocumentVendorItemMapping` (vendor line-item names to `InventoryItem` links)
 
 Design principles currently enforced:
 

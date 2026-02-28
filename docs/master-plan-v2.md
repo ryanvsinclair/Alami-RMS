@@ -220,17 +220,17 @@ Current active launch streams:
 - IMG-L (launch slice only)
 - UX-L (launch slice only)
 
-Parked stream:
+Post-launch stream:
 
 - DI (document intake), post-launch queue (resume gate unlocked after `LG-00` completion)
 
 ## Last Left Off Here
 
-- Current task ID: `DI-00`
-- Current task: `Document intake schema/contracts`
+- Current task ID: `DI-01`
+- Current task: `Document intake capture/isolation pipeline`
 - Status: `NOT STARTED`
 - Last updated: `2026-02-28`
-- Note: LG-00 launch gate is fully complete; deterministic flow now resumes DI stream at DI-00.
+- Note: DI-00 is complete; continue deterministic DI sequence at DI-01.
 
 ## Canonical Order Checklist
 
@@ -367,18 +367,18 @@ Test format lock:
 - [x] LG-00-d: Timer and queue advancement behavior pass
 - [x] LG-00-e: Multi-tenant isolation and permission checks pass
 
-## Post-Launch Queue (Parked)
+## Post-Launch Queue (Resumed)
 
-### Initiative DI - Document Intake Pipeline (Parked)
+### Initiative DI - Document Intake Pipeline (Active)
 
 Plan doc: `docs/document-intake-pipeline-plan.md`
-Current state: parked, not cancelled.
-Re-entry trigger: launch gate `LG-00` fully complete.
-Resume point: `DI-00`.
+Current state: active, resumed after launch-gate completion.
+Re-entry trigger: satisfied (`LG-00` fully complete).
+Resume point: `DI-01`.
 
-High-level parked checklist:
+High-level DI checklist:
 
-- [ ] DI-00 schema/contracts
+- [x] DI-00 schema/contracts
 - [ ] DI-01 capture/isolation
 - [ ] DI-02 parse/score
 - [ ] DI-03 vendor mapping/trust setup
@@ -418,9 +418,56 @@ No additional missing plan docs were identified from the current chat scope afte
 
 - Launch-critical initiatives active: `5` (RPK, RTS, IMG-L, UX-L, LG)
 - Launch-critical items complete: `50`
-- Parked post-launch initiatives: `1` (DI)
+- Post-launch initiatives in progress: `1` (DI)
 
 ## Latest Job Summary
+
+### 2026-02-28 - DI-00 completed (document-intake schema + contracts baseline)
+
+- Constitution Restatement:
+  - Task ID: `DI-00`
+  - Scope: complete additive document-intake schema/enums and shared contract vocabulary only (no API/routes/services/UI).
+  - Invariants confirmed: additive DB-only changes; no destructive migration steps; no launch-critical behavior regressions.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: no UI implementation changes in this slice.
+- Preflight evidence:
+  - `Get-Content prisma/schema.prisma`
+  - `rg -n "document_drafts|vendor_profiles|document_vendor_item_mappings|inbound_addresses|document_intake|FinancialSource" prisma/schema.prisma prisma/migrations src app docs`
+  - `Get-Content docs/document-intake-pipeline-plan.md`
+- Implementation:
+  - Added DI-00 schema in `prisma/schema.prisma`:
+    - enums: `DocumentInboundChannel`, `DocumentDraftStatus`, `VendorTrustState`
+    - models: `InboundAddress`, `VendorProfile`, `DocumentDraft`, `DocumentVendorItemMapping`
+    - enum addition: `FinancialSource.document_intake`
+    - reverse relations added on `Business`, `Supplier`, `Category`, `InventoryItem`, `FinancialTransaction`
+  - Added migration `prisma/migrations/20260228190000_document_intake_core_schema/migration.sql` (additive-only curated SQL).
+  - Added shared contracts baseline:
+    - `src/features/documents/shared/documents.contracts.ts`
+    - `src/features/documents/shared/index.ts`
+  - Added minimal home-source typing support for new `FinancialSource` value (`document_intake`) to keep dashboard contracts/UI aligned.
+  - Marked DI-00 complete in DI source plan and master checklist; advanced deterministic pointer to DI-01.
+- Validation:
+  - `npx prisma validate` -> PASS
+  - `npx prisma migrate status` -> PASS (up to date, 0 pending)
+  - `npx prisma generate` -> PASS
+  - `npx eslint src/features/documents/shared/ src/features/home/shared/dashboard-summary.contracts.ts src/features/home/ui/home-financial-layer.shared.tsx` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Migration note:
+  - `npx prisma migrate dev --name document_intake_core_schema` failed due existing shadow-db chain issue (`P3006/P1014`, unrelated to DI-00 scope).
+  - Used additive-safe fallback:
+    - generated migration SQL from config datasource diff
+    - removed non-additive/dropped-index statements and unsupported extension line
+    - applied with `npx prisma migrate deploy` after `migrate resolve --rolled-back` recovery steps for failed attempts
+- Diff proportionality:
+  - changed runtime files: 0
+  - changed schema/migration files: 3 (`schema.prisma`, migration SQL, migration lock)
+  - changed contracts files: 2 (new `documents/shared`)
+  - changed docs files: source/master/changelog/overview sync
+  - proportionality reason: exact DI-00 scope (schema + contracts baseline, plus required type alignment for new enum value).
+- Unrelated-file check:
+  - pre-existing unrelated local files remained untouched; this slice changed only DI-00 scoped files and required canonical docs.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
 
 ### 2026-02-28 - LG-00-e completed (multi-tenant isolation and permission checks pass)
 

@@ -1,6 +1,12 @@
 export type DashboardPeriod = "today" | "week" | "month";
 
-export type HomeFinancialSource = "godaddy_pos" | "uber_eats" | "doordash" | "shopping" | "manual";
+export type HomeFinancialSource =
+  | "godaddy_pos"
+  | "uber_eats"
+  | "doordash"
+  | "shopping"
+  | "manual"
+  | "document_intake";
 
 export interface HomeDashboardFinancialTx {
   id: string;

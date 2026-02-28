@@ -94,6 +94,16 @@ export const SOURCE_META: Record<
       </svg>
     ),
   },
+  document_intake: {
+    label: "Document Intake",
+    color: "text-muted",
+    bg: "bg-foreground/5",
+    icon: (
+      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6 3.75h8.25L18 7.5v12.75A1.5 1.5 0 0 1 16.5 21.75h-9A1.5 1.5 0 0 1 6 20.25V3.75Zm8.25 0v3.75H18M9 11.25h6M9 14.25h6M9 17.25h4.5" />
+      </svg>
+    ),
+  },
 };
 
 const INCOME_SOURCE_ORDER_BY_INDUSTRY: Record<IndustryType, HomeDashboardFinancialTx["source"][]> = {

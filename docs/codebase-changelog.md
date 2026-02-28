@@ -20,6 +20,68 @@ Companion overview: `docs/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-02-28 - DI-00 completed: document-intake schema and contracts baseline
+
+- Suggested Commit Title: `feat(di-00): add document intake schema and shared contracts baseline`
+- Scope: DI phase `DI-00` (schema design and contract vocabulary only; no routes/services/UI).
+- Constitution Restatement:
+  - Task ID: `DI-00`
+  - Scope sentence: add additive document-intake schema/enums and shared contracts, then synchronize Prisma/database state.
+  - Invariants confirmed: additive DB changes only; no destructive migration steps; no dependency/env changes.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: no UI implementation changes in this slice.
+- Deliverables:
+  - Added schema artifacts in `prisma/schema.prisma`:
+    - enums: `DocumentInboundChannel`, `DocumentDraftStatus`, `VendorTrustState`
+    - models: `InboundAddress`, `VendorProfile`, `DocumentDraft`, `DocumentVendorItemMapping`
+    - enum extension: `FinancialSource.document_intake`
+    - reverse relations for `Business`, `Supplier`, `Category`, `InventoryItem`, `FinancialTransaction`
+  - Added migration:
+    - `prisma/migrations/20260228190000_document_intake_core_schema/migration.sql`
+  - Added migration lock file:
+    - `prisma/migrations/migration_lock.toml`
+  - Added shared contracts:
+    - `src/features/documents/shared/documents.contracts.ts`
+    - `src/features/documents/shared/index.ts`
+  - Added home-source type/meta alignment for new `FinancialSource` value:
+    - `src/features/home/shared/dashboard-summary.contracts.ts`
+    - `src/features/home/ui/home-financial-layer.shared.tsx`
+  - Updated DI source plan/master pointer and DI status progression (`DI-00` complete, `DI-01` next).
+- Migration execution note:
+  - `npx prisma migrate dev --name document_intake_core_schema` failed due pre-existing shadow-db migration chain issue (`P3006/P1014`) unrelated to DI-00 scope.
+  - Applied additive-safe fallback:
+    - generated migration SQL diff against configured datasource
+    - removed non-additive/drop statements from generated SQL
+    - removed unsupported extension statement (`uuid_ossp`)
+    - used `npx prisma migrate resolve --rolled-back` recovery for failed attempts and then `npx prisma migrate deploy`
+- Touched Files (single-entry log):
+  - `prisma/schema.prisma` (updated)
+  - `prisma/migrations/migration_lock.toml` (added)
+  - `prisma/migrations/20260228190000_document_intake_core_schema/migration.sql` (added)
+  - `src/features/documents/shared/documents.contracts.ts` (added)
+  - `src/features/documents/shared/index.ts` (added)
+  - `src/features/home/shared/dashboard-summary.contracts.ts` (updated)
+  - `src/features/home/ui/home-financial-layer.shared.tsx` (updated)
+  - `docs/document-intake-pipeline-plan.md` (updated)
+  - `docs/master-plan-v2.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+  - `docs/codebase-changelog.md` (updated)
+- Validation:
+  - `npx prisma validate` -> PASS
+  - `npx prisma migrate status` -> PASS (up to date, 0 pending)
+  - `npx prisma generate` -> PASS
+  - `npx eslint src/features/documents/shared/ src/features/home/shared/dashboard-summary.contracts.ts src/features/home/ui/home-financial-layer.shared.tsx` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - Changed runtime files: 0.
+  - Changed schema/migration files: 3.
+  - Changed contracts/types files: 4.
+  - Delta rationale: exact DI-00 scope (schema + contracts baseline plus required enum-consumer type alignment).
+- Unrelated-file check:
+  - Existing unrelated local files remained unchanged by this slice.
+- Dependency change check: no new dependencies added.
+- Env-var change check: no new env vars introduced.
+
 ### 2026-02-28 - LG-00-e completed: multi-tenant isolation and permission checks pass
 
 - Suggested Commit Title: `test(lg-00-e): extend tenant-isolation and permission launch smoke coverage`

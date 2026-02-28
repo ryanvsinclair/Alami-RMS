@@ -116,6 +116,7 @@ enum FinancialSource {
   doordash
   shopping
   manual
+  document_intake
 }
 
 enum IncomeProvider {
@@ -193,6 +194,28 @@ enum KitchenOrderItemStatus {
   cancelled
 }
 
+enum DocumentInboundChannel {
+  email
+  webhook
+  manual_upload
+}
+
+enum DocumentDraftStatus {
+  received
+  parsing
+  draft
+  pending_review
+  posted
+  rejected
+}
+
+enum VendorTrustState {
+  unverified
+  learning
+  trusted
+  blocked
+}
+
 // ============================================================
 // TABLES
 // ============================================================
@@ -203,6 +226,7 @@ model Category {
   name        String
   created_at  DateTime        @default(now())
   items       InventoryItem[]
+  vendor_profiles VendorProfile[]
   business    Business        @relation(fields: [business_id], references: [id], onDelete: Cascade)
 
   @@unique([business_id, name])
@@ -224,6 +248,7 @@ model Supplier {
   shopping_sessions      ShoppingSession[]
   price_history          ItemPriceHistory[]
   receipt_parse_profiles ReceiptParseProfile[]
+  vendor_profiles        VendorProfile[]
   business               Business              @relation(fields: [business_id], references: [id], onDelete: Cascade)
 
   @@unique([business_id, name])
@@ -256,6 +281,7 @@ model InventoryItem {
   line_items             ReceiptLineItem[]
   shopping_session_items ShoppingSessionItem[]
   price_history          ItemPriceHistory[]
+  document_vendor_item_mappings DocumentVendorItemMapping[]
   business               Business               @relation(fields: [business_id], references: [id], onDelete: Cascade)
 
   @@index([business_id])
@@ -556,6 +582,7 @@ model FinancialTransaction {
   created_at          DateTime                 @default(now())
 
   shopping_session ShoppingSession? @relation(fields: [shopping_session_id], references: [id], onDelete: SetNull)
+  document_draft   DocumentDraft?
   business         Business         @relation(fields: [business_id], references: [id], onDelete: Cascade)
 
   @@unique([business_id, source, external_id])
@@ -685,6 +712,109 @@ model Contact {
 
   @@index([business_id])
   @@map("contacts")
+}
+
+model InboundAddress {
+  id            String   @id @default(cuid())
+  business_id   String
+  address_token String   @unique
+  is_active     Boolean  @default(true)
+  created_at    DateTime @default(now())
+
+  business Business @relation(fields: [business_id], references: [id], onDelete: Cascade)
+
+  @@unique([business_id])
+  @@index([business_id])
+  @@map("inbound_addresses")
+}
+
+model VendorProfile {
+  id                       String           @id @default(uuid())
+  business_id              String
+  vendor_name              String
+  vendor_aliases           Json             @default("[]")
+  supplier_id              String?
+  default_category_id      String?
+  trust_state              VendorTrustState @default(unverified)
+  total_posted             Int              @default(0)
+  trust_threshold_override Int?
+  auto_post_enabled        Boolean          @default(false)
+  trust_threshold_met_at   DateTime?
+  last_document_at         DateTime?
+  created_at               DateTime         @default(now())
+  updated_at               DateTime         @updatedAt
+
+  business         Business                   @relation(fields: [business_id], references: [id], onDelete: Cascade)
+  supplier         Supplier?                  @relation(fields: [supplier_id], references: [id], onDelete: SetNull)
+  default_category Category?                  @relation(fields: [default_category_id], references: [id], onDelete: SetNull)
+  document_drafts  DocumentDraft[]
+  item_mappings    DocumentVendorItemMapping[]
+
+  @@unique([business_id, vendor_name])
+  @@index([business_id])
+  @@index([supplier_id])
+  @@index([default_category_id])
+  @@map("vendor_profiles")
+}
+
+model DocumentDraft {
+  id                     String                 @id @default(uuid())
+  business_id            String
+  vendor_profile_id      String?
+  inbound_channel        DocumentInboundChannel
+  raw_storage_path       String
+  raw_content_type       String
+  raw_content_hash       String
+  postmark_message_id    String?
+  status                 DocumentDraftStatus    @default(received)
+  parsed_vendor_name     String?
+  parsed_date            DateTime?
+  parsed_total           Decimal?               @db.Decimal(10, 2)
+  parsed_tax             Decimal?               @db.Decimal(10, 2)
+  parsed_line_items      Json?
+  confidence_score       Decimal?               @db.Decimal(4, 3)
+  confidence_band        MatchConfidence?
+  parse_flags            Json?
+  anomaly_flags          Json?
+  financial_transaction_id String?              @unique
+  posted_at              DateTime?
+  posted_by_user_id      String?
+  auto_posted            Boolean                @default(false)
+  created_at             DateTime               @default(now())
+  updated_at             DateTime               @updatedAt
+
+  business              Business              @relation(fields: [business_id], references: [id], onDelete: Cascade)
+  vendor_profile        VendorProfile?        @relation(fields: [vendor_profile_id], references: [id], onDelete: SetNull)
+  financial_transaction FinancialTransaction? @relation(fields: [financial_transaction_id], references: [id], onDelete: SetNull)
+
+  @@unique([business_id, raw_content_hash])
+  @@index([business_id])
+  @@index([status])
+  @@index([vendor_profile_id])
+  @@index([business_id, created_at(sort: Desc)])
+  @@index([postmark_message_id])
+  @@map("document_drafts")
+}
+
+model DocumentVendorItemMapping {
+  id                String   @id @default(uuid())
+  business_id       String
+  vendor_profile_id String
+  raw_line_item_name String
+  inventory_item_id String
+  confirmed_count   Int      @default(0)
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  business      Business      @relation(fields: [business_id], references: [id], onDelete: Cascade)
+  vendor_profile VendorProfile @relation(fields: [vendor_profile_id], references: [id], onDelete: Cascade)
+  inventory_item InventoryItem @relation(fields: [inventory_item_id], references: [id], onDelete: Cascade)
+
+  @@unique([business_id, vendor_profile_id, raw_line_item_name])
+  @@index([business_id])
+  @@index([vendor_profile_id])
+  @@index([inventory_item_id])
+  @@map("document_vendor_item_mappings")
 }
 
 model ProduceItem {
@@ -886,6 +1016,10 @@ model Business {
   income_oauth_states    IncomeOAuthState[]
   income_events          IncomeEvent[]
   contacts               Contact[]
+  inbound_addresses      InboundAddress[]
+  vendor_profiles        VendorProfile[]
+  document_drafts        DocumentDraft[]
+  document_vendor_item_mappings DocumentVendorItemMapping[]
   dining_tables          DiningTable[]
   menu_categories        MenuCategory[]
   menu_items             MenuItem[]
