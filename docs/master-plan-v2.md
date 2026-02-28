@@ -457,6 +457,7 @@ No additional missing plan docs were identified from the current chat scope afte
   - pre-existing unrelated local files remained untouched; this slice modified only LG-00-a test+docs scope files.
 - Dependency check: no new dependencies.
 - Env-var check: no new environment variables.
+- Commit checkpoint: `ecc102b` (`test(lg-00-a): add launch intake regression smoke coverage`).
 
 ### 2026-02-28 - governance wording sync: per-step commit explicitly tied to repository history
 

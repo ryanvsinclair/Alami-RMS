@@ -54,6 +54,9 @@ Companion overview: `docs/codebase-overview.md`
   - Existing unrelated local files remained unchanged by this slice.
 - Dependency change check: no new dependencies added.
 - Env-var change check: no new env vars introduced.
+- Commit checkpoint:
+  - Commit hash: `ecc102b`
+  - Commit title: `test(lg-00-a): add launch intake regression smoke coverage`
 
 ### 2026-02-28 - governance wording sync: per-step commit explicitly tied to repository history
 
