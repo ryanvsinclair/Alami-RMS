@@ -1,7 +1,7 @@
 ﻿# Codebase Changelog
 
 Status: Active (living document)
-Last Updated: 2026-02-28
+Last Updated: 2026-03-02
 Primary Purpose: Chronological engineering changelog and validation record.
 
 Companion overview: `docs/codebase-overview.md`
@@ -19,6 +19,677 @@ Companion overview: `docs/codebase-overview.md`
 - Do not delete historical entries; add corrections as new entries.
 
 ## Changelog (Append New Entries At Top)
+
+### 2026-03-02 - Signup step slider width overflow fixed
+
+- Suggested Commit Title: `fix(auth-signup): correct multi-step slider panel widths to prevent field clipping`
+- Scope:
+  - Signup multi-step form layout bug fix only.
+- What changed:
+  - Fixed horizontal slider geometry in signup step flow:
+    - changed track width from fixed `300%` to `100%`
+    - changed transform offset math to step-based `100%` increments
+    - changed each panel to `min-w-full` so every step exactly matches viewport width
+  - Removed per-panel asymmetric horizontal paddings that were amplifying clipping perception.
+- Files changed:
+  - `app/auth/signup/SignupFormClient.tsx`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx eslint app/auth/signup/SignupFormClient.tsx` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+
+### 2026-03-02 - Signup converted to 3-step horizontal slide flow with per-step continue
+
+- Suggested Commit Title: `feat(auth-signup): add three-step sliding signup flow with phone capture`
+- Scope:
+  - Signup UX flow and payload contract update.
+- What changed:
+  - Replaced the single long signup form with a 3-step client flow (`SignupFormClient`) using horizontal slide transitions.
+  - Added per-step Continue buttons with step-local required-field validation before moving forward.
+  - Step structure now:
+    - Step 1: `first_name`, `last_name`, `date_of_birth`
+    - Step 2: business details (`industry_type`, `business_name`, optional place metadata)
+    - Step 3: `email`, `phone`, `password`, `confirm_password`
+  - Preserved final submit through existing server action (`signUpAction`) in the final step.
+  - Extended server-side signup validation to require `phone` and persisted `phone` to Supabase Auth user metadata.
+- Files changed:
+  - `app/auth/signup/page.tsx`
+  - `app/auth/signup/SignupFormClient.tsx`
+  - `app/auth/signup/RestaurantPlaceSearch.tsx`
+  - `app/actions/core/auth.ts`
+  - `docs/active/codebase-overview.md`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx eslint app/auth/signup/page.tsx app/auth/signup/SignupFormClient.tsx app/auth/signup/RestaurantPlaceSearch.tsx app/actions/core/auth.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+
+### 2026-03-02 - Signup form shell removed, DOB picker added, and field fills softened
+
+- Suggested Commit Title: `chore(auth-signup): remove form shell and switch age to date-of-birth picker`
+- Scope:
+  - Signup UI refinement and date-of-birth data contract update.
+- What changed:
+  - Removed the outer signup form shell styling (`app-sheet`/ring/card treatment) so fields render directly on page background.
+  - Replaced `age` with `date_of_birth` (`type="date"`) to use native calendar picker behavior.
+  - Updated server-side signup validation and metadata persistence to use `date_of_birth` (including validity/non-future checks).
+  - Reduced fill opacity for signup fields by ~30% (`bg-foreground/[0.04]` -> `bg-foreground/[0.028]`) across both main signup fields and business/place inputs.
+- Files changed:
+  - `app/auth/signup/page.tsx`
+  - `app/auth/signup/RestaurantPlaceSearch.tsx`
+  - `app/actions/core/auth.ts`
+  - `docs/active/codebase-overview.md`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx eslint app/auth/signup/page.tsx app/auth/signup/RestaurantPlaceSearch.tsx app/actions/core/auth.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+
+### 2026-03-02 - Signup flow refactor: identity fields, restaurant-only industry gate, confirm-password checks
+
+- Suggested Commit Title: `feat(auth-signup): collect identity metadata and enforce restaurant-only signup guardrails`
+- Scope:
+  - Signup UX and server-side validation/provisioning behavior updates.
+- What changed:
+  - Removed the top auth-shell branding container text so signup starts directly with `Get started`.
+  - Signup form now collects `first_name`, `last_name`, and `age` in addition to email/password.
+  - Added `confirm_password` field and server-side password-match validation.
+  - Replaced industry radio cards with a dropdown where only `restaurant` is selectable; all other industries are disabled as coming soon.
+  - Consolidated business-name capture into the restaurant place section and positioned that section as the final form block.
+  - Persisted identity fields into Supabase Auth user metadata during `signUp` (`first_name`, `last_name`, `age`, `full_name`).
+  - Added server-side enforcement for:
+    - required identity/business/auth fields
+    - restaurant-only signup constraint
+    - minimum password length
+    - password confirmation parity
+- Files changed:
+  - `app/auth/layout.tsx`
+  - `app/auth/signup/page.tsx`
+  - `app/auth/signup/RestaurantPlaceSearch.tsx`
+  - `app/actions/core/auth.ts`
+  - `docs/active/codebase-overview.md`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx eslint app/auth/layout.tsx app/auth/signup/page.tsx app/auth/signup/RestaurantPlaceSearch.tsx app/actions/core/auth.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+
+### 2026-03-02 - Hero action buttons aligned to top-control visual style
+
+- Suggested Commit Title: `chore(home-ui): restyle hero action buttons to match top controls`
+- Scope:
+  - Home hero action-button visual consistency update only.
+- What changed:
+  - Restyled `Add Receipt` and `Scan Barcode` buttons to match top home controls:
+    - `rounded-full` shape
+    - `bg-background/50` fill with same hover treatment (`bg-background/65`)
+    - foreground text/icon color treatment
+  - Converted action button content to horizontal icon+label layout while preserving routes and labels.
+- Files changed:
+  - `src/features/home/ui/HomeDashboardClient.tsx`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx eslint src/features/home/ui/HomeDashboardClient.tsx` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+
+### 2026-03-02 - Home hero elements lowered together to remove empty mid-gap
+
+- Suggested Commit Title: `chore(home-ui): lower watermark and hero content while tightening activity handoff`
+- Scope:
+  - Home page vertical composition refinement only.
+- What changed:
+  - Lowered watermark/logo background position in hero.
+  - Lowered balance/toggle/action block as a group while keeping top controls fixed in place.
+  - Reduced activity card top offset so spacing is visually consumed by hero content instead of a dead gap.
+- Files changed:
+  - `src/features/home/ui/HomeDashboardClient.tsx`
+  - `src/features/home/ui/HomeActivityList.tsx`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx eslint src/features/home/ui/HomeDashboardClient.tsx` -> PASS
+  - `npx eslint src/features/home/ui/HomeActivityList.tsx` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+
+### 2026-03-02 - Home layout dropped further to reveal more hero section
+
+- Suggested Commit Title: `chore(home-ui): further lower hero content and activity card start`
+- Scope:
+  - Home page vertical spacing adjustment only.
+- What changed:
+  - Increased hero section bottom spacing to push the handoff lower.
+  - Increased top offset of the balance/toggle/actions block while keeping top controls fixed.
+  - Applied explicit positive top margin override on the activity card container so it starts visibly lower.
+- Files changed:
+  - `src/features/home/ui/HomeDashboardClient.tsx`
+  - `src/features/home/ui/HomeActivityList.tsx`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx eslint src/features/home/ui/HomeDashboardClient.tsx` -> PASS
+  - `npx eslint src/features/home/ui/HomeActivityList.tsx` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+
+### 2026-03-02 - Home hero content dropped lower while keeping top controls fixed
+
+- Suggested Commit Title: `chore(home-ui): lower hero content and activity start position`
+- Scope:
+  - Home page vertical spacing refinement only.
+- What changed:
+  - Increased bottom spacing of the hero container.
+  - Added top offset to the balance/toggle/action block so content sits lower while top controls remain in place.
+  - Added a small positive top margin to the activity card so it starts lower and reveals more hero section.
+- Files changed:
+  - `src/features/home/ui/HomeDashboardClient.tsx`
+  - `src/features/home/ui/HomeActivityList.tsx`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx eslint src/features/home/ui/HomeDashboardClient.tsx` -> PASS
+  - `npx eslint src/features/home/ui/HomeActivityList.tsx` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+
+### 2026-03-02 - Home activity card top curvature clipping fixed
+
+- Suggested Commit Title: `fix(home-ui): prevent activity card top radius from being clipped`
+- Scope:
+  - Home page visual clipping fix only.
+- What changed:
+  - Removed `layer-summary-fill` wrapper class from home activity section container in `HomeDashboardClient`.
+  - Replaced it with a non-clipping container (`relative flex flex-1 flex-col`) so the activity card’s negative top overlap and rounded top edge remain visible.
+- Files changed:
+  - `src/features/home/ui/HomeDashboardClient.tsx`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx eslint src/features/home/ui/HomeDashboardClient.tsx` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+
+### 2026-03-02 - Home reports icon thickened and baseline removed
+
+- Suggested Commit Title: `chore(home-ui): thicken reports icon and remove horizontal baseline`
+- Scope:
+  - Home top-row reports icon styling only.
+- What changed:
+  - Increased reports icon `strokeWidth` in home top controls for a thicker look.
+  - Removed the icon’s horizontal baseline path segment, leaving only vertical bars.
+- Files changed:
+  - `src/features/home/ui/HomeDashboardClient.tsx`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx eslint src/features/home/ui/HomeDashboardClient.tsx` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+
+### 2026-03-02 - Home top-row non-search controls made truly circular
+
+- Suggested Commit Title: `chore(home-ui): make hero icon controls circular and keep search pill`
+- Scope:
+  - Home hero top-row shape correction only.
+- What changed:
+  - Updated profile/reports/contacts controls to fixed square size (`w-8 h-8`) centered in their columns, so they render as true circles.
+  - Kept the search control as a full pill in the center segment.
+  - Preserved current `15/55/15/15` row distribution.
+- Files changed:
+  - `src/features/home/ui/HomeDashboardClient.tsx`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx eslint src/features/home/ui/HomeDashboardClient.tsx` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+
+### 2026-03-02 - Bottom nav surface opacity reduced to 70%
+
+- Suggested Commit Title: `chore(nav-ui): reduce bottom nav background opacity to 70 percent`
+- Scope:
+  - Bottom navigation visual opacity tuning only.
+- What changed:
+  - Updated `--surface-nav-bg` alpha in global theme tokens to `0.70` for both dark and light modes.
+  - This directly lowers bottom nav bar background opacity because `BottomNav` uses `var(--surface-nav-bg)` for its surface fill.
+- Files changed:
+  - `app/globals.css`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+
+### 2026-03-02 - Home top-row fills now use app background color at 50% opacity
+
+- Suggested Commit Title: `chore(home-ui): set hero control fills to background color at 50 percent`
+- Scope:
+  - Home hero top-row visual tone refinement only.
+- What changed:
+  - Updated profile/search/reports/contacts control fills from slate gray to the app background color token (`bg-background`) at `50%` opacity.
+  - Updated hover state to a slightly stronger background-opacity variant for icon-circle controls.
+  - Kept the existing `15/55/15/15` control width distribution unchanged.
+- Files changed:
+  - `src/features/home/ui/HomeDashboardClient.tsx`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx eslint src/features/home/ui/HomeDashboardClient.tsx` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+
+### 2026-03-02 - Home top-row spacing adjusted to 15/55/15/15
+
+- Suggested Commit Title: `chore(home-ui): adjust hero control row to 15-55-15-15 distribution`
+- Scope:
+  - Home hero top-row spacing refinement only.
+- What changed:
+  - Updated top-row layout distribution from `10/70/10/10` to `15/55/15/15`.
+  - Kept icon-only circular profile/reports/contacts controls and search pill styling unchanged.
+- Files changed:
+  - `src/features/home/ui/HomeDashboardClient.tsx`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx eslint src/features/home/ui/HomeDashboardClient.tsx` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+
+### 2026-03-02 - Home top-row controls switched to compact icon circles + 70% search pill
+
+- Suggested Commit Title: `chore(home-ui): compact hero top controls with icon circles and search pill`
+- Scope:
+  - Home hero top-row visual/layout refinement only.
+- What changed:
+  - Removed top-button text labels (icon-only profile/reports/contacts controls).
+  - Replaced top icons with smaller filled light-gray circular buttons.
+  - Converted search control into a pill-style bar in the same row.
+  - Updated row distribution to 10/70/10/10 using a 10-column grid:
+    - profile circle: 10%
+    - search pill: 70%
+    - reports circle: 10%
+    - contacts circle: 10%
+- Files changed:
+  - `src/features/home/ui/HomeDashboardClient.tsx`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx eslint src/features/home/ui/HomeDashboardClient.tsx` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+
+### 2026-03-02 - Home dashboard refactor to 3-zone layout with unified activity list
+
+- Suggested Commit Title: `feat(home): refactor dashboard to balance-view hero and unified activity feed`
+- Scope:
+  - Home dashboard UI architecture update (top-nav hero + balance toggle + unified transaction rendering).
+- What changed:
+  - Added `HomeActivityList` as a new unified home activity component that:
+    - accepts full transaction data
+    - filters by `balanceView` (`balance`, `income`, `expenses`)
+    - renders day-grouped rows with source icons, signed amounts, and receipt deep links
+    - includes a persistent `+ Integrations` shortcut in the list header
+  - Rewrote `HomeDashboardClient` to the new 3-zone structure:
+    - Zone 1: full-width top nav buttons (Profile, Search disabled, Reports, Contacts)
+    - Zone 2: centered balance hero with tap-cycle toggle and two actions (`Add Receipt`, `Scan Barcode`)
+    - Zone 3: `HomeActivityList` rendering all transactions with live view filtering
+  - Preserved existing invariants:
+    - kitchen redirect logic via `TABLE_SERVICE_WORKSPACE_MODE_STORAGE_KEY`
+    - `BusinessConfigProvider` wrapper
+    - home watermark logo treatment
+    - `BottomNav` rendering
+  - Updated canonical docs to reflect the new home architecture and paths.
+- Files changed:
+  - `src/features/home/ui/HomeActivityList.tsx`
+  - `src/features/home/ui/HomeDashboardClient.tsx`
+  - `src/features/home/ui/index.ts`
+  - `docs/active/home-page-refactor-plan.md`
+  - `docs/active/codebase-overview.md`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `npx eslint src/features/home/ui/HomeActivityList.tsx` -> PASS
+  - `npx eslint src/features/home/ui/HomeDashboardClient.tsx` -> PASS
+  - `npx eslint src/features/home/ui/index.ts` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+
+### 2026-03-01 - Calendar/scheduling provider logos wired from `public/provider-pics`
+
+- Suggested Commit Title: `feat(integrations-ui): add logo image mapping for calendar connection rows`
+- Scope: Integrations visual enhancement for calendar/scheduling providers only.
+- What changed:
+  - Added logo-image rendering for calendar/scheduling/reservation provider rows on `/integrations` using the same image-map + scale approach used by income provider rows.
+  - Mapped provider IDs to the newly added files in `public/provider-pics`:
+    - Google, Outlook, Apple, Square, Calendly, Mindbody, Fresha, Vagaro, OpenTable, Resy
+  - Kept initials fallback behavior when a provider image is not mapped.
+- Files changed:
+  - `src/features/integrations/ui/IncomeConnectionsPageClient.tsx`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - `npx eslint "src/features/integrations/ui/IncomeConnectionsPageClient.tsx"` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+
+### 2026-03-01 - Calendar connection rows now show company-only names
+
+- Suggested Commit Title: `chore(integrations-ui): shorten calendar provider row labels to company names`
+- Scope: Integrations visual label cleanup only.
+- What changed:
+  - Updated calendar/scheduling provider row labels on `/integrations` to use company-only names.
+  - Replaced long labels with concise names where applicable:
+    - `Google Calendar` -> `Google`
+    - `Outlook / Microsoft 365` -> `Outlook`
+    - `Apple Calendar (ICS)` -> `Apple`
+    - `Square Appointments` -> `Square`
+  - Other providers already represented as company names remain unchanged.
+- Files changed:
+  - `src/features/integrations/ui/IncomeConnectionsPageClient.tsx`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - `npx eslint "src/features/integrations/ui/IncomeConnectionsPageClient.tsx"` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+
+### 2026-03-01 - Integrations list visual parity cleanup for calendar groups
+
+- Suggested Commit Title: `chore(integrations-ui): align calendar rows with income row format`
+- Scope: Small integrations-page visual adjustments only.
+- What changed:
+  - Removed the `Recommended` badge from calendar/scheduling/reservation rows.
+  - Removed subtitle/auth text under calendar provider titles.
+  - Removed the extra `Scheduling & Reservations` section header.
+  - Renamed group labels:
+    - `General Calendar` -> `Calender`
+    - `Booking Platforms` -> `Booking`
+    - `Reservation Platforms` -> `Reservations`
+  - Kept grouped card styling and row format consistent with the original integration connection rows.
+- Files changed:
+  - `src/features/integrations/ui/IncomeConnectionsPageClient.tsx`
+  - `app/(dashboard)/integrations/page.tsx`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - `npx eslint "src/features/integrations/ui/IncomeConnectionsPageClient.tsx" "app/(dashboard)/integrations/page.tsx"` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+
+### 2026-03-01 - Integrations page expanded to include scheduling and reservation provider catalogs
+
+- Suggested Commit Title: `feat(integrations): add profile entrypoint and unified income+calendar provider surface`
+- Scope: Integrations discovery and navigation improvement (profile route entry + expanded catalog rendering on `/integrations`).
+- What changed:
+  - Performed a codebase audit of user-connectable external-data sources:
+    - income OAuth/sync providers (GoDaddy POS, Uber Eats, DoorDash, Square, Stripe, Toast, SkipTheDishes)
+    - schedule/reservation provider catalogs and connector contracts (Google Calendar, Outlook, Apple ICS, Square Appointments, Calendly, Mindbody, Fresha, Vagaro, OpenTable, Resy)
+  - Added an `Integrations` settings row on `/profile` that routes users directly to `/integrations`.
+  - Expanded `/integrations` page rendering:
+    - keeps existing income provider groups and OAuth status behavior
+    - adds calendar/scheduling/reservation provider groups with rollout-status labels and industry-aware recommendation badges
+  - Wired `app/(dashboard)/integrations/page.tsx` to pass schedule provider catalog data into the integrations client UI.
+- Files changed:
+  - `app/(dashboard)/profile/page.tsx`
+  - `app/(dashboard)/integrations/page.tsx`
+  - `src/features/integrations/ui/IncomeConnectionsPageClient.tsx`
+  - `docs/codebase-overview.md`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - `npx eslint "app/(dashboard)/integrations/page.tsx" "src/features/integrations/ui/IncomeConnectionsPageClient.tsx" "app/(dashboard)/profile/page.tsx"` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 3
+  - changed docs: 2
+  - proportionality reason: exact scope (integration surface expansion + profile navigation entry + canonical docs sync).
+- Unrelated-file check:
+  - repository has pre-existing unrelated local changes; this slice only touched the files listed in this entry.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+
+### 2026-03-01 - Schedule adds restaurant Services CTA near New Event
+
+- Suggested Commit Title: `feat(schedule): add restaurant services shortcut and /service entry redirect`
+- Scope: Schedule header CTA update for restaurant businesses.
+- What changed:
+  - Added a restaurant-only `Services` button next to `New Event` in the Schedule header.
+  - `Services` button links to `/service`.
+  - Added canonical `/service` page route that redirects to `/service/tables`.
+- Files changed:
+  - `src/features/schedule/ui/ScheduleClient.tsx`
+  - `app/(dashboard)/service/page.tsx`
+  - `docs/codebase-overview.md`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - `npx eslint src/features/schedule/ui/ScheduleClient.tsx "app/(dashboard)/service/page.tsx"` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 2
+  - changed docs: 2
+  - proportionality reason: exact scope (schedule header CTA + `/service` route entry wrapper + canonical doc sync).
+- Unrelated-file check:
+  - repository has pre-existing unrelated local changes; this slice only touched the files listed in this entry.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+
+### 2026-03-01 - Home balance background logo scaled up with 18% opacity
+
+- Suggested Commit Title: `chore(home): increase background logo scale and lower opacity to 18`
+- Scope: Home balance decorative logo tuning only.
+- What changed:
+  - Increased decorative background logo size in the top balance section (`h-36`).
+  - Reduced logo opacity from 25% to 18% (`opacity-[0.18]`).
+- Files changed:
+  - `app/page.tsx`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - `npx eslint app/page.tsx` -> PASS
+- Diff proportionality:
+  - changed runtime files: 1
+  - changed docs: 1
+  - proportionality reason: exact scope (single visual size/opacity tweak + changelog sync).
+- Unrelated-file check:
+  - repository has pre-existing unrelated local changes; this slice only touched the files listed in this entry.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+
+### 2026-03-01 - Home balance logo changed to larger background treatment
+
+- Suggested Commit Title: `feat(home): turn balance logo into larger blended background mark`
+- Scope: Home header visual styling adjustment only.
+- What changed:
+  - Removed the standalone centered header logo element.
+  - Added the Alamirms logo as a decorative background layer inside the blue balance section.
+  - Moved the logo lower (`top-12`), enlarged it (`h-28`), and reduced prominence (`opacity-25`) so it feels integrated with the background.
+  - Ensured balance text/content stays above the decorative logo with explicit stacking.
+- Files changed:
+  - `app/page.tsx`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - `npx eslint app/page.tsx` -> PASS
+- Diff proportionality:
+  - changed runtime files: 1
+  - changed docs: 1
+  - proportionality reason: exact scope (logo reposition/scale/opacity background treatment + changelog sync).
+- Unrelated-file check:
+  - repository has pre-existing unrelated local changes; this slice only touched the files listed in this entry.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+
+### 2026-03-01 - Home logo repositioned to centered balance header with reduced opacity
+
+- Suggested Commit Title: `feat(home): center and enlarge balance-header logo at 50 opacity`
+- Scope: Home header visual adjustment only.
+- What changed:
+  - Repositioned the Alamirms logo from top-left to centered horizontally in the top balance section header area.
+  - Increased logo size for stronger brand visibility.
+  - Set logo opacity to `50%` (`opacity-50`) per UX request.
+- Files changed:
+  - `app/page.tsx`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - `npx eslint app/page.tsx` -> PASS
+- Diff proportionality:
+  - changed runtime files: 1
+  - changed docs: 1
+  - proportionality reason: exact scope (logo alignment/size/opacity adjustments + changelog sync).
+- Unrelated-file check:
+  - repository has pre-existing unrelated local changes; this slice only touched the files listed in this entry.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+
+### 2026-03-01 - Home header adds Alamirms logo at top-left
+
+- Suggested Commit Title: `feat(home): add alamirms logo to top-left header`
+- Scope: Home page visual polish only.
+- What changed:
+  - Added the existing Alamirms brand logo (`/logotransparentbackground.svg`) to the top-left of the home header bar.
+  - Kept existing right-side action controls unchanged.
+- Files changed:
+  - `app/page.tsx`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - `npx eslint app/page.tsx` -> PASS
+- Diff proportionality:
+  - changed runtime files: 1
+  - changed docs: 1
+  - proportionality reason: exact scope (single header logo addition + required changelog sync).
+- Unrelated-file check:
+  - repository has pre-existing unrelated local changes; this slice only touched the files listed in this entry.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+
+### 2026-03-01 - Home expenses feed switched to rolling 30-day window
+
+- Suggested Commit Title: `feat(home): use rolling 30-day expense feed on dashboard`
+- Scope: Home expenses section behavior update only (no report-layer changes).
+- What changed:
+  - Home expense transactions query now always returns all expense rows from the last 30 days (inclusive), ordered newest-first.
+  - Removed the prior `take: 25` cap for the home expense feed.
+  - Income/expense aggregates for the top financial summary remain period-based (`today/week/month`) and unchanged.
+  - Reports flow remains unchanged; older transactions naturally age out of home feed and remain in reporting datasets.
+- Files changed:
+  - `src/features/home/server/dashboard-summary.repository.ts`
+  - `docs/codebase-overview.md`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - `npx eslint src/features/home/server/dashboard-summary.repository.ts` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 1
+  - changed docs: 2
+  - proportionality reason: exact scope (home expense feed window rule + required canonical docs sync).
+- Unrelated-file check:
+  - repository had pre-existing unrelated local changes; this slice only touched the files listed in this entry.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+
+### 2026-03-01 - Home expenses list refactor with persisted balance-after snapshots
+
+- Suggested Commit Title: `feat(home): flatten expense rows and persist balance-after snapshots`
+- Scope: Home expenses UX polish + additive ledger snapshot persistence for new expense writes.
+- Constitution Restatement:
+  - Task ID: `ADHOC-HOME-EXPENSES-SNAPSHOT-2026-03-01`
+  - Scope sentence: refactor home expense rows into a flat grouped list while persisting `balance_after` snapshots each time a new expense transaction is recorded.
+  - Invariants confirmed: additive-only schema change; no module fork; receipt click-through behavior preserved.
+  - Validation controls confirmed: proportional diff, unrelated-file check, dependency check, env-var check.
+  - UI/UX confirmation: existing tokens only; no new gradient/glow/accent systems.
+- What changed:
+  - Home expenses UI now renders day-grouped, divider-separated rows without per-row card containers (`HomeTransactionsLayer`).
+  - Receipt click behavior remains unchanged (`/receive/receipt/:id` row navigation preserved).
+  - Added `FinancialTransaction.balance_after` (nullable decimal) via additive Prisma schema + migration.
+  - Added shared snapshot helper `resolveBalanceAfterSnapshot` under `src/features/finance/server`.
+  - Wired balance snapshot persistence into expense creation paths:
+    - shopping commit ledger write
+    - document-intake post ledger write
+    - manual/core financial ingestion upsert create path
+  - Extended home dashboard transaction contract to expose `balance_after` for row rendering.
+- Files changed:
+  - `src/features/home/ui/HomeTransactionsLayer.tsx`
+  - `src/features/home/shared/dashboard-summary.contracts.ts`
+  - `src/features/finance/server/balance-snapshot.service.ts`
+  - `src/features/shopping/server/commit.service.ts`
+  - `src/features/documents/server/document-post.service.ts`
+  - `app/actions/core/financial.ts`
+  - `prisma/schema.prisma`
+  - `prisma/migrations/20260301143000_financial_transaction_balance_after_snapshot/migration.sql`
+  - `docs/codebase-overview.md`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - `npx prisma generate` -> PASS
+  - `npx prisma validate` -> PASS
+  - `npx eslint src/features/home/ui/HomeTransactionsLayer.tsx src/features/home/shared/dashboard-summary.contracts.ts src/features/finance/server/balance-snapshot.service.ts src/features/shopping/server/commit.service.ts src/features/documents/server/document-post.service.ts app/actions/core/financial.ts` -> PASS
+  - `node --test src/features/documents/server/document-post.service.test.mjs` -> PASS (8 tests)
+  - `npx tsc --noEmit --incremental false` -> PASS
+- Diff proportionality:
+  - changed runtime files: 6
+  - changed schema files: 2 (`prisma/schema.prisma` + additive migration SQL)
+  - changed docs: 2
+  - proportionality reason: exact scope (home expense-row UX + expense snapshot persistence + required canonical doc sync).
+- Unrelated-file check:
+  - repository had pre-existing unrelated local modifications; this slice only touched the files listed in this entry.
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+- Notes:
+  - Existing historical transactions may have `balance_after = null`; new expense writes persist snapshots moving forward.
+
+### 2026-03-01 - Profile page redesigned to compact settings-style layout
+
+- Suggested Commit Title: `feat(profile): redesign settings layout with compact toggles and minimal logout`
+- Scope: Profile UX refactor (layout + toggle control style only).
+- What changed:
+  - Reworked profile screen into an Apple-settings-inspired hierarchy with a compact account header row.
+  - Replaced large segmented dark-mode control with a small switch-style toggle.
+  - Replaced large Host/Kitchen card buttons with a small switch-style toggle while preserving local-storage mode behavior.
+  - Removed large logout container and moved logout to a minimal bottom action.
+- Files changed:
+  - `app/(dashboard)/profile/page.tsx`
+  - `components/theme/theme-toggle.tsx`
+  - `src/features/table-service/ui/TableServiceModeToggleCard.tsx`
+  - `docs/codebase-overview.md`
+  - `docs/codebase-changelog.md`
+- Validation run:
+  - `npx eslint "app/(dashboard)/profile/page.tsx" components/theme/theme-toggle.tsx src/features/table-service/ui/TableServiceModeToggleCard.tsx` -> PASS
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.launch-smoke.test.ts` -> PASS
+- Notes:
+  - Runtime behavior is unchanged (theme storage key and table-service workspace mode key logic preserved).
+
+### 2026-03-01 - UX polish: integrations page redesign, intake supplier_sync removal, home "+" integration shortcut
+
+- Suggested Commit Title: `feat(ux): redesign integrations page, remove supplier_sync from intake, add home integration shortcut`
+- Scope: Ad-hoc UX polish session — no plan task ID (post-plan UX cleanup).
+- Summary of changes:
+  1. **Integrations page redesign** — replaced verbose card-per-provider layout with a clean flat list grouped by provider type.
+  2. **Supplier Sync removed from intake** — `supplier_sync` intent fully removed from intake contracts, capability service, session contracts, and Hub UI.
+  3. **Home income layer "+" shortcut** — added small `+` button next to stream count in `HomeIncomeLayer`, routes to `/integrations`, only shown when `integrations` module is enabled.
+  4. **Provider logo images** — replaced letter-initial avatars in integration rows with actual provider logos from `/public/provider-pics/`; per-image scale config added.
+  5. **Provider type grouping** — `IncomeConnectionsPageClient` now groups rows into labeled sections (Point of Sale / Food Delivery / Payments) with a separate rounded container per group.
+- Deliverables:
+  - `src/features/integrations/ui/IncomeProviderConnectCard.tsx` — full rewrite: flat row (logo → name → status text → chevron); `PROVIDER_IMAGE` map with per-provider `scale` config; whole row is a `<Link>` when OAuth is configured, greyed-out `<div>` when not.
+  - `src/features/integrations/ui/IncomeConnectionsPageClient.tsx` — full rewrite: removed verbose header card; `groupCards()` groups by `provider.type` in defined order; each group renders its own labeled + rounded container with intra-group dividers.
+  - `src/features/intake/shared/intake.contracts.ts` — removed `supplier_sync` from `INTAKE_INTENTS`, labels, descriptions, capabilities, and `INTAKE_INTENT_ORDER_BY_INDUSTRY` for all industries.
+  - `src/features/intake/shared/intake-capability.service.ts` — cleared `MODULE_GATED_CAPABILITIES` (was `{supplier_sync: "integrations"}`, now `{}`).
+  - `src/features/intake/shared/intake-session.contracts.ts` — removed `supplier_sync` case from `buildIntakeSessionRoute`; `"integration"` origin now maps to `"bulk_intake"` in `deriveIntentFromSessionOrigin`.
+  - `src/features/intake/ui/IntakeHubClient.tsx` — removed `supplier_sync` from `INTENT_HREF`, `INTENT_ICON`, `INTENT_COLOR`.
+  - `src/features/home/ui/HomeIncomeLayer.tsx` — added `showAddIntegration?: boolean` prop; renders a `+` `<Link>` to `/integrations` next to stream count when prop is true.
+  - `app/page.tsx` — passes `showAddIntegration={enabledModules?.includes("integrations") ?? false}` to `HomeIncomeLayer`.
+  - `public/provider-pics/` — new folder with provider logo images (GoDaddy POS, Uber Eats, DoorDash, Square, Stripe, Toast, SkipTheDishes).
+- Touched Files:
+  - `src/features/integrations/ui/IncomeProviderConnectCard.tsx` (rewritten)
+  - `src/features/integrations/ui/IncomeConnectionsPageClient.tsx` (rewritten)
+  - `src/features/intake/shared/intake.contracts.ts` (updated)
+  - `src/features/intake/shared/intake-capability.service.ts` (updated)
+  - `src/features/intake/shared/intake-session.contracts.ts` (updated)
+  - `src/features/intake/ui/IntakeHubClient.tsx` (updated)
+  - `src/features/home/ui/HomeIncomeLayer.tsx` (updated)
+  - `app/page.tsx` (updated)
+  - `public/provider-pics/*.{png,jpg}` (added — 7 images)
+  - `docs/codebase-changelog.md` (updated)
+  - `docs/codebase-overview.md` (updated)
+- Validation:
+  - `npx tsc --noEmit --incremental false` -> PASS
+  - `npx eslint src/features/integrations/ui/IncomeProviderConnectCard.tsx src/features/integrations/ui/IncomeConnectionsPageClient.tsx src/features/home/ui/HomeIncomeLayer.tsx` -> PASS
+- Dependency change check: no new npm dependencies (Next.js `<Image>` used for provider logos — built-in).
+- Env-var change check: no new env vars introduced.
 
 ### 2026-02-28 - RTS-05-e completed: host/kitchen workspace exit control
 
@@ -4401,12 +5072,3 @@ Entry format (recommended):
 - Notes:
   - <caveats / follow-up / accepted exceptions>
 ```
-
-
-
-
-
-
-
-
-

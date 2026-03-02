@@ -1,19 +1,9 @@
-import { requireBusinessMembership } from "@/core/auth/tenant";
-import { listIncomeProviderConnectionCardsForBusiness } from "@/features/integrations/server";
-import { IncomeOnboardingWizardClient } from "@/features/integrations/ui";
+import { redirect } from "next/navigation";
+import {
+  FIRST_ONBOARDING_INCOME_SOURCE_STEP_ID,
+  getOnboardingIncomeSourceStepPath,
+} from "@/features/integrations/shared/onboarding-flow";
 
-export default async function IncomeSourcesOnboardingPage() {
-  const { business } = await requireBusinessMembership();
-  const cards = await listIncomeProviderConnectionCardsForBusiness({
-    businessId: business.id,
-    industryType: business.industry_type,
-    returnToPath: "/onboarding/income-sources",
-  });
-
-  return (
-    <IncomeOnboardingWizardClient
-      industryType={business.industry_type}
-      cards={cards}
-    />
-  );
+export default function IncomeSourcesOnboardingPage() {
+  redirect(getOnboardingIncomeSourceStepPath(FIRST_ONBOARDING_INCOME_SOURCE_STEP_ID));
 }

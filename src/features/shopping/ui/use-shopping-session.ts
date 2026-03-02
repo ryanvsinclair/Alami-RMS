@@ -341,14 +341,20 @@ export function useShoppingSession(refs: ShoppingSessionRefs) {
     }
   }
 
-  async function handleQuickBarcodeAdd() {
-    if (!session || !quickBarcode.trim()) return;
+  async function handleQuickBarcodeAdd(barcodeOverride?: string) {
+    const normalizedBarcode = (barcodeOverride ?? quickBarcode).trim();
+    if (!session || !normalizedBarcode) return;
+
+    if (barcodeOverride) {
+      setQuickBarcode(normalizedBarcode);
+    }
+
     setQuickScanLoading(true);
     setError("");
     try {
       const result = await addShoppingSessionItemByBarcodeQuick({
         session_id: session.id,
-        barcode: quickBarcode.trim(),
+        barcode: normalizedBarcode,
       });
       setSession(result.session as ShoppingSession);
       setQuickScanFeedback(result.quick_scan);

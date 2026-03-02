@@ -1,6 +1,7 @@
 import { requireBusinessMembership } from "@/core/auth/tenant";
 import { listIncomeProviderConnectionCardsForBusiness } from "@/features/integrations/server";
 import { IncomeConnectionsPageClient } from "@/features/integrations/ui";
+import { CALENDAR_PROVIDER_CATALOG } from "@/features/schedule/shared";
 
 export default async function IntegrationsPage({
   searchParams,
@@ -21,11 +22,12 @@ export default async function IntegrationsPage({
     industryType: business.industry_type,
     returnToPath: "/integrations",
   });
+  const calendarProviders = [...CALENDAR_PROVIDER_CATALOG];
 
   return (
     <IncomeConnectionsPageClient
-      industryType={business.industry_type}
       cards={cards}
+      calendarProviders={calendarProviders}
       feedback={params}
     />
   );

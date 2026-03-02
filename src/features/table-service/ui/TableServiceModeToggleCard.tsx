@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import {
   TABLE_SERVICE_WORKSPACE_MODES,
   TABLE_SERVICE_WORKSPACE_MODE_STORAGE_KEY,
@@ -30,29 +28,39 @@ export default function TableServiceModeToggleCard() {
     window.localStorage.setItem(TABLE_SERVICE_WORKSPACE_MODE_STORAGE_KEY, nextMode);
   }
 
+  const isKitchen = mode === "kitchen";
+
   return (
-    <Card className="p-5">
-      <p className="text-xs uppercase tracking-wide text-muted">Table Service Mode</p>
-      <p className="mt-2 text-sm text-muted">
-        Choose default workspace emphasis for launch operations.
-      </p>
-      <div className="mt-4 grid grid-cols-2 gap-2">
-        <Button
-          variant={mode === "host" ? "primary" : "secondary"}
-          onClick={() => setWorkspaceMode("host")}
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-foreground">Kitchen Mode</p>
+          <p className="text-xs text-muted">
+            {isKitchen ? "On (Kitchen)" : "Off (Host)"}
+          </p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={isKitchen}
+          aria-label={`Workspace mode: ${isKitchen ? "Kitchen" : "Host"}`}
+          onClick={() => setWorkspaceMode(isKitchen ? "host" : "kitchen")}
+          className={`relative inline-flex h-6 w-11 items-center rounded-full border transition-colors ${
+            isKitchen
+              ? "border-primary/45 bg-primary/65"
+              : "border-border bg-foreground/10"
+          }`}
         >
-          Host
-        </Button>
-        <Button
-          variant={mode === "kitchen" ? "primary" : "secondary"}
-          onClick={() => setWorkspaceMode("kitchen")}
-        >
-          Kitchen
-        </Button>
+          <span
+            className={`inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
+              isKitchen ? "translate-x-[1.25rem]" : "translate-x-[0.1rem]"
+            }`}
+          />
+        </button>
       </div>
-      <p className="mt-3 text-xs text-muted">
+      <p className="text-xs text-muted">
         This launch toggle is temporary and will be replaced by role-based access in a future refactor.
       </p>
-    </Card>
+    </div>
   );
 }

@@ -32,7 +32,6 @@ import {
 const INTENT_HREF: Record<IntakeIntent, string> = {
   live_purchase: "/shopping",
   bulk_intake: "/receive",
-  supplier_sync: "/integrations",
 };
 
 // ---------------------------------------------------------------------------
@@ -50,18 +49,11 @@ const INTENT_ICON: Record<IntakeIntent, React.ReactNode> = {
       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15a2.25 2.25 0 0 1 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25Z" />
     </svg>
   ),
-  supplier_sync: (
-    <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h7.5M8.25 17.25h7.5M6.75 9.75h10.5v4.5H6.75v-4.5Z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 3.75v3m6-3v3m-6 10.5v3m6-3v3" />
-    </svg>
-  ),
 };
 
 const INTENT_COLOR: Record<IntakeIntent, string> = {
   live_purchase: "text-blue-300 bg-blue-400/14 ring-1 ring-inset ring-blue-300/26",
   bulk_intake: "text-success bg-success/14 ring-1 ring-inset ring-success/26",
-  supplier_sync: "text-violet-300 bg-violet-400/14 ring-1 ring-inset ring-violet-300/26",
 };
 
 // ---------------------------------------------------------------------------

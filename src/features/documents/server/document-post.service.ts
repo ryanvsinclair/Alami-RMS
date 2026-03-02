@@ -66,6 +66,15 @@ interface CreateDocumentPostServiceOptions {
   prismaClient?: DocumentPostPrismaClient;
   globalTrustThreshold?: number;
   now?: () => Date;
+  resolveBalanceAfterSnapshot?: (
+    client: unknown,
+    input: {
+      businessId: string;
+      occurredAt: Date;
+      amount: number | string | null | undefined;
+      type: "income" | "expense";
+    },
+  ) => Promise<number | null>;
 }
 
 export interface PostDraftResult {
@@ -160,6 +169,7 @@ export function createDocumentPostService(options: CreateDocumentPostServiceOpti
   const repositoryPrisma = prismaClient;
   const globalTrustThreshold = options.globalTrustThreshold ?? DEFAULT_VENDOR_TRUST_THRESHOLD;
   const now = options.now ?? (() => new Date());
+  const resolveSnapshot = options.resolveBalanceAfterSnapshot ?? (async () => null);
 
   async function postDraft(
     businessId: string,
@@ -193,6 +203,12 @@ export function createDocumentPostService(options: CreateDocumentPostServiceOpti
       const occurredAt = draft.parsed_date ?? now();
       const amount = toNumber(draft.parsed_total) ?? 0;
       const description = draft.parsed_vendor_name?.trim() || "Unknown Vendor";
+      const balanceAfter = await resolveSnapshot(tx, {
+        businessId,
+        occurredAt,
+        amount,
+        type: "expense",
+      });
 
       const financialTransaction = await tx.financialTransaction.upsert({
         where: {
@@ -208,6 +224,7 @@ export function createDocumentPostService(options: CreateDocumentPostServiceOpti
           source: "document_intake",
           amount,
           occurred_at: occurredAt,
+          balance_after: balanceAfter,
           description,
           external_id: draftId,
           metadata: {
@@ -365,9 +382,14 @@ let defaultServicePromise:
 
 async function getDefaultService() {
   if (!defaultServicePromise) {
-    defaultServicePromise = import("@/server/db/prisma").then(({ prisma }) =>
+    defaultServicePromise = Promise.all([
+      import("@/server/db/prisma"),
+      import("@/features/finance/server/balance-snapshot.service"),
+    ]).then(([{ prisma }, { resolveBalanceAfterSnapshot }]) =>
       createDocumentPostService({
         prismaClient: prisma as unknown as DocumentPostPrismaClient,
+        resolveBalanceAfterSnapshot:
+          resolveBalanceAfterSnapshot as CreateDocumentPostServiceOptions["resolveBalanceAfterSnapshot"],
       }),
     );
   }

@@ -1,18 +1,18 @@
-# Codebase Overview and Engineering Guide
+﻿# Codebase Overview and Engineering Guide
 
 Status: Active (living document)
-Last Updated: 2026-02-28
+Last Updated: 2026-03-02
 Primary Purpose: Current architecture reference, implementation summary, and feature-placement rules.
 
 ---
 
-## 🔐 Backend Architecture Reference
+## ðŸ” Backend Architecture Reference
 
 > **MANDATORY READ FOR ALL BACKEND WORK**
 >
 > All backend system understanding must be derived from:
 >
-> **[docs/MASTER_BACKEND_ARCHITECTURE.md](./MASTER_BACKEND_ARCHITECTURE.md)**
+> **[docs/active/MASTER_BACKEND_ARCHITECTURE.md](./MASTER_BACKEND_ARCHITECTURE.md)**
 >
 > This document is the **authoritative source of truth** for:
 > - Live database schema (introspected directly from Supabase)
@@ -49,30 +49,30 @@ What this document is not:
 
 Related historical/planning docs (still useful for deep history):
 
-- `docs/codebase-changelog.md` (chronological engineering changelog + validation record)
-- `docs/master-plan-v1.md` (archived canonical execution ledger; all v1 checklist items complete)
-- `docs/master-plan-v2.md` (active canonical tracker for the restaurant launch major refactor program)
-- `docs/app-structure-refactor-agent-playbook.md` (refactor execution history and wrapper decisions)
-- `docs/inventoryintakeplan.md` (inventory/barcode/receipt/enrichment rollout history)
-- `docs/combined-plan-coordination.md` (cross-plan sequencing and handoff history)
-- `docs/income-integrations-onboarding-plan.md` (business-type onboarding + income provider OAuth/sync rollout plan)
-- `docs/receipt-post-ocr-correction-plan.md` (post-TabScanner numeric/structural correction and reconciliation accuracy plan)
-- `docs/unified-inventory-intake-refactor-plan.md` (intent-first regrouping plan to unify Shopping + Receive under a single Inventory Intake Hub without changing core feature behavior)
-- `docs/operational-calendar-schedule-plan.md` (Operational Calendar plan — COMPLETE; OC-00 through OC-07 closed)
+- `docs/active/codebase-changelog.md` (chronological engineering changelog + validation record)
+- `docs/active/master-plan-v2.md` (active canonical tracker for the restaurant launch major refactor program)
+- `docs/archive/completed-plans/master-plan-v1.md` (archived canonical execution ledger; all v1 checklist items complete)
+- `docs/archive/completed-plans/app-structure-refactor-agent-playbook.md` (refactor execution history and wrapper decisions)
+- `docs/archive/completed-plans/inventoryintakeplan.md` (inventory/barcode/receipt/enrichment rollout history)
+- `docs/archive/completed-plans/combined-plan-coordination.md` (cross-plan sequencing and handoff history)
+- `docs/archive/completed-plans/income-integrations-onboarding-plan.md` (business-type onboarding + income provider OAuth/sync rollout plan)
+- `docs/archive/completed-plans/receipt-post-ocr-correction-plan.md` (post-TabScanner numeric/structural correction and reconciliation accuracy plan)
+- `docs/archive/completed-plans/unified-inventory-intake-refactor-plan.md` (intent-first regrouping plan to unify Shopping + Receive under a single Inventory Intake Hub without changing core feature behavior)
+- `docs/archive/completed-plans/operational-calendar-schedule-plan.md` (Operational Calendar plan — COMPLETE; OC-00 through OC-07 closed)
 
 ## Maintenance Rules (Required)
 
-After every meaningful code or docs change, update this overview and/or `docs/codebase-changelog.md` as required.
+After every meaningful code or docs change, update this overview and/or `docs/active/codebase-changelog.md` as required.
 
 Minimum required updates:
 
-1. Append a new entry at the top of `docs/codebase-changelog.md`.
+1. Append a new entry at the top of `docs/active/codebase-changelog.md`.
 2. If file placement/canonical paths changed, update `## Architecture Map` and `## Feature Placement Rules`.
 3. If behavior changed, update the relevant feature section(s) under `## Product Capabilities` or `## Core Workflows`.
 4. If a new exception/deviation was introduced, add it to `## Accepted Exceptions and Known Validation Gaps`.
-5. Record validation commands actually run (and failures/exceptions) in the changelog entry in `docs/codebase-changelog.md`.
+5. Record validation commands actually run (and failures/exceptions) in the changelog entry in `docs/active/codebase-changelog.md`.
 
-Changelog policy (`docs/codebase-changelog.md`):
+Changelog policy (`docs/active/codebase-changelog.md`):
 
 - Append new entries at the top (newest first).
 - Keep entries concise but concrete: what changed, which files, validation, caveats.
@@ -85,7 +85,7 @@ High-level completion:
 - App structure refactor plan: complete through Phase 8 (manual core-flow smoke deferred to user/integrated QA).
 - Inventory intake plan: complete through Phases 0, A, B, C, D, E.
 - Combined coordination plan: complete (manual integrated smoke remains a user QA task).
-- Master execution tracker: `docs/master-plan-v1.md` archived complete; `docs/master-plan-v2.md` is the active canonical tracker.
+- Master execution tracker: `docs/archive/completed-plans/master-plan-v1.md` archived complete; `docs/active/master-plan-v2.md` is the active canonical tracker.
 
 What remains outside plan completion:
 
@@ -93,7 +93,7 @@ What remains outside plan completion:
 - Receipt post-OCR correction plan is complete through Phase 6 closeout (`RC-19`), with non-blocking follow-ups tracked separately.
 - **Income Integrations Onboarding Plan: COMPLETE** (all phases IN-00 through IN-08, security checklist 7/7).
 - **Unified Inventory Intake Refactor Plan: COMPLETE** (all phases UI-00 through UI-06). `/intake` is the canonical Hub entry; capability-gating via `resolveVisibleIntents()`; all migration-era scaffolding removed; `/shopping` and `/receive` remain as full feature routes under the Hub.
-- **Operational Calendar Plan: COMPLETE** — OC-00 through OC-07 shipped (activation, shell, provider sync, scheduling connectors, suggestions, ops hardening, closure/archive transition).
+- **Operational Calendar Plan: COMPLETE** â€” OC-00 through OC-07 shipped (activation, shell, provider sync, scheduling connectors, suggestions, ops hardening, closure/archive transition).
 
 ## Stack
 
@@ -166,7 +166,7 @@ Current feature folders:
 - `src/features/contacts`
 - `src/features/finance`
 - `src/features/home`
-- `src/features/intake` (new — Unified Inventory Intake refactor; Phase 0 contracts only)
+- `src/features/intake` (new â€” Unified Inventory Intake refactor; Phase 0 contracts only)
 - `src/features/documents` (new - Document Intake DI-00 schema/contracts baseline)
 - `src/features/integrations`
 - `src/features/inventory`
@@ -271,11 +271,11 @@ Implemented capabilities:
 - Industry-aware intent card ordering via `INTAKE_INTENT_ORDER_BY_INDUSTRY` (from `src/features/intake/shared/`)
 - Restaurant-first launch support lock via `INDUSTRY_LAUNCH_SUPPORT_MAP` (`restaurant=full`, others=`planned`)
 - Intake launch guardrails codified in shared contracts (`intake_source` + `inventory_eligibility` vocabulary + invariant lock)
-- Three intent cards routing to existing flows:
-  - **Live Purchase** → `/shopping` (existing Shopping flow, unchanged)
-  - **Bulk Intake** → `/receive` (existing Receive flow, unchanged)
-  - **Supplier Sync** → `/integrations` (module-gated; only shown when `integrations` module is enabled)
+- Two intent cards routing to existing flows:
+  - **Live Purchase** â†’ `/shopping` (existing Shopping flow, unchanged)
+  - **Bulk Intake** â†’ `/receive` (existing Receive flow, unchanged)
 - `Intake` nav entry in bottom nav (consolidated standalone `/receive` and `/shopping` tabs into the Hub proxy)
+- Note: `supplier_sync` intent was removed â€” `/integrations` is accessible from the home income layer `+` shortcut instead
 - All existing routes fully operational (no behavior changes)
 
 Canonical paths:
@@ -284,7 +284,7 @@ Canonical paths:
 - `src/features/intake/shared/intake-session.contracts.ts` (session orchestration adapter: status mappings, `IntakeSessionSummary` DTO, route builder)
 - `src/features/intake/shared/intake-capability.service.ts` (capability gating: `resolveIntakeCapabilities`, `isIntentVisible`, `resolveVisibleIntents`)
 - `lib/config/presets.ts` (industry presets + launch support map)
-- `src/features/intake/ui/IntakeHubClient.tsx` (Hub UI component — uses `resolveVisibleIntents()`)
+- `src/features/intake/ui/IntakeHubClient.tsx` (Hub UI component â€” uses `resolveVisibleIntents()`)
 - `app/(dashboard)/intake/page.tsx` (route wrapper)
 
 Migration posture:
@@ -297,6 +297,15 @@ Migration posture:
 Implemented capabilities:
 
 - `industry_type` remains the canonical signup input for business provisioning.
+- Signup collects user identity fields (`first_name`, `last_name`, `date_of_birth`) and stores them in Supabase Auth user metadata on account creation.
+- Signup now uses a client-side 3-step flow with horizontal slide transitions and per-step Continue controls:
+  - Step 1: names + date of birth
+  - Step 2: business details
+  - Step 3: email + phone + password
+- Signup enforces `password` + `confirm_password` parity server-side to prevent typo-based account lockouts.
+- Industry selection is now dropdown-based with restaurant-first launch gating: only `restaurant` is selectable; all other industries are marked coming soon.
+- Business name collection is consolidated with the restaurant-place section as the final part of the signup form.
+- Signup captures `phone` in step 3 and stores it in Supabase Auth user metadata at account creation.
 - Signup now supports optional restaurant place capture (`google_place_id`, formatted address, latitude, longitude) with explicit skip behavior.
 - Business provisioning persists optional place metadata on `Business` when supplied.
 - Restaurant businesses now default-enable `table_service` alongside existing launch modules.
@@ -445,7 +454,7 @@ Implemented capabilities:
 - Kitchen queue now supports per-item lifecycle status updates (`pending`, `preparing`, `ready_to_serve`, `served`, `cancelled`) with immediate refresh after each change.
 - Kitchen queue now collapses orders from visible list when all items are terminal (`served`/`cancelled`) while keeping orders open until explicit close flow.
 - Kitchen queue now shows overdue urgency styling/labels when `due_at` is past, without changing FIFO ordering.
-- Profile page now includes table-service launch mode toggle (`Host` / `Kitchen`) for restaurant businesses with `table_service` enabled.
+- Profile page now uses a settings-style layout with a compact account header row, small dark-mode switch, a direct `Integrations` settings row, and small Host/Kitchen workspace switch (restaurant + `table_service` only).
 - Home route now auto-redirects restaurant users to `/service/kitchen` when profile mode is set to `Kitchen`.
 - Host and kitchen workspace headers now include `Exit to App`, which clears the launch-mode local-storage key and routes to `/`.
 - Table-service launch smoke coverage now lives in `src/features/table-service/shared/table-service.launch-smoke.test.ts`.
@@ -475,6 +484,7 @@ Canonical paths:
 Implemented capabilities:
 
 - `/schedule` route provides Day/Week/Month master shell and source filters from OC-02.
+- `/schedule` now shows a restaurant-only `Services` shortcut CTA near `New Event` to jump to table-service routes.
 - Provider catalog + sync health shell (SourceHealthBar) from OC-03 is active.
 - Scheduling-platform server foundation is active for Phase 3 expansion:
   - connector registry for appointment/reservation providers
@@ -507,47 +517,65 @@ Canonical paths:
 - `src/features/schedule/server/schedule-ops.service.ts`
 - `src/features/schedule/ui/ScheduleClient.tsx`
 - `app/(dashboard)/schedule/page.tsx`
+- `app/(dashboard)/service/page.tsx` (canonical `/service` entrypoint redirect to `/service/tables`)
 
 ### Home dashboard financial layers (interactive)
 
 Implemented capabilities:
 
-- Layered home financial surfaces with separate income and expense/transactions sheets
-- Income-layer tap interaction collapses the transactions sheet to reveal income-source breakdown
-- Expense-focused transactions sheet (recent expense activity only)
-- Business-type-aware income source ordering (for example restaurant POS + delivery channels first)
-- Receipt-linked expense rows now include explicit `View Photo` cue when navigating to receipt detail
+- Home route now uses a 3-zone layout:
+  - full-width top nav (Profile, Search, Reports, Contacts)
+  - centered hero balance with 3-way toggle (`Balance` / `Income` / `Expenses`)
+  - unified activity list card below the hero
+- Hero supports two primary actions:
+  - `Add Receipt` -> `/receive/photo`
+  - `Scan Barcode` -> `/receive/barcode`
+- `balanceView` drives both displayed hero value and activity filtering:
+  - `balance` shows net and all rows
+  - `income` shows income total and income rows only
+  - `expenses` shows expense total and expense rows only
+- Activity list is day-grouped, divider-based, and combines both income + expense transactions in a single component
+- Rows retain source icon metadata and receipt click-through (`/receive/receipt/[id]`) when `receipt_id` exists
+- `+ Integrations` shortcut is rendered in the activity list header and routes to `/integrations`
+- Existing kitchen redirect logic, watermark treatment, `BusinessConfigProvider`, and bottom nav behavior are preserved
 
 Canonical paths:
 
-- `src/features/home/ui/*`
+- `src/features/home/ui/HomeDashboardClient.tsx`
+- `src/features/home/ui/HomeActivityList.tsx`
+- `src/features/home/ui/home-financial-layer.shared.tsx`
 - `src/features/home/server/*`
 - `src/features/home/shared/*`
 
 Wrappers:
 
-- `app/page.tsx` (route composition/state wiring)
+- `app/page.tsx` (thin server wrapper + home-specific viewport theme color)
 - `app/actions/core/financial.ts` (`getDashboardSummary` wrapper delegates to feature server)
 
-### Income integrations — Phase 4 complete (GoDaddy POS + Uber Eats + DoorDash live)
+### Income integrations â€” Phase 4 complete (GoDaddy POS + Uber Eats + DoorDash live)
 
 Implemented capabilities:
 
 - Industry-aware provider catalog and recommendation ordering for onboarding/integrations views
 - Onboarding setup route (`/onboarding/income-sources`) with provider cards, status badges, and skip flow
-- Dashboard integrations route (`/integrations`) with connection status, last-sync timestamps, and sync buttons
+- Dashboard integrations route (`/integrations`) now presents a unified external-data connection surface:
+  - income providers grouped by provider type (Point of Sale / Food Delivery / Payments), with logo rows and OAuth connect flow where configured
+  - calendar/scheduling/reservation providers grouped by provider category (General Calendar / Booking Platforms / Reservation Platforms), with rollout status labels
+- Provider logos served from `/public/provider-pics/`; per-provider scale config in `PROVIDER_IMAGE` map in `IncomeProviderConnectCard.tsx`
+- Profile settings links directly to `/integrations` via an `Integrations` row.
+- Home activity list (`HomeActivityList`) shows a `+ Integrations` shortcut to `/integrations` (integrations is a core feature)
 - Provider-agnostic OAuth core active via:
   - `/api/integrations/oauth/[provider]/start`
   - `/api/integrations/oauth/[provider]/callback`
 - OAuth state hashing + one-time state consumption + PKCE + token encryption in feature server services
 - Three live provider sync adapters (all follow same normalization contract):
-  - `godaddy-pos.provider.ts` — POS events; `GET /api/integrations/sync/godaddy-pos/manual`
-  - `uber-eats.provider.ts` — order/payout events; `GET /api/integrations/sync/uber-eats/manual`
-  - `doordash.provider.ts` — delivery/order events; `GET /api/integrations/sync/doordash/manual`
-- Generic `runProviderManualSync` shared runner in `sync.service.ts` — all providers use same upsert/projection/log path
-- Provider catalog `SYNC_ENABLED_PROVIDERS` + `buildSyncHref` — one line to enable sync for a new provider
+  - `godaddy-pos.provider.ts` â€” POS events; `GET /api/integrations/sync/godaddy-pos/manual`
+  - `uber-eats.provider.ts` â€” order/payout events; `GET /api/integrations/sync/uber-eats/manual`
+  - `doordash.provider.ts` â€” delivery/order events; `GET /api/integrations/sync/doordash/manual`
+- Generic `runProviderManualSync` shared runner in `sync.service.ts` â€” all providers use same upsert/projection/log path
+- Provider catalog `SYNC_ENABLED_PROVIDERS` + `buildSyncHref` â€” one line to enable sync for a new provider
 - `IncomeEvent` upsert (idempotent on `connection_id + external_id`) + `FinancialTransaction` projection (idempotent on `business_id + source + external_id`)
-- `ExternalSyncLog` records every sync run (running → success/failed) with record counts
+- `ExternalSyncLog` records every sync run (running â†’ success/failed) with record counts
 - `lastSyncAt` surfaced in connection card contract and UI
 - Home dashboard income breakdown already consumes all three sources (`godaddy_pos`, `uber_eats`, `doordash`)
 
@@ -565,6 +593,7 @@ Canonical paths:
 - `src/features/integrations/providers/uber-eats.provider.ts`
 - `src/features/integrations/providers/doordash.provider.ts`
 - `src/features/integrations/ui/*`
+- `src/features/schedule/shared/schedule-provider.contracts.ts` (calendar/scheduling/reservation provider catalog surfaced on `/integrations`)
 
 Route wrappers:
 
@@ -599,7 +628,7 @@ Connection health indicators (Phase 6 complete):
 
 Production hardening (Phase 7 complete):
 
-- Token expiry guard in `runProviderManualSync`: checks `token_expires_at <= now` → calls `markIncomeConnectionExpired` (status="expired") → throws; requires reconnect
+- Token expiry guard in `runProviderManualSync`: checks `token_expires_at <= now` â†’ calls `markIncomeConnectionExpired` (status="expired") â†’ throws; requires reconnect
 - `markIncomeConnectionExpired` in `connections.repository.ts`: last_error_code="token_expired", status="expired"
 - `INCOME_PROVIDER_OAUTH_SCOPES` in `oauth.contracts.ts`: least-privilege read-only scopes per provider
 - `INCOME_TOKEN_KEY_VERSION = "v1"` with key rotation runbook in `oauth.contracts.ts`
@@ -794,6 +823,7 @@ Route/action wrappers remain in `app/(dashboard)` and `app/actions/core`.
 Core operational entities:
 
 - `Business`
+- `FinancialTransaction` (includes optional `balance_after` running-balance snapshot)
 - `InventoryItem` (includes optional `image_url`)
 - `ItemBarcode`
 - `ItemAlias`

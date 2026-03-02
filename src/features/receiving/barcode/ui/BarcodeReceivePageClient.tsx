@@ -5,6 +5,7 @@ import { Input } from "@/shared/ui/input";
 import { Button } from "@/shared/ui/button";
 import { Card } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
+import { BarcodeCameraScanner } from "@/shared/ui/barcode-camera-scanner";
 import { ItemNotFound } from "@/shared/components/flows/item-not-found";
 import { ingestByBarcode } from "@/app/actions/core/ingestion";
 import { resolveBarcode } from "@/app/actions/core/barcode-resolver";
@@ -34,13 +35,19 @@ export default function BarcodeReceivePageClient() {
   const [error, setError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  async function handleBarcodeScan() {
-    if (!barcode.trim()) return;
+  async function handleBarcodeScan(barcodeOverride?: string) {
+    const normalizedBarcode = (barcodeOverride ?? barcode).trim();
+    if (!normalizedBarcode) return;
+
+    if (barcodeOverride) {
+      setBarcode(normalizedBarcode);
+    }
+
     setLoading(true);
     setError("");
 
     try {
-      const resolution = await resolveBarcode({ barcode: barcode.trim() });
+      const resolution = await resolveBarcode({ barcode: normalizedBarcode });
       if (resolution.status === "resolved") {
         setFoundItem(resolution.item as ReceiveInventoryItemOption);
         setStep("quantity");
@@ -127,12 +134,23 @@ export default function BarcodeReceivePageClient() {
             placeholder="Scan or type barcode..."
             value={barcode}
             onChange={(e) => setBarcode(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleBarcodeScan()}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                void handleBarcodeScan();
+              }
+            }}
             autoFocus
             inputMode="numeric"
           />
+          <BarcodeCameraScanner
+            disabled={loading}
+            triggerLabel="Scan With Camera"
+            onDetected={(detectedBarcode) => {
+              void handleBarcodeScan(detectedBarcode);
+            }}
+          />
           {error && <p className="text-sm text-danger">{error}</p>}
-          <Button onClick={handleBarcodeScan} loading={loading} className="w-full" size="lg">
+          <Button onClick={() => void handleBarcodeScan()} loading={loading} className="w-full" size="lg">
             Look Up
           </Button>
         </>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   DEFAULT_THEME,
   isThemeMode,
@@ -22,45 +22,33 @@ function applyTheme(theme: ThemeMode) {
 }
 
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<ThemeMode>(DEFAULT_THEME);
-
-  useEffect(() => {
-    setTheme(readTheme());
-  }, []);
+  const [theme, setTheme] = useState<ThemeMode>(() => readTheme());
 
   const setMode = (next: ThemeMode) => {
     setTheme(next);
     applyTheme(next);
   };
 
+  const isDark = theme === "dark";
+
   return (
-    <div
-      className="inline-flex rounded-2xl border border-border bg-card/70 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
-      role="tablist"
-      aria-label="Color mode"
+    <button
+      type="button"
+      role="switch"
+      aria-checked={isDark}
+      aria-label={`Color mode: ${isDark ? "Dark" : "Light"}`}
+      onClick={() => setMode(isDark ? "light" : "dark")}
+      className={`relative inline-flex h-6 w-11 items-center rounded-full border transition-colors ${
+        isDark
+          ? "border-primary/45 bg-primary/65"
+          : "border-border bg-foreground/10"
+      }`}
     >
-      {([
-        { id: "dark", label: "Dark" },
-        { id: "light", label: "Light" },
-      ] as const).map((option) => {
-        const active = theme === option.id;
-        return (
-          <button
-            key={option.id}
-            type="button"
-            role="tab"
-            aria-selected={active}
-            onClick={() => setMode(option.id)}
-            className={`min-w-[78px] rounded-xl px-3 py-2 text-xs font-semibold transition-all ${
-              active
-                ? "bg-primary text-white shadow-[0_4px_12px_rgba(0,127,255,0.22)]"
-                : "text-muted hover:bg-foreground/5 hover:text-foreground"
-            }`}
-          >
-            {option.label}
-          </button>
-        );
-      })}
-    </div>
+      <span
+        className={`inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
+          isDark ? "translate-x-[1.25rem]" : "translate-x-[0.1rem]"
+        }`}
+      />
+    </button>
   );
 }

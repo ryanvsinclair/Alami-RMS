@@ -21,9 +21,9 @@ Primary Purpose: define non-negotiable execution rules that apply to every activ
 8. Multi-tenant and permission boundaries must not regress.
 9. Canonical docs must stay synchronized after each completed slice:
    - active source plan(s)
-   - `docs/master-plan-v2.md`
-   - `docs/codebase-changelog.md`
-   - `docs/codebase-overview.md` when behavior/architecture changes
+   - `docs/active/master-plan-v2.md`
+   - `docs/active/codebase-changelog.md`
+   - `docs/active/codebase-overview.md` when behavior/architecture changes
 10. Each completed checklist step/slice must be committed before advancing:
    - create one scoped git commit to this repository per completed step
    - include task ID in commit message

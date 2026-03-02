@@ -13,6 +13,7 @@ export interface HomeDashboardFinancialTx {
   type: "income" | "expense";
   source: HomeFinancialSource;
   amount: number | string;
+  balance_after: number | string | null;
   description: string | null;
   occurred_at: string;
   shopping_session: {

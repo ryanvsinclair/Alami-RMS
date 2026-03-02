@@ -7,6 +7,7 @@ import { prisma } from "@/core/prisma";
 import { requireBusinessId } from "@/core/auth/tenant";
 import { getHomeDashboardSummary } from "@/features/home/server";
 import type { DashboardPeriod as HomeDashboardPeriod } from "@/features/home/server";
+import { resolveBalanceAfterSnapshot } from "@/features/finance/server/balance-snapshot.service";
 import type { NormalizedTransaction, SyncResult } from "@/modules/integrations/types";
 export type DashboardPeriod = HomeDashboardPeriod;
 
@@ -39,6 +40,13 @@ export async function ingestFinancialTransactions(
 
   for (const record of records) {
     try {
+      const balanceAfter = await resolveBalanceAfterSnapshot(prisma, {
+        businessId,
+        occurredAt: record.occurred_at,
+        amount: record.amount,
+        type: record.type,
+      });
+
       const result = await prisma.financialTransaction.upsert({
         where: {
           business_id_source_external_id: {
@@ -54,6 +62,7 @@ export async function ingestFinancialTransactions(
           amount: record.amount,
           description: record.description,
           occurred_at: record.occurred_at,
+          balance_after: balanceAfter,
           external_id: record.external_id,
           metadata: record.metadata as never ?? undefined,
         },

@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { ItemNotFound } from "@/components/flows/item-not-found";
 import { useShoppingSession } from "@/features/shopping/ui/use-shopping-session";
 import { ItemImage } from "@/shared/ui/item-image";
+import { BarcodeCameraScanner } from "@/shared/ui/barcode-camera-scanner";
 import { QuantityBadge } from "@/shared/ui/quantity-badge";
 import {
   asNumber,
@@ -228,9 +229,18 @@ export default function ShoppingPage() {
                 }}
               />
             </div>
-            <Button onClick={s.handleQuickBarcodeAdd} loading={s.quickScanLoading}>
+            <Button onClick={() => void s.handleQuickBarcodeAdd()} loading={s.quickScanLoading}>
               Scan & Save
             </Button>
+          </div>
+          <div className="mt-2">
+            <BarcodeCameraScanner
+              disabled={s.quickScanLoading || s.receiptScanning}
+              triggerLabel="Scan UPC / EAN With Camera"
+              onDetected={(detectedBarcode) => {
+                void s.handleQuickBarcodeAdd(detectedBarcode);
+              }}
+            />
           </div>
 
           {s.quickScanFeedback && (

@@ -1,5 +1,6 @@
 import { Prisma, type IncomeConnectionStatus, type IncomeProvider } from "@/lib/generated/prisma/client";
 import { prisma } from "@/core/prisma";
+import { markIntegrationsOnboardingCompletedForBusiness } from "@/core/auth/tenant";
 
 export interface UpsertIncomeConnectionInput {
   businessId: string;
@@ -17,7 +18,7 @@ export interface UpsertIncomeConnectionInput {
 }
 
 export async function upsertIncomeConnection(input: UpsertIncomeConnectionInput) {
-  return prisma.businessIncomeConnection.upsert({
+  const connection = await prisma.businessIncomeConnection.upsert({
     where: {
       business_id_provider_id: {
         business_id: input.businessId,
@@ -55,6 +56,12 @@ export async function upsertIncomeConnection(input: UpsertIncomeConnectionInput)
       last_error_message: null,
     },
   });
+
+  if (input.status === "connected") {
+    await markIntegrationsOnboardingCompletedForBusiness(input.businessId);
+  }
+
+  return connection;
 }
 
 export async function findIncomeConnectionByProvider(params: {
@@ -83,7 +90,7 @@ export async function markIncomeConnectionSyncSuccess(params: {
   syncedAt: Date;
   fullSync: boolean;
 }) {
-  return prisma.businessIncomeConnection.update({
+  const connection = await prisma.businessIncomeConnection.update({
     where: { id: params.connectionId },
     data: {
       status: "connected",
@@ -93,6 +100,9 @@ export async function markIncomeConnectionSyncSuccess(params: {
       last_error_message: null,
     },
   });
+
+  await markIntegrationsOnboardingCompletedForBusiness(connection.business_id);
+  return connection;
 }
 
 export async function markIncomeConnectionError(params: {

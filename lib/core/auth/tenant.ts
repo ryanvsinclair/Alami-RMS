@@ -3,6 +3,8 @@ import { requireSupabaseUser } from "@/core/auth/server";
 import { INDUSTRY_PRESETS } from "@/lib/config/presets";
 import type { BusinessRole, IndustryType } from "@/lib/generated/prisma/client";
 
+const INTEGRATIONS_ONBOARDING_START_PATH = "/onboarding/income-sources/pos-payments";
+
 interface EnsureBusinessForUserOptions {
   industryType?: IndustryType;
   googlePlaceId?: string | null;
@@ -99,6 +101,49 @@ export async function requireBusinessMembership() {
     throw new Error("No business membership");
   }
   return { user, business, membership };
+}
+
+export async function markIntegrationsOnboardingCompletedForBusiness(businessId: string) {
+  await prisma.$executeRaw`
+    UPDATE "businesses"
+    SET "integrations_onboarding_completed" = TRUE,
+        "updated_at" = NOW()
+    WHERE "id" = ${businessId}
+      AND "integrations_onboarding_completed" = FALSE
+  `;
+}
+
+async function isIntegrationsOnboardingCompletedForBusiness(businessId: string) {
+  const rows = await prisma.$queryRaw<Array<{ integrations_onboarding_completed: boolean | null }>>`
+    SELECT "integrations_onboarding_completed"
+    FROM "businesses"
+    WHERE "id" = ${businessId}
+    LIMIT 1
+  `;
+  return Boolean(rows[0]?.integrations_onboarding_completed);
+}
+
+export async function resolvePostSignInPathForUser(userId: string, requestedNextPath: string) {
+  const safeNextPath = requestedNextPath.startsWith("/") ? requestedNextPath : "/";
+  const business = await ensureBusinessForUser(userId);
+
+  if (await isIntegrationsOnboardingCompletedForBusiness(business.id)) {
+    return safeNextPath;
+  }
+
+  const connectedIncomeConnectionCount = await prisma.businessIncomeConnection.count({
+    where: {
+      business_id: business.id,
+      status: "connected",
+    },
+  });
+
+  if (connectedIncomeConnectionCount > 0) {
+    await markIntegrationsOnboardingCompletedForBusiness(business.id);
+    return safeNextPath;
+  }
+
+  return INTEGRATIONS_ONBOARDING_START_PATH;
 }
 
 export function requireRole(role: BusinessRole, currentRole: BusinessRole) {

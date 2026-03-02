@@ -74,9 +74,7 @@ const INDUSTRY_CAPABILITIES: Record<IndustryType, readonly IntakeCapability[]> =
  * Module-gated capabilities — only available when the named module is enabled.
  * Key = capability, Value = required module id.
  */
-const MODULE_GATED_CAPABILITIES: Partial<Record<IntakeCapability, string>> = {
-  supplier_sync: "integrations",
-};
+const MODULE_GATED_CAPABILITIES: Partial<Record<IntakeCapability, string>> = {};
 
 // ---------------------------------------------------------------------------
 // Public API

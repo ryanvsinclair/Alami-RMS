@@ -1,104 +1,90 @@
+import Image from "next/image";
 import Link from "next/link";
-import type { IncomeProviderConnectionCard } from "@/features/integrations/shared";
-import { Badge } from "@/shared/ui/badge";
-import { Button } from "@/shared/ui/button";
-import { Card } from "@/shared/ui/card";
-import { ConnectionStatusBadge } from "./ConnectionStatusBadge";
+import type { IncomeConnectionStatus, IncomeProviderConnectionCard, IncomeProviderId } from "@/features/integrations/shared";
 
-function providerTypeLabel(type: IncomeProviderConnectionCard["provider"]["type"]) {
-  switch (type) {
-    case "pos":
-      return "POS";
-    case "delivery":
-      return "Delivery";
-    case "payment":
-      return "Payment";
-    case "ecommerce":
-      return "Ecommerce";
-    case "accounting":
-      return "Accounting";
-    case "bank":
-      return "Bank";
-    default:
-      return "Provider";
-  }
+interface ProviderImageConfig {
+  src: string;
+  /** Tailwind scale class, e.g. "scale-75", "scale-90", "scale-100", "scale-110" */
+  scale: string;
 }
+
+const PROVIDER_IMAGE: Partial<Record<IncomeProviderId, ProviderImageConfig>> = {
+  godaddy_pos:     { src: "/provider-pics/godaddy-logo-the-go.png",                           scale: "scale-75" },
+  uber_eats:       { src: "/provider-pics/uber-eats-logo-39748746B7-seeklogo.com.png",         scale: "scale-125" },
+  doordash:        { src: "/provider-pics/1656222751doordash-app-logo.png",                    scale: "scale-100" },
+  square:          { src: "/provider-pics/square.jpg",                    scale: "scale-125" },
+  stripe:          { src: "/provider-pics/stripe.jpg",                                         scale: "scale-200" },
+  toast:           { src: "/provider-pics/toast.png",                                          scale: "scale-100" },
+  skip_the_dishes: { src: "/provider-pics/skipthedishes.png",                                  scale: "scale-100" },
+};
+
+const statusLabel: Record<IncomeConnectionStatus, string> = {
+  not_connected: "Connect",
+  connected: "Connected",
+  error: "Error",
+};
+
+const statusStyle: Record<IncomeConnectionStatus, string> = {
+  not_connected: "text-muted",
+  connected: "text-success",
+  error: "text-danger",
+};
 
 export function IncomeProviderConnectCard({
   card,
-  showComingSoonNote = true,
 }: {
   card: IncomeProviderConnectionCard;
   showComingSoonNote?: boolean;
 }) {
-  return (
-    <Card className="space-y-4 p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-base font-semibold text-foreground">{card.provider.name}</p>
-            <Badge variant="info">{providerTypeLabel(card.provider.type)}</Badge>
-            {card.recommended ? (
-              <Badge variant="success">Recommended</Badge>
-            ) : (
-              <Badge variant="default">Optional</Badge>
-            )}
-            {card.syncStale && (
-              <Badge variant="warning">Sync Stale</Badge>
-            )}
-          </div>
-          <p className="text-sm text-muted">
-            Connect your {card.provider.name} account to sync income into dashboard layers.
-          </p>
-          {card.lastSyncAt && (
-            <p className="text-xs text-muted">
-              Last synced:{" "}
-              <span className="text-foreground">
-                {new Date(card.lastSyncAt).toLocaleString()}
-              </span>
-            </p>
-          )}
-          {card.status === "connected" && card.syncStale && !card.lastSyncAt && (
-            <p className="text-xs text-amber-600 dark:text-amber-400">
-              Connected but no sync has run yet. Run a manual sync to initialize.
-            </p>
-          )}
-          {card.status === "error" && card.lastErrorMessage && (
-            <p className="text-xs text-red-600 dark:text-red-400">
-              Error: {card.lastErrorMessage}
-            </p>
-          )}
-        </div>
-        <ConnectionStatusBadge status={card.status} />
-      </div>
+  const imageConfig = PROVIDER_IMAGE[card.provider.id];
+  const initial = card.provider.name.charAt(0).toUpperCase();
+  const href = card.connectEnabled && card.connectHref ? card.connectHref : null;
 
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          {card.connectEnabled && card.connectHref ? (
-            <Link
-              href={card.connectHref}
-              className="inline-flex h-12 items-center justify-center rounded-2xl border border-border bg-card px-4 text-sm font-semibold text-foreground transition-colors hover:border-foreground/20 hover:bg-foreground/[0.04]"
-            >
-              {card.connectLabel}
-            </Link>
-          ) : (
-            <Button variant="secondary" disabled>
-              {card.connectLabel}
-            </Button>
-          )}
-          {card.syncEnabled && card.syncHref && (
-            <Link
-              href={card.syncHref}
-              className="inline-flex h-12 items-center justify-center rounded-2xl bg-primary px-4 text-sm font-semibold text-white shadow-[0_6px_18px_rgba(0,127,255,0.28)] transition-colors hover:bg-primary-hover"
-            >
-              Run Sync
-            </Link>
-          )}
-        </div>
-        {showComingSoonNote && !card.connectEnabled && (
-          <p className="text-xs text-muted">Set provider OAuth env vars to activate this connector.</p>
+  const inner = (
+    <div className="flex items-center gap-4 px-4 py-3.5">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-foreground/[0.06] overflow-hidden text-sm font-bold text-foreground">
+        {imageConfig ? (
+          <Image
+            src={imageConfig.src}
+            alt={card.provider.name}
+            width={40}
+            height={40}
+            className={`h-full w-full object-contain ${imageConfig.scale}`}
+          />
+        ) : (
+          initial
         )}
       </div>
-    </Card>
+      <p className="flex-1 text-sm font-semibold text-foreground">{card.provider.name}</p>
+      <span className={`text-sm font-medium ${statusStyle[card.status]}`}>
+        {statusLabel[card.status]}
+      </span>
+      <svg
+        className="h-4 w-4 shrink-0 text-muted/60"
+        fill="none"
+        viewBox="0 0 24 24"
+        strokeWidth={2.5}
+        stroke="currentColor"
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+      </svg>
+    </div>
+  );
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className="block transition-colors hover:bg-foreground/[0.03] active:bg-foreground/[0.05]"
+      >
+        {inner}
+      </Link>
+    );
+  }
+
+  return (
+    <div className="cursor-default opacity-60">
+      {inner}
+    </div>
   );
 }

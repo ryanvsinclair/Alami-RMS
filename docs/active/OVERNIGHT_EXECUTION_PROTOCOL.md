@@ -8,11 +8,11 @@ This contract supersedes conservative overnight behavior that halted on minor un
 
 Canonical references:
 
-- `docs/master-plan-v2.md`
-- `docs/execution-constitution.md`
-- Active source plans referenced by `docs/master-plan-v2.md`
+- `docs/active/master-plan-v2.md`
+- `docs/active/execution-constitution.md`
+- Active source plans referenced by `docs/active/master-plan-v2.md`
 
-`docs/master-plan-v1.md` is archived and must not be used for active execution selection.
+`docs/archive/completed-plans/master-plan-v1.md` is archived and must not be used for active execution selection.
 
 ## 1. Core Execution Mandate
 
@@ -97,7 +97,7 @@ If in scope and non-destructive:
 
 ## 6. Sequence Gate Optimization
 
-Sequence gates remain enforced from `docs/master-plan-v2.md`.
+Sequence gates remain enforced from `docs/active/master-plan-v2.md`.
 
 However:
 
@@ -198,11 +198,11 @@ If full completion is possible within constraints, it must be achieved.
 
 This full-completion mode does not remove these controls:
 
-1. Deterministic task selection from `docs/master-plan-v2.md`.
+1. Deterministic task selection from `docs/active/master-plan-v2.md`.
 2. Mandatory constitution restatement before each task.
 3. Expanded validation gate before marking `[x]`.
 4. Source-plan, master-plan, and changelog synchronization.
-5. `docs/codebase-overview.md` updates when architecture/behavior changes.
+5. `docs/active/codebase-overview.md` updates when architecture/behavior changes.
 6. One scoped git commit to this repository is required after each completed checklist step before advancing.
 
 Hard rule:

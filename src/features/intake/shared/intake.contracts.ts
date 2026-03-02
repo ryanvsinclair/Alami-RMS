@@ -20,7 +20,7 @@
  * - `bulk_intake`:     "I already bought this" — receipt/invoice/document-based post-purchase entry
  * - `supplier_sync`:  "Sync this source automatically" — integration-driven ingestion (conditional)
  */
-export const INTAKE_INTENTS = ["live_purchase", "bulk_intake", "supplier_sync"] as const;
+export const INTAKE_INTENTS = ["live_purchase", "bulk_intake"] as const;
 export type IntakeIntent = (typeof INTAKE_INTENTS)[number];
 
 /**
@@ -29,7 +29,6 @@ export type IntakeIntent = (typeof INTAKE_INTENTS)[number];
 export const INTAKE_INTENT_LABELS: Record<IntakeIntent, string> = {
   live_purchase: "Live Purchase",
   bulk_intake: "Bulk Intake",
-  supplier_sync: "Supplier Sync",
 } as const;
 
 /**
@@ -38,7 +37,6 @@ export const INTAKE_INTENT_LABELS: Record<IntakeIntent, string> = {
 export const INTAKE_INTENT_DESCRIPTIONS: Record<IntakeIntent, string> = {
   live_purchase: "Log items as you shop — barcode, photo, or manual entry.",
   bulk_intake: "Record a past purchase via receipt scan, invoice, or manual entry.",
-  supplier_sync: "Automatically sync inventory from a connected supplier or POS system.",
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -200,7 +198,6 @@ export const INTAKE_CAPABILITIES = [
   "photo_assistance",
   "receipt_parse",
   "manual_entry",
-  "supplier_sync",
   "produce_entry",
   "invoice_entry",
 ] as const;
@@ -213,7 +210,6 @@ export type IntakeCapability = (typeof INTAKE_CAPABILITIES)[number];
 export const INTAKE_INTENT_CAPABILITIES: Record<IntakeIntent, readonly IntakeCapability[]> = {
   live_purchase: ["barcode_capture", "produce_entry", "manual_entry", "photo_assistance"],
   bulk_intake: ["receipt_parse", "invoice_entry", "manual_entry", "photo_assistance"],
-  supplier_sync: ["supplier_sync"],
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -228,9 +224,9 @@ import type { IndustryType } from "@/lib/generated/prisma/client";
  * All intents remain available regardless of industry — ordering is advisory only.
  */
 export const INTAKE_INTENT_ORDER_BY_INDUSTRY: Record<IndustryType, readonly IntakeIntent[]> = {
-  restaurant: ["live_purchase", "bulk_intake", "supplier_sync"],
-  retail: ["live_purchase", "bulk_intake", "supplier_sync"],
-  salon: ["bulk_intake", "live_purchase", "supplier_sync"],
-  contractor: ["live_purchase", "bulk_intake", "supplier_sync"],
-  general: ["live_purchase", "bulk_intake", "supplier_sync"],
+  restaurant: ["live_purchase", "bulk_intake"],
+  retail: ["live_purchase", "bulk_intake"],
+  salon: ["bulk_intake", "live_purchase"],
+  contractor: ["live_purchase", "bulk_intake"],
+  general: ["live_purchase", "bulk_intake"],
 } as const;

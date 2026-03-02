@@ -1,12 +1,8 @@
-import { redirect } from "next/navigation";
-import { isModuleEnabled } from "@/core/modules/guard";
-
-export default async function IntegrationsLayout({
+// Integrations is a core feature — no module gate. All businesses can access /integrations.
+export default function IntegrationsLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const enabled = await isModuleEnabled("integrations");
-  if (!enabled) redirect("/");
   return <>{children}</>;
 }

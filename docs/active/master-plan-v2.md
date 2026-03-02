@@ -24,7 +24,7 @@ Primary Purpose: canonical sequencing and progress tracker for launch-critical r
   - environment-variable review
 - Canonical doc sync is required for each completed slice.
 
-Constitution source: `docs/execution-constitution.md`
+Constitution source: `docs/active/execution-constitution.md`
 
 ## How To Use This File
 
@@ -37,14 +37,14 @@ Constitution source: `docs/execution-constitution.md`
 5. Update:
    - this file (checklist + latest job summary + next left-off marker)
    - touched source plan files
-   - `docs/codebase-changelog.md` (always)
-   - `docs/codebase-overview.md` when behavior/architecture changed
+   - `docs/active/codebase-changelog.md` (always)
+   - `docs/active/codebase-overview.md` when behavior/architecture changed
 6. Commit checkpoint:
    - create one scoped git commit to this repository for each completed checklist step before moving to the next step
 
 ## Immutable Constitution Reference (Required)
 
-- Canonical non-negotiables are defined in `docs/execution-constitution.md`.
+- Canonical non-negotiables are defined in `docs/active/execution-constitution.md`.
 - These rules apply to every active initiative in this plan.
 - Source plans must not contradict this constitution.
 - UI and UX work must follow the `UI and UX Design Constitution` section in that file.

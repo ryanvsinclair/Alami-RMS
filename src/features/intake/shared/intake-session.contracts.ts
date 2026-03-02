@@ -128,9 +128,6 @@ export function buildIntakeSessionRoute(
     case "bulk_intake":
       // Receipt sessions route to the specific receipt review page
       return `/receive/receipt/${underlyingId}`;
-    case "supplier_sync":
-      // Supplier sync sessions route to the integrations page
-      return "/integrations";
     default:
       return "/intake";
   }
@@ -147,8 +144,8 @@ export function deriveIntentFromSessionOrigin(
     case "shopping":
       return "live_purchase";
     case "receipt":
-      return "bulk_intake";
     case "integration":
-      return "supplier_sync";
+    default:
+      return "bulk_intake";
   }
 }

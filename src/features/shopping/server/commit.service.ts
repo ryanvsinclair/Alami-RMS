@@ -10,6 +10,7 @@ import { matchText } from "@/domain/matching/engine";
 import { extractProductName } from "@/domain/parsers/product-name";
 import { toNumber, round, normalizeName, getReceiptBalanceCheck } from "./helpers";
 import { recomputeSessionState } from "./session-state.service";
+import { resolveBalanceAfterSnapshot } from "@/features/finance/server/balance-snapshot.service";
 import {
   INTAKE_ITEM_SOURCES,
   INTAKE_SOURCE_ELIGIBILITY,
@@ -214,6 +215,14 @@ export async function commitShoppingSession(
     // Bridge: record in unified financial ledger (idempotent via upsert)
     const expenseAmount = toNumber(refreshed.receipt_total) ?? toNumber(refreshed.staged_subtotal) ?? 0;
     if (expenseAmount > 0) {
+      const occurredAt = new Date();
+      const balanceAfter = await resolveBalanceAfterSnapshot(tx, {
+        businessId,
+        occurredAt,
+        amount: expenseAmount,
+        type: "expense",
+      });
+
       await tx.financialTransaction.upsert({
         where: {
           business_id_source_external_id: {
@@ -228,7 +237,8 @@ export async function commitShoppingSession(
           source: "shopping",
           amount: expenseAmount,
           description: refreshed.store_name ?? refreshed.supplier?.name ?? "Shopping trip",
-          occurred_at: new Date(),
+          occurred_at: occurredAt,
+          balance_after: balanceAfter,
           external_id: refreshed.id,
           shopping_session_id: refreshed.id,
           metadata: {

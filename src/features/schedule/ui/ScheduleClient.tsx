@@ -16,6 +16,7 @@
  */
 
 import { useState } from "react";
+import Link from "next/link";
 import { useBusinessConfig } from "@/lib/config/context";
 import {
   CALENDAR_VIEW_MODES,
@@ -63,6 +64,7 @@ const SOURCE_COLOR: Record<CalendarEventSource, string> = {
 
 export default function ScheduleClient() {
   const { industryType } = useBusinessConfig();
+  const showServicesCta = industryType === "restaurant";
 
   const [viewMode, setViewMode] = useState<CalendarViewMode>(DEFAULT_CALENDAR_VIEW);
   const [visibleSources, setVisibleSources] = useState<Set<CalendarEventSource>>(
@@ -104,15 +106,28 @@ export default function ScheduleClient() {
             {emphasisTypes.slice(0, 2).map((t) => t.replace(/_/g, " ")).join(" Â· ")}
           </p>
         </div>
-        <button
-          type="button"
-          className="flex items-center gap-1.5 rounded-2xl bg-foreground px-3 py-2 text-xs font-semibold text-background shadow-sm active:scale-[0.97] transition-transform"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
-          New Event
-        </button>
+        <div className="flex items-center gap-2">
+          {showServicesCta && (
+            <Link
+              href="/service"
+              className="flex items-center gap-1.5 rounded-2xl border border-border/60 bg-card px-3 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-foreground/5"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6h16.5M3.75 12h16.5M3.75 18h16.5" />
+              </svg>
+              Services
+            </Link>
+          )}
+          <button
+            type="button"
+            className="flex items-center gap-1.5 rounded-2xl bg-foreground px-3 py-2 text-xs font-semibold text-background shadow-sm active:scale-[0.97] transition-transform"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            New Event
+          </button>
+        </div>
       </div>
 
       {/* ------------------------------------------------------------------ */}
