@@ -13,7 +13,7 @@ export function Card({
       className={`
         rounded-xl border border-[var(--surface-card-border)] bg-[var(--surface-card-bg)] p-4
         shadow-[var(--surface-card-shadow)]
-        ${onClick ? "cursor-pointer hover:border-[var(--surface-card-border-hover)] hover:shadow-[var(--surface-card-shadow-hover)] active:scale-[0.995] transition-all duration-200" : ""}
+        ${onClick ? "cursor-pointer hover:bg-foreground/[0.02] active:opacity-80 transition-opacity duration-100" : ""}
         ${className}
       `}
     >

@@ -120,7 +120,7 @@ export default function ScheduleClient() {
           )}
           <button
             type="button"
-            className="flex items-center gap-1.5 rounded-2xl bg-foreground px-3 py-2 text-xs font-semibold text-background shadow-sm active:scale-[0.97] transition-transform"
+            className="flex items-center gap-1.5 rounded-2xl bg-foreground px-3 py-2 text-xs font-semibold text-background shadow-sm transition-opacity duration-100 active:opacity-75"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />

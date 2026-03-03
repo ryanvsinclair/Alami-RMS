@@ -78,7 +78,7 @@ export default function IntakeHubClient() {
           key={intent}
           type="button"
           onClick={() => router.push(INTENT_HREF[intent])}
-          className="w-full text-left rounded-3xl border border-border bg-card p-4 shadow-[var(--surface-card-shadow)] transition-all active:scale-[0.99]"
+          className="w-full text-left rounded-3xl border border-border bg-card p-4 shadow-[var(--surface-card-shadow)] transition-opacity duration-100 active:opacity-75"
         >
           <div className="flex items-center gap-4">
             <div className={`rounded-xl p-3 ${INTENT_COLOR[intent]}`}>
