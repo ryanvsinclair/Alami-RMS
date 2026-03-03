@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getDashboardSummary, type DashboardPeriod } from "@/app/actions/core/financial";
@@ -107,18 +106,6 @@ export function HomeDashboardClient() {
       <div className="layer-stack min-h-screen w-full">
         <div className="mx-auto flex min-h-screen w-full max-w-lg flex-col">
           <div className="layer-balance relative px-5 pb-10 pt-5">
-            <div className="pointer-events-none absolute inset-x-0 top-20 z-0 flex select-none justify-center">
-              <Image
-                src="/logotransparentbackground.svg"
-                alt=""
-                width={520}
-                height={170}
-                className="h-36 w-auto opacity-[0.18]"
-                aria-hidden="true"
-                priority
-              />
-            </div>
-
             <div className="relative z-10 mb-7">
               <div className="grid w-full grid-cols-20 items-center gap-2">
                 <Link
@@ -173,7 +160,7 @@ export function HomeDashboardClient() {
                 {loading ? (
                   <Skeleton className="mx-auto h-11 w-52 rounded-xl bg-white/20" />
                 ) : (
-                  <p className="text-[44px] font-bold leading-none tracking-tight text-white">
+                  <p className="text-[34px] font-normal leading-none tracking-tight text-white">
                     {formatHeroAmount(displayValue)}
                   </p>
                 )}
@@ -197,21 +184,21 @@ export function HomeDashboardClient() {
               <div className="mt-5 flex w-full gap-3">
                 <Link
                   href="/receive/photo"
-                  className="flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-background/50 px-4 text-foreground/75 transition-colors hover:bg-background/65"
+                  className="flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-8.25A2.25 2.25 0 0 0 17.25 3.75H6.75A2.25 2.25 0 0 0 4.5 6v12A2.25 2.25 0 0 0 6.75 20.25h6.75M8.25 7.5h7.5M8.25 11.25h7.5M8.25 15h4.5m3.75 0h4.5m0 0-1.5-1.5m1.5 1.5-1.5 1.5" />
                   </svg>
-                  <span className="text-xs font-semibold">Add Receipt</span>
+                  <span>Add Receipt</span>
                 </Link>
                 <Link
                   href="/receive/barcode"
-                  className="flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-background/50 px-4 text-foreground/75 transition-colors hover:bg-background/65"
+                  className="flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 5.25h2.25v13.5H4.5V5.25Zm4.5 0h1.5v13.5H9V5.25Zm3.75 0h1.5v13.5h-1.5V5.25Zm4.5 0h2.25v13.5h-2.25V5.25Z" />
                   </svg>
-                  <span className="text-xs font-semibold">Scan Barcode</span>
+                  <span>Scan Barcode</span>
                 </Link>
               </div>
             </div>
