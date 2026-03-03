@@ -22,8 +22,8 @@
   --surface-nav-border: rgba(255, 255, 255, 0.10);
   --surface-nav-bg: rgba(18, 18, 20, 0.70);
   --surface-nav-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  --surface-nav-active-bg: rgba(0, 127, 255, 0.14);
-  --surface-nav-active-ring: inset 0 0 0 1px rgba(0, 127, 255, 0.24);
+  --surface-nav-active-bg: transparent;
+  --surface-nav-active-ring: none;
   --surface-control-bg: rgba(255, 255, 255, 0.05);
   --surface-control-bg-hover: rgba(255, 255, 255, 0.09);
   --surface-control-border: rgba(255, 255, 255, 0.08);
@@ -64,8 +64,8 @@
   --surface-nav-border: transparent;
   --surface-nav-bg: rgba(255, 255, 255, 0.70);
   --surface-nav-shadow: none;
-  --surface-nav-active-bg: rgba(0, 127, 255, 0.1);
-  --surface-nav-active-ring: inset 0 0 0 1px rgba(0, 127, 255, 0.18);
+  --surface-nav-active-bg: transparent;
+  --surface-nav-active-ring: none;
   --surface-control-bg: rgba(0, 0, 0, 0.04);
   --surface-control-bg-hover: rgba(0, 0, 0, 0.07);
   --surface-control-border: rgba(0, 0, 0, 0.08);
