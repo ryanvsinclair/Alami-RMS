@@ -15,7 +15,6 @@ import { ItemNotFound } from "@/components/flows/item-not-found";
 import { useShoppingSession } from "@/features/shopping/ui/use-shopping-session";
 import { ItemImage } from "@/shared/ui/item-image";
 import { BarcodeCameraScanner } from "@/shared/ui/barcode-camera-scanner";
-import { QuantityBadge } from "@/shared/ui/quantity-badge";
 import {
   asNumber,
   formatMoney,
@@ -372,10 +371,12 @@ export default function ShoppingPage() {
                 <Card className="bg-white/5 mb-3">
                   <p className="text-xs text-muted">Detected</p>
                   <p className="font-medium">{s.scanParsed.product_name ?? s.scanParsed.raw_text}</p>
-                  <div className="flex gap-2 mt-1">
+                  <div className="mt-1 flex items-center gap-2">
                     {s.scanParsed.size_descriptor && <Badge variant="info">{s.scanParsed.size_descriptor}</Badge>}
-                    {s.scanParsed.unit_price != null && <Badge>{formatMoney(s.scanParsed.unit_price)}</Badge>}
-                    {s.scanParsed.quantity > 1 && <Badge>x{s.scanParsed.quantity}</Badge>}
+                    <p className="text-xs text-muted">
+                      {s.scanParsed.unit_price != null ? formatMoney(s.scanParsed.unit_price) : ""}
+                      {s.scanParsed.quantity > 1 ? ` x${s.scanParsed.quantity}` : ""}
+                    </p>
                   </div>
                 </Card>
 
@@ -438,15 +439,13 @@ export default function ShoppingPage() {
                   />
                   <div className="min-w-0">
                     <p className="font-semibold truncate">{displayShoppingItemName(item.raw_name)}</p>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      <QuantityBadge quantity={asNumber(item.quantity) || 1} unit={item.unit} size="sm" />
-                      <Badge variant={item.origin === "staged" ? "info" : "default"}>{item.origin}</Badge>
+                    <div className="mt-1 flex items-center gap-2">
                       <Badge variant={reconVariant[item.reconciliation_status]}>
                         {reconLabel[item.reconciliation_status]}
                       </Badge>
-                      {getItemBarcodeBadgeValue(item) && (
-                        <Badge variant="warning">UPC {getItemBarcodeBadgeValue(item)}</Badge>
-                      )}
+                      <p className="text-xs text-muted">
+                        x{asNumber(item.quantity) || 1}{item.unit ? ` ${item.unit}` : ""}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -567,7 +566,7 @@ export default function ShoppingPage() {
                             : ""}
                         </p>
                       </div>
-                      <Badge variant="info">Scanned Barcode</Badge>
+                      <span className="text-xs text-muted">Scanned barcode</span>
                     </div>
 
                     <div className="mt-3 grid grid-cols-2 gap-2">
@@ -600,23 +599,13 @@ export default function ShoppingPage() {
                             ? s.photoFallbackAnalysisByItemId[barcodeItem.id].product_info?.product_name
                             : "OCR captured item text"}
                         </p>
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {s.photoFallbackAnalysisByItemId[barcodeItem.id].product_info?.brand && (
-                            <Badge variant="info">
-                              {s.photoFallbackAnalysisByItemId[barcodeItem.id].product_info?.brand}
-                            </Badge>
-                          )}
-                          {s.photoFallbackAnalysisByItemId[barcodeItem.id].product_info?.quantity_description && (
-                            <Badge>
-                              {s.photoFallbackAnalysisByItemId[barcodeItem.id].product_info?.quantity_description}
-                            </Badge>
-                          )}
-                          {s.photoFallbackAnalysisByItemId[barcodeItem.id].product_info?.weight && (
-                            <Badge>
-                              {s.photoFallbackAnalysisByItemId[barcodeItem.id].product_info?.weight}
-                            </Badge>
-                          )}
-                        </div>
+                        <p className="mt-2 text-xs text-muted">
+                          {[
+                            s.photoFallbackAnalysisByItemId[barcodeItem.id].product_info?.brand,
+                            s.photoFallbackAnalysisByItemId[barcodeItem.id].product_info?.quantity_description,
+                            s.photoFallbackAnalysisByItemId[barcodeItem.id].product_info?.weight,
+                          ].filter(Boolean).join(" - ")}
+                        </p>
                       </div>
                     )}
 
@@ -633,28 +622,18 @@ export default function ShoppingPage() {
                             {s.webFallbackSuggestionByItemId[barcodeItem.id].auto_apply_reason}
                           </p>
                         )}
-                        {s.webFallbackSuggestionByItemId[barcodeItem.id].auto_apply_eligible && (
-                          <div className="mt-2">
-                            <Badge variant="success">Auto-Apply Eligible</Badge>
-                          </div>
-                        )}
-
                         {s.webFallbackSuggestionByItemId[barcodeItem.id].web_result && (
                           <>
                             <p className="mt-2 text-sm font-semibold">
                               {s.webFallbackSuggestionByItemId[barcodeItem.id].web_result?.structured.canonical_name}
                             </p>
-                            <div className="mt-1 flex flex-wrap gap-1">
-                              {s.webFallbackSuggestionByItemId[barcodeItem.id].web_result?.structured.brand && (
-                                <Badge variant="info">
-                                  {s.webFallbackSuggestionByItemId[barcodeItem.id].web_result?.structured.brand}
-                                </Badge>
-                              )}
-                              {s.webFallbackSuggestionByItemId[barcodeItem.id].web_result?.structured.size && (
-                                <Badge>
-                                  {s.webFallbackSuggestionByItemId[barcodeItem.id].web_result?.structured.size}
-                                </Badge>
-                              )}
+                            <div className="mt-1 flex items-center justify-between gap-2">
+                              <p className="text-xs text-muted">
+                                {[
+                                  s.webFallbackSuggestionByItemId[barcodeItem.id].web_result?.structured.brand,
+                                  s.webFallbackSuggestionByItemId[barcodeItem.id].web_result?.structured.size,
+                                ].filter(Boolean).join(" - ")}
+                              </p>
                               <Badge
                                 variant={
                                   s.webFallbackSuggestionByItemId[barcodeItem.id].web_result?.confidence_label === "high"

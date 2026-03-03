@@ -62,19 +62,6 @@ function statusVariant(status: DocumentDraftStatus) {
   }
 }
 
-function confidenceVariant(confidence: DraftSummary["confidence_band"]) {
-  switch (confidence) {
-    case "high":
-      return "success";
-    case "medium":
-      return "info";
-    case "low":
-      return "warning";
-    default:
-      return "default";
-  }
-}
-
 const FILTERS: Array<{ key: InboxFilter; label: string }> = [
   { key: "default", label: "Open" },
   { key: "all", label: "All" },
@@ -214,10 +201,6 @@ export function DocumentInboxClient() {
                   <Badge variant={statusVariant(draft.status)}>
                     {draft.status.replace(/_/g, " ")}
                   </Badge>
-                  <Badge variant={confidenceVariant(draft.confidence_band)}>
-                    {draft.confidence_band ?? "none"}
-                  </Badge>
-                  {draft.auto_posted ? <Badge variant="info">auto posted</Badge> : null}
                 </div>
               </div>
             </Link>

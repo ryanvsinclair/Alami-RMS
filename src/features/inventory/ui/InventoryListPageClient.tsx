@@ -7,7 +7,6 @@ import { Card } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { ItemImage } from "@/shared/ui/item-image";
-import { QuantityBadge } from "@/shared/ui/quantity-badge";
 import { SortSelect } from "@/shared/ui/sort-select";
 import { ViewModeToggle } from "@/shared/ui/view-mode-toggle";
 import { getAllInventoryLevels } from "@/app/actions/core/transactions";
@@ -313,17 +312,10 @@ export default function InventoryListPageClient() {
                       onClick={() => router.push(`/inventory/${candidate.inventory_item_id}`)}
                     >
                       <p className="font-medium truncate">{candidate.inventory_item_name}</p>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {candidate.category_name && <Badge>{candidate.category_name}</Badge>}
-                        {candidate.task_types.slice(0, 3).map((taskType) => (
-                          <Badge key={taskType} variant="info">
-                            {enrichmentTaskLabel[taskType]}
-                          </Badge>
-                        ))}
-                        {candidate.task_types.length > 3 && (
-                          <Badge variant="default">+{candidate.task_types.length - 3}</Badge>
-                        )}
-                      </div>
+                      <p className="mt-1 text-xs text-muted truncate">
+                        {candidate.category_name ? `${candidate.category_name} - ` : ""}
+                        {candidate.task_types.length} task{candidate.task_types.length === 1 ? "" : "s"}
+                      </p>
                       <p className="text-xs text-muted mt-1 truncate">
                         {candidate.reasons[0]}
                       </p>
@@ -476,9 +468,9 @@ export default function InventoryListPageClient() {
                 className="mb-2"
               />
               <p className="truncate text-sm font-medium">{item.name}</p>
-              <div className="mt-1 flex items-center justify-between gap-2">
-                <QuantityBadge quantity={item.current_quantity} unit={item.unit} size="sm" />
-                {item.category && <Badge>{item.category.name}</Badge>}
+              <div className="mt-1 space-y-0.5">
+                <p className="text-xs text-muted">x{item.current_quantity} {item.unit}</p>
+                {item.category ? <p className="text-xs text-muted">{item.category.name}</p> : null}
               </div>
             </Card>
           ))}
@@ -503,13 +495,14 @@ export default function InventoryListPageClient() {
                   />
                   <div className="min-w-0">
                     <p className="font-medium truncate">{item.name}</p>
-                    <div className="flex flex-wrap gap-1 mt-0.5">
-                      {item.category && <Badge>{item.category.name}</Badge>}
-                      {item.supplier && <Badge variant="info">{item.supplier.name}</Badge>}
-                    </div>
+                    {(item.category || item.supplier) ? (
+                      <p className="mt-0.5 text-xs text-muted truncate">
+                        {[item.category?.name, item.supplier?.name].filter(Boolean).join(" - ")}
+                      </p>
+                    ) : null}
                   </div>
                 </div>
-                <QuantityBadge quantity={item.current_quantity} unit={item.unit} size="md" />
+                <p className="shrink-0 text-sm text-muted">x{item.current_quantity} {item.unit}</p>
               </div>
             </Card>
           ))}
