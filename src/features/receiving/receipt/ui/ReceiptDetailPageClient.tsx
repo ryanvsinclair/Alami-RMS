@@ -180,7 +180,7 @@ export default function ReceiptDetailPageClient() {
 
           <div className="flex items-center justify-center gap-2 pt-2">
             <span
-              className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide ${
+              className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-semibold normal-case tracking-normal ${
                 receipt.status === "committed"
                   ? "bg-success/15 text-success"
                   : receipt.status === "review"

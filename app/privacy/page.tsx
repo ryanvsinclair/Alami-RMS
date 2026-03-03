@@ -14,7 +14,7 @@ export default function PrivacyPage() {
 
       <div className="relative mx-auto w-full max-w-3xl px-5 py-10 sm:px-8 sm:py-14">
         <div className="rounded-3xl border border-border/70 bg-card/75 p-6 sm:p-8">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary/90">
+          <p className="text-xs font-semibold normal-case tracking-normal text-primary/90">
             Privacy
           </p>
           <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">

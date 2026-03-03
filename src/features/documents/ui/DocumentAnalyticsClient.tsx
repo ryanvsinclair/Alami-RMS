@@ -228,13 +228,13 @@ export function DocumentAnalyticsClient() {
       <section className="rounded-3xl border border-border bg-card p-5 shadow-[var(--surface-card-shadow)]">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-primary">Documents</p>
+            <p className="text-xs font-semibold normal-case tracking-normal text-primary">Documents</p>
             <h1 className="mt-1 text-2xl font-bold text-foreground">Analytics</h1>
             <p className="mt-2 text-sm text-muted">
               Vendor spend, price trends, reorder risk, tax totals, and COGS from posted document drafts.
             </p>
           </div>
-          <Link href="/documents" className="rounded-full border border-border px-3 py-1 text-xs font-semibold uppercase tracking-wide text-foreground/80 hover:text-foreground">
+          <Link href="/documents" className="rounded-full border border-border px-3 py-1 text-xs font-semibold normal-case tracking-normal text-foreground/80 hover:text-foreground">
             Inbox
           </Link>
         </div>
@@ -261,7 +261,7 @@ export function DocumentAnalyticsClient() {
 
         {periodPreset === "custom" ? (
           <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-            <label className="text-xs font-semibold uppercase tracking-wide text-muted">
+            <label className="text-[13px] font-normal tracking-normal text-muted">
               Start date
               <input
                 type="date"
@@ -270,7 +270,7 @@ export function DocumentAnalyticsClient() {
                 className="mt-1 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground"
               />
             </label>
-            <label className="text-xs font-semibold uppercase tracking-wide text-muted">
+            <label className="text-[13px] font-normal tracking-normal text-muted">
               End date
               <input
                 type="date"
@@ -322,7 +322,7 @@ export function DocumentAnalyticsClient() {
         <>
           <section className="rounded-2xl border border-border bg-card p-4">
             <div className="flex items-center justify-between gap-2">
-              <p className="text-xs font-semibold uppercase tracking-wide text-primary">Vendor Spend (Top 10)</p>
+              <p className="text-xs font-semibold normal-case tracking-normal text-primary">Vendor Spend (Top 10)</p>
               <p className="text-xs text-muted">
                 Period drafts:
                 {" "}
@@ -358,7 +358,7 @@ export function DocumentAnalyticsClient() {
 
           <section className="rounded-2xl border border-border bg-card p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-xs font-semibold uppercase tracking-wide text-primary">Price Trend</p>
+              <p className="text-xs font-semibold normal-case tracking-normal text-primary">Price Trend</p>
               <div className="flex flex-wrap items-center gap-2">
                 <select
                   value={selectedVendorId}
@@ -436,7 +436,7 @@ export function DocumentAnalyticsClient() {
           </section>
 
           <section className="rounded-2xl border border-border bg-card p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-primary">Tax Summary</p>
+            <p className="text-xs font-semibold normal-case tracking-normal text-primary">Tax Summary</p>
             <p className="mt-2 text-lg font-semibold text-foreground">Total Tax: {formatMoney(taxSummary?.totalTax)}</p>
             <div className="mt-3 space-y-2">
               {(taxSummary?.byVendor ?? []).slice(0, 10).map((entry) => (
@@ -449,7 +449,7 @@ export function DocumentAnalyticsClient() {
           </section>
 
           <section className="rounded-2xl border border-border bg-card p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-primary">COGS By Category</p>
+            <p className="text-xs font-semibold normal-case tracking-normal text-primary">COGS By Category</p>
             <p className="mt-2 text-lg font-semibold text-foreground">Total Expense: {formatMoney(cogsSummary?.totalExpense)}</p>
             <div className="mt-3 space-y-2">
               {(cogsSummary?.byCategory ?? []).map((entry) => (
@@ -464,7 +464,7 @@ export function DocumentAnalyticsClient() {
           </section>
 
           <section className="rounded-2xl border border-border bg-card p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-primary">Reorder Signals (7 days or less)</p>
+            <p className="text-xs font-semibold normal-case tracking-normal text-primary">Reorder Signals (7 days or less)</p>
             <div className="mt-3 space-y-2">
               {(reorderSignals?.signals ?? []).map((signal) => (
                 <div key={signal.inventoryItemId} className="rounded-xl border border-border px-3 py-2 text-sm">

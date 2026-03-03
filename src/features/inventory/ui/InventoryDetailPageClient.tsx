@@ -84,23 +84,23 @@ export default function InventoryDetailPageClient({
       </Card>
 
       <Card>
-        <h3 className="text-sm font-semibold text-muted uppercase tracking-wide mb-2">Details</h3>
+        <h3 className="text-sm font-semibold text-muted normal-case tracking-normal mb-2">Details</h3>
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
             <span className="text-muted">Category</span>
-            <span>{item.category?.name ?? "—"}</span>
+            <span>{item.category?.name ?? "â€”"}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted">Supplier</span>
-            <span>{item.supplier?.name ?? "—"}</span>
+            <span>{item.supplier?.name ?? "â€”"}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted">Default Cost</span>
-            <span>{item.default_cost ? `$${Number(item.default_cost).toFixed(2)}` : "—"}</span>
+            <span>{item.default_cost ? `$${Number(item.default_cost).toFixed(2)}` : "â€”"}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted">Par Level</span>
-            <span>{item.par_level ? `${item.par_level} ${item.unit}` : "—"}</span>
+            <span>{item.par_level ? `${item.par_level} ${item.unit}` : "â€”"}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted">Status</span>
@@ -113,7 +113,7 @@ export default function InventoryDetailPageClient({
 
       {item.barcodes.length > 0 && (
         <Card>
-          <h3 className="text-sm font-semibold text-muted uppercase tracking-wide mb-2">
+          <h3 className="text-sm font-semibold text-muted normal-case tracking-normal mb-2">
             Barcodes
           </h3>
           <div className="flex flex-wrap gap-1">
@@ -128,7 +128,7 @@ export default function InventoryDetailPageClient({
 
       {item.aliases.length > 0 && (
         <Card>
-          <h3 className="text-sm font-semibold text-muted uppercase tracking-wide mb-2">
+          <h3 className="text-sm font-semibold text-muted normal-case tracking-normal mb-2">
             Known Aliases ({item.aliases.length})
           </h3>
           <div className="flex flex-wrap gap-1">
@@ -143,7 +143,7 @@ export default function InventoryDetailPageClient({
       )}
 
       <div>
-        <h3 className="text-sm font-semibold text-muted uppercase tracking-wide mb-2">
+        <h3 className="text-sm font-semibold text-muted normal-case tracking-normal mb-2">
           Recent Transactions ({level?.transaction_count ?? 0} total)
         </h3>
         <div className="space-y-2">
@@ -158,7 +158,7 @@ export default function InventoryDetailPageClient({
                     </Badge>
                   </div>
                   <p className="text-xs text-muted mt-0.5">
-                    {new Date(tx.created_at).toLocaleDateString()} — {tx.source ?? "unknown source"}
+                    {new Date(tx.created_at).toLocaleDateString()} â€” {tx.source ?? "unknown source"}
                   </p>
                 </div>
                 <div className="text-right">

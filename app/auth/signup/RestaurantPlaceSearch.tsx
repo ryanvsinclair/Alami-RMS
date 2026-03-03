@@ -73,7 +73,7 @@ export function RestaurantPlaceSearch() {
 
   return (
     <div className="w-full min-w-0 max-w-full space-y-2 overflow-x-hidden rounded-2xl border border-border/70 bg-foreground/[0.02] p-3">
-      <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+      <p className="text-xs font-semibold normal-case tracking-normal text-muted">
         Business details
       </p>
       <p className="max-w-full text-xs text-muted/80">

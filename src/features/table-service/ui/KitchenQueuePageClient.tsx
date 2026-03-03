@@ -97,7 +97,7 @@ export default function KitchenQueuePageClient({ initialQueue }: KitchenQueuePag
     <main className="mx-auto max-w-4xl p-4 pt-8 space-y-4">
       <Card className="p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-xs uppercase tracking-wide text-muted">Kitchen Workspace</p>
+          <p className="text-xs normal-case tracking-normal text-muted">Kitchen Workspace</p>
           <div className="flex flex-wrap items-center justify-end gap-3">
             <div className="flex flex-wrap items-center gap-3 text-xs font-semibold">
               <Link href="/service/host" className="text-primary hover:underline">
@@ -145,7 +145,7 @@ export default function KitchenQueuePageClient({ initialQueue }: KitchenQueuePag
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-xs uppercase tracking-wide text-muted">
+                    <p className="text-xs normal-case tracking-normal text-muted">
                       Queue Position {index + 1}
                     </p>
                     <p className="text-lg font-semibold text-foreground">{entry.tableNumber}</p>

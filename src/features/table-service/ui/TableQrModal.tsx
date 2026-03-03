@@ -14,7 +14,7 @@ export function TableQrModal({ tableNumber, scanUrl, onClose }: TableQrModalProp
   const [rendered, setRendered] = useState(false);
   const [error, setError] = useState("");
 
-  // QR canvas size — large enough for crisp printing
+  // QR canvas size â€” large enough for crisp printing
   const QR_SIZE = 360;
   const PADDING = 24;
   const LABEL_HEIGHT = 52;
@@ -96,7 +96,7 @@ export function TableQrModal({ tableNumber, scanUrl, onClose }: TableQrModalProp
       <!DOCTYPE html>
       <html>
         <head>
-          <title>QR – ${tableNumber}</title>
+          <title>QR â€“ ${tableNumber}</title>
           <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body {
@@ -148,7 +148,7 @@ export function TableQrModal({ tableNumber, scanUrl, onClose }: TableQrModalProp
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs uppercase tracking-wide text-muted">QR Code</p>
+            <p className="text-xs normal-case tracking-normal text-muted">QR Code</p>
             <p className="mt-0.5 text-lg font-bold text-foreground">{tableNumber}</p>
           </div>
           <button

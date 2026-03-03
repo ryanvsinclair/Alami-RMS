@@ -230,7 +230,7 @@ export function DocumentDraftDetailClient({ draftId }: { draftId: string }) {
       ) : null}
 
       <section className="space-y-2 rounded-2xl border border-border bg-card p-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-primary">Parsed Fields</p>
+        <p className="text-xs font-semibold normal-case tracking-normal text-primary">Parsed Fields</p>
         <h1 className="text-xl font-bold text-foreground">
           {detail.parsed_vendor_name ?? detail.vendor_profile?.vendor_name ?? "Unknown Vendor"}
         </h1>
@@ -247,7 +247,7 @@ export function DocumentDraftDetailClient({ draftId }: { draftId: string }) {
       </section>
 
       <section className="space-y-3 rounded-2xl border border-border bg-card p-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-primary">Source Document</p>
+        <p className="text-xs font-semibold normal-case tracking-normal text-primary">Source Document</p>
         {showPdfPreview ? (
           <iframe
             title="Document Preview"
@@ -280,7 +280,7 @@ export function DocumentDraftDetailClient({ draftId }: { draftId: string }) {
       </section>
 
       <details className="rounded-2xl border border-border bg-card p-4">
-        <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wide text-primary">
+        <summary className="cursor-pointer text-xs font-semibold normal-case tracking-normal text-primary">
           Parse Flags
         </summary>
         <pre className="mt-3 max-h-72 overflow-auto rounded-xl border border-border bg-background p-3 text-xs text-foreground">
@@ -290,7 +290,7 @@ export function DocumentDraftDetailClient({ draftId }: { draftId: string }) {
 
       {anomalyFlags.length > 0 ? (
         <section className="space-y-2 rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
+          <p className="text-xs font-semibold normal-case tracking-normal text-amber-700">
             Anomaly Warnings
           </p>
           {anomalyFlags.map((flag) => (
@@ -341,7 +341,7 @@ export function DocumentDraftDetailClient({ draftId }: { draftId: string }) {
 
       {detail.vendor_profile ? (
         <section className="space-y-2 rounded-2xl border border-border bg-card p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-primary">Vendor Trust</p>
+          <p className="text-xs font-semibold normal-case tracking-normal text-primary">Vendor Trust</p>
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="default">state: {detail.vendor_profile.trust_state}</Badge>
             <Badge variant="default">posted: {detail.vendor_profile.total_posted}</Badge>
@@ -382,7 +382,7 @@ export function DocumentDraftDetailClient({ draftId }: { draftId: string }) {
       ) : null}
 
       <section className="space-y-2 rounded-2xl border border-border bg-card p-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-primary">Line Items</p>
+        <p className="text-xs font-semibold normal-case tracking-normal text-primary">Line Items</p>
         {detail.line_items.length === 0 ? (
           <p className="text-sm text-muted">No parsed line items.</p>
         ) : (

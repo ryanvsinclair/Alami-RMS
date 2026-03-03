@@ -113,7 +113,7 @@ export function HomeActivityList({
         </div>
         <Link
           href="/integrations"
-          className="text-[11px] font-semibold uppercase tracking-wide text-primary hover:text-primary-hover"
+          className="text-[11px] font-semibold normal-case tracking-normal text-primary hover:text-primary-hover"
         >
           + Integrations
         </Link>
@@ -146,7 +146,7 @@ export function HomeActivityList({
         <div className="space-y-6">
           {groupedTransactions.map((group) => (
             <section key={group.key}>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">
+              <p className="text-[11px] font-semibold normal-case tracking-normal text-muted">
                 {group.label}
               </p>
               <div className="mt-2 divide-y divide-border/40">

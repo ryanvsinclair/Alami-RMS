@@ -49,7 +49,7 @@ export default async function PublicRestaurantLandingPage({
   return (
     <main className="mx-auto max-w-lg p-4 pt-8">
       <Card className="p-5 space-y-3">
-        <p className="text-xs uppercase tracking-wide text-muted">Public Landing</p>
+        <p className="text-xs normal-case tracking-normal text-muted">Public Landing</p>
         <h1 className="text-xl font-bold text-foreground">{business.name}</h1>
         {business.formatted_address && (
           <p className="text-sm text-muted">{business.formatted_address}</p>
@@ -71,7 +71,7 @@ export default async function PublicRestaurantLandingPage({
       <div className="mt-4 space-y-4">
         {categories.map((category) => (
           <Card key={category.id} className="p-5 space-y-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">{category.name}</h2>
+            <h2 className="text-sm font-semibold normal-case tracking-normal text-muted">{category.name}</h2>
             {category.items.length === 0 ? (
               <p className="text-sm text-muted">No items available in this category.</p>
             ) : (
@@ -92,7 +92,7 @@ export default async function PublicRestaurantLandingPage({
 
         {uncategorizedItems.length > 0 && (
           <Card className="p-5 space-y-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">More</h2>
+            <h2 className="text-sm font-semibold normal-case tracking-normal text-muted">More</h2>
             <div className="space-y-2">
               {uncategorizedItems.map((item) => (
                 <div key={item.id} className="flex items-start justify-between gap-3">

@@ -65,7 +65,7 @@ export function SignupFormClient({
       <input type="hidden" name="next" value={next} />
 
       <div className="flex items-center justify-between px-1">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted">Step {step} of {STEP_COUNT}</p>
+        <p className="text-[13px] font-normal tracking-normal text-muted">Step {step} of {STEP_COUNT}</p>
         <div className="flex items-center gap-1.5">
           {[1, 2, 3].map((marker) => (
             <span
@@ -89,7 +89,7 @@ export function SignupFormClient({
           >
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <label htmlFor="first_name" className="text-xs font-semibold uppercase tracking-wide text-muted">
+                <label htmlFor="first_name" className="text-[13px] font-normal tracking-normal text-muted">
                   First name
                 </label>
                 <input
@@ -100,7 +100,7 @@ export function SignupFormClient({
                 />
               </div>
               <div className="space-y-1.5">
-                <label htmlFor="last_name" className="text-xs font-semibold uppercase tracking-wide text-muted">
+                <label htmlFor="last_name" className="text-[13px] font-normal tracking-normal text-muted">
                   Last name
                 </label>
                 <input
@@ -113,7 +113,7 @@ export function SignupFormClient({
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="date_of_birth" className="text-xs font-semibold uppercase tracking-wide text-muted">
+              <label htmlFor="date_of_birth" className="text-[13px] font-normal tracking-normal text-muted">
                 Date of birth
               </label>
               <input
@@ -140,7 +140,7 @@ export function SignupFormClient({
             style={{ width: `${panelWidthPct}%` }}
           >
             <div className="space-y-1.5">
-              <label htmlFor="industry_type" className="text-xs font-semibold uppercase tracking-wide text-muted">
+              <label htmlFor="industry_type" className="text-[13px] font-normal tracking-normal text-muted">
                 Industry
               </label>
               <select
@@ -186,7 +186,7 @@ export function SignupFormClient({
             style={{ width: `${panelWidthPct}%` }}
           >
             <div className="space-y-1.5">
-              <label htmlFor="email" className="text-xs font-semibold uppercase tracking-wide text-muted">
+              <label htmlFor="email" className="text-[13px] font-normal tracking-normal text-muted">
                 Email
               </label>
               <input
@@ -199,7 +199,7 @@ export function SignupFormClient({
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="phone" className="text-xs font-semibold uppercase tracking-wide text-muted">
+              <label htmlFor="phone" className="text-[13px] font-normal tracking-normal text-muted">
                 Phone
               </label>
               <input
@@ -213,7 +213,7 @@ export function SignupFormClient({
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="password" className="text-xs font-semibold uppercase tracking-wide text-muted">
+              <label htmlFor="password" className="text-[13px] font-normal tracking-normal text-muted">
                 Password
               </label>
               <input
@@ -227,7 +227,7 @@ export function SignupFormClient({
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="confirm_password" className="text-xs font-semibold uppercase tracking-wide text-muted">
+              <label htmlFor="confirm_password" className="text-[13px] font-normal tracking-normal text-muted">
                 Confirm password
               </label>
               <input

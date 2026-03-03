@@ -53,11 +53,11 @@ export function HomeIncomeLayer({
         <>
           <div className="grid grid-cols-2 gap-4">
             <div className="text-center">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-white/55">{incomeLabel}</p>
+              <p className="text-[10px] font-semibold normal-case tracking-normal text-white/55">{incomeLabel}</p>
               <p className="mt-1.5 text-xl font-bold text-white">{formatMoney(income)}</p>
             </div>
             <div className="border-l border-white/20 text-center">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-white/55">{expenseLabel}</p>
+              <p className="text-[10px] font-semibold normal-case tracking-normal text-white/55">{expenseLabel}</p>
               <p className="mt-1.5 text-xl font-bold text-white">{formatMoney(expenses)}</p>
             </div>
           </div>
@@ -69,7 +69,7 @@ export function HomeIncomeLayer({
           >
             <div className="rounded-2xl bg-white/[0.06] p-3">
               <div className="mb-2 flex items-center justify-between">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-white/55">{incomeLabel} Sources</p>
+                <p className="text-[10px] font-semibold normal-case tracking-normal text-white/55">{incomeLabel} Sources</p>
                 <div className="flex items-center gap-2">
                   <p className="text-[10px] font-medium text-white/40">{orderedIncomeBreakdown.length} streams</p>
                   {showAddIntegration && (

@@ -12,14 +12,14 @@ export default async function LoginPage({
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-xs uppercase tracking-[0.16em] text-muted">Welcome back</p>
+        <p className="text-[13px] font-normal tracking-normal text-muted">Welcome back</p>
         <h1 className="mt-1 text-3xl font-bold tracking-tight text-foreground">Sign in to your workspace</h1>
       </div>
 
       <form action={signInAction} className="app-sheet space-y-3 rounded-3xl p-5 ring-1 ring-primary/10">
         <input type="hidden" name="next" value={next} />
         <div className="space-y-1.5">
-          <label htmlFor="email" className="text-xs font-semibold uppercase tracking-wide text-muted">
+          <label htmlFor="email" className="text-[13px] font-normal tracking-normal text-muted">
             Email
           </label>
           <input
@@ -31,7 +31,7 @@ export default async function LoginPage({
           />
         </div>
         <div className="space-y-1.5">
-          <label htmlFor="password" className="text-xs font-semibold uppercase tracking-wide text-muted">
+          <label htmlFor="password" className="text-[13px] font-normal tracking-normal text-muted">
             Password
           </label>
           <input

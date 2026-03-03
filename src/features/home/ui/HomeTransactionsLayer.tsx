@@ -172,7 +172,7 @@ export function HomeTransactionsLayer({
             <div className="space-y-6">
               {groupedTransactions.map((group) => (
                 <section key={group.key}>
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">{group.label}</p>
+                  <p className="text-[11px] font-semibold normal-case tracking-normal text-muted">{group.label}</p>
                   <div className="mt-2 divide-y divide-border/40">
                     {group.items.map((tx) => {
                       const meta = SOURCE_META[tx.source];

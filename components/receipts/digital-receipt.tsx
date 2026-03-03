@@ -60,7 +60,7 @@ export function DigitalReceipt({
       >
         {/* Store header */}
         <div className="text-center mb-4 pb-3 border-b border-dashed border-white/10">
-          <p className="text-sm font-bold text-white tracking-wide uppercase">
+          <p className="text-sm font-bold text-white tracking-normal normal-case">
             {storeName || "Receipt"}
           </p>
           {date && (
@@ -69,7 +69,7 @@ export function DigitalReceipt({
         </div>
 
         {/* Column headers */}
-        <div className="flex justify-between text-[10px] text-white/30 uppercase tracking-wider mb-2 px-0.5">
+        <div className="flex justify-between text-[10px] text-white/30 normal-case tracking-normal mb-2 px-0.5">
           <span className="flex-1">Item</span>
           <span className="w-10 text-center">Qty</span>
           <span className="w-16 text-right">Amount</span>
@@ -129,7 +129,7 @@ export function DigitalReceipt({
         {/* Footer */}
         {paymentMethod && (
           <div className="mt-3 pt-2 border-t border-dashed border-white/10 text-center">
-            <p className="text-[11px] text-white/30 uppercase tracking-wide">
+            <p className="text-[11px] text-white/30 normal-case tracking-normal">
               Paid via {paymentMethod}
             </p>
           </div>

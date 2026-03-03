@@ -192,7 +192,7 @@ export function VendorMappingPanel(props: VendorMappingPanelProps) {
 
       {parsedLineItems.length > 0 ? (
         <div className="space-y-2">
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted">
+          <h4 className="text-xs font-semibold normal-case tracking-normal text-muted">
             Line Item Mapping
           </h4>
           {parsedLineItems.map((line) => {

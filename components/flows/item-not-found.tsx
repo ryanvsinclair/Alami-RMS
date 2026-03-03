@@ -128,7 +128,7 @@ export function ItemNotFound({
       {mode === "create" && (
         <>
           <Card className="bg-white/5">
-            <p className="text-xs text-muted uppercase tracking-wide font-medium mb-2">New Inventory Item</p>
+            <p className="text-xs text-muted normal-case tracking-normal font-medium mb-2">New Inventory Item</p>
             <div className="space-y-3">
               <Input
                 label="Item Name"

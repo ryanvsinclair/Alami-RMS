@@ -16,7 +16,7 @@ export default function ReportsPage() {
   return (
     <div className="p-4 space-y-4">
       <Card className="p-5">
-        <p className="text-xs uppercase tracking-wide text-muted">Reports</p>
+        <p className="text-xs normal-case tracking-normal text-muted">Reports</p>
         <h1 className="mt-1 text-xl font-bold text-foreground">Reports</h1>
         <p className="mt-2 text-sm text-muted">
           Analytics controls live here. Home stays a snapshot.
@@ -26,7 +26,7 @@ export default function ReportsPage() {
       <Card className="p-4">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted">Time Range</p>
+            <p className="text-xs font-semibold normal-case tracking-normal text-muted">Time Range</p>
             <p className="mt-1 text-sm text-foreground">Choose a reporting window</p>
           </div>
           <div
@@ -58,7 +58,7 @@ export default function ReportsPage() {
       </Card>
 
       <Card className="p-5">
-        <p className="text-xs uppercase tracking-wide text-primary">Financial Breakdown</p>
+        <p className="text-xs normal-case tracking-normal text-primary">Financial Breakdown</p>
         <p className="mt-1 text-sm text-muted">
           {period === "today" ? "Daily" : period === "week" ? "Weekly" : "Monthly"} analytics panels can be added here.
         </p>

@@ -236,7 +236,7 @@ export default function IncomeConnectionsPageClient({
 
       {incomeGroups.map((group) => (
         <div key={group.type} className="space-y-2">
-          <p className="px-1 text-xs font-semibold uppercase tracking-widest text-muted">
+          <p className="px-1 text-xs font-semibold normal-case tracking-normal text-muted">
             {group.label}
           </p>
           <div className="overflow-hidden rounded-3xl bg-card shadow-(--surface-card-shadow)">
@@ -254,7 +254,7 @@ export default function IncomeConnectionsPageClient({
         <div className="space-y-2 pt-1">
           {calendarGroups.map((group) => (
             <div key={group.type} className="space-y-2">
-              <p className="px-1 text-[11px] font-semibold uppercase tracking-wider text-muted/80">
+              <p className="px-1 text-[11px] font-semibold normal-case tracking-normal text-muted/80">
                 {group.label}
               </p>
               <div className="overflow-hidden rounded-3xl bg-card shadow-(--surface-card-shadow)">

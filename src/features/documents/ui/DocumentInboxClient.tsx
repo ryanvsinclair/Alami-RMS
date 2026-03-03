@@ -126,18 +126,18 @@ export function DocumentInboxClient() {
       <section className="rounded-3xl border border-border bg-card p-5 shadow-[var(--surface-card-shadow)]">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-primary">Documents</p>
+            <p className="text-xs font-semibold normal-case tracking-normal text-primary">Documents</p>
             <h1 className="mt-1 text-2xl font-bold text-foreground">{title}</h1>
             <p className="mt-2 text-sm text-muted">
               Review parsed documents and post verified expenses.
             </p>
-            <p className="mt-2 text-xs uppercase tracking-wide text-muted">
+            <p className="mt-2 text-xs normal-case tracking-normal text-muted">
               Total: <span className="text-foreground">{data?.total ?? 0}</span>
             </p>
           </div>
           <Link
             href="/documents/analytics"
-            className="rounded-full border border-border px-3 py-1 text-xs font-semibold uppercase tracking-wide text-foreground/80 hover:text-foreground"
+            className="rounded-full border border-border px-3 py-1 text-xs font-semibold normal-case tracking-normal text-foreground/80 hover:text-foreground"
           >
             Analytics
           </Link>
@@ -152,7 +152,7 @@ export function DocumentInboxClient() {
               key={entry.key}
               type="button"
               onClick={() => setFilter(entry.key)}
-              className={`rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-colors ${
+              className={`rounded-full border px-3 py-1.5 text-xs font-semibold normal-case tracking-normal transition-colors ${
                 active
                   ? "border-foreground text-foreground bg-foreground/5"
                   : "border-border text-muted hover:text-foreground"

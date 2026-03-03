@@ -33,7 +33,7 @@ const navItems: NavItem[] = [
     label: "Home",
     exact: true,
     icon: (
-      // App logo mark — two stacked chevrons, filled with currentColor to
+      // App logo mark Ã¢â‚¬â€ two stacked chevrons, filled with currentColor to
       // match nav active (text-primary) / inactive (text-foreground/45) states.
       <svg className="w-6 h-6" viewBox="0 0 2212 1604" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <path fillRule="evenodd" clipRule="evenodd" d="M1065.66 20.3398C1085.65 -6.77999 1126.19 -6.77988 1146.17 20.3398L2202 1453.24C2226.32 1486.26 2202.75 1532.9 2161.74 1532.9H1709.1C1707.87 1532.9 1706.78 1532.18 1706.02 1531.21L1130.98 788.195C1126.97 783.023 1119.16 783.023 1115.16 788.195L540.112 1531.21C539.358 1532.18 538.264 1532.9 537.032 1532.9H50.09C9.08263 1532.9 -14.4885 1486.26 9.83707 1453.24L1065.66 20.3398Z" />
@@ -51,7 +51,7 @@ const navItems: NavItem[] = [
       </svg>
     ),
   },
-  // Intake Hub — single nav entry for all inventory intake workflows.
+  // Intake Hub Ã¢â‚¬â€ single nav entry for all inventory intake workflows.
   {
     href: "/intake",
     label: "Intake",
@@ -83,7 +83,7 @@ const navItems: NavItem[] = [
       </svg>
     ),
   },
-  // Operational Calendar — aggregated schedule for all business event types.
+  // Operational Calendar Ã¢â‚¬â€ aggregated schedule for all business event types.
   {
     href: "/schedule",
     label: "Schedule",
@@ -162,7 +162,7 @@ export function BottomNav({ enabledModules }: { enabledModules?: string[] }) {
               href={item.href}
               className={`
                 flex h-full min-h-[58px] w-full flex-col items-center justify-center gap-1 rounded-full px-2
-                text-[10px] font-semibold tracking-wide transition-all duration-200 capitalize
+                text-[10px] font-medium tracking-normal transition-all duration-200
                 ${
                   isActive
                     ? "text-primary"

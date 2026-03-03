@@ -188,7 +188,7 @@ export default function PhotoReceivePageClient() {
             <>
               <Card>
                 <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs text-muted uppercase tracking-wide font-medium">Detected Product</p>
+                  <p className="text-xs text-muted normal-case tracking-normal font-medium">Detected Product</p>
                   <button onClick={() => { setRawText(""); setProductInfo(null); setEditableName(""); setError(""); }} className="text-xs text-primary">
                     Clear
                   </button>

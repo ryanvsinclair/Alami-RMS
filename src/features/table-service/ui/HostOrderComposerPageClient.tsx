@@ -250,7 +250,7 @@ export default function HostOrderComposerPageClient({
     <div className="space-y-4">
       <Card className="p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-xs uppercase tracking-wide text-muted">Host Workspace</p>
+          <p className="text-xs normal-case tracking-normal text-muted">Host Workspace</p>
           <div className="flex flex-wrap items-center justify-end gap-3">
             <div className="flex flex-wrap items-center gap-3 text-xs font-semibold">
               <Link href="/service/menu" className="text-primary hover:underline">

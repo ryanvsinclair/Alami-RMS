@@ -98,7 +98,7 @@ export default function StaffPageClient() {
             required
           />
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wide text-muted">
+            <label className="text-[13px] font-normal tracking-normal text-muted">
               Role
             </label>
             <select

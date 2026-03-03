@@ -145,7 +145,7 @@ export default function ManualReceivePageClient() {
         <>
           {isNewItem ? (
             <Card>
-              <p className="text-xs text-muted uppercase tracking-wide">New Item</p>
+              <p className="text-xs text-muted normal-case tracking-normal">New Item</p>
               <Input
                 label="Item Name"
                 value={newItemName}
@@ -155,7 +155,7 @@ export default function ManualReceivePageClient() {
             </Card>
           ) : (
             <Card>
-              <p className="text-xs text-muted uppercase tracking-wide">Selected Item</p>
+              <p className="text-xs text-muted normal-case tracking-normal">Selected Item</p>
               <p className="font-semibold text-lg">{selectedItem?.name}</p>
               <Badge variant="info">{selectedItem?.unit}</Badge>
             </Card>

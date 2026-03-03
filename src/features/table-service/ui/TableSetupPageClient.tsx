@@ -190,7 +190,7 @@ export default function TableSetupPageClient() {
     <div className="space-y-4 p-4">
       <Card className="p-5">
         <div className="flex items-center justify-between gap-3">
-          <p className="text-xs uppercase tracking-wide text-muted">Table Service</p>
+          <p className="text-xs normal-case tracking-normal text-muted">Table Service</p>
           <Link href="/service/menu" className="text-xs font-semibold text-primary hover:underline">
             Manage Menu
           </Link>

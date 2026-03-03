@@ -68,7 +68,7 @@ function ContactForm({
       </div>
       <Input label="Website" placeholder="https://..." value={form.website} onChange={setField("website")} />
       <div className="space-y-1.5">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted">Notes</p>
+        <p className="text-xs font-semibold normal-case tracking-normal text-muted">Notes</p>
         <textarea
           placeholder="Delivery days, minimum order, etc."
           value={form.notes}

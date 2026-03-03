@@ -166,7 +166,7 @@ export function HomeDashboardClient() {
             </div>
 
             <div className="relative z-10 mt-12 flex flex-col items-center text-center">
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-white/55">
+              <p className="text-[11px] font-semibold normal-case tracking-normal text-white/55">
                 {getBalanceViewLabel(balanceView)}
               </p>
               <div className="mt-2 min-h-11">

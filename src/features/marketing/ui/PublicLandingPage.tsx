@@ -39,7 +39,7 @@ export function PublicLandingPage() {
 
         <main className="flex flex-1 items-center py-10 sm:py-16">
           <div className="mx-auto w-full max-w-3xl text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary/85">
+            <p className="text-xs font-semibold normal-case tracking-normal text-primary/85">
               Inventory + Income
             </p>
             <h1 className="mt-3 text-3xl font-bold tracking-tight text-foreground sm:text-5xl">

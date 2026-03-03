@@ -88,7 +88,7 @@ export default function ShoppingPage() {
 
           {s.selectedStore && (
             <Card className="p-5">
-              <p className="text-xs text-muted uppercase tracking-wide">Confirm Store</p>
+              <p className="text-xs text-muted normal-case tracking-normal">Confirm Store</p>
               <h3 className="text-xl font-bold mt-1">{s.selectedStore.name}</h3>
               <p className="text-sm text-muted mt-1">{s.selectedStore.formatted_address}</p>
               <div className="mt-3 rounded-xl overflow-hidden border border-border">
@@ -133,7 +133,7 @@ export default function ShoppingPage() {
         <Card className="p-5">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-xs text-muted uppercase tracking-wide">Store</p>
+              <p className="text-xs text-muted normal-case tracking-normal">Store</p>
               <h2 className="text-xl font-bold">{session.store_name}</h2>
               <p className="text-xs text-muted">{session.store_address}</p>
             </div>
@@ -262,7 +262,7 @@ export default function ShoppingPage() {
                 UPC {s.quickScanFeedback.normalized_barcode}
               </p>
               <p className="mt-1 text-xs text-muted">
-                Source: {s.quickScanFeedback.source} • Confidence: {s.quickScanFeedback.confidence}
+                Source: {s.quickScanFeedback.source} â€¢ Confidence: {s.quickScanFeedback.confidence}
               </p>
               {s.quickScanFeedback.deferred_resolution && (
                 <p className="mt-1 text-xs text-muted">
@@ -295,9 +295,9 @@ export default function ShoppingPage() {
                   <p className="text-sm font-medium">{suggestion.display_name}</p>
                   <p className="mt-0.5 text-xs text-muted">
                     PLU {suggestion.plu_code}
-                    {suggestion.variety ? ` • ${suggestion.variety}` : ""}
-                    {suggestion.commodity ? ` • ${suggestion.commodity}` : ""}
-                    {" • "}
+                    {suggestion.variety ? ` â€¢ ${suggestion.variety}` : ""}
+                    {suggestion.commodity ? ` â€¢ ${suggestion.commodity}` : ""}
+                    {" â€¢ "}
                     Add qty {Number(s.qty) > 0 ? Number(s.qty) : 1}
                   </p>
                 </button>
@@ -408,7 +408,7 @@ export default function ShoppingPage() {
                   <div className="relative flex justify-center"><span className="bg-[#080d14] px-2 text-xs text-muted">not listed?</span></div>
                 </div>
                 <Button variant="secondary" className="w-full mt-3" onClick={() => s.resetScan()}>
-                  None of these — add new item
+                  None of these â€” add new item
                 </Button>
               </>
             )}
@@ -482,7 +482,7 @@ export default function ShoppingPage() {
               </div>
 
               <div className="mt-2 text-xs text-muted">
-                Staged: {formatMoney(item.staged_line_total)} {item.receipt_line_total != null && `• Receipt: ${formatMoney(item.receipt_line_total)}`}
+                Staged: {formatMoney(item.staged_line_total)} {item.receipt_line_total != null && `â€¢ Receipt: ${formatMoney(item.receipt_line_total)}`}
               </div>
 
               {item.reconciliation_status !== "exact" && item.resolution === "pending" && (
@@ -563,7 +563,7 @@ export default function ShoppingPage() {
                         <p className="mt-1 text-xs text-muted">
                           UPC {getItemBarcodeBadgeValue(barcodeItem)}
                           {barcodeItem.staged_line_total != null
-                            ? ` • Staged ${formatMoney(barcodeItem.staged_line_total)}`
+                            ? ` â€¢ Staged ${formatMoney(barcodeItem.staged_line_total)}`
                             : ""}
                         </p>
                       </div>
@@ -591,7 +591,7 @@ export default function ShoppingPage() {
 
                     {s.photoFallbackAnalysisByItemId[barcodeItem.id] && (
                       <div className="mt-3 rounded-xl border border-border p-3">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                        <p className="text-xs font-semibold normal-case tracking-normal text-muted">
                           Photo Hints
                         </p>
                         <p className="mt-1 text-sm">
@@ -622,7 +622,7 @@ export default function ShoppingPage() {
 
                     {s.webFallbackSuggestionByItemId[barcodeItem.id] && (
                       <div className="mt-3 rounded-xl border border-border p-3">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                        <p className="text-xs font-semibold normal-case tracking-normal text-muted">
                           Web/AI Fallback Suggestion
                         </p>
                         <p className="mt-1 text-xs text-muted">
@@ -770,7 +770,7 @@ export default function ShoppingPage() {
           </Button>
           {s.receiptScanning && (
             <p className="text-xs text-muted text-center mt-2 animate-pulse">
-              Processing with TabScanner — this may take a few seconds...
+              Processing with TabScanner â€” this may take a few seconds...
             </p>
           )}
           </Card>

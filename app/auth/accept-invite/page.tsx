@@ -13,7 +13,7 @@ export default async function AcceptInvitePage({
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-xs uppercase tracking-[0.16em] text-muted">Team invite</p>
+        <p className="text-xs normal-case tracking-normal text-muted">Team invite</p>
         <h1 className="mt-1 text-3xl font-bold text-foreground">Join team</h1>
       </div>
 

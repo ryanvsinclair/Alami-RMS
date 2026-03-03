@@ -113,7 +113,7 @@ export default function OrderDetailPage() {
       <div className="p-4 space-y-4">
         {/* Store + Summary */}
         <Card className="p-5">
-          <p className="text-xs text-muted uppercase tracking-wide">Store</p>
+          <p className="text-xs text-muted normal-case tracking-normal">Store</p>
           <h2 className="text-xl font-bold">{session.store_name}</h2>
           {session.store_address && (
             <p className="text-xs text-muted mt-0.5">{session.store_address}</p>
@@ -148,7 +148,7 @@ export default function OrderDetailPage() {
         {session.receipt?.image_url && (
           <Card className="p-5">
             <div className="mb-2 flex items-center justify-between gap-2">
-              <p className="text-xs text-muted uppercase tracking-wide">Receipt</p>
+              <p className="text-xs text-muted normal-case tracking-normal">Receipt</p>
               {session.receipt?.id && (
                 <Link
                   href={`/receive/receipt/${session.receipt.id}`}
