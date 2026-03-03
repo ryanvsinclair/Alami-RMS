@@ -20,14 +20,14 @@ export function PageHeader({
           {backHref && (
             <button
               onClick={() => router.push(backHref)}
-              className="grid h-10 w-10 place-items-center rounded-full text-muted transition-colors hover:bg-foreground/8 hover:text-foreground"
+              className="inline-flex items-center text-[17px] font-normal text-primary"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
               </svg>
             </button>
           )}
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">{title}</h1>
+          <h1 className="text-[28px] font-semibold tracking-tight text-foreground">{title}</h1>
         </div>
         {action && <div>{action}</div>}
       </div>
