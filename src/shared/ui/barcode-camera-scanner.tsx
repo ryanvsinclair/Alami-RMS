@@ -74,6 +74,8 @@ export function BarcodeCameraScanner({
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const detectorRef = useRef<BarcodeDetectorInstance | null>(null);
+  const zxingControlsRef = useRef<{ stop: () => void } | null>(null);
+  const zxingReaderRef = useRef<{ reset?: () => void } | null>(null);
   const scanTimeoutRef = useRef<number | null>(null);
   const activeRef = useRef(false);
   const lastDetectedRef = useRef<string>("");
@@ -91,6 +93,26 @@ export function BarcodeCameraScanner({
     }
 
     detectorRef.current = null;
+
+    const zxingControls = zxingControlsRef.current;
+    if (zxingControls) {
+      try {
+        zxingControls.stop();
+      } catch {
+        // no-op
+      }
+      zxingControlsRef.current = null;
+    }
+
+    const zxingReader = zxingReaderRef.current;
+    if (zxingReader?.reset) {
+      try {
+        zxingReader.reset();
+      } catch {
+        // no-op
+      }
+    }
+    zxingReaderRef.current = null;
 
     const stream = streamRef.current;
     if (stream) {
@@ -149,37 +171,59 @@ export function BarcodeCameraScanner({
     lastDetectedRef.current = "";
 
     try {
-      const detectorCtor = getBarcodeDetectorCtor();
-      if (!detectorCtor) {
-        throw new Error(
-          "Camera scanning is not supported in this browser. Continue with typed or hardware scanner input.",
-        );
-      }
-
       if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
         throw new Error("Camera access is unavailable on this device.");
       }
 
-      const supportedFormats = detectorCtor.getSupportedFormats
-        ? await detectorCtor.getSupportedFormats()
-        : null;
-
+      const detectorCtor = getBarcodeDetectorCtor();
       const requestedFormats = formats && formats.length > 0 ? formats : DEFAULT_FORMATS;
-      const detectorFormats = supportedFormats
-        ? requestedFormats.filter((format) => supportedFormats.includes(format))
-        : requestedFormats;
 
-      detectorRef.current = new detectorCtor(
-        detectorFormats.length > 0 ? { formats: detectorFormats } : undefined,
-      );
+      if (detectorCtor) {
+        const supportedFormats = detectorCtor.getSupportedFormats
+          ? await detectorCtor.getSupportedFormats()
+          : null;
 
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: false,
-        video: {
-          facingMode: { ideal: "environment" },
-        },
-      });
-      streamRef.current = stream;
+        const detectorFormats = supportedFormats
+          ? requestedFormats.filter((format) => supportedFormats.includes(format))
+          : requestedFormats;
+
+        detectorRef.current = new detectorCtor(
+          detectorFormats.length > 0 ? { formats: detectorFormats } : undefined,
+        );
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: {
+            facingMode: { ideal: "environment" },
+          },
+        });
+        streamRef.current = stream;
+        setScannerOpen(true);
+
+        await new Promise<void>((resolve) => {
+          if (typeof window !== "undefined") {
+            window.requestAnimationFrame(() => resolve());
+          } else {
+            resolve();
+          }
+        });
+
+        const video = videoRef.current;
+        if (!video) {
+          throw new Error("Scanner preview failed to initialize.");
+        }
+
+        video.srcObject = stream;
+        await video.play();
+
+        activeRef.current = true;
+        void scanFrame();
+        return;
+      }
+
+      const { BrowserMultiFormatReader } = await import("@zxing/browser");
+      const reader = new BrowserMultiFormatReader();
+      zxingReaderRef.current = reader as { reset?: () => void };
       setScannerOpen(true);
 
       await new Promise<void>((resolve) => {
@@ -195,11 +239,23 @@ export function BarcodeCameraScanner({
         throw new Error("Scanner preview failed to initialize.");
       }
 
-      video.srcObject = stream;
-      await video.play();
-
       activeRef.current = true;
-      void scanFrame();
+      const controls = await reader.decodeFromVideoDevice(undefined, video, (result) => {
+        if (!activeRef.current) return;
+        const rawValue = result?.getText()?.trim();
+        if (rawValue && rawValue !== lastDetectedRef.current) {
+          lastDetectedRef.current = rawValue;
+          onDetected(rawValue);
+          setScannerOpen(false);
+          stopScanner();
+        }
+      });
+
+      if (!activeRef.current) {
+        controls.stop();
+        return;
+      }
+      zxingControlsRef.current = controls as { stop: () => void };
     } catch (err) {
       setScannerOpen(false);
       stopScanner();
