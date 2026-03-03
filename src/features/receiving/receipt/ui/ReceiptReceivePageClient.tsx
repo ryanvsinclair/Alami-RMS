@@ -421,7 +421,7 @@ export default function ReceiptReceivePageClient() {
           {inputMode === "text" && (
             <>
               <textarea
-                className="w-full rounded-lg border border-border bg-white/6 px-3 py-2.5 text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/50 min-h-[200px] text-sm font-mono"
+                className="w-full rounded-[10px] border border-border bg-[var(--fill-tertiary)] px-3 py-2.5 text-foreground placeholder:text-muted focus:outline-none min-h-[200px] text-sm font-mono"
                 placeholder={"2x Chicken Breast 2kg   $15.98\n1x BBQ Sauce 1L          $4.99\n3x Napkins 200pk         $8.97\n..."}
                 value={rawText}
                 onChange={(e) => setRawText(e.target.value)}

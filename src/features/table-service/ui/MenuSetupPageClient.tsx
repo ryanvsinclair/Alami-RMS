@@ -333,7 +333,7 @@ export default function MenuSetupPageClient() {
           rows={6}
           value={csvText}
           onChange={(event) => setCsvText(event.target.value)}
-          className="w-full resize-y rounded-[10px] border border-border bg-foreground/[0.04] px-4 py-3 text-sm text-foreground placeholder:text-muted/70"
+          className="w-full resize-y rounded-[10px] border border-border bg-[var(--fill-tertiary)] px-4 py-3 text-sm text-foreground placeholder:text-muted/70"
           placeholder={"name,category,description,price,is_available,sort_order\nCheeseburger,Entrees,Brioche bun,12.50,true,10"}
         />
         <Button onClick={handleImportCsv} loading={csvImporting} disabled={!csvText.trim()}>

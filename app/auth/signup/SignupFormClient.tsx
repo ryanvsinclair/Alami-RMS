@@ -96,7 +96,7 @@ export function SignupFormClient({
                   id="first_name"
                   name="first_name"
                   required
-                  className="h-12 w-full rounded-[10px] border border-border bg-foreground/[0.028] px-4 text-foreground placeholder:text-muted/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] outline-none focus:ring-2 focus:ring-primary/30"
+                  className="h-12 w-full rounded-[10px] border border-border bg-[var(--fill-tertiary)] px-4 text-foreground placeholder:text-muted/70 focus:outline-none"
                 />
               </div>
               <div className="space-y-1.5">
@@ -107,7 +107,7 @@ export function SignupFormClient({
                   id="last_name"
                   name="last_name"
                   required
-                  className="h-12 w-full rounded-[10px] border border-border bg-foreground/[0.028] px-4 text-foreground placeholder:text-muted/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] outline-none focus:ring-2 focus:ring-primary/30"
+                  className="h-12 w-full rounded-[10px] border border-border bg-[var(--fill-tertiary)] px-4 text-foreground placeholder:text-muted/70 focus:outline-none"
                 />
               </div>
             </div>
@@ -122,7 +122,7 @@ export function SignupFormClient({
                 type="date"
                 max={maxDateOfBirth}
                 required
-                className="h-12 w-full rounded-[10px] border border-border bg-foreground/[0.028] px-4 text-foreground placeholder:text-muted/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] outline-none focus:ring-2 focus:ring-primary/30"
+                className="h-12 w-full rounded-[10px] border border-border bg-[var(--fill-tertiary)] px-4 text-foreground placeholder:text-muted/70 focus:outline-none"
               />
             </div>
 
@@ -148,7 +148,7 @@ export function SignupFormClient({
                 name="industry_type"
                 defaultValue="restaurant"
                 required
-                className="h-12 w-full rounded-2xl border border-border bg-foreground/[0.028] px-4 text-foreground outline-none focus:ring-2 focus:ring-primary/30"
+                className="h-12 w-full rounded-2xl border border-border bg-[var(--fill-tertiary)] px-4 text-foreground focus:outline-none"
               >
                 {INDUSTRY_TYPES.map((industry) => {
                   const enabled = industry === "restaurant";
@@ -194,7 +194,7 @@ export function SignupFormClient({
                 name="email"
                 type="email"
                 required
-                className="h-12 w-full rounded-[10px] border border-border bg-foreground/[0.028] px-4 text-foreground placeholder:text-muted/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] outline-none focus:ring-2 focus:ring-primary/30"
+                className="h-12 w-full rounded-[10px] border border-border bg-[var(--fill-tertiary)] px-4 text-foreground placeholder:text-muted/70 focus:outline-none"
               />
             </div>
 
@@ -208,7 +208,7 @@ export function SignupFormClient({
                 type="tel"
                 autoComplete="tel"
                 required
-                className="h-12 w-full rounded-[10px] border border-border bg-foreground/[0.028] px-4 text-foreground placeholder:text-muted/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] outline-none focus:ring-2 focus:ring-primary/30"
+                className="h-12 w-full rounded-[10px] border border-border bg-[var(--fill-tertiary)] px-4 text-foreground placeholder:text-muted/70 focus:outline-none"
               />
             </div>
 
@@ -222,7 +222,7 @@ export function SignupFormClient({
                 type="password"
                 minLength={8}
                 required
-                className="h-12 w-full rounded-[10px] border border-border bg-foreground/[0.028] px-4 text-foreground placeholder:text-muted/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] outline-none focus:ring-2 focus:ring-primary/30"
+                className="h-12 w-full rounded-[10px] border border-border bg-[var(--fill-tertiary)] px-4 text-foreground placeholder:text-muted/70 focus:outline-none"
               />
             </div>
 
@@ -236,7 +236,7 @@ export function SignupFormClient({
                 type="password"
                 minLength={8}
                 required
-                className="h-12 w-full rounded-[10px] border border-border bg-foreground/[0.028] px-4 text-foreground placeholder:text-muted/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] outline-none focus:ring-2 focus:ring-primary/30"
+                className="h-12 w-full rounded-[10px] border border-border bg-[var(--fill-tertiary)] px-4 text-foreground placeholder:text-muted/70 focus:outline-none"
               />
             </div>
 

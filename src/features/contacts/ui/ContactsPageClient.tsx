@@ -74,7 +74,7 @@ function ContactForm({
           value={form.notes}
           onChange={setField("notes")}
           rows={3}
-          className="w-full resize-none rounded-[10px] border border-border bg-foreground/[0.04] px-4 py-3 text-sm text-foreground placeholder:text-muted/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] outline-none focus:ring-2 focus:ring-primary/30"
+          className="w-full resize-none rounded-[10px] border border-border bg-[var(--fill-tertiary)] px-4 py-3 text-sm text-foreground placeholder:text-muted/70 focus:outline-none"
         />
       </div>
       <div className="grid grid-cols-2 gap-2 pt-1">
