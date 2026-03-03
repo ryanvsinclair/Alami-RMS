@@ -1,15 +1,15 @@
 ﻿# Codebase Changelog
 
 Status: Active (living document)
-Last Updated: 2026-03-02
+Last Updated: 2026-03-03
 Primary Purpose: Chronological engineering changelog and validation record.
 
-Companion overview: `docs/codebase-overview.md`
+Companion overview: `docs/active/codebase-overview.md`
 
 ## Agent Note (Required)
 
-- If anything fundamentally new is implemented in how the app works, functions, or what it offers, you must also open `docs/codebase-overview.md` and update the relevant section(s) so the overview matches reality.
-- Example: if the Inventory system changes enough that the current Inventory section no longer accurately describes the app, update that Inventory section in `docs/codebase-overview.md` as part of the same change.
+- If anything fundamentally new is implemented in how the app works, functions, or what it offers, you must also open `docs/active/codebase-overview.md` and update the relevant section(s) so the overview matches reality.
+- Example: if the Inventory system changes enough that the current Inventory section no longer accurately describes the app, update that Inventory section in `docs/active/codebase-overview.md` as part of the same change.
 
 ## Changelog Usage
 
@@ -19,6 +19,30 @@ Companion overview: `docs/codebase-overview.md`
 - Do not delete historical entries; add corrections as new entries.
 
 ## Changelog (Append New Entries At Top)
+
+### 2026-03-03 - Table-service host scanner now reads table number in-app (no QR URL navigation)
+
+- Suggested Commit Title: `feat(table-service): switch host QR flow to in-app table-number matching and direct host launch`
+- Scope:
+  - Table Service `/service/tables` host scanner and QR payload behavior refinement.
+- What changed:
+  - Reworked table setup built-in scanner flow to avoid navigating to scanned URLs for host usage.
+  - Host scanner now parses table number from scanned payload (`table`, `tableNumber`, `t`, `table:...`, or raw value), matches configured table in current business, and routes directly to `/service/host?table=<tableId>`.
+  - Added direct `Take Order` action per table in setup list to mirror scanner outcome.
+  - Changed generated table QR URLs from token route shape (`/scan/t/[token]`) to diner URL shape (`/r/[businessId]?table=[tableNumber]`) for simpler payload semantics.
+  - Removed token-focused controls from table setup surface (`Token` display and `Regenerate Token` action).
+  - Updated active table-service docs and overview docs to reflect host in-app scan behavior and current QR payload format.
+  - Corrected overview/changelog companion path references to `docs/active/*`.
+- Files changed:
+  - `src/features/table-service/ui/TableSetupPageClient.tsx`
+  - `docs/active/table-service-host-kitchen-workspace-breakdown.md`
+  - `docs/active/codebase-overview.md`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx eslint src/features/table-service/ui/TableSetupPageClient.tsx src/shared/ui/barcode-camera-scanner.tsx` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts src/features/table-service/shared/table-service.launch-smoke.test.ts` -> FAIL (1 assertion in existing home/profile mode smoke check expecting `TABLE_SERVICE_WORKSPACE_MODE_STORAGE_KEY` in `app/page.tsx`; unrelated to this table-setup change set)
+- Dependency check: no new dependencies in this change set.
+- Env-var check: no new environment variables.
 
 ### 2026-03-02 - Signup step slider width overflow fixed
 

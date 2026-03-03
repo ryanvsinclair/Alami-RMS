@@ -62,22 +62,38 @@ Behavior:
 - Kitchen page:
   - `app/(dashboard)/service/kitchen/page.tsx`
 
-### 5. QR scan split logic (member vs guest)
+### 5. QR behavior (public diner path vs in-app host scanner)
+
+Public diner path (URL navigation):
 
 - File: `app/scan/t/[token]/page.tsx`
 - File: `src/features/table-service/server/table.service.ts` (`resolveDiningTableByQrToken`, `getOrCreateActiveTableSession`)
 
 Behavior:
 
-1. Scan token resolves a dining table.
-2. If scanner is authenticated and is a member of that table's business:
-   - create or reuse active table session
-   - redirect to `/service/host?table=<id>&session=<id>`
-3. Otherwise, redirect to public diner page `/r/<businessId>`.
+1. `/scan/t/[token]` resolves token -> table/business.
+2. If signed-in scanner is a member of that business, it redirects to host.
+3. Otherwise it redirects to public diner page `/r/<businessId>`.
+
+In-app host scanner path (no QR URL navigation):
+
+- File: `src/features/table-service/ui/TableSetupPageClient.tsx`
+
+Behavior:
+
+1. Built-in scanner reads QR payload text only.
+2. Host flow extracts a table number from payload (`table=...`, `tableNumber=...`, `t=...`, `table:...`, or raw text).
+3. Client matches table number against already-loaded tables in the current business.
+4. App routes directly to `/service/host?table=<tableId>`.
+5. Host page creates/reuses active session server-side as normal.
+
+Current generated QR payload from tables setup:
+
+- `/r/<businessId>?table=<tableNumber>`
 
 Public page:
 
-- `app/r/[publicSlug]/page.tsx` (currently keyed by business id and renders menu + review CTA).
+- `app/r/[publicSlug]/page.tsx` (business-keyed menu + optional review CTA).
 
 ### 6. Host workflow lifecycle
 
@@ -300,6 +316,7 @@ If Prisma schema changed:
 
 ## Known Current Constraints and Notes
 
-- Host route currently uses `table` query parameter to resolve session server-side; the `session` query parameter passed by scan is not consumed in host route logic.
+- Host route uses `table` query parameter to resolve table and create/reuse session server-side.
 - Workspace mode toggle is intentionally temporary and expected to be replaced by role-based access in a later refactor.
 - Public diner route parameter is named `publicSlug` but currently resolved against business id.
+- `DiningTable.qr_token` still exists for backward compatibility and public scan route support, but table setup UI now favors table-number QR payload for host in-app scanning.

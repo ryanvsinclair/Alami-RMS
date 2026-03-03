@@ -1,7 +1,7 @@
 ﻿# Codebase Overview and Engineering Guide
 
 Status: Active (living document)
-Last Updated: 2026-03-02
+Last Updated: 2026-03-03
 Primary Purpose: Current architecture reference, implementation summary, and feature-placement rules.
 
 ---
@@ -40,7 +40,7 @@ Use it to:
 - find canonical file locations for new work
 - understand what major features already exist
 - follow the required rules for adding/changing features without breaking the app structure
-- review recent changes in `docs/codebase-changelog.md`
+- review recent changes in `docs/active/codebase-changelog.md`
 
 What this document is not:
 
@@ -433,11 +433,14 @@ Implemented capabilities:
 - CSV import for menu items with header mapping and row-level validation.
 - Import result reporting (`createdCount`, `updatedCount`, `skippedCount`, `errors`).
 - Dining-table CRUD in setup surface (`create`, `update`, `delete`).
-- Static per-table scan-token generation and regeneration (`DiningTable.qr_token`) with copyable `/scan/t/[token]` URLs.
+- Table setup now generates diner-facing QR payload URLs in the shape `/r/[businessId]?table=[tableNumber]`.
 - Public scan resolver route `/scan/t/[token]` now resolves token->table/business context and returns 404 for unknown tokens.
-- Session-aware scan branching baseline:
+- Session-aware scan branching for direct `/scan/t/[token]` navigation:
   - member of scanned business -> host workspace (`/service/host`)
   - guest/non-member -> public landing (`/r/[publicSlug]`)
+- In-app built-in host scanner in `/service/tables` now reads QR payload text without navigating to the QR URL.
+- Host scanner extracts table number (`table`, `tableNumber`, `t`, `table:...`, or raw text), matches table in current business, and routes directly to `/service/host?table=<tableId>`.
+- Table setup now includes direct per-table `Take Order` action equivalent to host scanner result.
 - Public landing is now menu-first with category-grouped available items.
 - Public landing shows review CTA only when `google_place_id` exists.
 - Host workspace now renders a table/session-aware order composer draft surface with:

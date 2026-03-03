@@ -10,7 +10,6 @@ import {
   createDiningTable,
   deleteDiningTable,
   getDiningTables,
-  regenerateDiningTableQrToken,
   updateDiningTable,
 } from "@/app/actions/modules/table-service";
 import type { TableServiceDiningTableSummary } from "@/features/table-service/shared";
@@ -34,27 +33,41 @@ function resolveTableQrOrigin() {
   }
 }
 
-function resolveTableScanTarget(rawScanValue: string) {
+function normalizeComparableTableNumber(value: string) {
+  return value.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function resolveTableNumberFromScanValue(rawScanValue: string) {
   const value = rawScanValue.trim();
   if (!value) return null;
 
-  if (value.startsWith("/scan/t/")) return value;
-  if (value.startsWith("scan/t/")) return `/${value}`;
-
-  if (/^[a-zA-Z0-9_-]{6,}$/.test(value)) {
-    return `/scan/t/${value}`;
+  const prefixedTableNumber = value.match(/^table\s*[:=]\s*(.+)$/i)?.[1]?.trim();
+  if (prefixedTableNumber) {
+    return prefixedTableNumber;
   }
 
-  try {
-    const parsed = new URL(value);
-    if (parsed.pathname.startsWith("/scan/t/")) {
-      return parsed.toString();
-    }
-  } catch {
+  if (value.startsWith("/scan/t/") || value.startsWith("scan/t/")) {
     return null;
   }
 
-  return null;
+  try {
+    const parsed = new URL(
+      value,
+      typeof window !== "undefined" ? window.location.origin : TABLE_QR_LOCAL_NETWORK_ORIGIN,
+    );
+    const tableNumber =
+      parsed.searchParams.get("table") ??
+      parsed.searchParams.get("tableNumber") ??
+      parsed.searchParams.get("t");
+
+    if (tableNumber?.trim()) {
+      return tableNumber.trim();
+    }
+  } catch {
+    return value;
+  }
+
+  return value;
 }
 
 export default function TableSetupPageClient() {
@@ -69,6 +82,7 @@ export default function TableSetupPageClient() {
   const [qrTable, setQrTable] = useState<DiningTable | null>(null);
   const [qrScanValue, setQrScanValue] = useState("");
   const [qrScanError, setQrScanError] = useState("");
+  const [startingFromScan, setStartingFromScan] = useState(false);
 
   const [origin, setOrigin] = useState("");
 
@@ -92,17 +106,32 @@ export default function TableSetupPageClient() {
     void loadTables();
   }, []);
 
-  function openScannedTableRoute(rawScanValue: string) {
-    const target = resolveTableScanTarget(rawScanValue);
-    if (!target) {
-      setQrScanError("Detected QR is not a valid table scan route.");
+  function openHostOrderForTable(tableId: string) {
+    if (typeof window === "undefined") return;
+    window.location.assign(`/service/host?table=${encodeURIComponent(tableId)}`);
+  }
+
+  function startHostOrderFromScanValue(rawScanValue: string) {
+    const scannedTableNumber = resolveTableNumberFromScanValue(rawScanValue);
+    if (!scannedTableNumber) {
+      setQrScanError("QR payload is missing a table number. Regenerate this table QR code.");
+      return;
+    }
+
+    const normalizedScannedTableNumber = normalizeComparableTableNumber(scannedTableNumber);
+    const matchedTable =
+      tables.find(
+        (table) => normalizeComparableTableNumber(table.tableNumber) === normalizedScannedTableNumber,
+      ) ?? null;
+
+    if (!matchedTable) {
+      setQrScanError(`No configured table matches "${scannedTableNumber}".`);
       return;
     }
 
     setQrScanError("");
-    if (typeof window !== "undefined") {
-      window.location.assign(target);
-    }
+    setStartingFromScan(true);
+    openHostOrderForTable(matchedTable.id);
   }
 
   async function handleCreate() {
@@ -149,19 +178,6 @@ export default function TableSetupPageClient() {
     }
   }
 
-  async function handleRegenerateToken(tableId: string) {
-    setSaving(true);
-    setError("");
-    try {
-      await regenerateDiningTableQrToken(tableId);
-      await loadTables();
-    } catch {
-      setError("Failed to regenerate QR token");
-    } finally {
-      setSaving(false);
-    }
-  }
-
   const sortedTables = useMemo(
     () =>
       [...tables].sort((a, b) =>
@@ -181,7 +197,7 @@ export default function TableSetupPageClient() {
         </div>
         <h1 className="mt-1 text-xl font-bold text-foreground">Dining Table Setup</h1>
         <p className="mt-2 text-sm text-muted">
-          Create tables and generate static scan tokens for `/scan/t/[token]`.
+          Create tables and generate QR codes for diners. Host scanners read the table number and open order-taking directly.
         </p>
       </Card>
 
@@ -207,22 +223,22 @@ export default function TableSetupPageClient() {
       <Card className="p-5 space-y-3">
         <p className="text-sm font-semibold">Scan Table QR (Built In)</p>
         <p className="text-sm text-muted">
-          Use this device camera to test a table QR and open the scanned table route.
+          Use this device camera to read the table number and jump straight into host order-taking.
         </p>
         <BarcodeCameraScanner
-          disabled={saving}
+          disabled={saving || loading || startingFromScan}
           triggerLabel="Scan Table QR With Camera"
           formats={["qr_code"]}
-          helperText="Point your camera at a table QR code. The scanned route opens automatically."
+          helperText="Point your camera at a table QR code. We will read the table number and start host ordering."
           cancelLabel="Cancel QR Scanner"
           onDetected={(detectedValue) => {
             setQrScanValue(detectedValue);
-            openScannedTableRoute(detectedValue);
+            startHostOrderFromScanValue(detectedValue);
           }}
         />
         <Input
-          label="Manual scan value"
-          placeholder="/scan/t/[token]"
+          label="Manual QR payload"
+          placeholder="/r/[business]?table=Table 12"
           value={qrScanValue}
           onChange={(event) => {
             setQrScanValue(event.target.value);
@@ -232,10 +248,11 @@ export default function TableSetupPageClient() {
         <Button
           type="button"
           variant="secondary"
-          onClick={() => openScannedTableRoute(qrScanValue)}
-          disabled={!qrScanValue.trim()}
+          onClick={() => startHostOrderFromScanValue(qrScanValue)}
+          disabled={!qrScanValue.trim() || loading || startingFromScan}
+          loading={startingFromScan}
         >
-          Open Scanned Route
+          Start Host Order
         </Button>
         {qrScanError && <p className="text-sm text-danger">{qrScanError}</p>}
       </Card>
@@ -249,7 +266,9 @@ export default function TableSetupPageClient() {
           <p className="text-sm text-muted">No dining tables configured yet.</p>
         ) : (
           sortedTables.map((table) => {
-            const scanUrl = origin ? `${origin}/scan/t/${table.qrToken}` : `/scan/t/${table.qrToken}`;
+            const scanUrl = origin
+              ? `${origin}/r/${encodeURIComponent(table.businessId)}?table=${encodeURIComponent(table.tableNumber)}`
+              : `/r/${encodeURIComponent(table.businessId)}?table=${encodeURIComponent(table.tableNumber)}`;
             return (
               <div key={table.id} className="rounded-2xl border border-border p-3 space-y-2">
                 {editingTableId === table.id ? (
@@ -277,9 +296,14 @@ export default function TableSetupPageClient() {
                     <div className="flex items-center justify-between gap-3">
                       <div>
                         <p className="font-semibold">{table.tableNumber}</p>
-                        <p className="text-xs text-muted">Token: {table.qrToken}</p>
                       </div>
                       <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => openHostOrderForTable(table.id)}
+                        >
+                          Take Order
+                        </Button>
                         <Button
                           size="sm"
                           variant="secondary"
@@ -325,14 +349,6 @@ export default function TableSetupPageClient() {
                       >
                         Copy Scan URL
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => handleRegenerateToken(table.id)}
-                        loading={saving}
-                      >
-                        Regenerate Token
-                      </Button>
                     </div>
                   </>
                 )}
@@ -345,7 +361,9 @@ export default function TableSetupPageClient() {
       {qrTable && origin && (
         <TableQrModal
           tableNumber={qrTable.tableNumber}
-          scanUrl={`${origin}/scan/t/${qrTable.qrToken}`}
+          scanUrl={`${origin}/r/${encodeURIComponent(qrTable.businessId)}?table=${encodeURIComponent(
+            qrTable.tableNumber,
+          )}`}
           onClose={() => setQrTable(null)}
         />
       )}
