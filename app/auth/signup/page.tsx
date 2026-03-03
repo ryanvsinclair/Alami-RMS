@@ -18,7 +18,7 @@ export default async function SignupPage({
 
   return (
     <div className="space-y-6">
-      <p className="text-[13px] font-normal tracking-normal text-muted">Get started</p>
+      <p className="text-sm font-normal text-muted">Get started</p>
 
       <SignupFormClient next={next} errorMessage={errorMessage} />
 
