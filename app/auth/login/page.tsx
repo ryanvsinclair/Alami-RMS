@@ -27,7 +27,7 @@ export default async function LoginPage({
             name="email"
             type="email"
             required
-            className="h-12 w-full rounded-2xl border border-border bg-foreground/[0.04] px-4 text-foreground placeholder:text-muted/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] outline-none focus:ring-2 focus:ring-primary/30"
+            className="h-12 w-full rounded-[10px] border border-border bg-foreground/[0.04] px-4 text-foreground placeholder:text-muted/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] outline-none focus:ring-2 focus:ring-primary/30"
           />
         </div>
         <div className="space-y-1.5">
@@ -39,7 +39,7 @@ export default async function LoginPage({
             name="password"
             type="password"
             required
-            className="h-12 w-full rounded-2xl border border-border bg-foreground/[0.04] px-4 text-foreground placeholder:text-muted/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] outline-none focus:ring-2 focus:ring-primary/30"
+            className="h-12 w-full rounded-[10px] border border-border bg-foreground/[0.04] px-4 text-foreground placeholder:text-muted/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] outline-none focus:ring-2 focus:ring-primary/30"
           />
         </div>
         {params?.error && (

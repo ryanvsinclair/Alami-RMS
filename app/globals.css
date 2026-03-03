@@ -110,7 +110,7 @@ body {
 }
 
 .app-hero-card {
-  border-radius: 24px;
+  border-radius: 16px;
   background: var(--hero-bg);
   box-shadow: var(--hero-shadow);
   color: #f8fbff;
@@ -160,7 +160,7 @@ body {
 
 .layer-summary {
   background: #1c1c1e;
-  border-radius: 28px 28px 0 0;
+  border-radius: 22px 22px 0 0;
   position: relative;
   z-index: 10;
 }
@@ -183,7 +183,7 @@ body {
 /* Layer 3 – transactions (card background, most visible) */
 .layer-transactions {
   background: var(--card);
-  border-radius: 32px 32px 0 0;
+  border-radius: 22px 22px 0 0;
   position: relative;
   margin-top: -14px;
   min-height: 0;

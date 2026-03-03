@@ -102,7 +102,7 @@ export function RestaurantPlaceSearch() {
             }}
             placeholder="Search for your restaurant..."
             required
-            className="h-11 w-full rounded-2xl border border-border bg-foreground/[0.028] px-4 pr-9 text-foreground placeholder:text-muted/70 outline-none focus:ring-2 focus:ring-primary/30"
+            className="h-11 w-full rounded-[10px] border border-border bg-foreground/[0.028] px-4 pr-9 text-foreground placeholder:text-muted/70 outline-none focus:ring-2 focus:ring-primary/30"
           />
           {loading && (
             <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
