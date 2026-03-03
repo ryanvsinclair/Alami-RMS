@@ -1,7 +1,7 @@
 import type { BarcodeProvider, ExternalProductMetadata } from "../barcode-providers";
 import { PROVIDER_TIMEOUT_MS } from "../barcode-providers";
 
-const USER_AGENT = "AlamiRMS/1.0 (inventory-management; barcode-lookup)";
+const USER_AGENT = "Vynance/1.0 (inventory-management; barcode-lookup)";
 
 /**
  * Open Beauty Facts API v2 adapter.

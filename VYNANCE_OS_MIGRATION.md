@@ -1,6 +1,6 @@
-# Alami OS Migration Guide
+# Vynance OS Migration Guide
 
-> Transforming AlamirMS from a restaurant-specific app into a modular, industry-agnostic small business operating system.
+> Transforming Vynance from a restaurant-specific app into a modular, industry-agnostic small business operating system.
 
 **Last updated:** 2026-02-24
 **Current status:** Phase 1 COMPLETE. Phases 2-4 pending.
@@ -25,7 +25,7 @@
 
 **Goal:** Industries are presets. Modules are building blocks. The engine is unified.
 
-AlamirMS currently handles inventory, shopping, receipts, financial tracking, and staff management for restaurants. The migration renames all "restaurant" terminology to "business" (Phase 1), separates core logic from optional modules (Phase 2), adds per-business module toggling (Phase 3), and introduces industry presets so salons, retail, contractors etc. get tailored experiences from the same codebase (Phase 4).
+Vynance currently handles inventory, shopping, receipts, financial tracking, and staff management for restaurants. The migration renames all "restaurant" terminology to "business" (Phase 1), separates core logic from optional modules (Phase 2), adds per-business module toggling (Phase 3), and introduces industry presets so salons, retail, contractors etc. get tailored experiences from the same codebase (Phase 4).
 
 **Key constraint:** Zero breakage. Every phase must pass `npx tsc --noEmit` and `npx next build` before deployment.
 
@@ -60,7 +60,7 @@ AlamirMS currently handles inventory, shopping, receipts, financial tracking, an
 ### Folder Structure
 
 ```
-alamirms/
+vynance/
   app/
     (dashboard)/              # Route group — all authed dashboard pages
       contacts/page.tsx

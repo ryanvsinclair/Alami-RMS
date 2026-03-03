@@ -52,6 +52,9 @@ interface BarcodeCameraScannerProps {
   onDetected: (barcode: string) => void;
   disabled?: boolean;
   triggerLabel?: string;
+  formats?: BarcodeDetectorFormat[];
+  helperText?: string;
+  cancelLabel?: string;
 }
 
 function getBarcodeDetectorCtor(): BarcodeDetectorCtor | null {
@@ -64,6 +67,9 @@ export function BarcodeCameraScanner({
   onDetected,
   disabled = false,
   triggerLabel = "Use Camera Scanner",
+  formats,
+  helperText = "Point your camera at a UPC/EAN barcode. The scanner will auto-fill once detected.",
+  cancelLabel = "Cancel Camera Scanner",
 }: BarcodeCameraScannerProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -146,7 +152,7 @@ export function BarcodeCameraScanner({
       const detectorCtor = getBarcodeDetectorCtor();
       if (!detectorCtor) {
         throw new Error(
-          "Camera barcode scanning is not supported in this browser. Continue with typed or hardware scanner input.",
+          "Camera scanning is not supported in this browser. Continue with typed or hardware scanner input.",
         );
       }
 
@@ -158,12 +164,13 @@ export function BarcodeCameraScanner({
         ? await detectorCtor.getSupportedFormats()
         : null;
 
-      const formats = supportedFormats
-        ? DEFAULT_FORMATS.filter((format) => supportedFormats.includes(format))
-        : DEFAULT_FORMATS;
+      const requestedFormats = formats && formats.length > 0 ? formats : DEFAULT_FORMATS;
+      const detectorFormats = supportedFormats
+        ? requestedFormats.filter((format) => supportedFormats.includes(format))
+        : requestedFormats;
 
       detectorRef.current = new detectorCtor(
-        formats.length > 0 ? { formats } : undefined,
+        detectorFormats.length > 0 ? { formats: detectorFormats } : undefined,
       );
 
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -228,15 +235,15 @@ export function BarcodeCameraScanner({
               muted
               playsInline
               className="h-56 w-full object-cover"
-              aria-label="Live barcode scanner camera preview"
+              aria-label="Live camera scanner preview"
             />
             <div className="pointer-events-none absolute inset-0 border-2 border-primary/30" />
           </div>
           <p className="text-xs text-muted">
-            Point your camera at a UPC/EAN barcode. The scanner will auto-fill once detected.
+            {helperText}
           </p>
           <Button type="button" variant="ghost" onClick={closeScanner} className="w-full">
-            Cancel Camera Scanner
+            {cancelLabel}
           </Button>
         </Card>
       )}

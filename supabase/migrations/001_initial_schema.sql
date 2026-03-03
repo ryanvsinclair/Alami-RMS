@@ -1,5 +1,5 @@
 -- ============================================================
--- ALAMIR MS: Inventory Ingestion System — Initial Schema
+-- VYNANCE: Inventory Ingestion System — Initial Schema
 -- ============================================================
 
 -- Enable extensions

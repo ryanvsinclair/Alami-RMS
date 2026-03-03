@@ -497,7 +497,7 @@ Companion overview: `docs/codebase-overview.md`
 - Scope: Home header visual styling adjustment only.
 - What changed:
   - Removed the standalone centered header logo element.
-  - Added the Alamirms logo as a decorative background layer inside the blue balance section.
+  - Added the Vynance logo as a decorative background layer inside the blue balance section.
   - Moved the logo lower (`top-12`), enlarged it (`h-28`), and reduced prominence (`opacity-25`) so it feels integrated with the background.
   - Ensured balance text/content stays above the decorative logo with explicit stacking.
 - Files changed:
@@ -519,7 +519,7 @@ Companion overview: `docs/codebase-overview.md`
 - Suggested Commit Title: `feat(home): center and enlarge balance-header logo at 50 opacity`
 - Scope: Home header visual adjustment only.
 - What changed:
-  - Repositioned the Alamirms logo from top-left to centered horizontally in the top balance section header area.
+  - Repositioned the Vynance logo from top-left to centered horizontally in the top balance section header area.
   - Increased logo size for stronger brand visibility.
   - Set logo opacity to `50%` (`opacity-50`) per UX request.
 - Files changed:
@@ -536,12 +536,12 @@ Companion overview: `docs/codebase-overview.md`
 - Dependency check: no new dependencies.
 - Env-var check: no new environment variables.
 
-### 2026-03-01 - Home header adds Alamirms logo at top-left
+### 2026-03-01 - Home header adds Vynance logo at top-left
 
-- Suggested Commit Title: `feat(home): add alamirms logo to top-left header`
+- Suggested Commit Title: `feat(home): add vynance logo to top-left header`
 - Scope: Home page visual polish only.
 - What changed:
-  - Added the existing Alamirms brand logo (`/logotransparentbackground.svg`) to the top-left of the home header bar.
+  - Added the existing Vynance brand logo (`/logotransparentbackground.svg`) to the top-left of the home header bar.
   - Kept existing right-side action controls unchanged.
 - Files changed:
   - `app/page.tsx`

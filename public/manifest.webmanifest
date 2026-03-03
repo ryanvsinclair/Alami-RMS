@@ -1,6 +1,6 @@
 {
-  "name": "Alamir MS Inventory",
-  "short_name": "Alamirms",
+  "name": "Vynance",
+  "short_name": "Vynance",
   "description": "Multi-modal inventory ingestion for restaurant operations",
   "start_url": "/",
   "scope": "/",

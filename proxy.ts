@@ -8,12 +8,20 @@ const ACCESS_TOKEN_COOKIE = "sb-access-token";
 const REFRESH_TOKEN_COOKIE = "sb-refresh-token";
 
 const PUBLIC_PATHS = new Set([
+  "/",
+  "/privacy",
+  "/terms",
   "/auth/login",
   "/auth/signup",
   "/auth/accept-invite",
   "/manifest.webmanifest",
   "/sw.js",
 ]);
+
+const PUBLIC_PREFIX_PATHS = [
+  "/r/",
+  "/scan/t/",
+];
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -56,13 +64,17 @@ function redirectToLogin(request: NextRequest) {
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const isPublicPrefixPath = PUBLIC_PREFIX_PATHS.some((prefix) =>
+    pathname.startsWith(prefix)
+  );
 
   // 1. Bypass static assets, API routes, and public pages.
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
     pathname.includes(".") ||
-    PUBLIC_PATHS.has(pathname)
+    PUBLIC_PATHS.has(pathname) ||
+    isPublicPrefixPath
   ) {
     return NextResponse.next();
   }

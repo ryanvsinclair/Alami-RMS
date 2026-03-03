@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Card } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
+import { BarcodeCameraScanner } from "@/shared/ui/barcode-camera-scanner";
 import {
   createDiningTable,
   deleteDiningTable,
@@ -16,6 +17,45 @@ import type { TableServiceDiningTableSummary } from "@/features/table-service/sh
 import { TableQrModal } from "./TableQrModal";
 
 type DiningTable = TableServiceDiningTableSummary;
+const TABLE_QR_LOCAL_NETWORK_ORIGIN = "http://192.168.2.59:3000";
+
+function resolveTableQrOrigin() {
+  if (typeof window === "undefined") return TABLE_QR_LOCAL_NETWORK_ORIGIN;
+
+  try {
+    const currentOrigin = window.location.origin;
+    const { hostname } = new URL(currentOrigin);
+    if (hostname === "localhost" || hostname === "127.0.0.1") {
+      return TABLE_QR_LOCAL_NETWORK_ORIGIN;
+    }
+    return currentOrigin;
+  } catch {
+    return TABLE_QR_LOCAL_NETWORK_ORIGIN;
+  }
+}
+
+function resolveTableScanTarget(rawScanValue: string) {
+  const value = rawScanValue.trim();
+  if (!value) return null;
+
+  if (value.startsWith("/scan/t/")) return value;
+  if (value.startsWith("scan/t/")) return `/${value}`;
+
+  if (/^[a-zA-Z0-9_-]{6,}$/.test(value)) {
+    return `/scan/t/${value}`;
+  }
+
+  try {
+    const parsed = new URL(value);
+    if (parsed.pathname.startsWith("/scan/t/")) {
+      return parsed.toString();
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
 
 export default function TableSetupPageClient() {
   const [tables, setTables] = useState<DiningTable[]>([]);
@@ -27,11 +67,13 @@ export default function TableSetupPageClient() {
   const [editingTableId, setEditingTableId] = useState<string | null>(null);
   const [editingTableNumber, setEditingTableNumber] = useState("");
   const [qrTable, setQrTable] = useState<DiningTable | null>(null);
+  const [qrScanValue, setQrScanValue] = useState("");
+  const [qrScanError, setQrScanError] = useState("");
 
   const [origin, setOrigin] = useState("");
 
   useEffect(() => {
-    setOrigin(window.location.origin);
+    setOrigin(resolveTableQrOrigin());
   }, []);
 
   async function loadTables() {
@@ -49,6 +91,19 @@ export default function TableSetupPageClient() {
   useEffect(() => {
     void loadTables();
   }, []);
+
+  function openScannedTableRoute(rawScanValue: string) {
+    const target = resolveTableScanTarget(rawScanValue);
+    if (!target) {
+      setQrScanError("Detected QR is not a valid table scan route.");
+      return;
+    }
+
+    setQrScanError("");
+    if (typeof window !== "undefined") {
+      window.location.assign(target);
+    }
+  }
 
   async function handleCreate() {
     if (!newTableNumber.trim()) return;
@@ -147,6 +202,42 @@ export default function TableSetupPageClient() {
         <Button onClick={handleCreate} loading={saving} disabled={!newTableNumber.trim()}>
           Add Table
         </Button>
+      </Card>
+
+      <Card className="p-5 space-y-3">
+        <p className="text-sm font-semibold">Scan Table QR (Built In)</p>
+        <p className="text-sm text-muted">
+          Use this device camera to test a table QR and open the scanned table route.
+        </p>
+        <BarcodeCameraScanner
+          disabled={saving}
+          triggerLabel="Scan Table QR With Camera"
+          formats={["qr_code"]}
+          helperText="Point your camera at a table QR code. The scanned route opens automatically."
+          cancelLabel="Cancel QR Scanner"
+          onDetected={(detectedValue) => {
+            setQrScanValue(detectedValue);
+            openScannedTableRoute(detectedValue);
+          }}
+        />
+        <Input
+          label="Manual scan value"
+          placeholder="/scan/t/[token]"
+          value={qrScanValue}
+          onChange={(event) => {
+            setQrScanValue(event.target.value);
+            if (qrScanError) setQrScanError("");
+          }}
+        />
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() => openScannedTableRoute(qrScanValue)}
+          disabled={!qrScanValue.trim()}
+        >
+          Open Scanned Route
+        </Button>
+        {qrScanError && <p className="text-sm text-danger">{qrScanError}</p>}
       </Card>
 
       <Card className="p-5 space-y-3">

@@ -20,8 +20,8 @@ const codeMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Alamir MS Inventory",
-    template: "%s | Alamir MS Inventory",
+    default: "Vynance",
+    template: "%s | Vynance",
   },
   description: "Multi-modal inventory ingestion for business operations",
   manifest: "/manifest.webmanifest",
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Alamirms",
+    title: "Vynance",
   },
 };
 

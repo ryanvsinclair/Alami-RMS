@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 
-const STORAGE_KEY = "alamirms_welcome_seen_v1";
+const STORAGE_KEY = "vynance_welcome_seen_v1";
 
 export function WelcomeSplash() {
   const [visible, setVisible] = useState(false);
@@ -35,13 +35,13 @@ export function WelcomeSplash() {
       <div className="welcome-splash-logo-wrap">
         <Image
           src="/logotransparentbackground.svg"
-          alt="Alamirms logo"
+          alt="Vynance logo"
           width={176}
           height={176}
           className="welcome-splash-logo"
           priority
         />
-        <p className="welcome-splash-text">AlamIrms</p>
+        <p className="welcome-splash-text">Vynance</p>
       </div>
     </div>
   );

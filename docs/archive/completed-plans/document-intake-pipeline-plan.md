@@ -206,7 +206,7 @@ Constitution source: `docs/execution-constitution.md`
 
 - **2026-02-28 — Postmark infrastructure configured.** Pre-code setup complete:
   - Postmark inbound stream active; inbound email address confirmed (`f0564e12b8a47d723184b66f2d35e84e@inbound.postmarkapp.com`)
-  - Inbound webhook URL set in Postmark pointing to `https://alami-rms.vercel.app/api/documents/inbound` with HTTP Basic Auth embedded
+  - Inbound webhook URL set in Postmark pointing to `https://www.vynance.ca/api/documents/inbound` with HTTP Basic Auth embedded
   - `POSTMARK_SERVER_INBOUND_HASH`, `POSTMARK_INBOUND_WEBHOOK_USER`, `POSTMARK_INBOUND_WEBHOOK_PASS`, `SUPABASE_STORAGE_BUCKET_DOCUMENTS` all added to `.env`
   - Ready to execute DI-00 (schema + contracts)
 
