@@ -30,7 +30,7 @@ export default function ReportsPage() {
             <p className="mt-1 text-sm text-foreground">Choose a reporting window</p>
           </div>
           <div
-            className="inline-flex rounded-2xl border border-border bg-card/70 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
+            className="inline-flex rounded-xl border border-border bg-card/70 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
             role="tablist"
             aria-label="Report time range"
           >

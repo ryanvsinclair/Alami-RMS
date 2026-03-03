@@ -184,7 +184,7 @@ export default function ContactsPageClient() {
       )}
 
       {error && (
-        <div className="rounded-2xl border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">
+        <div className="rounded-xl border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">
           {error}
         </div>
       )}
@@ -206,7 +206,7 @@ export default function ContactsPageClient() {
           {[0, 1, 2].map((index) => (
             <div key={index} className="animate-pulse rounded-3xl border border-border bg-card p-4">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-2xl bg-foreground/[0.06]" />
+                <div className="h-10 w-10 rounded-xl bg-foreground/[0.06]" />
                 <div className="flex-1 space-y-2">
                   <div className="h-3.5 w-28 rounded-lg bg-foreground/[0.06]" />
                   <div className="h-3 w-20 rounded-lg bg-foreground/[0.04]" />
@@ -219,7 +219,7 @@ export default function ContactsPageClient() {
 
       {!loading && contacts.length === 0 && !showAdd && (
         <div className="py-16 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-foreground/[0.04]">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-foreground/[0.04]">
             <svg className="h-8 w-8 text-muted" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
             </svg>
@@ -252,7 +252,7 @@ export default function ContactsPageClient() {
           ) : (
             <>
               <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-primary/10">
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-primary/10">
                   <span className="text-sm font-bold text-primary">{initials(contact.name)}</span>
                 </div>
 

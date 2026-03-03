@@ -24,7 +24,7 @@ export function ExitServiceModeButton() {
       type="button"
       aria-label="Exit service mode and return to home"
       onClick={handleExit}
-      className="flex items-center gap-1.5 whitespace-nowrap rounded-2xl border border-border bg-foreground/[0.04] px-3 py-1.5 text-xs font-semibold text-muted transition-colors hover:border-foreground/20 hover:text-foreground"
+      className="flex items-center gap-1.5 whitespace-nowrap rounded-xl border border-border bg-foreground/[0.04] px-3 py-1.5 text-xs font-semibold text-muted transition-colors hover:border-foreground/20 hover:text-foreground"
     >
       <svg
         viewBox="0 0 24 24"

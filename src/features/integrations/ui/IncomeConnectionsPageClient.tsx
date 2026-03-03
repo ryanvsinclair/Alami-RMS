@@ -160,7 +160,7 @@ function CalendarProviderRow({
 
   return (
     <div className="flex items-center gap-4 px-4 py-3.5">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-foreground/[0.06] overflow-hidden text-sm font-bold text-foreground">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-foreground/[0.06] overflow-hidden text-sm font-bold text-foreground">
         {imageConfig ? (
           <Image
             src={imageConfig.src}
@@ -214,22 +214,22 @@ export default function IncomeConnectionsPageClient({
   return (
     <div className="space-y-4 p-4">
       {feedback?.oauth === "connected" && (
-        <div className="rounded-2xl bg-success/10 px-4 py-3 text-sm text-success">
+        <div className="rounded-xl bg-success/10 px-4 py-3 text-sm text-success">
           {feedback.provider ? `${feedback.provider} connected successfully.` : "Provider connected successfully."}
         </div>
       )}
       {feedback?.oauth_error && (
-        <div className="rounded-2xl bg-danger/10 px-4 py-3 text-sm text-danger">
+        <div className="rounded-xl bg-danger/10 px-4 py-3 text-sm text-danger">
           {feedback.oauth_error}
         </div>
       )}
       {feedback?.sync === "success" && (
-        <div className="rounded-2xl bg-success/10 px-4 py-3 text-sm text-success">
+        <div className="rounded-xl bg-success/10 px-4 py-3 text-sm text-success">
           Manual sync completed{feedback.records ? ` (${feedback.records} records fetched)` : ""}.
         </div>
       )}
       {feedback?.sync_error && (
-        <div className="rounded-2xl bg-danger/10 px-4 py-3 text-sm text-danger">
+        <div className="rounded-xl bg-danger/10 px-4 py-3 text-sm text-danger">
           {feedback.sync_error}
         </div>
       )}

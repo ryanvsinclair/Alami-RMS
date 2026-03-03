@@ -83,7 +83,7 @@ function CalendarProviderRow({
 
   return (
     <div className="flex items-center gap-4 px-4 py-3.5">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-foreground/[0.06] text-sm font-bold text-foreground">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-foreground/[0.06] text-sm font-bold text-foreground">
         {imageConfig ? (
           <Image
             src={imageConfig.src}
@@ -232,7 +232,7 @@ export function OnboardingConnectionsStep({
             type="button"
             onClick={() => navigateTo(skipHref, "forward")}
             disabled={exiting}
-            className="inline-flex h-12 w-full items-center justify-center rounded-2xl border border-border bg-card px-4 text-sm font-semibold text-foreground transition-colors hover:bg-foreground/[0.04] disabled:pointer-events-none disabled:opacity-70"
+            className="inline-flex h-12 w-full items-center justify-center rounded-xl border border-border bg-card px-4 text-sm font-semibold text-foreground transition-colors hover:bg-foreground/[0.04] disabled:pointer-events-none disabled:opacity-70"
           >
             Skip
           </button>
@@ -240,7 +240,7 @@ export function OnboardingConnectionsStep({
             type="button"
             onClick={() => navigateTo(continueHref, "forward")}
             disabled={exiting}
-            className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-primary px-4 text-sm font-semibold text-white shadow-[0_6px_18px_rgba(0,127,255,0.28)] transition-colors hover:bg-primary-hover disabled:pointer-events-none disabled:opacity-70"
+            className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-white shadow-[0_6px_18px_rgba(0,127,255,0.28)] transition-colors hover:bg-primary-hover disabled:pointer-events-none disabled:opacity-70"
           >
             Continue
           </button>

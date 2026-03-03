@@ -94,7 +94,7 @@ export default function ReceiptDetailPageClient() {
       )}
 
       {error && (
-        <div className="rounded-2xl bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400">
+        <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400">
           {error}
         </div>
       )}
@@ -162,7 +162,7 @@ export default function ReceiptDetailPageClient() {
           )}
 
           {tab === "photo" && receipt.signed_image_url && (
-            <div className="rounded-2xl overflow-hidden border border-white/8">
+            <div className="rounded-xl overflow-hidden border border-white/8">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={receipt.signed_image_url}

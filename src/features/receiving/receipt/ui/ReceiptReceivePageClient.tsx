@@ -503,7 +503,7 @@ export default function ReceiptReceivePageClient() {
                           </p>
                           <p className="text-xs text-muted">
                             {line.quantity ?? "?"} {line.unit ?? "each"}
-                            {line.line_cost ? ` • $${Number(line.line_cost).toFixed(2)}` : ""}
+                            {line.line_cost ? ` â€¢ $${Number(line.line_cost).toFixed(2)}` : ""}
                           </p>
                         </div>
                         <span className="text-[11px] text-muted">
@@ -603,7 +603,7 @@ export default function ReceiptReceivePageClient() {
           {receipt && (
             <Link
               href={`/receive/receipt/${receipt.id}`}
-              className="block w-full rounded-2xl border border-white/10 bg-white/5 py-3 text-sm font-medium text-white/70 hover:text-white transition-colors"
+              className="block w-full rounded-xl border border-white/10 bg-white/5 py-3 text-sm font-medium text-white/70 hover:text-white transition-colors"
             >
               View Receipt
             </Link>

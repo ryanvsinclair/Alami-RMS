@@ -22,7 +22,7 @@ export default function TermsPage() {
           </h1>
           <p className="mt-2 text-sm text-muted">Last updated: {LEGAL_PROFILE.effectiveDateLabel}</p>
 
-          <div className="mt-4 rounded-2xl border border-warning/30 bg-warning/10 px-4 py-3 text-xs leading-relaxed text-warning">
+          <div className="mt-4 rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-xs leading-relaxed text-warning">
             Finalization required: replace bracketed placeholders (for legal entity, contact details,
             governing law, venue, and jurisdiction coverage) before publishing publicly.
           </div>

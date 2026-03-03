@@ -271,13 +271,13 @@ export default function HostOrderComposerPageClient({
       </Card>
 
       {success && (
-        <div className="rounded-2xl border border-success/20 bg-success/10 px-4 py-3 text-sm text-success">
+        <div className="rounded-xl border border-success/20 bg-success/10 px-4 py-3 text-sm text-success">
           {success}
         </div>
       )}
 
       {error && (
-        <div className="rounded-2xl border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">
+        <div className="rounded-xl border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">
           {error}
         </div>
       )}
@@ -285,7 +285,7 @@ export default function HostOrderComposerPageClient({
       {hasConfirmedOrder && confirmedOrder && (
         <Card className="p-5 space-y-3">
           <p className="text-sm font-semibold">Kitchen Ticket Created</p>
-          <div className="rounded-2xl border border-border bg-foreground/[0.03] px-4 py-3 text-sm text-muted space-y-1">
+          <div className="rounded-xl border border-border bg-foreground/[0.03] px-4 py-3 text-sm text-muted space-y-1">
             <p className="font-semibold text-foreground">Ticket ID: {confirmedOrder.id}</p>
             <p>Item lines: {confirmedOrder.items.length}</p>
             <p>Order notes: {confirmedOrder.notes ?? "None"}</p>
@@ -293,7 +293,7 @@ export default function HostOrderComposerPageClient({
             <p>Due at: {formatDateTimeLabel(confirmedOrder.dueAt)}</p>
             <p>Closed at: {formatDateTimeLabel(confirmedOrder.closedAt)}</p>
           </div>
-          <div className="rounded-2xl border border-border px-4 py-3 text-sm text-muted space-y-1">
+          <div className="rounded-xl border border-border px-4 py-3 text-sm text-muted space-y-1">
             {confirmedOrder.items.slice(-6).map((item) => {
               const itemName = itemsById.get(item.menuItemId)?.name ?? `Item ${item.menuItemId}`;
               return (
@@ -369,7 +369,7 @@ export default function HostOrderComposerPageClient({
             const lineTotal = unitPrice * quantity;
 
             return (
-              <div key={line.id} className="rounded-2xl border border-border p-3 space-y-3">
+              <div key={line.id} className="rounded-xl border border-border p-3 space-y-3">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="font-semibold">
@@ -423,7 +423,7 @@ export default function HostOrderComposerPageClient({
 
       <Card className="p-5 space-y-3">
         <p className="text-sm font-semibold">Order Summary</p>
-        <div className="rounded-2xl border border-border bg-foreground/[0.03] px-4 py-3 text-sm text-muted space-y-1">
+        <div className="rounded-xl border border-border bg-foreground/[0.03] px-4 py-3 text-sm text-muted space-y-1">
           <p>Line items: {summary.lineCount}</p>
           <p>Total quantity: {summary.totalQuantity}</p>
           <p className="font-semibold text-foreground">Subtotal: {moneyFormatter.format(summary.subtotal)}</p>

@@ -62,14 +62,14 @@ export default async function ProfilePage() {
         </div>
 
         <Card className="p-2">
-          <div className="flex items-center gap-3 rounded-2xl bg-foreground/[0.03] px-3 py-3">
+          <div className="flex items-center gap-3 rounded-xl bg-foreground/[0.03] px-3 py-3">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-foreground/[0.1] text-base font-semibold text-foreground">
               {initials}
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate text-lg font-semibold text-foreground">{displayName}</p>
               <p className="truncate text-xs text-muted">
-                {user.email ?? `${toTitleCase(membership.role)} · ${business.name}`}
+                {user.email ?? `${toTitleCase(membership.role)} Â· ${business.name}`}
               </p>
             </div>
             <svg

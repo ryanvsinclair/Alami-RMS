@@ -51,7 +51,7 @@ export function DigitalReceipt({
     <div className="mx-auto max-w-sm">
       {/* Receipt paper */}
       <div
-        className="relative rounded-2xl px-5 py-6 font-mono text-[13px] leading-relaxed"
+        className="relative rounded-xl px-5 py-6 font-mono text-[13px] leading-relaxed"
         style={{
           background: "linear-gradient(180deg, #1a1f2e 0%, #151923 100%)",
           border: "1px solid rgba(255,255,255,0.08)",

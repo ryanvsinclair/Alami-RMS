@@ -102,7 +102,7 @@ export default function StaffPageClient() {
               Role
             </label>
             <select
-              className="h-12 w-full rounded-2xl border border-border bg-white/7 px-4 text-foreground outline-none focus:ring-2 focus:ring-primary/30"
+              className="h-12 w-full rounded-xl border border-border bg-white/7 px-4 text-foreground outline-none focus:ring-2 focus:ring-primary/30"
               value={role}
               onChange={(e) => setRole(e.target.value as "manager" | "staff")}
             >
@@ -115,7 +115,7 @@ export default function StaffPageClient() {
           </Button>
         </form>
         {inviteUrl && (
-          <div className="rounded-2xl border border-border bg-white/6 p-3">
+          <div className="rounded-xl border border-border bg-white/6 p-3">
             <p className="text-xs text-muted">Share this link with staff:</p>
             <p className="mt-1 break-all text-xs text-foreground">{inviteUrl}</p>
           </div>
@@ -133,7 +133,7 @@ export default function StaffPageClient() {
         {!loading && invites.length === 0 && <p className="text-sm text-muted">No invites yet.</p>}
         <div className="space-y-2">
           {invites.map((invite) => (
-            <div key={invite.id} className="rounded-2xl border border-border/80 bg-white/5 p-3">
+            <div key={invite.id} className="rounded-xl border border-border/80 bg-white/5 p-3">
               <div className="flex items-center justify-between gap-2">
                 <div>
                   <p className="text-sm font-semibold text-foreground">{invite.email}</p>
@@ -179,7 +179,7 @@ export default function StaffPageClient() {
           {members.map((member) => (
             <div
               key={member.user_id}
-              className="flex items-center justify-between rounded-2xl border border-border/80 bg-white/5 p-3"
+              className="flex items-center justify-between rounded-xl border border-border/80 bg-white/5 p-3"
             >
               <div>
                 <p className="text-sm font-semibold text-foreground">{member.user_id}</p>

@@ -245,7 +245,7 @@ export default function MenuSetupPageClient() {
       </Card>
 
       {error && (
-        <div className="rounded-2xl border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">
+        <div className="rounded-xl border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">
           {error}
         </div>
       )}
@@ -340,7 +340,7 @@ export default function MenuSetupPageClient() {
           Import CSV
         </Button>
         {importReport && (
-          <div className="rounded-2xl border border-border bg-foreground/[0.03] px-4 py-3 text-xs text-muted space-y-1">
+          <div className="rounded-xl border border-border bg-foreground/[0.03] px-4 py-3 text-xs text-muted space-y-1">
             <p>Created: {importReport.createdCount}</p>
             <p>Updated: {importReport.updatedCount}</p>
             <p>Skipped: {importReport.skippedCount}</p>
@@ -363,7 +363,7 @@ export default function MenuSetupPageClient() {
           <p className="text-sm text-muted">No categories yet.</p>
         ) : (
           categories.map((category) => (
-            <div key={category.id} className="rounded-2xl border border-border p-3 space-y-2">
+            <div key={category.id} className="rounded-xl border border-border p-3 space-y-2">
               {editingCategoryId === category.id ? (
                 <>
                   <Input
@@ -456,7 +456,7 @@ export default function MenuSetupPageClient() {
             const sortOrder = item.sortOrder ?? 0;
 
             return (
-              <div key={item.id} className="rounded-2xl border border-border p-3 space-y-2">
+              <div key={item.id} className="rounded-xl border border-border p-3 space-y-2">
                 {editingItemId === item.id ? (
                   <>
                     <Select

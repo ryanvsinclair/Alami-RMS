@@ -152,7 +152,7 @@ export function DocumentInboxClient() {
       </section>
 
       {error ? (
-        <div className="rounded-2xl border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">
+        <div className="rounded-xl border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">
           {error}
         </div>
       ) : null}
@@ -162,14 +162,14 @@ export function DocumentInboxClient() {
           {Array.from({ length: 3 }).map((_, index) => (
             <div
               key={`skeleton-${index}`}
-              className="h-28 animate-pulse rounded-2xl border border-border bg-card"
+              className="h-28 animate-pulse rounded-xl border border-border bg-card"
             />
           ))}
         </div>
       ) : null}
 
       {!loading && drafts.length === 0 ? (
-        <div className="rounded-2xl border border-border bg-card px-4 py-10 text-center">
+        <div className="rounded-xl border border-border bg-card px-4 py-10 text-center">
           <p className="text-sm font-semibold text-foreground">No documents found</p>
           <p className="mt-1 text-sm text-muted">
             Incoming documents will appear here after parse completes.
@@ -183,7 +183,7 @@ export function DocumentInboxClient() {
             <Link
               key={draft.id}
               href={`/documents/${draft.id}`}
-              className="block rounded-2xl border border-border bg-card p-4 transition-colors hover:border-foreground/20"
+              className="block rounded-xl border border-border bg-card p-4 transition-colors hover:border-foreground/20"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">

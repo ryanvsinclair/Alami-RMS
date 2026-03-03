@@ -72,7 +72,7 @@ export function RestaurantPlaceSearch() {
   }
 
   return (
-    <div className="w-full min-w-0 max-w-full space-y-2 overflow-x-hidden rounded-2xl border border-border/70 bg-foreground/[0.02] p-3">
+    <div className="w-full min-w-0 max-w-full space-y-2 overflow-x-hidden rounded-xl border border-border/70 bg-foreground/[0.02] p-3">
       <p className="text-xs font-semibold normal-case tracking-normal text-muted">
         Business details
       </p>
@@ -117,7 +117,7 @@ export function RestaurantPlaceSearch() {
         {suggestions.length > 0 && (
           <ul
             ref={listRef}
-            className="absolute z-20 mt-1 w-full overflow-hidden rounded-2xl border border-border bg-card shadow-lg"
+            className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-border bg-card shadow-lg"
           >
             {suggestions.map((suggestion) => (
               <li key={suggestion.place_id}>
@@ -138,7 +138,7 @@ export function RestaurantPlaceSearch() {
       </div>
 
       {selected && (
-        <div className="flex items-start justify-between gap-3 rounded-2xl border border-border bg-foreground/[0.028] px-4 py-3">
+        <div className="flex items-start justify-between gap-3 rounded-xl border border-border bg-foreground/[0.028] px-4 py-3">
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-foreground">{selected.name}</p>
             <p className="mt-0.5 truncate text-xs text-muted">{selected.formatted_address}</p>

@@ -53,7 +53,7 @@ export function PublicLandingPage() {
             <div className="mt-7 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
               <Link
                 href="/auth/signup"
-                className="inline-flex h-11 items-center justify-center rounded-full bg-primary px-6 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(0,127,255,0.3)] transition-colors hover:bg-primary-hover"
+                className="inline-flex h-11 items-center justify-center rounded-full bg-primary px-6 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(0,127,255,0.3)] transition-colors hover:bg-primary-hover"
               >
                 Get started
               </Link>
@@ -69,7 +69,7 @@ export function PublicLandingPage() {
               {quickPoints.map((point) => (
                 <div
                   key={point}
-                  className="rounded-2xl border border-border/70 bg-card/65 px-3 py-3 text-xs text-muted sm:text-sm"
+                  className="rounded-xl border border-border/70 bg-card/65 px-3 py-3 text-xs text-muted sm:text-sm"
                 >
                   {point}
                 </div>

@@ -117,7 +117,7 @@ export default function KitchenQueuePageClient({ initialQueue }: KitchenQueuePag
       </Card>
 
       {error && (
-        <div className="rounded-2xl border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">
+        <div className="rounded-xl border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">
           {error}
         </div>
       )}
@@ -139,7 +139,7 @@ export default function KitchenQueuePageClient({ initialQueue }: KitchenQueuePag
             return (
               <div
                 key={entry.orderId}
-                className={`rounded-2xl border p-4 space-y-3 ${
+                className={`rounded-xl border p-4 space-y-3 ${
                   overdueLabel ? "border-danger/40 bg-danger/5" : "border-border"
                 }`}
               >
@@ -163,7 +163,7 @@ export default function KitchenQueuePageClient({ initialQueue }: KitchenQueuePag
                   <p className="text-sm text-muted">Notes: {entry.orderNotes}</p>
                 )}
 
-                <div className="rounded-2xl border border-border bg-foreground/[0.03] px-4 py-3 text-sm text-muted space-y-3">
+                <div className="rounded-xl border border-border bg-foreground/[0.03] px-4 py-3 text-sm text-muted space-y-3">
                   {entry.items.map((item) => (
                     <div key={item.id} className="rounded-xl border border-border/80 bg-card/30 p-3 space-y-2">
                       <div className="flex items-start justify-between gap-3">

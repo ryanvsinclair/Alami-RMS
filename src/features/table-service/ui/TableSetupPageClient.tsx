@@ -202,7 +202,7 @@ export default function TableSetupPageClient() {
       </Card>
 
       {error && (
-        <div className="rounded-2xl border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">
+        <div className="rounded-xl border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">
           {error}
         </div>
       )}
@@ -270,7 +270,7 @@ export default function TableSetupPageClient() {
               ? `${origin}/r/${encodeURIComponent(table.businessId)}?table=${encodeURIComponent(table.tableNumber)}`
               : `/r/${encodeURIComponent(table.businessId)}?table=${encodeURIComponent(table.tableNumber)}`;
             return (
-              <div key={table.id} className="rounded-2xl border border-border p-3 space-y-2">
+              <div key={table.id} className="rounded-xl border border-border p-3 space-y-2">
                 {editingTableId === table.id ? (
                   <>
                     <Input

@@ -49,7 +49,7 @@ export default async function LoginPage({
         )}
         <button
           type="submit"
-          className="h-12 w-full rounded-2xl bg-primary font-semibold text-white transition-colors hover:bg-primary-hover"
+          className="h-12 w-full rounded-xl bg-primary font-semibold text-white transition-colors hover:bg-primary-hover"
         >
           Sign in
         </button>

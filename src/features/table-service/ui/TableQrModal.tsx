@@ -14,7 +14,7 @@ export function TableQrModal({ tableNumber, scanUrl, onClose }: TableQrModalProp
   const [rendered, setRendered] = useState(false);
   const [error, setError] = useState("");
 
-  // QR canvas size â€” large enough for crisp printing
+  // QR canvas size Ã¢â‚¬â€ large enough for crisp printing
   const QR_SIZE = 360;
   const PADDING = 24;
   const LABEL_HEIGHT = 52;
@@ -96,7 +96,7 @@ export function TableQrModal({ tableNumber, scanUrl, onClose }: TableQrModalProp
       <!DOCTYPE html>
       <html>
         <head>
-          <title>QR â€“ ${tableNumber}</title>
+          <title>QR Ã¢â‚¬â€œ ${tableNumber}</title>
           <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body {
@@ -164,7 +164,7 @@ export function TableQrModal({ tableNumber, scanUrl, onClose }: TableQrModalProp
         </div>
 
         {/* Canvas */}
-        <div className="flex items-center justify-center rounded-2xl border border-border bg-white p-3">
+        <div className="flex items-center justify-center rounded-xl border border-border bg-white p-3">
           {error ? (
             <p className="text-sm text-danger">{error}</p>
           ) : (
@@ -183,7 +183,7 @@ export function TableQrModal({ tableNumber, scanUrl, onClose }: TableQrModalProp
             type="button"
             onClick={handleDownload}
             disabled={!rendered}
-            className="flex h-10 items-center justify-center gap-2 rounded-2xl border border-border bg-foreground/[0.04] text-sm font-semibold text-foreground transition-colors hover:bg-foreground/[0.08] disabled:opacity-40"
+            className="flex h-10 items-center justify-center gap-2 rounded-xl border border-border bg-foreground/[0.04] text-sm font-semibold text-foreground transition-colors hover:bg-foreground/[0.08] disabled:opacity-40"
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
@@ -194,7 +194,7 @@ export function TableQrModal({ tableNumber, scanUrl, onClose }: TableQrModalProp
             type="button"
             onClick={handlePrint}
             disabled={!rendered}
-            className="flex h-10 items-center justify-center gap-2 rounded-2xl bg-primary text-sm font-semibold text-white shadow-[0_4px_12px_rgba(0,127,255,0.28)] transition-colors hover:bg-primary-hover disabled:opacity-40"
+            className="flex h-10 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-white shadow-[0_4px_12px_rgba(0,127,255,0.28)] transition-colors hover:bg-primary-hover disabled:opacity-40"
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z" />

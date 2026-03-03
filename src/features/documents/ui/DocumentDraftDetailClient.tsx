@@ -177,9 +177,9 @@ export function DocumentDraftDetailClient({ draftId }: { draftId: string }) {
   if (loading) {
     return (
       <div className="space-y-3 p-4">
-        <div className="h-20 animate-pulse rounded-2xl border border-border bg-card" />
-        <div className="h-56 animate-pulse rounded-2xl border border-border bg-card" />
-        <div className="h-40 animate-pulse rounded-2xl border border-border bg-card" />
+        <div className="h-20 animate-pulse rounded-xl border border-border bg-card" />
+        <div className="h-56 animate-pulse rounded-xl border border-border bg-card" />
+        <div className="h-40 animate-pulse rounded-xl border border-border bg-card" />
       </div>
     );
   }
@@ -190,7 +190,7 @@ export function DocumentDraftDetailClient({ draftId }: { draftId: string }) {
         <Link href="/documents" className="text-sm text-primary hover:underline">
           Back to Documents
         </Link>
-        <div className="rounded-2xl border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">
+        <div className="rounded-xl border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">
           {error || "Document draft not found"}
         </div>
       </div>
@@ -218,18 +218,18 @@ export function DocumentDraftDetailClient({ draftId }: { draftId: string }) {
       </div>
 
       {error ? (
-        <div className="rounded-2xl border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">
+        <div className="rounded-xl border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">
           {error}
         </div>
       ) : null}
 
       {notice ? (
-        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700">
+        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700">
           {notice}
         </div>
       ) : null}
 
-      <section className="space-y-2 rounded-2xl border border-border bg-card p-4">
+      <section className="space-y-2 rounded-xl border border-border bg-card p-4">
         <p className="text-xs font-semibold normal-case tracking-normal text-primary">Parsed Fields</p>
         <h1 className="text-xl font-bold text-foreground">
           {detail.parsed_vendor_name ?? detail.vendor_profile?.vendor_name ?? "Unknown Vendor"}
@@ -246,7 +246,7 @@ export function DocumentDraftDetailClient({ draftId }: { draftId: string }) {
         </div>
       </section>
 
-      <section className="space-y-3 rounded-2xl border border-border bg-card p-4">
+      <section className="space-y-3 rounded-xl border border-border bg-card p-4">
         <p className="text-xs font-semibold normal-case tracking-normal text-primary">Source Document</p>
         {showPdfPreview ? (
           <iframe
@@ -279,7 +279,7 @@ export function DocumentDraftDetailClient({ draftId }: { draftId: string }) {
         ) : null}
       </section>
 
-      <details className="rounded-2xl border border-border bg-card p-4">
+      <details className="rounded-xl border border-border bg-card p-4">
         <summary className="cursor-pointer text-xs font-semibold normal-case tracking-normal text-primary">
           Parse Flags
         </summary>
@@ -289,7 +289,7 @@ export function DocumentDraftDetailClient({ draftId }: { draftId: string }) {
       </details>
 
       {anomalyFlags.length > 0 ? (
-        <section className="space-y-2 rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4">
+        <section className="space-y-2 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
           <p className="text-xs font-semibold normal-case tracking-normal text-amber-700">
             Anomaly Warnings
           </p>
@@ -340,7 +340,7 @@ export function DocumentDraftDetailClient({ draftId }: { draftId: string }) {
       />
 
       {detail.vendor_profile ? (
-        <section className="space-y-2 rounded-2xl border border-border bg-card p-4">
+        <section className="space-y-2 rounded-xl border border-border bg-card p-4">
           <p className="text-xs font-semibold normal-case tracking-normal text-primary">Vendor Trust</p>
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="default">state: {detail.vendor_profile.trust_state}</Badge>
@@ -381,7 +381,7 @@ export function DocumentDraftDetailClient({ draftId }: { draftId: string }) {
         </section>
       ) : null}
 
-      <section className="space-y-2 rounded-2xl border border-border bg-card p-4">
+      <section className="space-y-2 rounded-xl border border-border bg-card p-4">
         <p className="text-xs font-semibold normal-case tracking-normal text-primary">Line Items</p>
         {detail.line_items.length === 0 ? (
           <p className="text-sm text-muted">No parsed line items.</p>

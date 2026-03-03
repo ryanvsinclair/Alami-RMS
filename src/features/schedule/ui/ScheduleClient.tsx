@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 /**
  * Operational Calendar â€” master calendar shell (OC-02/OC-03).
@@ -110,7 +110,7 @@ export default function ScheduleClient() {
           {showServicesCta && (
             <Link
               href="/service"
-              className="flex items-center gap-1.5 rounded-2xl border border-border/60 bg-card px-3 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-foreground/5"
+              className="flex items-center gap-1.5 rounded-xl border border-border/60 bg-card px-3 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-foreground/5"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6h16.5M3.75 12h16.5M3.75 18h16.5" />
@@ -120,7 +120,7 @@ export default function ScheduleClient() {
           )}
           <button
             type="button"
-            className="flex items-center gap-1.5 rounded-2xl bg-foreground px-3 py-2 text-xs font-semibold text-background shadow-sm transition-opacity duration-100 active:opacity-75"
+            className="flex items-center gap-1.5 rounded-xl bg-foreground px-3 py-2 text-xs font-semibold text-background shadow-sm transition-opacity duration-100 active:opacity-75"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -135,7 +135,7 @@ export default function ScheduleClient() {
       {/* ------------------------------------------------------------------ */}
       <div className="px-4 pb-3">
         <div
-          className="inline-flex rounded-2xl p-1 gap-0.5"
+          className="inline-flex rounded-xl p-1 gap-0.5"
           style={{ background: "var(--surface-nav-bg)", border: "1px solid var(--surface-nav-border)" }}
         >
           {CALENDAR_VIEW_MODES.map((mode) => (
@@ -209,7 +209,7 @@ function SourceHealthBar({ providerCards }: { providerCards: CalendarProviderSyn
   if (providerCards.length === 0) {
     // No providers connected â€” show a quiet callout.
     return (
-      <div className="mx-4 mb-3 flex items-center gap-2 rounded-2xl border border-border/40 px-3 py-2">
+      <div className="mx-4 mb-3 flex items-center gap-2 rounded-xl border border-border/40 px-3 py-2">
         <span className="w-2 h-2 rounded-full bg-muted/40 shrink-0" />
         <span className="text-xs text-muted/70">
           No calendar sources connected. Events from connected providers will appear here.
@@ -231,7 +231,7 @@ function SourceHealthBar({ providerCards }: { providerCards: CalendarProviderSyn
                                           "All sources up";
 
   return (
-    <div className="mx-4 mb-3 flex items-center gap-2 rounded-2xl border border-border/40 px-3 py-2">
+    <div className="mx-4 mb-3 flex items-center gap-2 rounded-xl border border-border/40 px-3 py-2">
       <span className={`w-2 h-2 rounded-full shrink-0 ${healthColor}`} />
       <span className="text-xs text-foreground font-medium">{healthLabel}</span>
       <span className="text-xs text-muted">
@@ -263,7 +263,7 @@ function OperationalSuggestionsRail({
 }) {
   if (suggestions.length === 0) {
     return (
-      <div className="mx-4 mb-3 rounded-2xl border border-border/40 px-3 py-2">
+      <div className="mx-4 mb-3 rounded-xl border border-border/40 px-3 py-2">
         <p className="text-xs text-muted/70">
           No operational suggestions right now. Calendar-driven intake/inventory alerts appear here.
         </p>
@@ -276,7 +276,7 @@ function OperationalSuggestionsRail({
       {suggestions.slice(0, 3).map((suggestion) => (
         <div
           key={suggestion.id}
-          className="rounded-2xl border border-border/40 px-3 py-2"
+          className="rounded-xl border border-border/40 px-3 py-2"
         >
           <p className="text-xs font-semibold text-foreground">{suggestion.title}</p>
           <p className="text-xs text-muted/80 mt-0.5">{suggestion.description}</p>
@@ -292,7 +292,7 @@ function OpsDiagnosticsBar({
 }) {
   if (!summary) {
     return (
-      <div className="mx-4 mb-3 rounded-2xl border border-border/40 px-3 py-2">
+      <div className="mx-4 mb-3 rounded-xl border border-border/40 px-3 py-2">
         <p className="text-xs text-muted/70">
           Ops diagnostics become visible as provider-sync metrics and conflict telemetry are collected.
         </p>
@@ -301,7 +301,7 @@ function OpsDiagnosticsBar({
   }
 
   return (
-    <div className="mx-4 mb-3 rounded-2xl border border-border/40 px-3 py-2">
+    <div className="mx-4 mb-3 rounded-xl border border-border/40 px-3 py-2">
       <p className="text-xs text-foreground font-semibold">Ops Diagnostics</p>
       <p className="text-[11px] text-muted/80 mt-1">
         Sync reliability {(summary.syncReliabilityRate * 100).toFixed(1)}% - Duplicate suppression {(summary.duplicateSuppressionRate * 100).toFixed(1)}% - Overlap conflicts {(summary.overlapConflictRate * 100).toFixed(1)}%
@@ -372,7 +372,7 @@ function WeekGridShell({ today }: { today: Date }) {
 
       {/* Time grid placeholder */}
       <div
-        className="flex-1 rounded-2xl border border-border/50 overflow-hidden"
+        className="flex-1 rounded-xl border border-border/50 overflow-hidden"
         style={{ background: "var(--surface-card-bg, var(--background))" }}
       >
         <div className="grid grid-cols-7 h-full divide-x divide-border/30">
@@ -419,7 +419,7 @@ function DayColumnShell({ today }: { today: Date }) {
       </div>
 
       {/* Hour rows */}
-      <div className="flex-1 rounded-2xl border border-border/50 overflow-auto"
+      <div className="flex-1 rounded-xl border border-border/50 overflow-auto"
         style={{ background: "var(--surface-card-bg, var(--background))" }}>
         {HOURS.map((h) => (
           <div key={h} className="flex items-start gap-2 border-b border-border/20 px-3 py-2 min-h-[44px]">

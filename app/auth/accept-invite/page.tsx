@@ -36,7 +36,7 @@ export default async function AcceptInvitePage({
                 <input type="hidden" name="token" value={token} />
                 <button
                   type="submit"
-                  className="h-12 w-full rounded-2xl bg-primary font-semibold text-white shadow-[0_8px_20px_rgba(0,127,255,0.32)] transition-colors hover:bg-primary-hover"
+                  className="h-12 w-full rounded-xl bg-primary font-semibold text-white shadow-[0_8px_20px_rgba(0,127,255,0.32)] transition-colors hover:bg-primary-hover"
                 >
                   Accept Invite
                 </button>

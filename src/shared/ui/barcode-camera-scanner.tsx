@@ -285,7 +285,7 @@ export function BarcodeCameraScanner({
 
       {scannerOpen && (
         <Card className="space-y-3 border-primary/25 bg-primary/[0.04]">
-          <div className="relative overflow-hidden rounded-2xl border border-border bg-black/40">
+          <div className="relative overflow-hidden rounded-xl border border-border bg-black/40">
             <video
               ref={videoRef}
               muted

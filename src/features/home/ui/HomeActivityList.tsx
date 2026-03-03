@@ -122,7 +122,7 @@ export function HomeActivityList({
       {loading && (
         <div className="space-y-4">
           {[0, 1, 2, 3].map((index) => (
-            <div key={index} className="space-y-2 rounded-2xl bg-foreground/[0.03] px-4 py-3.5">
+            <div key={index} className="space-y-2 rounded-xl bg-foreground/[0.03] px-4 py-3.5">
               <Skeleton className="h-4 w-40" />
               <Skeleton className="h-3 w-28" />
             </div>
@@ -131,13 +131,13 @@ export function HomeActivityList({
       )}
 
       {!loading && Boolean(error) && (
-        <div className="rounded-2xl bg-danger/10 px-4 py-3 text-sm text-danger">
+        <div className="rounded-xl bg-danger/10 px-4 py-3 text-sm text-danger">
           {error}
         </div>
       )}
 
       {!loading && !error && groupedTransactions.length === 0 && (
-        <div className="rounded-2xl bg-foreground/[0.03] px-4 py-10 text-center">
+        <div className="rounded-xl bg-foreground/[0.03] px-4 py-10 text-center">
           <p className="text-sm font-semibold text-foreground/55">{emptyStateMessage}</p>
         </div>
       )}

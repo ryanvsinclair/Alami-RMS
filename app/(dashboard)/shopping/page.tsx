@@ -67,7 +67,7 @@ export default function ShoppingPage() {
             />
 
             {!s.selectedStore && (s.suggestions.length > 0 || s.placesLoading) && (
-              <div className="mt-2 rounded-2xl border border-border bg-card overflow-hidden">
+              <div className="mt-2 rounded-xl border border-border bg-card overflow-hidden">
                 {s.placesLoading && (
                   <div className="px-4 py-3 text-xs text-muted">Searching stores...</div>
                 )}
@@ -261,7 +261,7 @@ export default function ShoppingPage() {
                 UPC {s.quickScanFeedback.normalized_barcode}
               </p>
               <p className="mt-1 text-xs text-muted">
-                Source: {s.quickScanFeedback.source} â€¢ Confidence: {s.quickScanFeedback.confidence}
+                Source: {s.quickScanFeedback.source} Ã¢â‚¬Â¢ Confidence: {s.quickScanFeedback.confidence}
               </p>
               {s.quickScanFeedback.deferred_resolution && (
                 <p className="mt-1 text-xs text-muted">
@@ -283,7 +283,7 @@ export default function ShoppingPage() {
             <p className="mt-2 text-xs text-muted">Searching produce suggestions...</p>
           )}
           {s.produceSuggestions.length > 0 && (
-            <div className="mt-2 overflow-hidden rounded-2xl border border-border bg-foreground/[0.02]">
+            <div className="mt-2 overflow-hidden rounded-xl border border-border bg-foreground/[0.02]">
               {s.produceSuggestions.map((suggestion) => (
                 <button
                   key={`produce-suggest-${suggestion.plu_code}`}
@@ -294,9 +294,9 @@ export default function ShoppingPage() {
                   <p className="text-sm font-medium">{suggestion.display_name}</p>
                   <p className="mt-0.5 text-xs text-muted">
                     PLU {suggestion.plu_code}
-                    {suggestion.variety ? ` â€¢ ${suggestion.variety}` : ""}
-                    {suggestion.commodity ? ` â€¢ ${suggestion.commodity}` : ""}
-                    {" â€¢ "}
+                    {suggestion.variety ? ` Ã¢â‚¬Â¢ ${suggestion.variety}` : ""}
+                    {suggestion.commodity ? ` Ã¢â‚¬Â¢ ${suggestion.commodity}` : ""}
+                    {" Ã¢â‚¬Â¢ "}
                     Add qty {Number(s.qty) > 0 ? Number(s.qty) : 1}
                   </p>
                 </button>
@@ -409,7 +409,7 @@ export default function ShoppingPage() {
                   <div className="relative flex justify-center"><span className="bg-[#080d14] px-2 text-xs text-muted">not listed?</span></div>
                 </div>
                 <Button variant="secondary" className="w-full mt-3" onClick={() => s.resetScan()}>
-                  None of these â€” add new item
+                  None of these Ã¢â‚¬â€ add new item
                 </Button>
               </>
             )}
@@ -481,7 +481,7 @@ export default function ShoppingPage() {
               </div>
 
               <div className="mt-2 text-xs text-muted">
-                Staged: {formatMoney(item.staged_line_total)} {item.receipt_line_total != null && `â€¢ Receipt: ${formatMoney(item.receipt_line_total)}`}
+                Staged: {formatMoney(item.staged_line_total)} {item.receipt_line_total != null && `Ã¢â‚¬Â¢ Receipt: ${formatMoney(item.receipt_line_total)}`}
               </div>
 
               {item.reconciliation_status !== "exact" && item.resolution === "pending" && (
@@ -552,7 +552,7 @@ export default function ShoppingPage() {
                 {s.unresolvedScannedBarcodeItems.map((barcodeItem) => (
                   <div
                     key={`pair-${barcodeItem.id}`}
-                    className="rounded-2xl border border-border p-3"
+                    className="rounded-xl border border-border p-3"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
@@ -562,7 +562,7 @@ export default function ShoppingPage() {
                         <p className="mt-1 text-xs text-muted">
                           UPC {getItemBarcodeBadgeValue(barcodeItem)}
                           {barcodeItem.staged_line_total != null
-                            ? ` â€¢ Staged ${formatMoney(barcodeItem.staged_line_total)}`
+                            ? ` Ã¢â‚¬Â¢ Staged ${formatMoney(barcodeItem.staged_line_total)}`
                             : ""}
                         </p>
                       </div>
@@ -749,7 +749,7 @@ export default function ShoppingPage() {
           </Button>
           {s.receiptScanning && (
             <p className="text-xs text-muted text-center mt-2 animate-pulse">
-              Processing with TabScanner â€” this may take a few seconds...
+              Processing with TabScanner Ã¢â‚¬â€ this may take a few seconds...
             </p>
           )}
           </Card>
@@ -760,7 +760,7 @@ export default function ShoppingPage() {
       </div>
 
       <div className="fixed left-0 right-0 bottom-24 z-40 px-3">
-        <div className="max-w-lg mx-auto rounded-2xl border border-white/18 bg-[linear-gradient(160deg,rgba(8,24,43,0.9)_0%,rgba(5,17,32,0.86)_55%,rgba(7,18,34,0.9)_100%)] p-3 text-white shadow-[0_18px_42px_rgba(3,8,18,0.5),inset_0_1px_0_rgba(255,255,255,0.2)] backdrop-blur-xl">
+        <div className="max-w-lg mx-auto rounded-xl border border-white/18 bg-[linear-gradient(160deg,rgba(8,24,43,0.9)_0%,rgba(5,17,32,0.86)_55%,rgba(7,18,34,0.9)_100%)] p-3 text-white shadow-[0_12px_20px_rgba(3,8,18,0.5),inset_0_1px_0_rgba(255,255,255,0.2)] backdrop-blur-xl">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-xs text-white/70">Basket Total</p>

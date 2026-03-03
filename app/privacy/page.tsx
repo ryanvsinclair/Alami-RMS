@@ -22,7 +22,7 @@ export default function PrivacyPage() {
           </h1>
           <p className="mt-2 text-sm text-muted">Last updated: {LEGAL_PROFILE.effectiveDateLabel}</p>
 
-          <div className="mt-4 rounded-2xl border border-warning/30 bg-warning/10 px-4 py-3 text-xs leading-relaxed text-warning">
+          <div className="mt-4 rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-xs leading-relaxed text-warning">
             Finalization required: replace bracketed placeholders (for legal entity, contact details,
             governing law, and jurisdictions) before publishing publicly.
           </div>

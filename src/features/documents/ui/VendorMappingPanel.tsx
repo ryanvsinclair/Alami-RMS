@@ -93,7 +93,7 @@ export function VendorMappingPanel(props: VendorMappingPanelProps) {
   }
 
   return (
-    <section className="space-y-4 rounded-2xl border border-border bg-card p-4">
+    <section className="space-y-4 rounded-xl border border-border bg-card p-4">
       <header className="space-y-1">
         <h3 className="text-sm font-semibold">Vendor Mapping</h3>
         <p className="text-xs text-muted">

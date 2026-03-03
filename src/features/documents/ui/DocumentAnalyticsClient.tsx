@@ -284,7 +284,7 @@ export function DocumentAnalyticsClient() {
       </section>
 
       {error ? (
-        <div className="rounded-2xl border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">
+        <div className="rounded-xl border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">
           {error}
         </div>
       ) : null}
@@ -294,14 +294,14 @@ export function DocumentAnalyticsClient() {
           {Array.from({ length: 4 }).map((_, index) => (
             <div
               key={`analytics-skeleton-${index}`}
-              className="h-28 animate-pulse rounded-2xl border border-border bg-card"
+              className="h-28 animate-pulse rounded-xl border border-border bg-card"
             />
           ))}
         </div>
       ) : null}
 
       {!loading && vendorSpend && !supportsAnalytics ? (
-        <section className="rounded-2xl border border-border bg-card px-4 py-5 text-sm text-muted">
+        <section className="rounded-xl border border-border bg-card px-4 py-5 text-sm text-muted">
           Analytics requires at least
           {" "}
           <span className="font-semibold text-foreground">
@@ -320,7 +320,7 @@ export function DocumentAnalyticsClient() {
 
       {!loading && vendorSpend && supportsAnalytics ? (
         <>
-          <section className="rounded-2xl border border-border bg-card p-4">
+          <section className="rounded-xl border border-border bg-card p-4">
             <div className="flex items-center justify-between gap-2">
               <p className="text-xs font-semibold normal-case tracking-normal text-primary">Vendor Spend (Top 10)</p>
               <p className="text-xs text-muted">
@@ -356,7 +356,7 @@ export function DocumentAnalyticsClient() {
             </div>
           </section>
 
-          <section className="rounded-2xl border border-border bg-card p-4">
+          <section className="rounded-xl border border-border bg-card p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-xs font-semibold normal-case tracking-normal text-primary">Price Trend</p>
               <div className="flex flex-wrap items-center gap-2">
@@ -435,7 +435,7 @@ export function DocumentAnalyticsClient() {
             ) : null}
           </section>
 
-          <section className="rounded-2xl border border-border bg-card p-4">
+          <section className="rounded-xl border border-border bg-card p-4">
             <p className="text-xs font-semibold normal-case tracking-normal text-primary">Tax Summary</p>
             <p className="mt-2 text-lg font-semibold text-foreground">Total Tax: {formatMoney(taxSummary?.totalTax)}</p>
             <div className="mt-3 space-y-2">
@@ -448,7 +448,7 @@ export function DocumentAnalyticsClient() {
             </div>
           </section>
 
-          <section className="rounded-2xl border border-border bg-card p-4">
+          <section className="rounded-xl border border-border bg-card p-4">
             <p className="text-xs font-semibold normal-case tracking-normal text-primary">COGS By Category</p>
             <p className="mt-2 text-lg font-semibold text-foreground">Total Expense: {formatMoney(cogsSummary?.totalExpense)}</p>
             <div className="mt-3 space-y-2">
@@ -463,7 +463,7 @@ export function DocumentAnalyticsClient() {
             </div>
           </section>
 
-          <section className="rounded-2xl border border-border bg-card p-4">
+          <section className="rounded-xl border border-border bg-card p-4">
             <p className="text-xs font-semibold normal-case tracking-normal text-primary">Reorder Signals (7 days or less)</p>
             <div className="mt-3 space-y-2">
               {(reorderSignals?.signals ?? []).map((signal) => (

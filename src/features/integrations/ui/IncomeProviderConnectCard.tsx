@@ -42,7 +42,7 @@ export function IncomeProviderConnectCard({
 
   const inner = (
     <div className="flex items-center gap-4 px-4 py-3.5">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-foreground/[0.06] overflow-hidden text-sm font-bold text-foreground">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-foreground/[0.06] overflow-hidden text-sm font-bold text-foreground">
         {imageConfig ? (
           <Image
             src={imageConfig.src}

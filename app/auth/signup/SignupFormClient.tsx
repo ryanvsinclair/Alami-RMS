@@ -129,7 +129,7 @@ export function SignupFormClient({
             <button
               type="button"
               onClick={handleContinue}
-              className="h-12 w-full rounded-2xl bg-primary font-semibold text-white shadow-[0_8px_20px_rgba(0,127,255,0.32)] transition-colors hover:bg-primary-hover"
+              className="h-12 w-full rounded-xl bg-primary font-semibold text-white shadow-[0_8px_20px_rgba(0,127,255,0.32)] transition-colors hover:bg-primary-hover"
             >
               Continue
             </button>
@@ -148,7 +148,7 @@ export function SignupFormClient({
                 name="industry_type"
                 defaultValue="restaurant"
                 required
-                className="h-12 w-full rounded-2xl border border-border bg-[var(--fill-tertiary)] px-4 text-foreground focus:outline-none"
+                className="h-12 w-full rounded-xl border border-border bg-[var(--fill-tertiary)] px-4 text-foreground focus:outline-none"
               >
                 {INDUSTRY_TYPES.map((industry) => {
                   const enabled = industry === "restaurant";
@@ -167,14 +167,14 @@ export function SignupFormClient({
               <button
                 type="button"
                 onClick={handleBack}
-                className="h-12 min-w-0 flex-1 rounded-2xl border border-border bg-foreground/[0.02] font-semibold text-foreground transition-colors hover:bg-foreground/[0.05]"
+                className="h-12 min-w-0 flex-1 rounded-xl border border-border bg-foreground/[0.02] font-semibold text-foreground transition-colors hover:bg-foreground/[0.05]"
               >
                 Back
               </button>
               <button
                 type="button"
                 onClick={handleContinue}
-                className="h-12 min-w-0 flex-1 rounded-2xl bg-primary font-semibold text-white shadow-[0_8px_20px_rgba(0,127,255,0.32)] transition-colors hover:bg-primary-hover"
+                className="h-12 min-w-0 flex-1 rounded-xl bg-primary font-semibold text-white shadow-[0_8px_20px_rgba(0,127,255,0.32)] transition-colors hover:bg-primary-hover"
               >
                 Continue
               </button>
@@ -250,13 +250,13 @@ export function SignupFormClient({
               <button
                 type="button"
                 onClick={handleBack}
-                className="h-12 min-w-0 flex-1 rounded-2xl border border-border bg-foreground/[0.02] font-semibold text-foreground transition-colors hover:bg-foreground/[0.05]"
+                className="h-12 min-w-0 flex-1 rounded-xl border border-border bg-foreground/[0.02] font-semibold text-foreground transition-colors hover:bg-foreground/[0.05]"
               >
                 Back
               </button>
               <button
                 type="submit"
-                className="h-12 min-w-0 flex-1 rounded-2xl bg-primary font-semibold text-white shadow-[0_8px_20px_rgba(0,127,255,0.32)] transition-colors hover:bg-primary-hover"
+                className="h-12 min-w-0 flex-1 rounded-xl bg-primary font-semibold text-white shadow-[0_8px_20px_rgba(0,127,255,0.32)] transition-colors hover:bg-primary-hover"
               >
                 Create account
               </button>

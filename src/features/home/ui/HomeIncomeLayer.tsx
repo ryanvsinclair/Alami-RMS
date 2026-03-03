@@ -67,7 +67,7 @@ export function HomeIncomeLayer({
               transactionsCollapsed ? "mt-4 max-h-80 opacity-100" : "mt-0 max-h-0 opacity-0"
             }`}
           >
-            <div className="rounded-2xl bg-white/[0.06] p-3">
+            <div className="rounded-xl bg-white/[0.06] p-3">
               <div className="mb-2 flex items-center justify-between">
                 <p className="text-[10px] font-semibold normal-case tracking-normal text-white/55">{incomeLabel} Sources</p>
                 <div className="flex items-center gap-2">
