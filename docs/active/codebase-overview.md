@@ -429,7 +429,8 @@ Implemented capabilities:
 - Manual menu category CRUD (create/update/delete).
 - Manual menu item CRUD (create/update/delete) with:
   - optional category assignment
-  - `description`, `price`, `isAvailable`, and `sortOrder`
+  - `description`, `imageUrl`, `price`, `isAvailable`, and `sortOrder`
+  - direct image upload to Supabase public menu-item bucket for diner-facing menu visuals
 - CSV import for menu items with header mapping and row-level validation.
 - Import result reporting (`createdCount`, `updatedCount`, `skippedCount`, `errors`).
 - Dining-table CRUD in setup surface (`create`, `update`, `delete`).
@@ -440,23 +441,32 @@ Implemented capabilities:
   - guest/non-member -> public landing (`/r/[publicSlug]`)
 - In-app built-in host scanner in `/service/tables` now reads QR payload text without navigating to the QR URL.
 - Host scanner extracts table number (`table`, `tableNumber`, `t`, `table:...`, or raw text), matches table in current business, and routes directly to `/service/host?table=<tableId>`.
+- `/service` now renders a lightweight launcher page with direct buttons to `/service/table` and `/service/kitchen`.
+- `/service/table` is an alias route that redirects to `/service/tables`.
+- `/service` launcher cards now include `Lock Here` actions to lock app navigation into `Table` or `Kitchen` workspace scope.
+- Settings now includes App Lock PIN setup for a 4-digit passcode (set/change/remove) using keypad-style passcode entry UX.
+- While app lock is active:
+  - dashboard sidebar and bottom nav are hidden
+  - non-allowed routes are redirected to the locked workspace landing route
+  - bottom-left unlock button opens passcode keypad; valid PIN restores full app navigation
 - Table setup now includes direct per-table `Take Order` action equivalent to host scanner result.
-- Public landing is now menu-first with category-grouped available items.
+- Public landing is now menu-first with category-grouped available items and optional item thumbnails.
 - Public landing shows review CTA only when `google_place_id` exists.
-- Host workspace now renders a table/session-aware order composer draft surface with:
-  - menu item line add
-  - per-line quantity + notes editing
-  - line removal
-  - subtotal/quantity summary
-  - confirm action that immediately creates kitchen ticket (`KitchenOrder` + `KitchenOrderItem` rows)
+- Host workspace now renders an iPad/desktop split order-taking layout with:
+  - left menu browser with search bar, category chips + counts, and menu card grid
+  - optional menu item image thumbnails/placeholders on card tiles
+  - right sticky check panel with draft lines, quantity/notes controls, and check totals
+  - `Send` action mapped to existing lifecycle (`confirmKitchenOrder` then `appendKitchenOrderItems`)
+  - sent-items summary card showing line-level statuses from the active kitchen order
   - `confirmed_at` + `due_at` timer fields set at confirm time (`due_at = confirmed_at + 30 minutes`)
-  - post-confirm append action that adds new `KitchenOrderItem` rows onto the same `KitchenOrder`
-  - existing ticket state surfaced in host workspace to prevent duplicate order creation
   - host `Done/Paid` close action that closes both order and active table session
-- Kitchen workspace route `/service/kitchen` now renders confirmed open orders in FIFO order by `confirmed_at` (oldest first).
-- Kitchen queue now supports per-item lifecycle status updates (`pending`, `preparing`, `ready_to_serve`, `served`, `cancelled`) with immediate refresh after each change.
-- Kitchen queue now collapses orders from visible list when all items are terminal (`served`/`cancelled`) while keeping orders open until explicit close flow.
-- Kitchen queue now shows overdue urgency styling/labels when `due_at` is past, without changing FIFO ordering.
+- Kitchen workspace route `/service/kitchen` now renders confirmed open orders in FIFO order by `confirmed_at` (oldest first) with an `Active Queue` / `Completed Orders` toggle.
+- `Completed Orders` contains open tickets whose items are all `ready_to_serve`; those tickets are removed from the `Active Queue` view.
+- Kitchen queue supports per-item lifecycle updates (`pending`, `preparing`, `ready_to_serve`, `served`, `cancelled`) with immediate refresh after each change.
+- `Completed Orders` is read-only in kitchen UI; status changes there must come from host-side amendment flows.
+- Host amendments (`appendKitchenOrderItems`, `requestKitchenOrderItemChange`, and host-triggered remove via `updateKitchenOrderItemStatus` with queue bump) re-prioritize ticket timing (`confirmed_at`/`due_at`) so amended tickets return to active queue at the end of the line.
+- Closed/Paid tickets (`closed_at` set) are excluded from both queue views.
+- Active queue still shows overdue urgency styling/labels when `due_at` is past, without reordering the FIFO sequence.
 - Profile page now uses a settings-style layout with a compact account header row, small dark-mode switch, a direct `Integrations` settings row, and small Host/Kitchen workspace switch (restaurant + `table_service` only).
 - Home route now auto-redirects restaurant users to `/service/kitchen` when profile mode is set to `Kitchen`.
 - Host and kitchen workspace headers now include `Exit to App`, which clears the launch-mode local-storage key and routes to `/`.
@@ -465,12 +475,18 @@ Implemented capabilities:
 Canonical paths:
 
 - `app/(dashboard)/service/layout.tsx`
+- `app/(dashboard)/service/page.tsx`
+- `app/(dashboard)/service/table/page.tsx`
 - `app/(dashboard)/service/menu/page.tsx`
 - `app/(dashboard)/service/tables/page.tsx`
 - `app/(dashboard)/service/host/page.tsx`
 - `app/(dashboard)/service/kitchen/page.tsx`
+- `app/(dashboard)/settings/page.tsx`
 - `app/r/[publicSlug]/page.tsx`
 - `app/scan/t/[token]/page.tsx`
+- `components/layout/dashboard-lock-shell.tsx`
+- `components/security/app-lock-pin-card.tsx`
+- `components/security/pin-keypad-modal.tsx`
 - `app/actions/modules/table-service.ts`
 - `src/features/table-service/server/menu-csv.ts`
 - `src/features/table-service/server/menu.service.ts`
@@ -481,6 +497,7 @@ Canonical paths:
 - `src/features/table-service/ui/HostOrderComposerPageClient.tsx`
 - `src/features/table-service/ui/MenuSetupPageClient.tsx`
 - `src/features/table-service/ui/TableSetupPageClient.tsx`
+- `src/shared/utils/app-lock.ts`
 
 ### Operational Calendar (OC-04 complete)
 
@@ -520,7 +537,8 @@ Canonical paths:
 - `src/features/schedule/server/schedule-ops.service.ts`
 - `src/features/schedule/ui/ScheduleClient.tsx`
 - `app/(dashboard)/schedule/page.tsx`
-- `app/(dashboard)/service/page.tsx` (canonical `/service` entrypoint redirect to `/service/tables`)
+- `app/(dashboard)/service/page.tsx` (canonical `/service` launcher with table/kitchen buttons)
+- `app/(dashboard)/service/table/page.tsx` (alias redirect to `/service/tables`)
 
 ### Home dashboard financial layers (interactive)
 
@@ -850,7 +868,7 @@ Restaurant table-service entities (RTS baseline):
 
 - `DiningTable` (global unique `qr_token`; per-business unique `table_number`)
 - `MenuCategory` (seeded/custom category support via `is_seeded`)
-- `MenuItem` (includes `description`, `price`, and `is_available` 86 toggle)
+- `MenuItem` (includes `description`, optional `image_url`, `price`, and `is_available` 86 toggle)
 - `TableSession` (includes `party_size`; one active session per table via DB partial unique index)
 - `KitchenOrder` (exactly one order per table session; `confirmed_at`/`due_at`/`closed_at` lifecycle anchors)
 - `KitchenOrderItem` (status enum: `pending`, `preparing`, `ready_to_serve`, `served`, `cancelled`)

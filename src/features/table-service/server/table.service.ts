@@ -121,6 +121,28 @@ export async function deleteDiningTable(businessId: string, tableId: string) {
   });
   if (!existing) throw new Error("Dining table not found");
 
+  const activeSession = await prisma.tableSession.findFirst({
+    where: {
+      business_id: businessId,
+      dining_table_id: tableId,
+      closed_at: null,
+    },
+    select: { id: true },
+  });
+  if (activeSession) {
+    throw new Error("Cannot delete table with an active session or order. Close it first.");
+  }
+
+  const sessionHistoryCount = await prisma.tableSession.count({
+    where: {
+      business_id: businessId,
+      dining_table_id: tableId,
+    },
+  });
+  if (sessionHistoryCount > 0) {
+    throw new Error("Cannot delete table with existing order/session history.");
+  }
+
   await prisma.diningTable.delete({
     where: { id: tableId },
   });

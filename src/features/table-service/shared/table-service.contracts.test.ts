@@ -21,7 +21,7 @@ describe("table-service contracts", () => {
       "served",
       "cancelled",
     ]);
-    assert.deepEqual(KITCHEN_TERMINAL_ITEM_STATUSES, ["served", "cancelled"]);
+    assert.deepEqual(KITCHEN_TERMINAL_ITEM_STATUSES, ["served"]);
   });
 
   it("locks one-order-per-session and append behavior invariants", () => {

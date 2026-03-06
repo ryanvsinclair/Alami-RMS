@@ -42,5 +42,16 @@ export async function getHomeDashboardSummary(
       count: row._count._all,
     })),
     transactions: serialize(rows.transactions),
+    pendingBills: rows.pendingBillOccurrences.map((occ) => ({
+      id: occ.id,
+      billId: occ.bill_id,
+      billName: occ.bill.name,
+      amount: typeof occ.bill.amount === "object" && occ.bill.amount !== null && "toNumber" in occ.bill.amount
+        ? (occ.bill.amount as { toNumber: () => number }).toNumber()
+        : Number(occ.bill.amount),
+      category: occ.bill.category as string,
+      recurrence: occ.bill.recurrence as string,
+      dueAt: occ.due_at.toISOString(),
+    })),
   };
 }

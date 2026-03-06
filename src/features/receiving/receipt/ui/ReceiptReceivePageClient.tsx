@@ -358,198 +358,225 @@ export default function ReceiptReceivePageClient() {
   }
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="space-y-4 p-4 md:p-5 xl:p-6">
       {step === "input" && (
-        <>
-          <div className="flex rounded-lg border border-border overflow-hidden">
-            <button
-              onClick={() => setInputMode("camera")}
-              className={`flex-1 py-2 text-sm font-medium transition-colors ${
-                inputMode === "camera" ? "bg-primary text-white" : "text-muted hover:bg-white/8"
-              }`}
-            >
-              Camera / Upload
-            </button>
-            <button
-              onClick={() => setInputMode("text")}
-              className={`flex-1 py-2 text-sm font-medium transition-colors ${
-                inputMode === "text" ? "bg-primary text-white" : "text-muted hover:bg-white/8"
-              }`}
-            >
-              Paste Text
-            </button>
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(260px,320px)]">
+          <div className="space-y-4">
+            <div className="flex overflow-hidden rounded-lg border border-border">
+              <button
+                onClick={() => setInputMode("camera")}
+                className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                  inputMode === "camera" ? "bg-primary text-white" : "text-muted hover:bg-white/8"
+                }`}
+              >
+                Camera / Upload
+              </button>
+              <button
+                onClick={() => setInputMode("text")}
+                className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                  inputMode === "text" ? "bg-primary text-white" : "text-muted hover:bg-white/8"
+                }`}
+              >
+                Paste Text
+              </button>
+            </div>
+
+            {inputMode === "camera" && (
+              <>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handleImageCapture}
+                  className="hidden"
+                />
+
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={scanning}
+                  className="w-full space-y-3 rounded-xl border-2 border-dashed border-border p-8 text-center transition-colors hover:border-primary/50"
+                >
+                  {scanning ? (
+                    <>
+                      <svg className="mx-auto h-10 w-10 animate-spin text-primary" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      <p className="text-sm font-medium text-primary">Scanning receipt...</p>
+                      <p className="animate-pulse text-xs text-muted">This may take a few seconds</p>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="mx-auto h-10 w-10 text-muted" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Z" />
+                      </svg>
+                      <p className="text-sm text-muted">Tap to take photo or upload receipt image</p>
+                    </>
+                  )}
+                </button>
+              </>
+            )}
+
+            {inputMode === "text" && (
+              <>
+                <textarea
+                  className="min-h-[220px] w-full rounded-[10px] border border-border bg-[var(--fill-tertiary)] px-3 py-2.5 font-mono text-sm text-foreground placeholder:text-muted focus:outline-none"
+                  placeholder={"2x Chicken Breast 2kg   $15.98\n1x BBQ Sauce 1L          $4.99\n3x Napkins 200pk         $8.97\n..."}
+                  value={rawText}
+                  onChange={(e) => setRawText(e.target.value)}
+                  autoFocus
+                />
+                <Button
+                  onClick={handleParse}
+                  loading={loading}
+                  disabled={!rawText.trim()}
+                  className="w-full"
+                  size="lg"
+                >
+                  Parse Receipt
+                </Button>
+              </>
+            )}
+
+            {error && <p className="text-sm text-danger">{error}</p>}
           </div>
 
-          {inputMode === "camera" && (
-            <>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                onChange={handleImageCapture}
-                className="hidden"
-              />
+          <aside className="hidden space-y-2 rounded-xl border border-border bg-card p-4 xl:block">
+            <p className="text-xs font-semibold normal-case tracking-normal text-primary">Workflow</p>
+            <p className="text-sm text-muted">1. Capture or paste a receipt.</p>
+            <p className="text-sm text-muted">2. Review each parsed line item and produce decision.</p>
+            <p className="text-sm text-muted">3. Finalize once pending produce items are resolved.</p>
+          </aside>
+        </div>
+      )}
 
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={scanning}
-                className="w-full border-2 border-dashed border-border rounded-xl p-8 text-center space-y-3 hover:border-primary/50 transition-colors"
-              >
-                {scanning ? (
-                  <>
-                    <svg className="animate-spin w-10 h-10 text-primary mx-auto" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    <p className="text-sm text-primary font-medium">Scanning receipt...</p>
-                    <p className="text-xs text-muted animate-pulse">This may take a few seconds</p>
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-10 h-10 text-muted mx-auto" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Z" />
-                    </svg>
-                    <p className="text-sm text-muted">Tap to take photo or upload receipt image</p>
-                  </>
-                )}
-              </button>
-            </>
-          )}
+            {step === "review" && receipt && (
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(320px,420px)]">
+          <aside className="space-y-4 xl:sticky xl:top-6 xl:self-start">
+            <div className="rounded-xl border border-border bg-card p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="text-sm font-medium">{totalCount} items parsed</p>
+                  <p className="text-xs text-muted">{confirmedCount} matched</p>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  <Badge variant="success">{parseHighCount} parse high</Badge>
+                  <Badge variant="warning">{parseMediumCount} parse med</Badge>
+                  <Badge variant="danger">{parseLowCount} parse low</Badge>
+                </div>
+              </div>
+            </div>
 
-          {inputMode === "text" && (
-            <>
-              <textarea
-                className="w-full rounded-[10px] border border-border bg-[var(--fill-tertiary)] px-3 py-2.5 text-foreground placeholder:text-muted focus:outline-none min-h-[200px] text-sm font-mono"
-                placeholder={"2x Chicken Breast 2kg   $15.98\n1x BBQ Sauce 1L          $4.99\n3x Napkins 200pk         $8.97\n..."}
-                value={rawText}
-                onChange={(e) => setRawText(e.target.value)}
-                autoFocus
-              />
+            {produceCandidates.length > 0 && (
+              <div className="space-y-3 rounded-lg border border-border bg-white/6 p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-medium">Parsed Produce Checklist</p>
+                    <p className="text-xs text-muted">
+                      {pendingProduceCount} pending decision{pendingProduceCount === 1 ? "" : "s"}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => handleSelectAllProduce("add_to_inventory")}
+                      disabled={bulkDecisionSaving || pendingProduceCount === 0}
+                      className="rounded-md bg-success/12 px-2 py-1 text-xs text-success disabled:opacity-50"
+                    >
+                      Select All Yes
+                    </button>
+                    <button
+                      onClick={() => handleSelectAllProduce("expense_only")}
+                      disabled={bulkDecisionSaving || pendingProduceCount === 0}
+                      className="rounded-md bg-white/10 px-2 py-1 text-xs text-white/70 disabled:opacity-50"
+                    >
+                      Select All No
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  {produceCandidates.map((line) => {
+                    const decision = getProduceDecision(line);
+                    const isPending = decision === "pending";
+                    const isActive = line.id === activeProduceLineId;
+                    return (
+                      <div
+                        key={line.id}
+                        className={`rounded-md border p-2 ${
+                          isActive ? "border-primary" : "border-border"
+                        } ${isPending ? "bg-white/6" : "bg-white/4"}`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="text-sm font-medium">
+                              {line.parsed_name ?? line.raw_text}
+                            </p>
+                            <p className="text-xs text-muted">
+                              {line.quantity ?? "?"} {line.unit ?? "each"}
+                              {line.line_cost ? ` | $${Number(line.line_cost).toFixed(2)}` : ""}
+                            </p>
+                          </div>
+                          <span className="text-[11px] text-muted">
+                            {decision === "pending"
+                              ? "Pending"
+                              : decision === "add_to_inventory"
+                                ? "Yes"
+                                : decision === "expense_only"
+                                  ? "No"
+                                  : "Resolve later"}
+                          </span>
+                        </div>
+
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          <button
+                            onClick={() => handleProduceDecision(line.id, "add_to_inventory")}
+                            disabled={
+                              decisionSavingLineId === line.id ||
+                              bulkDecisionSaving ||
+                              !line.matched_item
+                            }
+                            className="rounded-md bg-success/12 px-2 py-1 text-xs text-success disabled:opacity-50"
+                          >
+                            Yes
+                          </button>
+                          <button
+                            onClick={() => handleProduceDecision(line.id, "expense_only")}
+                            disabled={decisionSavingLineId === line.id || bulkDecisionSaving}
+                            className="rounded-md bg-white/10 px-2 py-1 text-xs text-white/70 disabled:opacity-50"
+                          >
+                            No
+                          </button>
+                          <button
+                            onClick={() => handleProduceDecision(line.id, "resolve_later")}
+                            disabled={decisionSavingLineId === line.id || bulkDecisionSaving}
+                            className="rounded-md bg-amber-500/12 px-2 py-1 text-xs text-amber-300 disabled:opacity-50"
+                          >
+                            Resolve Later
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {error && <p className="text-sm text-danger">{error}</p>}
+
+            <div className="sticky -mx-4 bottom-20 border-t border-border bg-[#080d14]/95 px-4 pt-3 backdrop-blur md:bottom-0 xl:mx-0 xl:rounded-xl xl:border xl:bg-card xl:p-3">
               <Button
-                onClick={handleParse}
-                loading={loading}
-                disabled={!rawText.trim()}
+                onClick={handleCommitAll}
+                loading={committing}
+                disabled={pendingProduceCount > 0}
                 className="w-full"
                 size="lg"
               >
-                Parse Receipt
+                Finalize Receipt ({eligibleInventoryCount} inventory items)
               </Button>
-            </>
-          )}
-
-          {error && <p className="text-sm text-danger">{error}</p>}
-        </>
-      )}
-
-      {step === "review" && receipt && (
-        <>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium">{totalCount} items parsed</p>
-              <p className="text-xs text-muted">{confirmedCount} matched</p>
             </div>
-            <div className="flex gap-2">
-              <Badge variant="success">{parseHighCount} parse high</Badge>
-              <Badge variant="warning">{parseMediumCount} parse med</Badge>
-              <Badge variant="danger">{parseLowCount} parse low</Badge>
-            </div>
-          </div>
-
-          {produceCandidates.length > 0 && (
-            <div className="rounded-lg border border-border bg-white/6 p-3 space-y-3">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-medium">Parsed Produce Checklist</p>
-                  <p className="text-xs text-muted">
-                    {pendingProduceCount} pending decision{pendingProduceCount === 1 ? "" : "s"}
-                  </p>
-                </div>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => handleSelectAllProduce("add_to_inventory")}
-                    disabled={bulkDecisionSaving || pendingProduceCount === 0}
-                    className="px-2 py-1 text-xs rounded-md bg-success/12 text-success disabled:opacity-50"
-                  >
-                    Select All Yes
-                  </button>
-                  <button
-                    onClick={() => handleSelectAllProduce("expense_only")}
-                    disabled={bulkDecisionSaving || pendingProduceCount === 0}
-                    className="px-2 py-1 text-xs rounded-md bg-white/10 text-white/70 disabled:opacity-50"
-                  >
-                    Select All No
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                {produceCandidates.map((line) => {
-                  const decision = getProduceDecision(line);
-                  const isPending = decision === "pending";
-                  const isActive = line.id === activeProduceLineId;
-                  return (
-                    <div
-                      key={line.id}
-                      className={`rounded-md border p-2 ${
-                        isActive ? "border-primary" : "border-border"
-                      } ${isPending ? "bg-white/6" : "bg-white/4"}`}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <p className="text-sm font-medium">
-                            {line.parsed_name ?? line.raw_text}
-                          </p>
-                          <p className="text-xs text-muted">
-                            {line.quantity ?? "?"} {line.unit ?? "each"}
-                            {line.line_cost ? ` â€¢ $${Number(line.line_cost).toFixed(2)}` : ""}
-                          </p>
-                        </div>
-                        <span className="text-[11px] text-muted">
-                          {decision === "pending"
-                            ? "Pending"
-                            : decision === "add_to_inventory"
-                            ? "Yes"
-                            : decision === "expense_only"
-                            ? "No"
-                            : "Resolve later"}
-                        </span>
-                      </div>
-
-                      <div className="mt-2 flex gap-1">
-                        <button
-                          onClick={() => handleProduceDecision(line.id, "add_to_inventory")}
-                          disabled={
-                            decisionSavingLineId === line.id ||
-                            bulkDecisionSaving ||
-                            !line.matched_item
-                          }
-                          className="px-2 py-1 text-xs rounded-md bg-success/12 text-success disabled:opacity-50"
-                        >
-                          Yes
-                        </button>
-                        <button
-                          onClick={() => handleProduceDecision(line.id, "expense_only")}
-                          disabled={decisionSavingLineId === line.id || bulkDecisionSaving}
-                          className="px-2 py-1 text-xs rounded-md bg-white/10 text-white/70 disabled:opacity-50"
-                        >
-                          No
-                        </button>
-                        <button
-                          onClick={() => handleProduceDecision(line.id, "resolve_later")}
-                          disabled={decisionSavingLineId === line.id || bulkDecisionSaving}
-                          className="px-2 py-1 text-xs rounded-md bg-amber-500/12 text-amber-300 disabled:opacity-50"
-                        >
-                          Resolve Later
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+          </aside>
 
           <div className="space-y-2">
             {receipt.line_items.map((li) => (
@@ -572,25 +599,11 @@ export default function ReceiptReceivePageClient() {
               />
             ))}
           </div>
-
-          {error && <p className="text-sm text-danger">{error}</p>}
-
-          <div className="sticky bottom-20 bg-[#080d14]/95 border-t border-border pt-3 -mx-4 px-4 backdrop-blur">
-            <Button
-              onClick={handleCommitAll}
-              loading={committing}
-              disabled={pendingProduceCount > 0}
-              className="w-full"
-              size="lg"
-            >
-              Finalize Receipt ({eligibleInventoryCount} inventory items)
-            </Button>
-          </div>
-        </>
+        </div>
       )}
 
       {step === "success" && (
-        <div className="text-center py-8 space-y-4">
+        <div className="mx-auto max-w-lg space-y-4 py-8 text-center">
           <div className="w-16 h-16 rounded-full bg-success/12 flex items-center justify-center mx-auto">
             <svg className="w-8 h-8 text-success" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
@@ -616,3 +629,4 @@ export default function ReceiptReceivePageClient() {
     </div>
   );
 }
+

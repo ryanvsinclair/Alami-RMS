@@ -1,47 +1,125 @@
 # Responsive Layout System and Page Matrix
 
-Status: active reference  
+Status: completed execution tracker  
 Created: 2026-03-03  
 Last Updated: 2026-03-03  
-Primary Purpose: define an efficient, maintainable responsive system for Mobile, iPad, and Desktop across all pages.
+Primary Purpose: define and track a maintainable responsive system for Mobile, iPad, and Desktop across all primary routes.
+
+## Compressed Invariant Block (Read First Every Session)
+
+- Mobile UX must remain fully functional while adding tablet/desktop layouts.
+- Shared shell and shared layout primitives take priority over route-level media hacks.
+- Layout changes are presentation-first; business logic and data flow must not change.
+- Touch targets stay >= 44px across breakpoints.
+- Each completed checklist step should include a validation pass and doc sync.
+
+## How To Use This File
+
+1. Start each session by reading:
+   - `## Last Left Off Here`
+   - `## Canonical Order Checklist`
+2. Claim one or two adjacent checklist items.
+3. Implement only scoped responsive/layout changes.
+4. Run viewport and lint/type validation for touched routes.
+5. Update checklist status, completion snapshot, and latest job summary.
+
+## Last Left Off Here
+
+- Current task ID: `RL-03-c`
+- Current task: `Final responsive consistency pass and checklist closeout`
+- Status: `COMPLETED`
+- Last updated: `2026-03-03`
+- Note: `RL-00` through `RL-03` are now complete in code and validated.
+
+## Canonical Order Checklist
+
+Status legend:
+
+- `[ ]` not started
+- `[~]` in progress
+- `[x]` completed
+- `[!]` blocked
+
+### Phase RL-00 - Foundation Shell and Shared Primitives
+
+- [x] RL-00-a: Refactor dashboard shell to remove global phone-width cap and support md+/xl layout rails.
+- [x] RL-00-b: Make bottom nav mobile-only (`md:hidden`).
+- [x] RL-00-c: Add md+/xl dashboard side navigation rail.
+- [x] RL-00-d: Introduce shared page container variants (`narrow`, `standard`, `wide`, `full`).
+- [x] RL-00-e: Update md+ page-header container width behavior to align with new shell.
+
+### Phase RL-01 - High-Impact Workspaces
+
+- [x] RL-01-a: `/shopping` responsive workspace migration (mobile fixed commit card + md+ sidebar commit rail).
+- [x] RL-01-b: `/shopping/orders` responsive list migration.
+- [x] RL-01-c: `/shopping/orders/[id]` responsive detail migration.
+- [x] RL-01-d: `/receive/receipt` + `/receive/receipt/[id]` responsive workspace migration.
+- [x] RL-01-e: `/service/host` responsive split layout migration.
+- [x] RL-01-f: `/service/kitchen` responsive queue-grid migration.
+- [x] RL-01-g: `/documents/[draftId]` responsive review workspace migration.
+
+### Phase RL-02 - List, Detail, and Analytics Routes
+
+- [x] RL-02-a: `/inventory` + `/inventory/[id]` responsive migration.
+- [x] RL-02-b: `/contacts` responsive split/editor migration.
+- [x] RL-02-c: `/documents` + `/documents/analytics` responsive migration.
+- [x] RL-02-d: `/integrations` responsive grouped-grid migration.
+- [x] RL-02-e: `/schedule` + `/reports` responsive analytics/calendar migration.
+- [x] RL-02-f: `/profile` + `/staff` responsive refinements.
+
+### Phase RL-03 - Non-Dashboard Polish and Consistency
+
+- [x] RL-03-a: `/auth/*` and `/onboarding/*` responsive tuning.
+- [x] RL-03-b: `/r/[publicSlug]`, `/privacy`, `/terms`, and public `/` responsive cleanup.
+- [x] RL-03-c: Remove remaining ad-hoc route wrappers and standardize spacing/sticky/empty-state patterns.
+
+## Completion Percentage (Update Every Slice)
+
+Current snapshot (2026-03-03):
+
+- Checklist items total: `21`
+- Checklist `[x]`: `21`
+- Checklist `[~]`: `0`
+- Strict completion: `100.00%`
+- Weighted progress: `100.00%`
 
 ## Executive Summary
 
-The codebase is strongly mobile-first, but the current dashboard shell hard-caps almost all authenticated pages to phone width. The most efficient path is:
+The codebase started strongly mobile-first, with dashboard routes hard-capped to phone width. The current strategy is:
 
-1. Introduce one shared responsive shell for dashboard routes.
+1. Keep one shared responsive shell for dashboard routes.
 2. Standardize page container variants (`narrow`, `standard`, `wide`, `full`).
-3. Migrate pages by archetype (workflow, list, detail, analytics, settings), not one-off CSS edits.
-4. Keep mobile UX intact while adding iPad and desktop layouts progressively.
+3. Migrate by page archetype/workspace impact, not one-off CSS.
+4. Preserve mobile behavior while progressively unlocking iPad and desktop productivity layouts.
 
-## Review Findings (Ordered by Severity)
+## Review Findings Status (Ordered by Severity)
 
 ### High
 
-1. Dashboard width is globally constrained to phone width.
-   - `app/(dashboard)/layout.tsx` uses `max-w-lg`, forcing mobile-width rendering on larger viewports.
+1. [x] Dashboard width was globally constrained to phone width.
+   - Implemented in `app/(dashboard)/layout.tsx` (removed `max-w-lg` dashboard shell cap).
 
-2. Bottom nav is always fixed and mobile-sized, with no tablet/desktop navigation mode.
-   - `components/nav/bottom-nav.tsx` renders fixed bottom nav at all breakpoints and constrains nav frame to `max-w-lg`.
+2. [x] Bottom nav was always fixed/mobile-sized at all breakpoints.
+   - Implemented in `components/nav/bottom-nav.tsx` (`md:hidden`).
 
-3. Several flows use fixed mobile offsets that will collide on larger layouts.
-   - `app/(dashboard)/shopping/page.tsx` uses `pb-44`, fixed summary bar at `bottom-24`, and `max-w-lg` inside fixed area.
+3. [x] Shopping used fixed mobile offsets that collided on larger layouts.
+   - Implemented in `app/(dashboard)/shopping/page.tsx` (md+ sidebar commit rail; fixed commit card now mobile-only).
 
 ### Medium
 
-4. Inconsistent local width wrappers reduce predictability.
-   - Example: `app/(dashboard)/service/host/page.tsx` (`max-w-3xl`) and kitchen client (`max-w-4xl`) while parent shell is still `max-w-lg`.
+4. [x] Inconsistent host/kitchen wrappers reduced predictability.
+   - Implemented via shared container usage and responsive host/kitchen workspace structure.
 
-5. Desktop header component is not a real desktop shell.
-   - `components/nav/page-header.tsx` is `hidden md:block` but still constrained with `max-w-lg` and not integrated globally.
+5. [x] Desktop header was constrained with `max-w-lg`.
+   - Implemented in `components/nav/page-header.tsx` (md+/xl width expansion).
 
-6. Many pages are single-column with minimal breakpoint behavior.
-   - Multiple feature clients use `p-4` stacks with no `md/lg` layout strategy.
+6. [x] Many routes remained single-column with minimal breakpoint behavior.
+   - Resolved via responsive route-client migrations across receive, documents, inventory, contacts, integrations, schedule, reports, staff, and profile.
 
 ### Low
 
-7. Schedule defaults are not adaptive for smaller screens.
-   - Week/month 7-column views remain dense on small devices.
+7. [x] Schedule defaults were not adaptive for smaller screens.
+   - Resolved in `src/features/schedule/ui/ScheduleClient.tsx` (mobile day-view default, desktop diagnostics rail layout).
 
 ## Responsive System (Recommended)
 
@@ -72,12 +150,6 @@ Create one dashboard shell that supports 3 modes without per-page hacks:
 - Desktop:
   - left expanded nav + main content + optional right context panel
   - bottom nav hidden
-
-Implementation target:
-
-- Refactor `app/(dashboard)/layout.tsx` to remove `max-w-lg` shell cap.
-- Update `components/nav/bottom-nav.tsx` to `md:hidden`.
-- Add md+ nav rail component (new).
 
 ## 3) Container Variants (Per Page)
 
@@ -263,33 +335,53 @@ Build shared wrappers for archetypes to avoid repeated breakpoint logic.
 5. `/` public marketing
    - Already reasonably adaptive; keep and tune spacing.
 
-## Implementation Plan (Efficient Rollout)
+## Latest Job Summary
 
-### Phase 1: Foundation (shared shell + nav)
+### 2026-03-03 - RL-01 through RL-03 completed and checklist closed
 
-1. Refactor dashboard shell to responsive grid/rails.
-2. Make bottom nav mobile-only.
-3. Add md+ side navigation rail.
-4. Introduce page container variants.
+- Completed high-impact workspace closeout:
+  - `app/(dashboard)/shopping/orders/page.tsx`
+  - `app/(dashboard)/shopping/orders/[id]/page.tsx`
+  - `src/features/receiving/receipt/ui/ReceiptReceivePageClient.tsx`
+  - `src/features/receiving/receipt/ui/ReceiptDetailPageClient.tsx`
+  - `src/features/documents/ui/DocumentDraftDetailClient.tsx`
+- Completed list/detail/analytics responsive migrations:
+  - `src/features/inventory/ui/InventoryListPageClient.tsx`
+  - `src/features/inventory/ui/InventoryDetailPageClient.tsx`
+  - `src/features/contacts/ui/ContactsPageClient.tsx`
+  - `src/features/documents/ui/DocumentInboxClient.tsx`
+  - `src/features/documents/ui/DocumentAnalyticsClient.tsx`
+  - `src/features/integrations/ui/IncomeConnectionsPageClient.tsx`
+  - `src/features/schedule/ui/ScheduleClient.tsx`
+  - `src/features/staff/ui/StaffPageClient.tsx`
+  - `app/(dashboard)/profile/page.tsx`
+- Completed non-dashboard consistency pass:
+  - `app/auth/layout.tsx`
+  - `src/features/integrations/ui/OnboardingConnectionsStep.tsx`
+  - `app/r/[publicSlug]/page.tsx`
+  - `src/features/home/ui/HomeDashboardClient.tsx`
+- Validation completed:
+  - `npx eslint` on all touched responsive route/client files -> pass
+  - `npx tsc --noEmit` -> pass
+- Next task ID: `N/A (responsive matrix complete)`
 
-### Phase 2: High-impact workspaces
+### 2026-03-03 - RL-00 completed and RL-01 partially completed
 
-1. Shopping pages.
-2. Receipt receive + detail.
-3. Service host + kitchen.
-4. Documents draft detail.
-
-### Phase 3: List/detail and analytics pages
-
-1. Inventory, contacts, documents inbox, integrations.
-2. Schedule + reports.
-3. Profile and staff refinements.
-
-### Phase 4: Polish + consistency
-
-1. Auth/onboarding/public menu responsive tuning.
-2. Standardize spacing, sticky actions, and empty states.
-3. Remove ad-hoc route-level width wrappers replaced by container variants.
+- Completed foundation shell and navigation work:
+  - `app/(dashboard)/layout.tsx`
+  - `components/nav/bottom-nav.tsx`
+  - `components/nav/dashboard-side-nav.tsx`
+  - `components/layout/dashboard-page-container.tsx`
+  - `components/nav/page-header.tsx`
+- Completed high-impact workspace updates:
+  - `app/(dashboard)/shopping/page.tsx`
+  - `app/(dashboard)/service/host/page.tsx`
+  - `src/features/table-service/ui/HostOrderComposerPageClient.tsx`
+  - `src/features/table-service/ui/KitchenQueuePageClient.tsx`
+- Validation completed:
+  - `npx eslint` on touched files -> pass
+  - `npx tsc --noEmit` -> pass
+- Next task ID at that time: `RL-01-b`
 
 ## Guardrails
 
@@ -310,15 +402,13 @@ For each migrated route:
 3. Run targeted lint and route smoke checks.
 4. Add/update Playwright visual regression snapshots for key routes.
 
-## Concrete First Refactor Targets
+## Concrete First Refactor Targets (Status)
 
-Start with these files for maximum leverage:
+- [x] `app/(dashboard)/layout.tsx`
+- [x] `components/nav/bottom-nav.tsx`
+- [x] `components/nav/page-header.tsx`
+- [x] `app/(dashboard)/shopping/page.tsx`
+- [x] `src/features/table-service/ui/KitchenQueuePageClient.tsx`
+- [x] `src/features/table-service/ui/HostOrderComposerPageClient.tsx`
 
-1. `app/(dashboard)/layout.tsx`
-2. `components/nav/bottom-nav.tsx`
-3. `components/nav/page-header.tsx` (or replace with md+ shell header)
-4. `app/(dashboard)/shopping/page.tsx`
-5. `src/features/table-service/ui/KitchenQueuePageClient.tsx`
-6. `src/features/table-service/ui/HostOrderComposerPageClient.tsx`
-
-These changes unlock responsive behavior across most of the authenticated app with the least duplicated effort.
+These first targets are complete and unlocked the shared responsive foundation plus the first high-impact workspace migrations.

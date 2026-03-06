@@ -85,123 +85,125 @@ export default function StaffPageClient() {
   }
 
   return (
-    <div className="space-y-4 p-4 pb-28">
-      <Card className="space-y-3">
-        <p className="text-sm font-semibold text-foreground">Invite Staff</p>
-        <form onSubmit={onInvite} className="space-y-2">
-          <Input
-            label="Email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="staff@restaurant.com"
-            required
-          />
-          <div className="space-y-1.5">
-            <label className="text-[13px] font-normal tracking-normal text-muted">
-              Role
-            </label>
-            <select
-              className="h-12 w-full rounded-xl border border-border bg-white/7 px-4 text-foreground outline-none focus:ring-2 focus:ring-primary/30"
-              value={role}
-              onChange={(e) => setRole(e.target.value as "manager" | "staff")}
-            >
-              <option value="staff">Staff</option>
-              <option value="manager">Manager</option>
-            </select>
-          </div>
-          <Button type="submit" className="w-full" loading={saving}>
-            Create Invite Link
-          </Button>
-        </form>
-        {inviteUrl && (
-          <div className="rounded-xl border border-border bg-white/6 p-3">
-            <p className="text-xs text-muted">Share this link with staff:</p>
-            <p className="mt-1 break-all text-xs text-foreground">{inviteUrl}</p>
-          </div>
-        )}
-        {error && (
-          <p className="rounded-xl border border-red-400/25 bg-red-500/10 px-3 py-2 text-sm text-red-300">
-            {error}
-          </p>
-        )}
-      </Card>
+    <div className="space-y-4 p-4 pb-28 md:p-5 md:pb-6 xl:p-6">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,360px)_minmax(0,1fr)_minmax(0,1fr)]">
+        <Card className="space-y-3 xl:sticky xl:top-6 xl:self-start">
+          <p className="text-sm font-semibold text-foreground">Invite Staff</p>
+          <form onSubmit={onInvite} className="space-y-2">
+            <Input
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="staff@restaurant.com"
+              required
+            />
+            <div className="space-y-1.5">
+              <label className="text-[13px] font-normal tracking-normal text-muted">
+                Role
+              </label>
+              <select
+                className="h-12 w-full rounded-xl border border-border bg-white/7 px-4 text-foreground outline-none focus:ring-2 focus:ring-primary/30"
+                value={role}
+                onChange={(e) => setRole(e.target.value as "manager" | "staff")}
+              >
+                <option value="staff">Staff</option>
+                <option value="manager">Manager</option>
+              </select>
+            </div>
+            <Button type="submit" className="w-full" loading={saving}>
+              Create Invite Link
+            </Button>
+          </form>
+          {inviteUrl && (
+            <div className="rounded-xl border border-border bg-white/6 p-3">
+              <p className="text-xs text-muted">Share this link with staff:</p>
+              <p className="mt-1 break-all text-xs text-foreground">{inviteUrl}</p>
+            </div>
+          )}
+          {error && (
+            <p className="rounded-xl border border-red-400/25 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+              {error}
+            </p>
+          )}
+        </Card>
 
-      <Card>
-        <p className="mb-3 text-sm font-semibold text-foreground">Pending Invites</p>
-        {loading && <p className="text-sm text-muted">Loading...</p>}
-        {!loading && invites.length === 0 && <p className="text-sm text-muted">No invites yet.</p>}
-        <div className="space-y-2">
-          {invites.map((invite) => (
-            <div key={invite.id} className="rounded-xl border border-border/80 bg-white/5 p-3">
-              <div className="flex items-center justify-between gap-2">
+        <Card>
+          <p className="mb-3 text-sm font-semibold text-foreground">Pending Invites</p>
+          {loading && <p className="text-sm text-muted">Loading...</p>}
+          {!loading && invites.length === 0 && <p className="text-sm text-muted">No invites yet.</p>}
+          <div className="space-y-2">
+            {invites.map((invite) => (
+              <div key={invite.id} className="rounded-xl border border-border/80 bg-white/5 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">{invite.email}</p>
+                    <p className="text-xs text-muted">
+                      Expires {new Date(invite.expires_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={invite.role === "manager" ? "warning" : "default"}>
+                      {invite.role}
+                    </Badge>
+                    <Badge
+                      variant={
+                        invite.status === "pending"
+                          ? "info"
+                          : invite.status === "accepted"
+                            ? "success"
+                            : "danger"
+                      }
+                    >
+                      {invite.status}
+                    </Badge>
+                  </div>
+                </div>
+                {invite.status === "pending" && (
+                  <button
+                    onClick={() => onRevoke(invite.id)}
+                    className="mt-2 text-xs font-semibold text-red-300"
+                  >
+                    Revoke
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        <Card>
+          <p className="mb-3 text-sm font-semibold text-foreground">Current Team</p>
+          {loading && <p className="text-sm text-muted">Loading...</p>}
+          {!loading && members.length === 0 && <p className="text-sm text-muted">No members found.</p>}
+          <div className="space-y-2">
+            {members.map((member) => (
+              <div
+                key={member.user_id}
+                className="flex items-center justify-between rounded-xl border border-border/80 bg-white/5 p-3"
+              >
                 <div>
-                  <p className="text-sm font-semibold text-foreground">{invite.email}</p>
+                  <p className="text-sm font-semibold text-foreground">{member.user_id}</p>
                   <p className="text-xs text-muted">
-                    Expires {new Date(invite.expires_at).toLocaleDateString()}
+                    Joined {new Date(member.created_at).toLocaleDateString()}
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant={invite.role === "manager" ? "warning" : "default"}>
-                    {invite.role}
-                  </Badge>
-                  <Badge
-                    variant={
-                      invite.status === "pending"
-                        ? "info"
-                        : invite.status === "accepted"
-                          ? "success"
-                          : "danger"
-                    }
-                  >
-                    {invite.status}
-                  </Badge>
-                </div>
-              </div>
-              {invite.status === "pending" && (
-                <button
-                  onClick={() => onRevoke(invite.id)}
-                  className="mt-2 text-xs font-semibold text-red-300"
+                <Badge
+                  variant={
+                    member.role === "owner"
+                      ? "success"
+                      : member.role === "manager"
+                        ? "warning"
+                        : "default"
+                  }
                 >
-                  Revoke
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      <Card>
-        <p className="mb-3 text-sm font-semibold text-foreground">Current Team</p>
-        {loading && <p className="text-sm text-muted">Loading...</p>}
-        {!loading && members.length === 0 && <p className="text-sm text-muted">No members found.</p>}
-        <div className="space-y-2">
-          {members.map((member) => (
-            <div
-              key={member.user_id}
-              className="flex items-center justify-between rounded-xl border border-border/80 bg-white/5 p-3"
-            >
-              <div>
-                <p className="text-sm font-semibold text-foreground">{member.user_id}</p>
-                <p className="text-xs text-muted">
-                  Joined {new Date(member.created_at).toLocaleDateString()}
-                </p>
+                  {member.role}
+                </Badge>
               </div>
-              <Badge
-                variant={
-                  member.role === "owner"
-                    ? "success"
-                    : member.role === "manager"
-                      ? "warning"
-                      : "default"
-                }
-              >
-                {member.role}
-              </Badge>
-            </div>
-          ))}
-        </div>
-      </Card>
+            ))}
+          </div>
+        </Card>
+      </div>
     </div>
   );
 }

@@ -117,6 +117,34 @@ enum FinancialSource {
   shopping
   manual
   document_intake
+  recurring_bill
+}
+
+enum RecurringBillCategory {
+  subscription
+  utility
+  rent
+  insurance
+  loan
+  payroll
+  marketing
+  software
+  other
+}
+
+enum RecurrenceInterval {
+  daily
+  weekly
+  biweekly
+  monthly
+  quarterly
+  annually
+}
+
+enum RecurringBillOccurrenceStatus {
+  pending
+  confirmed
+  skipped
 }
 
 enum IncomeProvider {
@@ -582,9 +610,10 @@ model FinancialTransaction {
   shopping_session_id String?
   created_at          DateTime                 @default(now())
 
-  shopping_session ShoppingSession? @relation(fields: [shopping_session_id], references: [id], onDelete: SetNull)
-  document_draft   DocumentDraft?
-  business         Business         @relation(fields: [business_id], references: [id], onDelete: Cascade)
+  shopping_session          ShoppingSession?          @relation(fields: [shopping_session_id], references: [id], onDelete: SetNull)
+  document_draft            DocumentDraft?
+  recurring_bill_occurrence RecurringBillOccurrence?
+  business                  Business                  @relation(fields: [business_id], references: [id], onDelete: Cascade)
 
   @@unique([business_id, source, external_id])
   @@index([business_id])
@@ -592,6 +621,49 @@ model FinancialTransaction {
   @@index([source, occurred_at(sort: Desc)])
   @@index([occurred_at(sort: Desc)])
   @@map("financial_transactions")
+}
+
+model RecurringBill {
+  id               String                 @id @default(uuid())
+  business_id      String
+  name             String
+  amount           Decimal                @db.Decimal(10, 2)
+  category         RecurringBillCategory
+  recurrence       RecurrenceInterval
+  recurrence_day   Int?
+  next_due_at      DateTime
+  started_at       DateTime
+  is_active        Boolean                @default(true)
+  notes            String?
+  created_at       DateTime               @default(now())
+  updated_at       DateTime               @updatedAt
+
+  business    Business                 @relation(fields: [business_id], references: [id], onDelete: Cascade)
+  occurrences RecurringBillOccurrence[]
+
+  @@index([business_id])
+  @@index([business_id, is_active, next_due_at(sort: Asc)])
+  @@map("recurring_bills")
+}
+
+model RecurringBillOccurrence {
+  id                       String                        @id @default(uuid())
+  business_id              String
+  bill_id                  String
+  due_at                   DateTime
+  status                   RecurringBillOccurrenceStatus @default(pending)
+  confirmed_at             DateTime?
+  financial_transaction_id String?                       @unique
+  created_at               DateTime                      @default(now())
+
+  bill                  RecurringBill         @relation(fields: [bill_id], references: [id], onDelete: Cascade)
+  financial_transaction FinancialTransaction?  @relation(fields: [financial_transaction_id], references: [id], onDelete: SetNull)
+  business              Business              @relation(fields: [business_id], references: [id], onDelete: Cascade)
+
+  @@index([business_id])
+  @@index([business_id, status, due_at(sort: Asc)])
+  @@index([bill_id, due_at(sort: Desc)])
+  @@map("recurring_bill_occurrences")
 }
 
 model ExternalSyncLog {
@@ -907,6 +979,7 @@ model MenuItem {
   category_id  String?
   name         String
   description  String?
+  image_url    String?
   price        Decimal  @db.Decimal(10, 2)
   is_available Boolean  @default(true)
   sort_order   Int      @default(0)
@@ -1028,6 +1101,8 @@ model Business {
   table_sessions         TableSession[]
   kitchen_orders         KitchenOrder[]
   kitchen_order_items    KitchenOrderItem[]
+  recurring_bills        RecurringBill[]
+  recurring_bill_occurrences RecurringBillOccurrence[]
 
   @@map("businesses")
 }

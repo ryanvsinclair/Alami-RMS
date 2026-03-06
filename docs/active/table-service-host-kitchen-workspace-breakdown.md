@@ -55,8 +55,13 @@ Behavior:
 
 ### 4. Entry points into Host and Kitchen
 
-- `/service` redirects to `/service/tables`:
-  - `app/(dashboard)/service/page.tsx`
+- `/service` renders a simple launcher with buttons to:
+  - `/service/table`
+  - `/service/kitchen`
+  - file: `app/(dashboard)/service/page.tsx`
+- `/service` launcher cards also include `Lock Here` actions that enable PIN-gated app lock mode for the selected workspace.
+- `/service/table` is an alias route that redirects to `/service/tables`:
+  - file: `app/(dashboard)/service/table/page.tsx`
 - Host page:
   - `app/(dashboard)/service/host/page.tsx`
 - Kitchen page:
@@ -113,7 +118,10 @@ Behavior:
 3. Submit path:
    - no existing order: `confirmKitchenOrder(...)`
    - existing order: `appendKitchenOrderItems(...)`
-4. Done/Paid path:
+4. Host amendment path (`appendKitchenOrderItems`, `requestKitchenOrderItemChange`, and host remove):
+   - re-prioritizes queue timing by bumping `confirmed_at` and recalculating `due_at`
+   - sends amended ticket back to the end of active queue order
+5. Done/Paid path:
    - `closeKitchenOrderAndSession(...)`
    - closes both `KitchenOrder.closed_at` and `TableSession.closed_at`.
 
@@ -131,8 +139,13 @@ Behavior:
    - `confirmed_at` present
    - ordered FIFO by `confirmed_at ASC`, then `created_at ASC`
 3. Queue visibility rule:
-   - orders collapse when all items are terminal (`served` or `cancelled`)
-4. Kitchen can update each line item status.
+   - backend queue excludes closed orders and keeps open confirmed orders visible while not fully `served`
+   - kitchen UI splits this queue into two toggles:
+     - `Active Queue`: any order not fully `ready_to_serve`
+     - `Completed Orders`: orders where all line items are `ready_to_serve`
+4. Kitchen can update line-item status only while ticket is in `Active Queue`.
+   - `Completed Orders` is read-only in kitchen UI.
+   - returning a completed ticket to active flow requires host-side amendment.
 5. Overdue label is visual urgency only and does not reorder queue.
 
 ### 8. Exit preview mode
@@ -143,6 +156,27 @@ Behavior:
 
 1. Clears `TABLE_SERVICE_WORKSPACE_MODE_STORAGE_KEY` from `localStorage`.
 2. Redirects user to `/`.
+
+### 9. Service App Lock mode (PIN-gated route lock)
+
+- Files:
+  - `app/(dashboard)/settings/page.tsx`
+  - `components/security/app-lock-pin-card.tsx`
+  - `components/security/pin-keypad-modal.tsx`
+  - `components/layout/dashboard-lock-shell.tsx`
+  - `src/shared/utils/app-lock.ts`
+  - `app/(dashboard)/service/page.tsx`
+
+Behavior:
+
+1. Settings provides 4-digit PIN setup/change/remove.
+2. `/service` launcher `Lock Here` on `Table` or `Kitchen` sets locked scope and routes into that workspace.
+3. While locked:
+   - sidebar and bottom nav are hidden.
+   - dashboard routes are restricted to locked scope prefixes.
+   - disallowed route visits are redirected to locked landing route.
+4. Locked screen shows bottom-left `Unlock` button with PIN keypad.
+5. Correct PIN unlocks app and restores normal navigation.
 
 ## Data Model and Contracts
 
@@ -184,6 +218,7 @@ Important helpers:
 
 - `app/(dashboard)/service/layout.tsx`
 - `app/(dashboard)/service/page.tsx`
+- `app/(dashboard)/service/table/page.tsx`
 - `app/(dashboard)/service/host/page.tsx`
 - `app/(dashboard)/service/kitchen/page.tsx`
 - `app/(dashboard)/service/tables/page.tsx`

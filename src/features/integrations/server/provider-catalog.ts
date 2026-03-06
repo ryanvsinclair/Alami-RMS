@@ -127,6 +127,11 @@ export async function listIncomeProviderConnectionCardsForBusiness(input: {
     const isConnected = connection.status === "connected";
     const syncEnabled = isConnected && SYNC_ENABLED_PROVIDERS.has(connection.provider_id);
     const lastSyncAt = connection.last_sync_at ? connection.last_sync_at.toISOString() : null;
+    const connectHref = isConnected && connection.provider_id === "uber_eats"
+      ? "/integrations/uber-eats"
+      : card.connectEnabled
+        ? `/api/integrations/oauth/${connection.provider_id}/start?return_to=${encodeURIComponent(returnToPath)}`
+        : null;
 
     // Stale sync: connected but never synced, or last sync was >24h ago
     const syncStale = isConnected && (
@@ -142,6 +147,7 @@ export async function listIncomeProviderConnectionCardsForBusiness(input: {
       lastErrorMessage: connection.last_error_message ?? null,
       status: mapDatabaseStatusToCardStatus(connection.status),
       connectLabel: card.connectEnabled ? "Reconnect" : "Reconnect (Setup needed)",
+      connectHref,
       syncEnabled,
       syncHref: syncEnabled
         ? buildSyncHref(connection.provider_id, returnToPath)

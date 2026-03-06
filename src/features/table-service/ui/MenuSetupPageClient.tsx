@@ -13,11 +13,13 @@ import {
   deleteMenuItem,
   getMenuSetupData,
   importMenuItemsFromCsv,
+  uploadMenuItemImage,
   updateMenuCategory,
   updateMenuItem,
 } from "@/app/actions/modules/table-service";
 import type {
   MenuCsvImportReport,
+  MenuItemImageUploadResult,
   TableServiceMenuCategorySummary,
   TableServiceMenuItemSummary,
   TableServiceMenuSetupData,
@@ -35,6 +37,7 @@ const EMPTY_ITEM_FORM = {
   categoryId: "",
   name: "",
   description: "",
+  imageUrl: "",
   price: "",
   isAvailable: true,
   sortOrder: "0",
@@ -59,6 +62,8 @@ export default function MenuSetupPageClient() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [csvImporting, setCsvImporting] = useState(false);
+  const [uploadingNewItemImage, setUploadingNewItemImage] = useState(false);
+  const [uploadingEditingItemImage, setUploadingEditingItemImage] = useState(false);
   const [csvText, setCsvText] = useState("");
   const [importReport, setImportReport] = useState<MenuCsvImportReport | null>(null);
 
@@ -160,6 +165,7 @@ export default function MenuSetupPageClient() {
         name: itemForm.name,
         categoryId: itemForm.categoryId || null,
         description: itemForm.description || null,
+        imageUrl: itemForm.imageUrl || null,
         price,
         isAvailable: itemForm.isAvailable,
         sortOrder: parseSortOrder(itemForm.sortOrder),
@@ -184,6 +190,7 @@ export default function MenuSetupPageClient() {
         name: editingItemForm.name,
         categoryId: editingItemForm.categoryId || null,
         description: editingItemForm.description || null,
+        imageUrl: editingItemForm.imageUrl || null,
         price,
         isAvailable: editingItemForm.isAvailable,
         sortOrder: parseSortOrder(editingItemForm.sortOrder),
@@ -208,6 +215,40 @@ export default function MenuSetupPageClient() {
       setError("Failed to delete menu item");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleUploadImage(file: File, mode: "create" | "edit") {
+    if (!file) return;
+
+    if (mode === "create") {
+      setUploadingNewItemImage(true);
+    } else {
+      setUploadingEditingItemImage(true);
+    }
+    setError("");
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const result = (await uploadMenuItemImage(formData)) as MenuItemImageUploadResult;
+      if (!result?.publicUrl) {
+        throw new Error("Missing image URL");
+      }
+
+      if (mode === "create") {
+        setItemForm((prev) => ({ ...prev, imageUrl: result.publicUrl }));
+      } else {
+        setEditingItemForm((prev) => ({ ...prev, imageUrl: result.publicUrl }));
+      }
+    } catch {
+      setError("Failed to upload menu item image");
+    } finally {
+      if (mode === "create") {
+        setUploadingNewItemImage(false);
+      } else {
+        setUploadingEditingItemImage(false);
+      }
     }
   }
 
@@ -291,6 +332,47 @@ export default function MenuSetupPageClient() {
           onChange={(event) => setItemForm((prev) => ({ ...prev, description: event.target.value }))}
           placeholder="Brioche bun, cheddar, pickles"
         />
+        <div className="space-y-2">
+          <p className="text-[13px] font-normal tracking-normal text-muted">Item image (optional)</p>
+          <div className="rounded-xl border border-border bg-foreground/[0.03] p-3">
+            {itemForm.imageUrl ? (
+              <img
+                src={itemForm.imageUrl}
+                alt={`${itemForm.name || "Menu item"} preview`}
+                className="h-24 w-full rounded-lg border border-border object-cover"
+              />
+            ) : (
+              <div className="flex h-24 items-center justify-center rounded-lg border border-dashed border-border text-xs text-muted">
+                No image uploaded
+              </div>
+            )}
+          </div>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (!file) return;
+              void handleUploadImage(file, "create");
+              event.target.value = "";
+            }}
+            disabled={saving || uploadingNewItemImage}
+            className="block w-full text-xs text-muted file:mr-3 file:rounded-lg file:border file:border-border file:bg-card file:px-3 file:py-2 file:font-semibold file:text-foreground hover:file:bg-foreground/[0.04]"
+          />
+          <div className="flex items-center justify-between gap-2 text-xs text-muted">
+            <span>{uploadingNewItemImage ? "Uploading image..." : "PNG, JPG, WEBP, GIF up to 5MB."}</span>
+            {itemForm.imageUrl && (
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={() => setItemForm((prev) => ({ ...prev, imageUrl: "" }))}
+              >
+                Remove Image
+              </Button>
+            )}
+          </div>
+        </div>
         <div className="grid grid-cols-2 gap-2">
           <Input
             label="Price"
@@ -321,7 +403,7 @@ export default function MenuSetupPageClient() {
         <Button
           onClick={handleCreateItem}
           loading={saving}
-          disabled={!itemForm.name.trim() || parsePrice(itemForm.price) == null}
+          disabled={!itemForm.name.trim() || parsePrice(itemForm.price) == null || uploadingNewItemImage}
         >
           Add Menu Item
         </Button>
@@ -488,6 +570,47 @@ export default function MenuSetupPageClient() {
                         }))
                       }
                     />
+                    <div className="space-y-2">
+                      <p className="text-[13px] font-normal tracking-normal text-muted">Item image (optional)</p>
+                      <div className="rounded-xl border border-border bg-foreground/[0.03] p-3">
+                        {editingItemForm.imageUrl ? (
+                          <img
+                            src={editingItemForm.imageUrl}
+                            alt={`${editingItemForm.name || "Menu item"} preview`}
+                            className="h-24 w-full rounded-lg border border-border object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-24 items-center justify-center rounded-lg border border-dashed border-border text-xs text-muted">
+                            No image uploaded
+                          </div>
+                        )}
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(event) => {
+                          const file = event.target.files?.[0];
+                          if (!file) return;
+                          void handleUploadImage(file, "edit");
+                          event.target.value = "";
+                        }}
+                        disabled={saving || uploadingEditingItemImage}
+                        className="block w-full text-xs text-muted file:mr-3 file:rounded-lg file:border file:border-border file:bg-card file:px-3 file:py-2 file:font-semibold file:text-foreground hover:file:bg-foreground/[0.04]"
+                      />
+                      <div className="flex items-center justify-between gap-2 text-xs text-muted">
+                        <span>{uploadingEditingItemImage ? "Uploading image..." : "PNG, JPG, WEBP, GIF up to 5MB."}</span>
+                        {editingItemForm.imageUrl && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => setEditingItemForm((prev) => ({ ...prev, imageUrl: "" }))}
+                          >
+                            Remove Image
+                          </Button>
+                        )}
+                      </div>
+                    </div>
                     <div className="grid grid-cols-2 gap-2">
                       <Input
                         label="Price"
@@ -533,6 +656,7 @@ export default function MenuSetupPageClient() {
                         size="sm"
                         onClick={() => handleUpdateItem(item.id)}
                         loading={saving}
+                        disabled={uploadingEditingItemImage}
                       >
                         Save
                       </Button>
@@ -547,14 +671,27 @@ export default function MenuSetupPageClient() {
                   </>
                 ) : (
                   <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="font-semibold">{item.name}</p>
-                      <p className="text-xs text-muted">
-                        {categoryName} | ${displayPrice} | {isAvailable ? "Available" : "86"} | sort {sortOrder}
-                      </p>
-                      {item.description && (
-                        <p className="text-xs text-muted mt-1">{item.description}</p>
+                    <div className="flex min-w-0 items-start gap-3">
+                      {item.imageUrl ? (
+                        <img
+                          src={item.imageUrl}
+                          alt={item.name}
+                          className="h-12 w-12 rounded-lg border border-border object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-dashed border-border text-[10px] text-muted">
+                          IMG
+                        </div>
                       )}
+                      <div className="min-w-0">
+                        <p className="font-semibold">{item.name}</p>
+                        <p className="text-xs text-muted">
+                          {categoryName} | ${displayPrice} | {isAvailable ? "Available" : "86"} | sort {sortOrder}
+                        </p>
+                        {item.description && (
+                          <p className="mt-1 text-xs text-muted">{item.description}</p>
+                        )}
+                      </div>
                     </div>
                     <div className="flex gap-2">
                       <Button
@@ -566,6 +703,7 @@ export default function MenuSetupPageClient() {
                             categoryId: item.categoryId ?? "",
                             name: item.name,
                             description: item.description ?? "",
+                            imageUrl: item.imageUrl ?? "",
                             price: String(item.price),
                             isAvailable: Boolean(isAvailable),
                             sortOrder: String(sortOrder),

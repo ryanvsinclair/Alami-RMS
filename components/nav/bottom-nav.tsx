@@ -85,6 +85,16 @@ const navItems: NavItem[] = [
   },
   // Operational Calendar Ã¢â‚¬â€ aggregated schedule for all business event types.
   {
+    href: "/bills",
+    label: "Bills",
+    exact: false,
+    icon: (
+      <svg className="w-[26px] h-[26px]" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 0 1 0 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a3 3 0 0 1 0-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375Z" />
+      </svg>
+    ),
+  },
+  {
     href: "/schedule",
     label: "Schedule",
     exact: false,
@@ -140,8 +150,12 @@ export function BottomNav({ enabledModules }: { enabledModules?: string[] }) {
     };
   }, [enabledModuleSet, pathname]);
 
+  if (pathname === "/shopping") {
+    return null;
+  }
+
   return (
-    <nav className="fixed inset-x-0 bottom-4 z-50 px-3 pointer-events-none safe-bottom">
+    <nav className="fixed inset-x-0 bottom-4 z-50 px-3 pointer-events-none safe-bottom md:hidden">
       <div
         className="pointer-events-auto mx-auto flex h-[62px] max-w-lg items-center justify-between gap-1 rounded-full px-2 py-1.5 text-foreground backdrop-blur-xl"
         style={{

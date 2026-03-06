@@ -40,8 +40,8 @@ export const INCOME_CONNECTION_ALLOWED_ROLES = [
 export const INCOME_PROVIDER_OAUTH_SCOPES: Readonly<Record<string, readonly string[]>> = {
   /** GoDaddy POS: read-only transaction and order history */
   godaddy_pos: ["openid", "profile", "commerce.transactions.read"],
-  /** Uber Eats: read-only order and payout reporting */
-  uber_eats: ["eats.report.deliveries.read", "eats.report.payments.read"],
+  /** Uber Eats: authorization_code connect flow used for store provisioning approval */
+  uber_eats: ["eats.pos_provisioning"],
   /** DoorDash: read-only delivery and financials reporting */
   doordash: ["delivery.read", "financials.read"],
 } as const;

@@ -1,7 +1,10 @@
 import { Prisma } from "@/lib/generated/prisma/client";
 import { prisma } from "@/server/db/prisma";
+import { createServiceClient } from "@/server/storage/supabase/client";
 import { serialize } from "@/domain/shared/serialize";
+import { randomUUID } from "crypto";
 import {
+  type MenuItemImageUploadResult,
   type MenuCsvImportReport,
   type TableServiceMenuCategorySummary,
   type TableServiceMenuItemSummary,
@@ -10,6 +13,9 @@ import {
   type UpsertMenuItemInput,
 } from "../shared/table-service.contracts";
 import { parseMenuCsv } from "./menu-csv";
+
+const MENU_ITEM_IMAGES_BUCKET = process.env.SUPABASE_MENU_ITEM_IMAGES_BUCKET ?? "menu-items";
+const MENU_ITEM_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
 
 function normalizeText(value: string) {
   return value.trim().toLowerCase();
@@ -27,6 +33,27 @@ function toDecimal(price: number) {
 function toSortOrder(value: number | undefined) {
   if (value == null || !Number.isFinite(value)) return 0;
   return Math.max(0, Math.trunc(value));
+}
+
+function resolveMenuItemImageContentType(file: File) {
+  const normalized = file.type.toLowerCase().split(";")[0]?.trim();
+  if (!normalized || !normalized.startsWith("image/")) {
+    throw new Error("Menu item image must be an image file");
+  }
+  if (normalized === "image/png") return "image/png";
+  if (normalized === "image/webp") return "image/webp";
+  if (normalized === "image/gif") return "image/gif";
+  return "image/jpeg";
+}
+
+function resolveMenuItemImageExtension(fileName: string, contentType: string) {
+  if (contentType === "image/png") return "png";
+  if (contentType === "image/webp") return "webp";
+  if (contentType === "image/gif") return "gif";
+
+  const extension = fileName.split(".").pop()?.trim().toLowerCase();
+  if (extension === "png" || extension === "webp" || extension === "gif") return extension;
+  return "jpg";
 }
 
 function toMenuCategorySummary(category: {
@@ -51,6 +78,7 @@ function toMenuItemSummary(item: {
   category_id: string | null;
   name: string;
   description: string | null;
+  image_url: string | null;
   price: Prisma.Decimal;
   is_available: boolean;
   sort_order: number;
@@ -61,10 +89,54 @@ function toMenuItemSummary(item: {
     categoryId: item.category_id,
     name: item.name,
     description: item.description,
+    imageUrl: item.image_url,
     price: item.price.toNumber(),
     isAvailable: item.is_available,
     sortOrder: item.sort_order,
   };
+}
+
+export async function uploadMenuItemImage(
+  businessId: string,
+  file: File,
+): Promise<MenuItemImageUploadResult> {
+  if (!(file instanceof File)) {
+    throw new Error("Menu item image file is required");
+  }
+  if (file.size <= 0) {
+    throw new Error("Menu item image file is empty");
+  }
+  if (file.size > MENU_ITEM_IMAGE_MAX_BYTES) {
+    throw new Error("Menu item image file exceeds 5MB");
+  }
+
+  const contentType = resolveMenuItemImageContentType(file);
+  const extension = resolveMenuItemImageExtension(file.name, contentType);
+  const storagePath = `business_${businessId}/menu-item-${Date.now()}-${randomUUID()}.${extension}`;
+  const bytes = Buffer.from(await file.arrayBuffer());
+  const supabase = createServiceClient();
+
+  const { error } = await supabase.storage
+    .from(MENU_ITEM_IMAGES_BUCKET)
+    .upload(storagePath, bytes, {
+      contentType,
+      upsert: true,
+    });
+
+  if (error) {
+    throw new Error(`Storage upload failed: ${error.message}`);
+  }
+
+  const publicUrlData = supabase.storage.from(MENU_ITEM_IMAGES_BUCKET).getPublicUrl(storagePath);
+  const publicUrl = publicUrlData.data.publicUrl;
+  if (!publicUrl) {
+    throw new Error("Failed to resolve uploaded menu item image URL");
+  }
+
+  return serialize({
+    publicUrl,
+    storagePath,
+  });
 }
 
 export async function getMenuSetupData(businessId: string) {
@@ -151,6 +223,7 @@ export async function createMenuItem(businessId: string, input: UpsertMenuItemIn
       category_id: categoryId,
       name: input.name.trim(),
       description: normalizeOptionalText(input.description),
+      image_url: normalizeOptionalText(input.imageUrl),
       price: toDecimal(input.price),
       is_available: input.isAvailable ?? true,
       sort_order: toSortOrder(input.sortOrder),
@@ -186,6 +259,7 @@ export async function updateMenuItem(
       category_id: categoryId,
       name: input.name.trim(),
       description: normalizeOptionalText(input.description),
+      image_url: normalizeOptionalText(input.imageUrl),
       price: toDecimal(input.price),
       is_available: input.isAvailable ?? true,
       sort_order: toSortOrder(input.sortOrder),

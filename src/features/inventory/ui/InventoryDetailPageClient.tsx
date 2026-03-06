@@ -46,7 +46,7 @@ export default function InventoryDetailPageClient({
   const { id } = use(params);
   const [item, setItem] = useState<ItemDetail | null>(null);
   const [level, setLevel] = useState<{ current_quantity: number; transaction_count: number } | null>(
-    null
+    null,
   );
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,119 +67,123 @@ export default function InventoryDetailPageClient({
   }, [id]);
 
   if (loading) {
-    return <div className="p-4 text-center text-muted text-sm">Loading item...</div>;
+    return <div className="p-4 text-center text-sm text-muted">Loading item...</div>;
   }
 
   if (!item) {
-    return <div className="p-4 text-center text-muted text-sm">Item not found</div>;
+    return <div className="p-4 text-center text-sm text-muted">Item not found</div>;
   }
 
   return (
-    <div className="p-4 space-y-4">
-      <Card>
-        <div className="text-center">
-          <p className="text-3xl font-bold">{level?.current_quantity ?? 0}</p>
-          <p className="text-muted text-sm">{item.unit} in stock</p>
-        </div>
-      </Card>
+    <div className="space-y-4 p-4 md:p-5 xl:p-6">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
+        <div className="space-y-4 xl:sticky xl:top-6 xl:self-start">
+          <Card>
+            <div className="text-center">
+              <p className="text-3xl font-bold">{level?.current_quantity ?? 0}</p>
+              <p className="text-sm text-muted">{item.unit} in stock</p>
+            </div>
+          </Card>
 
-      <Card>
-        <h3 className="text-sm font-semibold text-muted normal-case tracking-normal mb-2">Details</h3>
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted">Category</span>
-            <span>{item.category?.name ?? "â€”"}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted">Supplier</span>
-            <span>{item.supplier?.name ?? "â€”"}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted">Default Cost</span>
-            <span>{item.default_cost ? `$${Number(item.default_cost).toFixed(2)}` : "â€”"}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted">Par Level</span>
-            <span>{item.par_level ? `${item.par_level} ${item.unit}` : "â€”"}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted">Status</span>
-            <Badge variant={item.is_active ? "success" : "danger"}>
-              {item.is_active ? "Active" : "Inactive"}
-            </Badge>
-          </div>
-        </div>
-      </Card>
+          <Card>
+            <h3 className="mb-2 text-sm font-semibold normal-case tracking-normal text-muted">Details</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted">Category</span>
+                <span>{item.category?.name ?? "-"}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted">Supplier</span>
+                <span>{item.supplier?.name ?? "-"}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted">Default Cost</span>
+                <span>{item.default_cost ? `$${Number(item.default_cost).toFixed(2)}` : "-"}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted">Par Level</span>
+                <span>{item.par_level ? `${item.par_level} ${item.unit}` : "-"}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted">Status</span>
+                <Badge variant={item.is_active ? "success" : "danger"}>
+                  {item.is_active ? "Active" : "Inactive"}
+                </Badge>
+              </div>
+            </div>
+          </Card>
 
-      {item.barcodes.length > 0 && (
-        <Card>
-          <h3 className="text-sm font-semibold text-muted normal-case tracking-normal mb-2">
-            Barcodes
-          </h3>
-          <div className="flex flex-wrap gap-1">
-            {item.barcodes.map((b) => (
-              <Badge key={b.id} variant="info">
-                {b.barcode}
-              </Badge>
-            ))}
-          </div>
-        </Card>
-      )}
-
-      {item.aliases.length > 0 && (
-        <Card>
-          <h3 className="text-sm font-semibold text-muted normal-case tracking-normal mb-2">
-            Known Aliases ({item.aliases.length})
-          </h3>
-          <div className="flex flex-wrap gap-1">
-            {item.aliases.map((a) => (
-              <Badge key={a.id}>
-                {a.alias_text}
-                {a.source && <span className="ml-1 opacity-60">({a.source})</span>}
-              </Badge>
-            ))}
-          </div>
-        </Card>
-      )}
-
-      <div>
-        <h3 className="text-sm font-semibold text-muted normal-case tracking-normal mb-2">
-          Recent Transactions ({level?.transaction_count ?? 0} total)
-        </h3>
-        <div className="space-y-2">
-          {transactions.map((tx) => (
-            <Card key={tx.id}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium capitalize">{tx.transaction_type}</span>
-                    <Badge variant={methodColors[tx.input_method] ?? "default"}>
-                      {tx.input_method}
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-muted mt-0.5">
-                    {new Date(tx.created_at).toLocaleDateString()} â€” {tx.source ?? "unknown source"}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p
-                    className={`font-semibold ${
-                      Number(tx.quantity) >= 0 ? "text-success" : "text-danger"
-                    }`}
-                  >
-                    {Number(tx.quantity) >= 0 ? "+" : ""}
-                    {Number(tx.quantity)} {tx.unit}
-                  </p>
-                  {tx.unit_cost && (
-                    <p className="text-xs text-muted">${Number(tx.unit_cost).toFixed(2)}/unit</p>
-                  )}
-                </div>
+          {item.barcodes.length > 0 && (
+            <Card>
+              <h3 className="mb-2 text-sm font-semibold normal-case tracking-normal text-muted">
+                Barcodes
+              </h3>
+              <div className="flex flex-wrap gap-1">
+                {item.barcodes.map((b) => (
+                  <Badge key={b.id} variant="info">
+                    {b.barcode}
+                  </Badge>
+                ))}
               </div>
             </Card>
-          ))}
-          {transactions.length === 0 && (
-            <p className="text-sm text-muted text-center py-4">No transactions yet</p>
           )}
+
+          {item.aliases.length > 0 && (
+            <Card>
+              <h3 className="mb-2 text-sm font-semibold normal-case tracking-normal text-muted">
+                Known Aliases ({item.aliases.length})
+              </h3>
+              <div className="flex flex-wrap gap-1">
+                {item.aliases.map((a) => (
+                  <Badge key={a.id}>
+                    {a.alias_text}
+                    {a.source && <span className="ml-1 opacity-60">({a.source})</span>}
+                  </Badge>
+                ))}
+              </div>
+            </Card>
+          )}
+        </div>
+
+        <div>
+          <h3 className="mb-2 text-sm font-semibold normal-case tracking-normal text-muted">
+            Recent Transactions ({level?.transaction_count ?? 0} total)
+          </h3>
+          <div className="space-y-2">
+            {transactions.map((tx) => (
+              <Card key={tx.id}>
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium capitalize">{tx.transaction_type}</span>
+                      <Badge variant={methodColors[tx.input_method] ?? "default"}>
+                        {tx.input_method}
+                      </Badge>
+                    </div>
+                    <p className="mt-0.5 text-xs text-muted">
+                      {new Date(tx.created_at).toLocaleDateString()} - {tx.source ?? "unknown source"}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p
+                      className={`font-semibold ${
+                        Number(tx.quantity) >= 0 ? "text-success" : "text-danger"
+                      }`}
+                    >
+                      {Number(tx.quantity) >= 0 ? "+" : ""}
+                      {Number(tx.quantity)} {tx.unit}
+                    </p>
+                    {tx.unit_cost && (
+                      <p className="text-xs text-muted">${Number(tx.unit_cost).toFixed(2)}/unit</p>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            ))}
+            {transactions.length === 0 && (
+              <p className="py-4 text-center text-sm text-muted">No transactions yet</p>
+            )}
+          </div>
         </div>
       </div>
     </div>

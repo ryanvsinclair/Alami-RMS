@@ -212,7 +212,7 @@ export default function IncomeConnectionsPageClient({
   const calendarGroups = groupCalendarProviders(calendarProviders);
 
   return (
-    <div className="space-y-4 p-4">
+    <div className="space-y-4 p-4 md:p-5 xl:p-6">
       {feedback?.oauth === "connected" && (
         <div className="rounded-xl bg-success/10 px-4 py-3 text-sm text-success">
           {feedback.provider ? `${feedback.provider} connected successfully.` : "Provider connected successfully."}
@@ -234,24 +234,26 @@ export default function IncomeConnectionsPageClient({
         </div>
       )}
 
-      {incomeGroups.map((group) => (
-        <div key={group.type} className="space-y-2">
-          <p className="px-1 text-xs font-semibold normal-case tracking-normal text-muted">
-            {group.label}
-          </p>
-          <div className="overflow-hidden rounded-3xl bg-card shadow-(--surface-card-shadow)">
-            {group.cards.map((card, index) => (
-              <div key={card.provider.id}>
-                {index > 0 && <div className="mx-4 border-t border-border/40" />}
-                <IncomeProviderConnectCard card={card} />
-              </div>
-            ))}
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {incomeGroups.map((group) => (
+          <div key={group.type} className="space-y-2">
+            <p className="px-1 text-xs font-semibold normal-case tracking-normal text-muted">
+              {group.label}
+            </p>
+            <div className="overflow-hidden rounded-3xl bg-card shadow-(--surface-card-shadow)">
+              {group.cards.map((card, index) => (
+                <div key={card.provider.id}>
+                  {index > 0 && <div className="mx-4 border-t border-border/40" />}
+                  <IncomeProviderConnectCard card={card} />
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
 
       {calendarGroups.length > 0 && (
-        <div className="space-y-2 pt-1">
+        <div className="grid gap-4 pt-1 md:grid-cols-2 xl:grid-cols-3">
           {calendarGroups.map((group) => (
             <div key={group.type} className="space-y-2">
               <p className="px-1 text-[11px] font-semibold normal-case tracking-normal text-muted/80">

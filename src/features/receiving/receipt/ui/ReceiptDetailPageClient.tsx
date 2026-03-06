@@ -57,10 +57,10 @@ export default function ReceiptDetailPageClient() {
   const hasLineItems = (receipt?.line_items.length ?? 0) > 0;
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="space-y-4 p-4 md:p-5 xl:p-6">
       <div className="flex items-center gap-3">
         <Link
-          href="/"
+          href="/receive/receipt"
           className="grid h-9 w-9 place-items-center rounded-xl border border-white/10 bg-white/5 text-white/60 hover:text-white transition-colors"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -100,108 +100,128 @@ export default function ReceiptDetailPageClient() {
       )}
 
       {!loading && !error && receipt && (
-        <>
-          {hasPhoto && receipt.signed_image_url && (
-            <div className="flex justify-end">
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(280px,340px)]">
+          <section className="space-y-4">
+            {hasPhoto && hasLineItems && (
+              <div className="flex overflow-hidden rounded-xl border border-white/10">
+                <button
+                  onClick={() => setTab("digital")}
+                  className={`flex flex-1 items-center justify-center gap-2 py-2.5 text-sm font-medium transition-colors ${
+                    tab === "digital"
+                      ? "bg-primary text-white"
+                      : "text-white/50 hover:bg-white/5"
+                  }`}
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                  </svg>
+                  Digital
+                </button>
+                <button
+                  onClick={() => setTab("photo")}
+                  className={`flex flex-1 items-center justify-center gap-2 py-2.5 text-sm font-medium transition-colors ${
+                    tab === "photo"
+                      ? "bg-primary text-white"
+                      : "text-white/50 hover:bg-white/5"
+                  }`}
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
+                  </svg>
+                  Photo
+                </button>
+              </div>
+            )}
+
+            {tab === "digital" && hasLineItems && (
+              <DigitalReceipt
+                storeName={preferredStoreName}
+                date={totals?.date ?? null}
+                lineItems={receipt.line_items}
+                subtotal={totals?.subtotal ?? null}
+                tax={totals?.tax ?? null}
+                total={totals?.total ?? null}
+                currency={totals?.currency ?? undefined}
+                paymentMethod={totals?.paymentMethod}
+              />
+            )}
+
+            {tab === "photo" && receipt.signed_image_url && (
+              <div className="overflow-hidden rounded-xl border border-white/8">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={receipt.signed_image_url}
+                  alt="Original receipt photo"
+                  className="h-auto w-full"
+                />
+              </div>
+            )}
+
+            {!hasPhoto && !hasLineItems && (
+              <div className="py-12 text-center">
+                <p className="text-sm text-white/30">No receipt data available</p>
+              </div>
+            )}
+          </section>
+
+          <aside className="space-y-3 xl:sticky xl:top-6 xl:self-start">
+            <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+              <p className="text-xs font-semibold normal-case tracking-normal text-muted">Receipt Status</p>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <span
+                  className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-semibold normal-case tracking-normal ${
+                    receipt.status === "committed"
+                      ? "bg-success/15 text-success"
+                      : receipt.status === "review"
+                        ? "bg-amber-500/15 text-amber-400"
+                        : receipt.status === "failed"
+                          ? "bg-red-500/15 text-red-400"
+                          : "bg-white/10 text-white/40"
+                  }`}
+                >
+                  {receipt.status === "committed" && (
+                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                    </svg>
+                  )}
+                  {receipt.status}
+                </span>
+                <span className="text-[11px] text-white/40">
+                  {receipt.line_items.length} item{receipt.line_items.length !== 1 ? "s" : ""}
+                </span>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm">
+              <p className="text-xs font-semibold normal-case tracking-normal text-muted">Summary</p>
+              <p className="mt-2 text-white/80">{preferredStoreName ?? "Unknown vendor"}</p>
+              <p className="text-xs text-white/40">{totals?.date ?? "Date unavailable"}</p>
+              {totals?.subtotal != null && (
+                <p className="mt-2 text-white/70">Subtotal: ${totals.subtotal.toFixed(2)}</p>
+              )}
+              {totals?.tax != null && (
+                <p className="text-white/70">Tax: ${totals.tax.toFixed(2)}</p>
+              )}
+              {totals?.total != null && (
+                <p className="font-semibold text-white">Total: ${totals.total.toFixed(2)}</p>
+              )}
+            </div>
+
+            {hasPhoto && receipt.signed_image_url && (
               <a
                 href={receipt.signed_image_url}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-white/80 transition-colors hover:text-white"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-white/80 transition-colors hover:text-white"
               >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-7.5 0L21 3m0 0v6.75M21 3h-6.75" />
                 </svg>
-                View Photo
+                Open Photo
               </a>
-            </div>
-          )}
-
-          {hasPhoto && hasLineItems && (
-            <div className="flex rounded-xl border border-white/10 overflow-hidden">
-              <button
-                onClick={() => setTab("digital")}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-colors ${
-                  tab === "digital"
-                    ? "bg-primary text-white"
-                    : "text-white/50 hover:bg-white/5"
-                }`}
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-                </svg>
-                Digital
-              </button>
-              <button
-                onClick={() => setTab("photo")}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-colors ${
-                  tab === "photo"
-                    ? "bg-primary text-white"
-                    : "text-white/50 hover:bg-white/5"
-                }`}
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
-                </svg>
-                Photo
-              </button>
-            </div>
-          )}
-
-          {tab === "digital" && hasLineItems && (
-            <DigitalReceipt
-              storeName={preferredStoreName}
-              date={totals?.date ?? null}
-              lineItems={receipt.line_items}
-              subtotal={totals?.subtotal ?? null}
-              tax={totals?.tax ?? null}
-              total={totals?.total ?? null}
-              currency={totals?.currency ?? undefined}
-              paymentMethod={totals?.paymentMethod}
-            />
-          )}
-
-          {tab === "photo" && receipt.signed_image_url && (
-            <div className="rounded-xl overflow-hidden border border-white/8">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={receipt.signed_image_url}
-                alt="Original receipt photo"
-                className="w-full h-auto"
-              />
-            </div>
-          )}
-
-          {!hasPhoto && !hasLineItems && (
-            <div className="text-center py-12">
-              <p className="text-sm text-white/30">No receipt data available</p>
-            </div>
-          )}
-
-          <div className="flex items-center justify-center gap-2 pt-2">
-            <span
-              className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-semibold normal-case tracking-normal ${
-                receipt.status === "committed"
-                  ? "bg-success/15 text-success"
-                  : receipt.status === "review"
-                    ? "bg-amber-500/15 text-amber-400"
-                    : receipt.status === "failed"
-                      ? "bg-red-500/15 text-red-400"
-                      : "bg-white/10 text-white/40"
-              }`}
-            >
-              {receipt.status === "committed" && (
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                </svg>
-              )}
-              {receipt.status}
-            </span>
-            <span className="text-[11px] text-white/20">
-              {receipt.line_items.length} item{receipt.line_items.length !== 1 ? "s" : ""}
-            </span>
-          </div>
-        </>
+            )}
+          </aside>
+        </div>
       )}
     </div>
   );

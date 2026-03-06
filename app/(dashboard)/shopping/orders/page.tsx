@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DashboardPageContainer } from "@/components/layout/dashboard-page-container";
 import {
   getCommittedShoppingSessions,
   reorderShoppingSession,
@@ -61,14 +62,19 @@ export default function PastOrdersPage() {
   }
 
   return (
-    <>
-      <div className="p-4 space-y-3">
+    <main className="py-4 md:py-6">
+      <DashboardPageContainer variant="wide">
+        <div className="space-y-3 md:grid md:grid-cols-2 md:gap-3 md:space-y-0 xl:grid-cols-3">
         {loading && (
-          <p className="text-sm text-muted text-center py-8">Loading orders...</p>
+          <p className="py-8 text-center text-sm text-muted md:col-span-2 xl:col-span-3">
+            Loading orders...
+          </p>
         )}
 
         {!loading && sessions.length === 0 && (
-          <p className="text-sm text-muted text-center py-8">No past orders yet.</p>
+          <p className="py-8 text-center text-sm text-muted md:col-span-2 xl:col-span-3">
+            No past orders yet.
+          </p>
         )}
 
         {sessions.map((session) => (
@@ -114,8 +120,9 @@ export default function PastOrdersPage() {
           </Card>
         ))}
 
-        {error && <p className="text-sm text-danger">{error}</p>}
-      </div>
-    </>
+        {error && <p className="text-sm text-danger md:col-span-2 xl:col-span-3">{error}</p>}
+        </div>
+      </DashboardPageContainer>
+    </main>
   );
 }

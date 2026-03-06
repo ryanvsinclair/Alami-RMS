@@ -5,6 +5,7 @@ import { serialize } from "@/core/utils/serialize";
 import { requireBusinessId } from "@/core/auth/tenant";
 import {
   extractCanonicalPluCodeFromBarcode,
+  resolveAndPersistMissingInventoryItemImage,
   resolveItemImageUrl,
 } from "@/features/inventory/server";
 import type {
@@ -383,51 +384,70 @@ export async function getAllInventoryLevels() {
     ])
   );
 
-  return serialize(items.map((item) => {
-    const barcodeWithImage =
-      item.barcodes
-        .map((barcode) => ({
-          normalizedBarcode: barcode.barcode,
-          imageUrl: barcodeImageByBarcode.get(barcode.barcode) ?? null,
-        }))
-        .find((entry) => entry.imageUrl != null) ?? null;
+  const rows = await Promise.all(
+    items.map(async (item) => {
+      const barcodeWithImage =
+        item.barcodes
+          .map((barcode) => ({
+            normalizedBarcode: barcode.barcode,
+            imageUrl: barcodeImageByBarcode.get(barcode.barcode) ?? null,
+          }))
+          .find((entry) => entry.imageUrl != null) ?? null;
 
-    const produceWithImage =
-      item.barcodes
-        .map((barcode) => {
-          const pluCode = extractCanonicalPluCodeFromBarcode(barcode.barcode);
-          if (pluCode == null) {
-            return null;
-          }
-          return {
-            pluCode,
-            imageUrl: produceImageByPlu.get(pluCode) ?? null,
+      const produceWithImage =
+        item.barcodes
+          .map((barcode) => {
+            const pluCode = extractCanonicalPluCodeFromBarcode(barcode.barcode);
+            if (pluCode == null) {
+              return null;
+            }
+            return {
+              pluCode,
+              imageUrl: produceImageByPlu.get(pluCode) ?? null,
+            };
+          })
+          .find((entry) => entry?.imageUrl != null) ?? null;
+
+      let resolvedImage = resolveItemImageUrl({
+        inventoryItemImageUrl: item.image_url,
+        pluCode: produceWithImage?.pluCode ?? null,
+        produceImageUrl: produceWithImage?.imageUrl ?? null,
+        barcodeNormalized: barcodeWithImage?.normalizedBarcode ?? null,
+        barcodeImageUrl: barcodeWithImage?.imageUrl ?? null,
+      });
+
+      if (!resolvedImage.imageUrl) {
+        const spoonacularImageUrl = await resolveAndPersistMissingInventoryItemImage({
+          inventoryItemId: item.id,
+          businessId,
+          itemName: item.name,
+          currentImageUrl: item.image_url,
+        });
+        if (spoonacularImageUrl) {
+          resolvedImage = {
+            source: "own",
+            imageUrl: spoonacularImageUrl,
           };
-        })
-        .find((entry) => entry?.imageUrl != null) ?? null;
+        }
+      }
 
-    const resolvedImage = resolveItemImageUrl({
-      inventoryItemImageUrl: item.image_url,
-      pluCode: produceWithImage?.pluCode ?? null,
-      produceImageUrl: produceWithImage?.imageUrl ?? null,
-      barcodeNormalized: barcodeWithImage?.normalizedBarcode ?? null,
-      barcodeImageUrl: barcodeWithImage?.imageUrl ?? null,
-    });
+      const itemStats = statsByItemId.get(item.id);
+      return {
+        id: item.id,
+        name: item.name,
+        unit: item.unit,
+        category: item.category,
+        supplier: item.supplier,
+        current_quantity: itemStats?.current_quantity ?? 0,
+        transaction_count: itemStats?.transaction_count ?? 0,
+        last_transaction_at: itemStats?.last_transaction_at ?? null,
+        image_url: resolvedImage.imageUrl,
+        image_source: resolvedImage.source,
+      };
+    }),
+  );
 
-    const itemStats = statsByItemId.get(item.id);
-    return {
-      id: item.id,
-      name: item.name,
-      unit: item.unit,
-      category: item.category,
-      supplier: item.supplier,
-      current_quantity: itemStats?.current_quantity ?? 0,
-      transaction_count: itemStats?.transaction_count ?? 0,
-      last_transaction_at: itemStats?.last_transaction_at ?? null,
-      image_url: resolvedImage.imageUrl,
-      image_source: resolvedImage.source,
-    };
-  }));
+  return serialize(rows);
 }
 
 export async function getRecentTransactions(limit = 20) {

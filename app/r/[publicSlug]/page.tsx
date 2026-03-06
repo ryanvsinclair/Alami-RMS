@@ -47,7 +47,7 @@ export default async function PublicRestaurantLandingPage({
   ]);
 
   return (
-    <main className="mx-auto max-w-lg p-4 pt-8">
+    <main className="mx-auto w-full max-w-6xl p-4 pt-8 md:px-6 xl:px-8">
       <Card className="p-5 space-y-3">
         <p className="text-xs normal-case tracking-normal text-muted">Public Landing</p>
         <h1 className="text-xl font-bold text-foreground">{business.name}</h1>
@@ -68,7 +68,7 @@ export default async function PublicRestaurantLandingPage({
         )}
       </Card>
 
-      <div className="mt-4 space-y-4">
+      <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {categories.map((category) => (
           <Card key={category.id} className="p-5 space-y-3">
             <h2 className="text-sm font-semibold normal-case tracking-normal text-muted">{category.name}</h2>
@@ -78,9 +78,22 @@ export default async function PublicRestaurantLandingPage({
               <div className="space-y-2">
                 {category.items.map((item) => (
                   <div key={item.id} className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="font-semibold">{item.name}</p>
-                      {item.description && <p className="text-xs text-muted">{item.description}</p>}
+                    <div className="flex min-w-0 items-start gap-3">
+                      {item.image_url ? (
+                        <img
+                          src={item.image_url}
+                          alt={item.name}
+                          className="h-12 w-12 rounded-lg border border-border object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-dashed border-border text-[10px] text-muted">
+                          IMG
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="font-semibold">{item.name}</p>
+                        {item.description && <p className="text-xs text-muted">{item.description}</p>}
+                      </div>
                     </div>
                     <p className="text-sm font-semibold">${Number(item.price).toFixed(2)}</p>
                   </div>
@@ -91,14 +104,27 @@ export default async function PublicRestaurantLandingPage({
         ))}
 
         {uncategorizedItems.length > 0 && (
-          <Card className="p-5 space-y-3">
+          <Card className="p-5 space-y-3 md:col-span-2 xl:col-span-3">
             <h2 className="text-sm font-semibold normal-case tracking-normal text-muted">More</h2>
             <div className="space-y-2">
               {uncategorizedItems.map((item) => (
                 <div key={item.id} className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="font-semibold">{item.name}</p>
-                    {item.description && <p className="text-xs text-muted">{item.description}</p>}
+                  <div className="flex min-w-0 items-start gap-3">
+                    {item.image_url ? (
+                      <img
+                        src={item.image_url}
+                        alt={item.name}
+                        className="h-12 w-12 rounded-lg border border-border object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-dashed border-border text-[10px] text-muted">
+                        IMG
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="font-semibold">{item.name}</p>
+                      {item.description && <p className="text-xs text-muted">{item.description}</p>}
+                    </div>
                   </div>
                   <p className="text-sm font-semibold">${Number(item.price).toFixed(2)}</p>
                 </div>
@@ -108,7 +134,7 @@ export default async function PublicRestaurantLandingPage({
         )}
 
         {categories.length === 0 && uncategorizedItems.length === 0 && (
-          <Card className="p-5">
+          <Card className="p-5 md:col-span-2 xl:col-span-3">
             <p className="text-sm text-muted">Menu is not available yet.</p>
           </Card>
         )}

@@ -1,3 +1,5 @@
+import { getUberEatsApiBaseUrl } from "./uber-eats.marketplace";
+
 export interface UberEatsIncomeEvent {
   externalId: string;
   occurredAt: Date;
@@ -163,7 +165,10 @@ export async function fetchUberEatsIncomeEvents(params: {
 }): Promise<UberEatsIncomeEvent[]> {
   const endpoint = process.env.INCOME_UBER_EATS_EVENTS_URL;
   if (!endpoint) {
-    throw new Error("Missing INCOME_UBER_EATS_EVENTS_URL for Uber Eats sync");
+    throw new Error(
+      `Uber Eats reporting sync still requires the report-job client implementation. ` +
+        `No legacy JSON events endpoint is configured for ${getUberEatsApiBaseUrl()}.`
+    );
   }
 
   const url = new URL(endpoint);

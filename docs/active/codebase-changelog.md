@@ -20,6 +20,583 @@ Companion overview: `docs/active/codebase-overview.md`
 
 ## Changelog (Append New Entries At Top)
 
+### 2026-03-03 - App lock mode (4-digit PIN) + service workspace lock routing
+
+- Suggested Commit Title: `feat(security): add PIN-based app lock with table/kitchen scoped route restrictions`
+- Scope:
+  - Dashboard navigation lock behavior and Settings security controls.
+- What changed:
+  - Added 4-digit App Lock PIN management in Settings:
+    - set PIN
+    - change PIN (requires current PIN)
+    - remove PIN (requires current PIN)
+  - Added Apple-style keypad passcode modal UX for PIN setup and unlock flows (mobile/iPad-friendly).
+  - Added lock actions to `/service` launcher cards:
+    - `Lock Here` on `Table` locks app to table workspace scope and routes to `/service/table`
+    - `Lock Here` on `Kitchen` locks app to kitchen workspace scope and routes to `/service/kitchen`
+  - Added dashboard lock shell:
+    - hides sidebar and bottom nav while locked
+    - restricts route access to locked scope prefixes
+    - redirects disallowed routes to locked landing route
+    - provides bottom-left `Unlock` button with PIN entry
+  - Added shared app-lock storage/state helpers (`localStorage` + event synchronization).
+  - Added `/service/table` alias route redirecting to `/service/tables` (for clean table lock landing path).
+- Files changed:
+  - `app/(dashboard)/layout.tsx`
+  - `app/(dashboard)/settings/page.tsx`
+  - `app/(dashboard)/service/page.tsx`
+  - `app/(dashboard)/service/table/page.tsx`
+  - `components/layout/dashboard-lock-shell.tsx`
+  - `components/security/app-lock-pin-card.tsx`
+  - `components/security/pin-keypad-modal.tsx`
+  - `src/shared/utils/app-lock.ts`
+  - `docs/active/table-service-host-kitchen-workspace-breakdown.md`
+  - `docs/active/codebase-overview.md`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx eslint 'app/(dashboard)/layout.tsx' 'app/(dashboard)/service/page.tsx' 'app/(dashboard)/settings/page.tsx' components/layout/dashboard-lock-shell.tsx components/security/app-lock-pin-card.tsx components/security/pin-keypad-modal.tsx src/shared/utils/app-lock.ts` -> PASS
+  - `npx tsc --noEmit` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no changes.
+
+### 2026-03-03 - Service launcher page with table/kitchen route buttons
+
+- Suggested Commit Title: `feat(table-service): replace /service redirect with simple launcher and table alias`
+- Scope:
+  - Table Service route entry UX.
+- What changed:
+  - Replaced `/service` hard redirect with a simple launcher page containing two button-style links:
+    - `Table` -> `/service/table`
+    - `Kitchen` -> `/service/kitchen`
+  - Added `/service/table` alias route to redirect to canonical `/service/tables`.
+  - Updated service architecture docs to reflect launcher behavior instead of direct `/service` redirect.
+- Files changed:
+  - `app/(dashboard)/service/page.tsx`
+  - `app/(dashboard)/service/table/page.tsx`
+  - `docs/active/table-service-host-kitchen-workspace-breakdown.md`
+  - `docs/active/codebase-overview.md`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx eslint app/(dashboard)/service/page.tsx app/(dashboard)/service/table/page.tsx` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no changes.
+
+### 2026-03-03 - Kitchen header copy cleanup (remove workspace label + duplicate toggle summary)
+
+- Suggested Commit Title: `chore(table-service): simplify kitchen header copy above queue toggles`
+- Scope:
+  - Table Service kitchen page header text hierarchy.
+- What changed:
+  - Removed `Kitchen Workspace` micro-label from kitchen header top row.
+  - Removed duplicate subheader summary line (`Active Queue (...) | Completed Orders (...)`) under `Kitchen Queue`.
+  - Kept toggle chips as the single source of queue-count context.
+- Files changed:
+  - `src/features/table-service/ui/KitchenQueuePageClient.tsx`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx eslint src/features/table-service/ui/KitchenQueuePageClient.tsx` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no changes.
+
+### 2026-03-03 - Kitchen completed-orders lock (kitchen read-only, host-only amendments)
+
+- Suggested Commit Title: `fix(table-service): lock completed-order status changes in kitchen view`
+- Scope:
+  - Table Service kitchen queue interaction guardrails.
+- What changed:
+  - `Completed Orders` tickets in `/service/kitchen` are now read-only.
+  - Kitchen line-item status controls are disabled for completed-view tickets, preventing kitchen-side transitions back to active queue.
+  - Added a defensive handler guard in `handleItemClick` so completed-view updates are ignored even if a click path is triggered.
+  - Footer helper copy now reflects completed-view lock behavior (`status locked in completed orders (update from host)`).
+  - Host behavior remains unchanged: host-side amendments are still the only way to move completed tickets back into active queue.
+- Files changed:
+  - `src/features/table-service/ui/KitchenQueuePageClient.tsx`
+  - `docs/active/table-service-host-kitchen-workspace-breakdown.md`
+  - `docs/active/codebase-overview.md`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx eslint src/features/table-service/ui/KitchenQueuePageClient.tsx` -> PASS
+  - `npx tsc --noEmit` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no changes.
+
+### 2026-03-03 - Kitchen queue toggle (active/completed) + host amendment re-queueing
+
+- Suggested Commit Title: `feat(table-service): split kitchen active/completed queues and re-queue host amendments`
+- Scope:
+  - Table Service kitchen queue lifecycle behavior and host amendment queue-priority handling.
+- What changed:
+  - Added `Active Queue` and `Completed Orders` toggle views in `KitchenQueuePageClient`.
+  - Completed classification now uses item status composition:
+    - completed view: all items are `ready_to_serve`
+    - active view: any other open order state
+  - Completed tickets are removed from active view (while still open) and shown only under completed toggle.
+  - Closed/Paid tickets remain excluded from both views via existing `closed_at: null` query filter.
+  - Host amendments now reprioritize queue timing to send tickets back to active queue end-of-line:
+    - `appendKitchenOrderItems(...)` now updates `confirmed_at` + recomputes `due_at`
+    - `requestKitchenOrderItemChange(...)` now updates `confirmed_at` + recomputes `due_at`
+    - `updateKitchenOrderItemStatus(...)` now accepts optional `bumpQueuePosition`; host remove flow passes `true`
+  - Kitchen view now renders queue order directly from backend FIFO data so amended orders (with newer `confirmed_at`) land at the end.
+- Files changed:
+  - `src/features/table-service/ui/KitchenQueuePageClient.tsx`
+  - `src/features/table-service/server/order.service.ts`
+  - `src/features/table-service/shared/table-service.contracts.ts`
+  - `src/features/table-service/ui/HostOrderComposerPageClient.tsx`
+  - `docs/active/table-service-host-kitchen-workspace-breakdown.md`
+  - `docs/active/codebase-overview.md`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx eslint src/features/table-service/server/order.service.ts src/features/table-service/shared/table-service.contracts.ts src/features/table-service/ui/HostOrderComposerPageClient.tsx src/features/table-service/ui/KitchenQueuePageClient.tsx` -> PASS (1 warning: `@next/next/no-img-element` in host composer)
+  - `npx tsc --noEmit` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no changes.
+
+### 2026-03-03 - Kitchen queue viewport rail expansion with anchored header
+
+- Suggested Commit Title: `refactor(table-service): make kitchen queue rail fill viewport below anchored header`
+- Scope:
+  - Table Service kitchen queue layout behavior.
+- What changed:
+  - Refactored `/service/kitchen` page container to a strict full-viewport flex column (`h-[100dvh]`).
+  - Kept the header anchored at the top region (as a non-scrolling, shrink-0 block) with explicit outer spacing.
+  - Expanded the horizontal queue rail to own the full remaining viewport area (`flex-1 min-h-0`) rather than a padded inner page block.
+  - Moved queue rail padding from the scroll viewport into the inner rail so horizontal scrolling area itself spans the page width while still preserving card breathing room for shadows.
+  - Added `items-stretch` on the rail row so tickets consistently consume available rail height.
+- Files changed:
+  - `src/features/table-service/ui/KitchenQueuePageClient.tsx`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx eslint src/features/table-service/ui/KitchenQueuePageClient.tsx` -> PASS
+  - `npx tsc --noEmit` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no changes.
+
+### 2026-03-03 - Kitchen ticket shadow clipping follow-up (ticket overflow override)
+
+- Suggested Commit Title: `fix(table-service): stop clipping kitchen ticket outer shadows`
+- Scope:
+  - Table Service kitchen queue ticket card rendering.
+- What changed:
+  - Increased horizontal rail padding to give shadows extra breathing room (`px-4 py-4`).
+  - Overrode ticket card overflow at the component level (`style={{ overflow: "visible" }}`) so the ticket's own box shadow is not clipped by the glass-surface default overflow.
+  - Increased ticket card shadow depth to improve visibility after clipping fix (`0_10px_28px_rgba(0,0,0,0.14)`).
+- Files changed:
+  - `src/features/table-service/ui/KitchenQueuePageClient.tsx`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx eslint src/features/table-service/ui/KitchenQueuePageClient.tsx` -> PASS
+  - `npx tsc --noEmit` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no changes.
+
+### 2026-03-03 - Kitchen ticket shadow clipping fix in horizontal queue rail
+
+- Suggested Commit Title: `fix(table-service): prevent kitchen ticket shadow clipping in queue rail`
+- Scope:
+  - Table Service kitchen queue ticket rail presentation only.
+- What changed:
+  - Reworked the horizontal ticket rail wrapper to avoid clipping ticket shadows at the scroll viewport boundary.
+  - Removed the previous inline negative-margin/padding hack and replaced it with explicit rail padding:
+    - `overflow-x-auto px-2 py-3`
+    - inner rail now uses `flex w-max min-w-full gap-4`
+  - Adjusted order-notes quote rendering to use escaped entities (`&ldquo;...&rdquo;`) so lint passes.
+- Files changed:
+  - `src/features/table-service/ui/KitchenQueuePageClient.tsx`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx eslint src/features/table-service/ui/KitchenQueuePageClient.tsx` -> PASS
+  - `npx tsc --noEmit` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no changes.
+
+### 2026-03-03 - Kitchen queue keeps cancelled items visible
+
+- Suggested Commit Title: `fix(table-service): keep cancelled lines visible in kitchen queue`
+- Scope:
+  - Table Service kitchen queue visibility contract.
+- What changed:
+  - Updated queue visibility rules so `cancelled` is no longer treated as terminal for queue inclusion.
+  - Orders now remain visible in kitchen queue when all lines are cancelled, and each cancelled line shows its cancelled status.
+  - Queue now collapses only for served-only orders (or when order/session is closed).
+  - Updated contracts/smoke tests to lock the new behavior.
+- Files changed:
+  - `src/features/table-service/shared/table-service.contracts.ts`
+  - `src/features/table-service/shared/table-service.contracts.test.ts`
+  - `src/features/table-service/shared/table-service.launch-smoke.test.ts`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx eslint src/features/table-service/shared/table-service.contracts.ts src/features/table-service/shared/table-service.contracts.test.ts src/features/table-service/shared/table-service.launch-smoke.test.ts src/features/table-service/server/order.service.ts` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts src/features/table-service/shared/table-service.launch-smoke.test.ts` -> PASS
+  - `npx tsc --noEmit` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no changes.
+
+### 2026-03-03 - Host current-check parity pass: no existing-items wrapper, no ticket meta card, no sent-items panel
+
+- Suggested Commit Title: `refactor(table-service): unify host check cards and remove redundant status/ticket panels`
+- Scope:
+  - Table Service host workspace `Current Check` and left-column filter behavior.
+- What changed:
+  - Existing ticket item cards were aligned to match draft-add card UX:
+    - same card visual treatment
+    - same quantity controls placement
+    - same `Add Note` and `Remove Item` button placement
+  - Removed the outer wrapper container around existing ticket items so each existing item renders as its own standalone card.
+  - Removed the ticket metadata card (`Ticket ID`, confirmed/due/closed timestamps) from check actions.
+  - Removed the separate `Sent Items` section entirely (status remains visible per existing item card).
+  - Anchored menu search + category filters using sticky positioning so they stay in place while browsing.
+  - Updated launch smoke assertions to reflect the revised host UI contract.
+- Files changed:
+  - `src/features/table-service/ui/HostOrderComposerPageClient.tsx`
+  - `src/features/table-service/shared/table-service.launch-smoke.test.ts`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx eslint src/features/table-service/ui/HostOrderComposerPageClient.tsx src/features/table-service/shared/table-service.launch-smoke.test.ts` -> PASS (warning only: `@next/next/no-img-element`)
+  - `npx tsc --noEmit` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts src/features/table-service/shared/table-service.launch-smoke.test.ts` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no changes.
+
+### 2026-03-03 - Host current-check UX parity + add-note button for existing and draft lines
+
+- Suggested Commit Title: `refactor(table-service): unify current-check line UX and add note-button flow`
+- Scope:
+  - Table Service host `Current Check` interaction model.
+- What changed:
+  - Added `Add Note` button to existing ticket items.
+  - Reworked existing ticket item interactions to match draft-line UX:
+    - quantity decrement/increment controls
+    - `Add Note` action
+    - `Remove Item` action
+    - consistent card structure and button treatment
+  - Reworked draft lines to match the same action pattern:
+    - removed inline note input
+    - added `Add Note` button (prompt-based note edit)
+    - kept quantity controls and remove action with matching styling/labels
+  - Existing ticket item quantity and note changes continue to flow through `requestKitchenOrderItemChange` with status gating.
+  - Updated launch smoke assertion from `Request Change` to `Add Note`.
+- Files changed:
+  - `src/features/table-service/ui/HostOrderComposerPageClient.tsx`
+  - `src/features/table-service/shared/table-service.launch-smoke.test.ts`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx eslint src/features/table-service/ui/HostOrderComposerPageClient.tsx src/features/table-service/shared/table-service.launch-smoke.test.ts` -> PASS (warning only: `@next/next/no-img-element`)
+  - `npx tsc --noEmit` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts src/features/table-service/shared/table-service.launch-smoke.test.ts` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no changes.
+
+### 2026-03-03 - Host page: remove gradient shell and unanchor current-check layout
+
+- Suggested Commit Title: `refactor(table-service): remove host gradient shell and unanchor right panel`
+- Scope:
+  - Table Service host order page layout behavior only.
+- What changed:
+  - Removed the gradient wrapper shell from host contents by dropping the `design-glass-page` container and its layered background elements.
+  - Removed fixed-height/overflow constraints that were anchoring the right panel behavior:
+    - removed `md:h-[calc(100dvh-3rem)]` + `md:overflow-hidden` from host root
+    - removed grid/section min-height and overflow-lock classes
+    - removed menu-column-only scroll lock (`md:overflow-y-auto`) so page content scrolls naturally
+  - Result: `Current Check` is no longer pinned/anchored and moves with normal page scroll.
+- Files changed:
+  - `src/features/table-service/ui/HostOrderComposerPageClient.tsx`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx eslint src/features/table-service/ui/HostOrderComposerPageClient.tsx` -> PASS (warning only: `@next/next/no-img-element`)
+  - `npx tsc --noEmit` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no changes.
+
+### 2026-03-03 - Host order edit loads existing lines + pre-ready change/remove requests
+
+- Suggested Commit Title: `feat(table-service): load existing host ticket lines and allow pre-ready change/remove requests`
+- Scope:
+  - Table Service host order-taking workspace (`/service/host`) and order service/action contracts.
+- What changed:
+  - Existing confirmed ticket lines now render inside `Current Check` so opening an existing order shows prior items immediately (not just ticket metadata).
+  - Added host-side item actions for existing ticket lines:
+    - `Request Change` (quantity + notes prompt)
+    - `Remove Item` (marks the line `cancelled`)
+  - Guarded host change/remove actions to pre-ready states only (`pending`, `preparing`); ready/served/cancelled lines are shown as locked.
+  - Added server-side `requestKitchenOrderItemChange` with business/session/order guards and mutable-status validation.
+  - Added server action wrapper `requestKitchenOrderItemChange` and shared contract input type `RequestKitchenOrderItemChangeInput`.
+  - Updated table-service launch smoke assertions to lock in the new host/action wiring.
+- Files changed:
+  - `src/features/table-service/ui/HostOrderComposerPageClient.tsx`
+  - `src/features/table-service/server/order.service.ts`
+  - `app/actions/modules/table-service.ts`
+  - `src/features/table-service/shared/table-service.contracts.ts`
+  - `src/features/table-service/shared/table-service.launch-smoke.test.ts`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx eslint src/features/table-service/ui/HostOrderComposerPageClient.tsx src/features/table-service/server/order.service.ts src/features/table-service/shared/table-service.contracts.ts app/actions/modules/table-service.ts src/features/table-service/shared/table-service.launch-smoke.test.ts` -> PASS (warning only: `@next/next/no-img-element`)
+  - `npx tsc --noEmit` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts src/features/table-service/shared/table-service.launch-smoke.test.ts` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no changes.
+
+### 2026-03-03 - Table setup order list grouped by menu category
+
+- Suggested Commit Title: `feat(table-service): group table setup confirmed items by category`
+- Scope:
+  - Table Service table-setup cards (`/service/tables`) confirmed order list readability.
+- What changed:
+  - Extended kitchen queue item contract to include category metadata:
+    - `categoryId`
+    - `categoryName`
+  - Updated kitchen queue server projection to hydrate category metadata from each linked `menu_item` relation.
+  - Updated table setup card rendering so `Order List` is grouped into category sections instead of a single flat list.
+  - Preserved existing fallback behavior:
+    - items without category render under `No Category`.
+    - empty states still render `No confirmed order yet.`
+- Files changed:
+  - `src/features/table-service/shared/table-service.contracts.ts`
+  - `src/features/table-service/server/order.service.ts`
+  - `src/features/table-service/ui/TableSetupPageClient.tsx`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx eslint src/features/table-service/ui/TableSetupPageClient.tsx src/features/table-service/server/order.service.ts src/features/table-service/shared/table-service.contracts.ts` -> PASS
+  - `npx tsc --noEmit` -> PASS
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts src/features/table-service/shared/table-service.launch-smoke.test.ts` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no changes.
+
+### 2026-03-03 - iPad sidebar anchoring + contextual global return + host menu-only scroll
+
+- Suggested Commit Title: `feat(layout): anchor iPad side nav and add contextual return; constrain host scroll to menu list`
+- Scope:
+  - Dashboard sidebar behavior and Table Service host `/service/host` iPad scroll model.
+- What changed:
+  - Anchored dashboard side nav for md+ viewports so it remains fixed during content scroll:
+    - sidebar now uses sticky top + full viewport height (`md:sticky md:top-0 md:h-screen`).
+  - Added contextual global `Return` button at bottom of side nav:
+    - appears only when current path is not a direct sidebar destination.
+    - uses `router.back()` with fallback to `/` when browser history is unavailable.
+    - direct sidebar destinations include: `/`, `/staff`, `/intake`, `/documents`, `/inventory`, `/schedule`, `/service`, `/service/tables`, `/settings`.
+  - Removed local top-left return affordance from host take-order page; return navigation is now handled by sidebar contextual button.
+  - Updated host page layout so only menu items area scrolls on iPad:
+    - page container now has fixed iPad viewport height + overflow hidden.
+    - search/filter section remains anchored.
+    - current check section remains anchored.
+    - menu items section is the only iPad scrollable pane (`overflow-y-auto`).
+    - removed internal scroll regions from current check and sent items lists.
+  - Updated table-service launch smoke test to validate new contextual-return implementation in sidebar.
+- Files changed:
+  - `components/nav/dashboard-side-nav.tsx`
+  - `src/features/table-service/ui/HostOrderComposerPageClient.tsx`
+  - `src/features/table-service/shared/table-service.launch-smoke.test.ts`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx eslint components/nav/dashboard-side-nav.tsx src/features/table-service/ui/HostOrderComposerPageClient.tsx src/features/table-service/shared/table-service.launch-smoke.test.ts app/(dashboard)/layout.tsx app/(dashboard)/service/host/page.tsx` -> PASS (warning only: `@next/next/no-img-element`)
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts src/features/table-service/shared/table-service.launch-smoke.test.ts` -> PASS
+  - `npx tsc --noEmit` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no changes.
+
+### 2026-03-03 - Apply design-language glass system to host take-order page
+
+- Suggested Commit Title: `style(table-service): apply design-language glassmorphism to host take-order workspace`
+- Scope:
+  - Table Service host order-taking page visual system alignment with `docs/active/design-language.md`.
+- What changed:
+  - Added reusable design-language CSS primitives in global styles:
+    - gradient field layers (`design-glass-layer-*`)
+    - glass surface container (`design-glass-surface`)
+    - glass chips (`design-glass-chip`, `design-glass-chip-active`)
+    - ghost button style (`design-glass-ghost-button`)
+    - light-mode counterparts under `[data-theme=\"light\"]` selectors
+  - Updated host take-order page to use the new design-language primitives:
+    - page-level gradient field wrapper
+    - glass-styled return button
+    - glass search/chip filter controls
+    - glass item cards and right-side check/summary cards
+  - Kept existing host business behavior unchanged (confirm/append/send/close order flows).
+  - Updated launch smoke assertion for the return button text to `Return` (ASCII-safe).
+- Files changed:
+  - `app/globals.css`
+  - `src/features/table-service/ui/HostOrderComposerPageClient.tsx`
+  - `src/features/table-service/shared/table-service.launch-smoke.test.ts`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx eslint src/features/table-service/ui/HostOrderComposerPageClient.tsx app/globals.css src/features/table-service/shared/table-service.launch-smoke.test.ts` -> PASS (warnings only: `@next/next/no-img-element`; CSS file ignored by eslint config)
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts src/features/table-service/shared/table-service.launch-smoke.test.ts` -> PASS
+  - `npx tsc --noEmit` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no changes.
+
+### 2026-03-03 - Host take-order layout flattening (remove top host card, add return button, unwrap menu browser/cards)
+
+- Suggested Commit Title: `refactor(table-service): flatten host take-order layout and add return affordance`
+- Scope:
+  - Table Service `/service/host` presentation-only layout refinement.
+- What changed:
+  - Removed the top Host Workspace container and all of its previous header contents.
+  - Added a small top-left `← Return` button linking back to `/service/tables`.
+  - Moved/flattened menu browser controls into the top-left content area without an outer card:
+    - retained search bar
+    - retained category filter chips/buttons
+    - removed the menu-browser title/count header row
+  - Removed the outer menu-items container card; menu now renders as standalone separated item cards.
+  - Updated host route wrapper usage to stop passing the now-unused `table` prop into `HostOrderComposerPageClient`.
+  - Updated launch smoke assertions for new host affordances (`Return` link + search bar) and removed the old host exit-button expectation.
+- Files changed:
+  - `src/features/table-service/ui/HostOrderComposerPageClient.tsx`
+  - `app/(dashboard)/service/host/page.tsx`
+  - `src/features/table-service/shared/table-service.launch-smoke.test.ts`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx eslint src/features/table-service/ui/HostOrderComposerPageClient.tsx app/(dashboard)/service/host/page.tsx src/features/table-service/shared/table-service.launch-smoke.test.ts` -> PASS (warning only: `@next/next/no-img-element`)
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts src/features/table-service/shared/table-service.launch-smoke.test.ts` -> PASS
+  - `npx tsc --noEmit` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no changes.
+
+### 2026-03-03 - Table-service host iPad split workflow + menu item image upload/public render
+
+- Suggested Commit Title: `feat(table-service): add menu item image uploads and split host send workflow`
+- Scope:
+  - Table Service menu setup, host order-taking workspace, shared contracts/schema, and public diner menu rendering.
+- What changed:
+  - Added `MenuItem.image_url` persistence support:
+    - Prisma schema updated (`MenuItem.image_url`).
+    - additive migration added: `20260303120000_table_service_menu_item_image_url`.
+    - table-service contracts now include `TableServiceMenuItemSummary.imageUrl` and `UpsertMenuItemInput.imageUrl`.
+  - Added server-side menu image upload flow:
+    - `uploadMenuItemImage(businessId, file)` in table-service menu service uploads to Supabase public bucket (default `menu-items`), validates image type/size, and returns public URL.
+    - new table-service server action `uploadMenuItemImage(formData)` exposes upload to menu setup UI.
+  - Updated `/service/menu` setup UX:
+    - create/edit menu item forms now support optional image upload, preview, and removal.
+    - item list rows now show image thumbnail/placeholder.
+  - Updated host order-taking workspace `/service/host`:
+    - iPad split layout: left menu browser + right sticky check panel.
+    - added search/filter bar and category chips with item counts.
+    - replaced select-based line entry with menu card grid (name/price/category/image placeholder).
+    - `Send` action keeps existing confirm/append behavior (`confirmKitchenOrder` then `appendKitchenOrderItems`).
+    - added sent-items summary card using existing confirmed order line statuses.
+  - Updated public diner menu `/r/[publicSlug]` to render menu item thumbnails so diners see uploaded images.
+  - Updated table-service launch smoke assertion text to match new host composer copy.
+- Files changed:
+  - `prisma/schema.prisma`
+  - `prisma/migrations/20260303120000_table_service_menu_item_image_url/migration.sql`
+  - `src/features/table-service/shared/table-service.contracts.ts`
+  - `src/features/table-service/server/menu.service.ts`
+  - `app/actions/modules/table-service.ts`
+  - `src/features/table-service/ui/MenuSetupPageClient.tsx`
+  - `src/features/table-service/ui/HostOrderComposerPageClient.tsx`
+  - `app/r/[publicSlug]/page.tsx`
+  - `src/features/table-service/shared/table-service.launch-smoke.test.ts`
+  - `docs/active/codebase-overview.md`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx prisma generate` -> PASS
+  - `npx eslint src/features/table-service/ui/HostOrderComposerPageClient.tsx src/features/table-service/ui/MenuSetupPageClient.tsx src/features/table-service/server/menu.service.ts src/features/table-service/shared/table-service.contracts.ts src/features/table-service/shared/table-service.launch-smoke.test.ts app/actions/modules/table-service.ts app/r/[publicSlug]/page.tsx` -> PASS (warnings only: `@next/next/no-img-element`)
+  - `node --test --experimental-transform-types src/features/table-service/shared/table-service.contracts.test.ts src/features/table-service/shared/table-service.launch-smoke.test.ts` -> PASS
+  - `npx tsc --noEmit` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check:
+  - optional new server env var supported: `SUPABASE_MENU_ITEM_IMAGES_BUCKET` (defaults to `menu-items`).
+
+### 2026-03-03 - Table card order/edit semantics correction + delete guardrails
+
+- Suggested Commit Title: `fix(table-service): align table card actions with order semantics and improve delete errors`
+- Scope:
+  - Table Service `/service/tables` card actions and delete behavior correction.
+- What changed:
+  - Confirmed-order display is data-driven from `getKitchenQueue()`; no hardcoded order values were introduced.
+  - Removed table-number edit mode from table cards.
+  - Repurposed edit icon to order context:
+    - when a confirmed order exists, icon opens host workspace for append/edit flow
+    - when no confirmed order exists, icon is disabled
+  - Strengthened delete behavior:
+    - UI blocks delete if table has an active confirmed order
+    - server-side guard now returns explicit errors when table has active session/order or historical session/order records
+    - UI now surfaces thrown server error message instead of generic delete failure text
+- Files changed:
+  - `src/features/table-service/ui/TableSetupPageClient.tsx`
+  - `src/features/table-service/server/table.service.ts`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx eslint src/features/table-service/ui/TableSetupPageClient.tsx src/features/table-service/server/table.service.ts` -> PASS
+  - `npx tsc --noEmit` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+
+### 2026-03-03 - Table cards refactor (icon actions, confirmed-order list, delete confirmation)
+
+- Suggested Commit Title: `feat(table-service): refactor table cards with order list and icon-only actions`
+- Scope:
+  - Table Service `/service/tables` card-level UX and status behavior update.
+- What changed:
+  - Removed per-card scan URL display and removed `Copy URL` action.
+  - Added per-card `Order List` panel:
+    - empty state when no confirmed order
+    - scrollable list of confirmed order items when available
+  - Replaced text actions with icon actions:
+    - `View QR` -> QR icon button
+    - `Edit` -> page + pencil icon button
+    - `Delete` -> trash icon button
+  - Added confirmation prompt before delete action.
+  - Card-level order CTA behavior now reflects confirmed state:
+    - if no confirmed order: show `Take Order` button
+    - if confirmed order exists: hide `Take Order` and show confirmed-status icon
+  - Table card confirmed state is driven from `getKitchenQueue()` data merged with table list in `loadTables()`.
+- Files changed:
+  - `src/features/table-service/ui/TableSetupPageClient.tsx`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx eslint src/features/table-service/ui/TableSetupPageClient.tsx` -> PASS
+  - `npx tsc --noEmit` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+
+### 2026-03-03 - Table setup take-order flow now launches scanner directly (no modal)
+
+- Suggested Commit Title: `fix(table-service): launch take-order scanner directly without modal container`
+- Scope:
+  - Table Service `/service/tables` take-order interaction refinement.
+- What changed:
+  - Removed modal-based scanner container from table setup.
+  - Header `Take Order` now directly triggers the camera scanner in one click (no intermediate popup container).
+  - Added `BarcodeCameraScanner` control props:
+    - `showTrigger?: boolean`
+    - `startSignal?: number`
+  - Table setup now uses scanner `startSignal` to initiate camera flow programmatically from header action button.
+  - Preserved existing scanned-table matching and host launch behavior.
+- Files changed:
+  - `src/features/table-service/ui/TableSetupPageClient.tsx`
+  - `src/shared/ui/barcode-camera-scanner.tsx`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx eslint src/features/table-service/ui/TableSetupPageClient.tsx src/shared/ui/barcode-camera-scanner.tsx` -> PASS
+  - `npx tsc --noEmit` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+
+### 2026-03-03 - iPad table-setup UI refactor (header actions, auto-add, scanner modal, card grid)
+
+- Suggested Commit Title: `feat(table-service): refactor table setup into action header with auto-add and scanner modal`
+- Scope:
+  - Table Service `/service/tables` layout and interaction model refinement for iPad/desktop workspace behavior.
+- What changed:
+  - Removed the top hero container card and replaced it with a plain page header (`Table Service` + `Dining Table Setup`) and corner actions.
+  - Kept `Manage Menu` in the header action cluster and added:
+    - `Take Order` button (opens scanner popup modal)
+    - one-click `Add Table #N` button (auto-creates the next numbered table)
+  - Removed the standalone `Add Dining Table` container; add flow is now header-only one-click auto numbering:
+    - empty state adds `Table 1`
+    - subsequent clicks add `Table 2`, `Table 3`, etc. based on current table numbering
+  - Removed the standalone `Scan Table QR` container and moved scan/manual payload host-launch flow into a popup modal opened by `Take Order`.
+  - Removed the outer `Dining Tables` container card and replaced it with an individual card grid (one card per table) for better iPad layout density.
+  - Preserved existing per-table actions (`Take Order`, `View QR`, `Edit`, `Copy URL`, `Delete`) and existing host launch behavior.
+- Files changed:
+  - `src/features/table-service/ui/TableSetupPageClient.tsx`
+  - `docs/active/codebase-changelog.md`
+- Validation run:
+  - `npx eslint src/features/table-service/ui/TableSetupPageClient.tsx` -> PASS
+  - `npx tsc --noEmit` -> PASS
+- Dependency check: no new dependencies.
+- Env-var check: no new environment variables.
+
 ### 2026-03-03 - Table-service host scanner now reads table number in-app (no QR URL navigation)
 
 - Suggested Commit Title: `feat(table-service): switch host QR flow to in-app table-number matching and direct host launch`

@@ -7,6 +7,7 @@ import {
   resolveItemImageUrl,
   type ResolveItemImageUrlParams,
 } from "./item-image.resolver.core";
+import { resolveAndPersistMissingInventoryItemImage } from "./spoonacular-image.service";
 
 export {
   extractCanonicalPluCodeFromBarcode,
@@ -26,6 +27,7 @@ export async function resolveItemImageUrlFromDb(
       business_id: businessId,
     },
     select: {
+      name: true,
       image_url: true,
       barcodes: {
         select: {
@@ -91,11 +93,31 @@ export async function resolveItemImageUrlFromDb(
   const selectedProduceImage = produceImageRows.find((row) => normalizeImageUrl(row.image_url) != null) ?? null;
   const selectedBarcodeImage = barcodeImageRows.find((row) => normalizeImageUrl(row.image_url) != null) ?? null;
 
-  return resolveItemImageUrl({
+  const resolved = resolveItemImageUrl({
     inventoryItemImageUrl: item.image_url,
     pluCode: selectedProduceImage?.plu_code ?? null,
     barcodeNormalized: selectedBarcodeImage?.barcode_normalized ?? null,
     produceImageUrl: selectedProduceImage?.image_url ?? null,
     barcodeImageUrl: selectedBarcodeImage?.image_url ?? null,
   });
+
+  if (resolved.imageUrl) {
+    return resolved;
+  }
+
+  const spoonacularImageUrl = await resolveAndPersistMissingInventoryItemImage({
+    inventoryItemId,
+    businessId,
+    itemName: item.name,
+    currentImageUrl: item.image_url,
+  });
+
+  if (spoonacularImageUrl) {
+    return {
+      source: "own",
+      imageUrl: spoonacularImageUrl,
+    };
+  }
+
+  return resolved;
 }

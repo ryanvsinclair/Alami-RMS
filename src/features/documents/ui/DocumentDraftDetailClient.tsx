@@ -176,7 +176,7 @@ export function DocumentDraftDetailClient({ draftId }: { draftId: string }) {
 
   if (loading) {
     return (
-      <div className="space-y-3 p-4">
+      <div className="space-y-3 p-4 md:p-5 xl:p-6">
         <div className="h-20 animate-pulse rounded-xl border border-border bg-card" />
         <div className="h-56 animate-pulse rounded-xl border border-border bg-card" />
         <div className="h-40 animate-pulse rounded-xl border border-border bg-card" />
@@ -186,7 +186,7 @@ export function DocumentDraftDetailClient({ draftId }: { draftId: string }) {
 
   if (!detail) {
     return (
-      <div className="space-y-4 p-4">
+      <div className="space-y-4 p-4 md:p-5 xl:p-6">
         <Link href="/documents" className="text-sm text-primary hover:underline">
           Back to Documents
         </Link>
@@ -207,8 +207,8 @@ export function DocumentDraftDetailClient({ draftId }: { draftId: string }) {
     documentUrl != null && detail.raw_content_type.toLowerCase().startsWith("image/");
 
   return (
-    <div className="space-y-4 p-4">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 p-4 md:p-5 xl:p-6">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <Link href="/documents" className="text-sm text-primary hover:underline">
           Back to Documents
         </Link>
@@ -229,218 +229,233 @@ export function DocumentDraftDetailClient({ draftId }: { draftId: string }) {
         </div>
       ) : null}
 
-      <section className="space-y-2 rounded-xl border border-border bg-card p-4">
-        <p className="text-xs font-semibold normal-case tracking-normal text-primary">Parsed Fields</p>
-        <h1 className="text-xl font-bold text-foreground">
-          {detail.parsed_vendor_name ?? detail.vendor_profile?.vendor_name ?? "Unknown Vendor"}
-        </h1>
-        <p className="text-sm text-muted">{formatDate(detail.parsed_date)}</p>
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="info">Total: {formatMoney(detail.parsed_total)}</Badge>
-          <Badge variant="default">Tax: {formatMoney(detail.parsed_tax)}</Badge>
-          <Badge variant="default">
-            Confidence: {detail.confidence_band ?? "none"}
-            {detail.confidence_score != null ? ` (${Math.round(detail.confidence_score * 100)}%)` : ""}
-          </Badge>
-          {detail.auto_posted ? <Badge variant="info">auto posted</Badge> : null}
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)_minmax(280px,340px)]">
+        <div className="space-y-4">
+          <section className="space-y-2 rounded-xl border border-border bg-card p-4">
+            <p className="text-xs font-semibold normal-case tracking-normal text-primary">Parsed Fields</p>
+            <h1 className="text-xl font-bold text-foreground">
+              {detail.parsed_vendor_name ?? detail.vendor_profile?.vendor_name ?? "Unknown Vendor"}
+            </h1>
+            <p className="text-sm text-muted">{formatDate(detail.parsed_date)}</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="info">Total: {formatMoney(detail.parsed_total)}</Badge>
+              <Badge variant="default">Tax: {formatMoney(detail.parsed_tax)}</Badge>
+              <Badge variant="default">
+                Confidence: {detail.confidence_band ?? "none"}
+                {detail.confidence_score != null ? ` (${Math.round(detail.confidence_score * 100)}%)` : ""}
+              </Badge>
+              {detail.auto_posted ? <Badge variant="info">auto posted</Badge> : null}
+            </div>
+          </section>
+
+          <section className="space-y-2 rounded-xl border border-border bg-card p-4">
+            <p className="text-xs font-semibold normal-case tracking-normal text-primary">Line Items</p>
+            {detail.line_items.length === 0 ? (
+              <p className="text-sm text-muted">No parsed line items.</p>
+            ) : (
+              <div className="space-y-2">
+                {detail.line_items.map((lineItem) => (
+                  <div
+                    key={lineItem.description}
+                    className="grid gap-1 rounded-xl border border-border p-3 text-sm md:grid-cols-4"
+                  >
+                    <p className="font-medium text-foreground">{lineItem.description}</p>
+                    <p className="text-muted">
+                      Qty: {lineItem.quantity ?? 1}
+                    </p>
+                    <p className="text-muted">
+                      Unit: {formatMoney(lineItem.unit_cost)}
+                    </p>
+                    <p className="text-muted">
+                      Mapped: {lineItem.mapped_inventory_item_name ?? "Unmapped"}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
         </div>
-      </section>
 
-      <section className="space-y-3 rounded-xl border border-border bg-card p-4">
-        <p className="text-xs font-semibold normal-case tracking-normal text-primary">Source Document</p>
-        {showPdfPreview ? (
-          <iframe
-            title="Document Preview"
-            src={documentUrl ?? undefined}
-            className="h-96 w-full rounded-xl border border-border"
-          />
-        ) : null}
-        {showImagePreview ? (
-          <img
-            src={documentUrl ?? ""}
-            alt="Document Preview"
-            className="max-h-96 w-full rounded-xl object-contain"
-          />
-        ) : null}
-        {!showPdfPreview && !showImagePreview && detail.raw_document_preview_text ? (
-          <pre className="max-h-96 overflow-auto rounded-xl border border-border bg-background p-3 text-xs text-foreground">
-            {detail.raw_document_preview_text}
-          </pre>
-        ) : null}
-        {!showPdfPreview && !showImagePreview && !detail.raw_document_preview_text && documentUrl ? (
-          <a
-            href={documentUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="text-sm text-primary hover:underline"
-          >
-            Open Source Document
-          </a>
-        ) : null}
-      </section>
+        <div className="space-y-4">
+          <section className="space-y-3 rounded-xl border border-border bg-card p-4">
+            <p className="text-xs font-semibold normal-case tracking-normal text-primary">Source Document</p>
+            {showPdfPreview ? (
+              <iframe
+                title="Document Preview"
+                src={documentUrl ?? undefined}
+                className="h-96 w-full rounded-xl border border-border"
+              />
+            ) : null}
+            {showImagePreview ? (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={documentUrl ?? ""}
+                  alt="Document Preview"
+                  className="max-h-96 w-full rounded-xl object-contain"
+                />
+              </>
+            ) : null}
+            {!showPdfPreview && !showImagePreview && detail.raw_document_preview_text ? (
+              <pre className="max-h-96 overflow-auto rounded-xl border border-border bg-background p-3 text-xs text-foreground">
+                {detail.raw_document_preview_text}
+              </pre>
+            ) : null}
+            {!showPdfPreview && !showImagePreview && !detail.raw_document_preview_text && documentUrl ? (
+              <a
+                href={documentUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-sm text-primary hover:underline"
+              >
+                Open Source Document
+              </a>
+            ) : null}
+          </section>
 
-      <details className="rounded-xl border border-border bg-card p-4">
-        <summary className="cursor-pointer text-xs font-semibold normal-case tracking-normal text-primary">
-          Parse Flags
-        </summary>
-        <pre className="mt-3 max-h-72 overflow-auto rounded-xl border border-border bg-background p-3 text-xs text-foreground">
-          {JSON.stringify(detail.parse_flags ?? {}, null, 2)}
-        </pre>
-      </details>
+          <details className="rounded-xl border border-border bg-card p-4">
+            <summary className="cursor-pointer text-xs font-semibold normal-case tracking-normal text-primary">
+              Parse Flags
+            </summary>
+            <pre className="mt-3 max-h-72 overflow-auto rounded-xl border border-border bg-background p-3 text-xs text-foreground">
+              {JSON.stringify(detail.parse_flags ?? {}, null, 2)}
+            </pre>
+          </details>
+        </div>
 
-      {anomalyFlags.length > 0 ? (
-        <section className="space-y-2 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
-          <p className="text-xs font-semibold normal-case tracking-normal text-amber-700">
-            Anomaly Warnings
-          </p>
-          {anomalyFlags.map((flag) => (
-            <p key={flag} className="text-sm text-amber-800">
-              <span className="font-semibold">{flag}</span>
-              {" - "}
-              {ANOMALY_EXPLANATIONS[flag] ?? "Review this draft before posting."}
-            </p>
-          ))}
-        </section>
-      ) : null}
+        <aside className="space-y-4 xl:sticky xl:top-6 xl:self-start">
+          {anomalyFlags.length > 0 ? (
+            <section className="space-y-2 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
+              <p className="text-xs font-semibold normal-case tracking-normal text-amber-700">
+                Anomaly Warnings
+              </p>
+              {anomalyFlags.map((flag) => (
+                <p key={flag} className="text-sm text-amber-800">
+                  <span className="font-semibold">{flag}</span>
+                  {" - "}
+                  {ANOMALY_EXPLANATIONS[flag] ?? "Review this draft before posting."}
+                </p>
+              ))}
+            </section>
+          ) : null}
 
-      <VendorMappingPanel
-        parsedVendorName={detail.parsed_vendor_name}
-        senderEmail={detail.sender_email}
-        vendorProfiles={detail.vendor_profiles}
-        parsedLineItems={detail.line_items.map((line) => ({ description: line.description }))}
-        inventoryItems={detail.inventory_items}
-        canManageTrustThreshold={detail.canManageTrustThreshold ?? false}
-        onConfirmVendor={(vendorProfileId) =>
-          runAction(async () => {
-            await confirmVendorForDraft(draftId, vendorProfileId);
-            setNotice("Vendor mapping updated.");
-          })
-        }
-        onCreateVendor={(payload) =>
-          runAction(async () => {
-            const created = await createVendorProfile(payload);
-            const createdId = getEntityId(created);
-            if (!createdId) throw new Error("Vendor profile was created without an id");
-            await confirmVendorForDraft(draftId, createdId);
-            setNotice("Vendor created and mapped.");
-          })
-        }
-        onUpdateTrustThreshold={(vendorProfileId, threshold) =>
-          runAction(async () => {
-            await updateVendorTrustThreshold(vendorProfileId, threshold);
-            setNotice("Trust threshold updated.");
-          })
-        }
-        onConfirmLineItemMapping={(vendorProfileId, rawName, inventoryItemId) =>
-          runAction(async () => {
-            await confirmLineItemMapping(vendorProfileId, rawName, inventoryItemId);
-            setNotice("Line-item mapping saved.");
-          })
-        }
-      />
+          {detail.vendor_profile ? (
+            <section className="space-y-2 rounded-xl border border-border bg-card p-4">
+              <p className="text-xs font-semibold normal-case tracking-normal text-primary">Vendor Trust</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="default">state: {detail.vendor_profile.trust_state}</Badge>
+                <Badge variant="default">posted: {detail.vendor_profile.total_posted}</Badge>
+                <Badge variant="default">threshold: {effectiveTrustThreshold}</Badge>
+                <Badge variant={detail.vendor_profile.auto_post_enabled ? "success" : "warning"}>
+                  auto-post {detail.vendor_profile.auto_post_enabled ? "enabled" : "disabled"}
+                </Badge>
+              </div>
+              {detail.canManageTrustThreshold ? (
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="secondary"
+                    disabled={!detail.vendor_profile.auto_post_enabled || saving}
+                    onClick={() =>
+                      runAction(async () => {
+                        await disableAutoPost(detail.vendor_profile!.id);
+                        setNotice("Auto-post disabled for vendor.");
+                      })
+                    }
+                  >
+                    Disable Auto-Post
+                  </Button>
+                  <Button
+                    variant="danger"
+                    disabled={saving}
+                    onClick={() =>
+                      runAction(async () => {
+                        await blockVendor(detail.vendor_profile!.id);
+                        setNotice("Vendor blocked from auto-post.");
+                      })
+                    }
+                  >
+                    Block Vendor
+                  </Button>
+                </div>
+              ) : null}
+            </section>
+          ) : null}
 
-      {detail.vendor_profile ? (
-        <section className="space-y-2 rounded-xl border border-border bg-card p-4">
-          <p className="text-xs font-semibold normal-case tracking-normal text-primary">Vendor Trust</p>
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="default">state: {detail.vendor_profile.trust_state}</Badge>
-            <Badge variant="default">posted: {detail.vendor_profile.total_posted}</Badge>
-            <Badge variant="default">threshold: {effectiveTrustThreshold}</Badge>
-            <Badge variant={detail.vendor_profile.auto_post_enabled ? "success" : "warning"}>
-              auto-post {detail.vendor_profile.auto_post_enabled ? "enabled" : "disabled"}
-            </Badge>
-          </div>
-          {detail.canManageTrustThreshold ? (
+          <section className="space-y-2 rounded-xl border border-border bg-card p-4">
+            <p className="text-xs font-semibold normal-case tracking-normal text-primary">Actions</p>
             <div className="flex flex-wrap gap-2">
               <Button
-                variant="secondary"
-                disabled={!detail.vendor_profile.auto_post_enabled || saving}
                 onClick={() =>
                   runAction(async () => {
-                    await disableAutoPost(detail.vendor_profile!.id);
-                    setNotice("Auto-post disabled for vendor.");
+                    await postDraft(draftId);
+                    setNotice("Draft posted as document_intake expense.");
                   })
                 }
+                loading={saving}
+                disabled={!canPost}
               >
-                Disable Auto-Post
+                Post Expense
               </Button>
               <Button
-                variant="danger"
-                disabled={saving}
+                variant="secondary"
                 onClick={() =>
                   runAction(async () => {
-                    await blockVendor(detail.vendor_profile!.id);
-                    setNotice("Vendor blocked from auto-post.");
+                    await rejectDraft(draftId);
+                    setNotice("Draft rejected.");
                   })
                 }
+                disabled={!canPost || saving}
               >
-                Block Vendor
+                Reject
               </Button>
             </div>
-          ) : null}
-        </section>
-      ) : null}
+            {detail.status === "posted" ? (
+              <p className="text-sm text-muted">
+                Posted on {formatDate(detail.posted_at)}.
+                {detail.financial_transaction_id ? ` Transaction id: ${detail.financial_transaction_id}.` : ""}
+              </p>
+            ) : null}
+          </section>
+        </aside>
 
-      <section className="space-y-2 rounded-xl border border-border bg-card p-4">
-        <p className="text-xs font-semibold normal-case tracking-normal text-primary">Line Items</p>
-        {detail.line_items.length === 0 ? (
-          <p className="text-sm text-muted">No parsed line items.</p>
-        ) : (
-          <div className="space-y-2">
-            {detail.line_items.map((lineItem) => (
-              <div
-                key={lineItem.description}
-                className="grid gap-1 rounded-xl border border-border p-3 text-sm md:grid-cols-4"
-              >
-                <p className="font-medium text-foreground">{lineItem.description}</p>
-                <p className="text-muted">
-                  Qty: {lineItem.quantity ?? 1}
-                </p>
-                <p className="text-muted">
-                  Unit: {formatMoney(lineItem.unit_cost)}
-                </p>
-                <p className="text-muted">
-                  Mapped: {lineItem.mapped_inventory_item_name ?? "Unmapped"}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section className="flex flex-wrap gap-2">
-        <Button
-          onClick={() =>
-            runAction(async () => {
-              await postDraft(draftId);
-              setNotice("Draft posted as document_intake expense.");
-            })
-          }
-          loading={saving}
-          disabled={!canPost}
-        >
-          Post Expense
-        </Button>
-        <Button
-          variant="secondary"
-          onClick={() =>
-            runAction(async () => {
-              await rejectDraft(draftId);
-              setNotice("Draft rejected.");
-            })
-          }
-          disabled={!canPost || saving}
-        >
-          Reject
-        </Button>
-      </section>
-
-      {detail.status === "posted" ? (
-        <p className="text-sm text-muted">
-          Posted as document_intake expense on {formatDate(detail.posted_at)}.
-          {detail.financial_transaction_id ? ` Financial transaction id: ${detail.financial_transaction_id}.` : ""}
-        </p>
-      ) : null}
+        <div className="xl:col-span-3">
+          <VendorMappingPanel
+            parsedVendorName={detail.parsed_vendor_name}
+            senderEmail={detail.sender_email}
+            vendorProfiles={detail.vendor_profiles}
+            parsedLineItems={detail.line_items.map((line) => ({ description: line.description }))}
+            inventoryItems={detail.inventory_items}
+            canManageTrustThreshold={detail.canManageTrustThreshold ?? false}
+            onConfirmVendor={(vendorProfileId) =>
+              runAction(async () => {
+                await confirmVendorForDraft(draftId, vendorProfileId);
+                setNotice("Vendor mapping updated.");
+              })
+            }
+            onCreateVendor={(payload) =>
+              runAction(async () => {
+                const created = await createVendorProfile(payload);
+                const createdId = getEntityId(created);
+                if (!createdId) throw new Error("Vendor profile was created without an id");
+                await confirmVendorForDraft(draftId, createdId);
+                setNotice("Vendor created and mapped.");
+              })
+            }
+            onUpdateTrustThreshold={(vendorProfileId, threshold) =>
+              runAction(async () => {
+                await updateVendorTrustThreshold(vendorProfileId, threshold);
+                setNotice("Trust threshold updated.");
+              })
+            }
+            onConfirmLineItemMapping={(vendorProfileId, rawName, inventoryItemId) =>
+              runAction(async () => {
+                await confirmLineItemMapping(vendorProfileId, rawName, inventoryItemId);
+                setNotice("Line-item mapping saved.");
+              })
+            }
+          />
+        </div>
+      </div>
     </div>
   );
 }

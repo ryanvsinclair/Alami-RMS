@@ -169,7 +169,7 @@ export default function InventoryListPageClient() {
         : enrichmentQueue.items;
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="space-y-4 p-4 md:p-5 xl:p-6">
       {/* Fix Later Queue Card */}
       {enrichmentQueue && enrichmentQueue.summary.total_pending > 0 && (
         <Card className="p-4">
@@ -296,7 +296,7 @@ export default function InventoryListPageClient() {
           )}
 
           {/* Queue items with action controls */}
-          <div className="mt-3 space-y-2">
+          <div className="mt-3 space-y-2 md:grid md:grid-cols-2 md:gap-2 md:space-y-0 xl:grid-cols-1">
             {visibleQueueItems.length === 0 && (
               <p className="text-xs text-muted">
                 No queue items match this filter.
@@ -418,7 +418,7 @@ export default function InventoryListPageClient() {
 
       {/* Undo toast */}
       {lastDismissed && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-zinc-900 text-white text-sm px-4 py-2 rounded-lg shadow-lg flex items-center gap-3">
+        <div className="fixed bottom-20 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-lg bg-zinc-900 px-4 py-2 text-sm text-white shadow-lg md:bottom-6">
           <span className="truncate max-w-[200px]">
             Dismissed task for {lastDismissed.itemName}
           </span>
@@ -432,7 +432,7 @@ export default function InventoryListPageClient() {
         </div>
       )}
 
-      <div className="flex items-end gap-2">
+      <div className="flex flex-col gap-2 md:flex-row md:items-end">
         <div className="flex-1">
           <Input
             placeholder="Search inventory..."
@@ -440,8 +440,10 @@ export default function InventoryListPageClient() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <SortSelect value={sortKey} onChange={setSortKey} className="w-36 shrink-0" />
-        <ViewModeToggle value={viewMode} onChange={setViewMode} />
+        <div className="flex items-center gap-2 md:shrink-0">
+          <SortSelect value={sortKey} onChange={setSortKey} className="w-36 shrink-0" />
+          <ViewModeToggle value={viewMode} onChange={setViewMode} />
+        </div>
       </div>
 
       {loading ? (
@@ -451,7 +453,7 @@ export default function InventoryListPageClient() {
           {items.length === 0 ? "No inventory items yet" : "No items match your search"}
         </div>
       ) : viewMode === "grid" ? (
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
           {visibleInventoryItems.map((item) => (
             <Card
               key={item.id}

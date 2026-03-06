@@ -6,10 +6,7 @@ import { PublicLandingPage } from "@/features/marketing/ui/PublicLandingPage";
 
 // Hero top section is the blue gradient — match the start color of --hero-bg.
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#007fff" },
-    { media: "(prefers-color-scheme: light)", color: "#007fff" },
-  ],
+  themeColor: "#007fff",
 };
 
 async function hasValidSession(): Promise<boolean> {

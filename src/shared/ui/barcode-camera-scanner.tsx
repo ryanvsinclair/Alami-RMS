@@ -55,6 +55,8 @@ interface BarcodeCameraScannerProps {
   formats?: BarcodeDetectorFormat[];
   helperText?: string;
   cancelLabel?: string;
+  showTrigger?: boolean;
+  startSignal?: number;
 }
 
 function getBarcodeDetectorCtor(): BarcodeDetectorCtor | null {
@@ -70,6 +72,8 @@ export function BarcodeCameraScanner({
   formats,
   helperText = "Point your camera at a UPC/EAN barcode. The scanner will auto-fill once detected.",
   cancelLabel = "Cancel Camera Scanner",
+  showTrigger = true,
+  startSignal,
 }: BarcodeCameraScannerProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -79,6 +83,8 @@ export function BarcodeCameraScanner({
   const scanTimeoutRef = useRef<number | null>(null);
   const activeRef = useRef(false);
   const lastDetectedRef = useRef<string>("");
+  const lastStartSignalRef = useRef<number | undefined>(startSignal);
+  const startScannerFnRef = useRef<() => Promise<void>>(async () => {});
 
   const [scannerOpen, setScannerOpen] = useState(false);
   const [starting, setStarting] = useState(false);
@@ -265,23 +271,34 @@ export function BarcodeCameraScanner({
     }
   }
 
+  startScannerFnRef.current = startScanner;
+
   function closeScanner() {
     setScannerOpen(false);
     stopScanner();
   }
 
+  useEffect(() => {
+    if (startSignal == null) return;
+    if (startSignal === lastStartSignalRef.current) return;
+    lastStartSignalRef.current = startSignal;
+    void startScannerFnRef.current();
+  }, [startSignal]);
+
   return (
     <div className="space-y-2">
-      <Button
-        type="button"
-        variant="secondary"
-        onClick={() => void startScanner()}
-        disabled={disabled}
-        loading={starting}
-        className="w-full"
-      >
-        {triggerLabel}
-      </Button>
+      {showTrigger && (
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() => void startScanner()}
+          disabled={disabled}
+          loading={starting}
+          className="w-full"
+        >
+          {triggerLabel}
+        </Button>
+      )}
 
       {scannerOpen && (
         <Card className="space-y-3 border-primary/25 bg-primary/[0.04]">

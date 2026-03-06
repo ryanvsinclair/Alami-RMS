@@ -32,9 +32,11 @@ test("launch smoke: required QR/host/kitchen routes exist", () => {
   }
 });
 
-test("launch smoke: queue visibility collapses on terminal-only items and resurfaces on append", () => {
+test("launch smoke: queue visibility keeps cancelled lines visible and only collapses on served-only orders", () => {
   assert.equal(shouldShowKitchenOrderInQueue(["pending"]), true);
-  assert.equal(shouldShowKitchenOrderInQueue(["served", "cancelled"]), false);
+  assert.equal(shouldShowKitchenOrderInQueue(["cancelled"]), true);
+  assert.equal(shouldShowKitchenOrderInQueue(["served", "cancelled"]), true);
+  assert.equal(shouldShowKitchenOrderInQueue(["served"]), false);
   assert.equal(shouldShowKitchenOrderInQueue(["served", "pending"]), true);
 });
 
@@ -46,23 +48,30 @@ test("launch smoke: confirmation timer due-at uses canonical window", () => {
 });
 
 test("launch smoke: profile mode toggle wiring uses shared storage key and kitchen redirect target", () => {
-  const homePage = fs.readFileSync(path.join(repoRoot, "app/page.tsx"), "utf8");
+  const homeDashboardClient = fs.readFileSync(
+    path.join(repoRoot, "src/features/home/ui/HomeDashboardClient.tsx"),
+    "utf8",
+  );
   const profileToggle = fs.readFileSync(
     path.join(repoRoot, "src/features/table-service/ui/TableServiceModeToggleCard.tsx"),
     "utf8",
   );
 
-  assert.match(homePage, /TABLE_SERVICE_WORKSPACE_MODE_STORAGE_KEY/);
-  assert.match(homePage, /\/service\/kitchen/);
+  assert.match(homeDashboardClient, /TABLE_SERVICE_WORKSPACE_MODE_STORAGE_KEY/);
+  assert.match(homeDashboardClient, /\/service\/kitchen/);
   assert.match(profileToggle, /TABLE_SERVICE_WORKSPACE_MODE_STORAGE_KEY/);
   assert.match(profileToggle, /Host/);
   assert.match(profileToggle, /Kitchen/);
   assert.equal(typeof TABLE_SERVICE_WORKSPACE_MODE_STORAGE_KEY, "string");
 });
 
-test("launch smoke: host and kitchen workspaces expose exit action to clear mode and return home", () => {
+test("launch smoke: kitchen workspace exposes exit action and side nav provides contextual return control", () => {
   const exitButton = fs.readFileSync(
     path.join(repoRoot, "src/features/table-service/ui/ExitServiceModeButton.tsx"),
+    "utf8",
+  );
+  const sideNav = fs.readFileSync(
+    path.join(repoRoot, "components/nav/dashboard-side-nav.tsx"),
     "utf8",
   );
   const hostComposer = fs.readFileSync(
@@ -77,7 +86,9 @@ test("launch smoke: host and kitchen workspaces expose exit action to clear mode
   assert.match(exitButton, /TABLE_SERVICE_WORKSPACE_MODE_STORAGE_KEY/);
   assert.match(exitButton, /localStorage\.removeItem/);
   assert.match(exitButton, /router\.replace\("\/"\)/);
-  assert.match(hostComposer, /<ExitServiceModeButton/);
+  assert.match(sideNav, /router\.back\(\)/);
+  assert.match(sideNav, /shouldShowContextReturn/);
+  assert.doesNotMatch(hostComposer, /href="\/service\/tables"/);
   assert.match(kitchenQueueClient, /<ExitServiceModeButton/);
 });
 
@@ -111,9 +122,16 @@ test("launch smoke: host composer wires confirm, append, and done-paid close lif
   assert.match(hostComposer, /confirmKitchenOrder/);
   assert.match(hostComposer, /appendKitchenOrderItems/);
   assert.match(hostComposer, /closeKitchenOrderAndSession/);
-  assert.match(hostComposer, /Append Items To Order/);
+  assert.match(hostComposer, /requestKitchenOrderItemChange/);
+  assert.match(hostComposer, /Current Check/);
+  assert.match(hostComposer, /Check Actions/);
+  assert.match(hostComposer, /Add Note/);
+  assert.match(hostComposer, /Remove Item/);
+  assert.match(hostComposer, /Existing Ticket Items/);
+  assert.match(hostComposer, /New Draft Adds/);
+  assert.match(hostComposer, /Search menu items/);
   assert.match(hostComposer, /Done\/Paid And Close Table Session/);
-  assert.match(hostComposer, /Post-confirm edits append new item rows to the same kitchen order/);
+  assert.match(hostComposer, /New sends append items to the same kitchen ticket/);
 });
 
 test("launch smoke: order service enforces same-order append and host-controlled table-session closure", () => {
@@ -178,6 +196,7 @@ test("launch smoke: table-service action wrappers require access before business
   assert.match(actionsModule, /return _confirmKitchenOrder\(businessId, input\)/);
   assert.match(actionsModule, /return _appendKitchenOrderItems\(businessId, input\)/);
   assert.match(actionsModule, /return _closeKitchenOrderAndSession\(businessId, input\)/);
+  assert.match(actionsModule, /return _requestKitchenOrderItemChange\(businessId, input\)/);
   assert.match(actionsModule, /return _updateKitchenOrderItemStatus\(businessId, input\)/);
 });
 

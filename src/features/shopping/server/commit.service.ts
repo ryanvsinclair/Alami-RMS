@@ -84,16 +84,14 @@ export async function commitShoppingSession(
       items: refreshed.items,
     });
 
-    if (refreshed.status !== "ready") {
-      if (refreshed.receipt_id) {
-        throw new Error(
-          "Receipt scan is not 100% complete. Please rescan the receipt and try again."
-        );
-      }
-      throw new Error("Resolve all discrepancies before committing");
+    const hasReceipt = Boolean(refreshed.receipt_id);
+    if (hasReceipt && refreshed.status !== "ready") {
+      throw new Error(
+        "Receipt scan is not 100% complete. Please rescan the receipt and try again."
+      );
     }
 
-    if (refreshed.receipt_id && (!receiptBalance.isBalanced || receiptBalance.isMissingExpectedTotal)) {
+    if (hasReceipt && (!receiptBalance.isBalanced || receiptBalance.isMissingExpectedTotal)) {
       throw new Error(
         "Receipt scan is not 100% complete. Please rescan the receipt and try again."
       );
@@ -248,6 +246,7 @@ export async function commitShoppingSession(
             ineligible_inventory_item_ids: ineligibleInventoryItems.map((entry) => entry.shopping_session_item_id),
             receipt_total: toNumber(refreshed.receipt_total),
             staged_subtotal: toNumber(refreshed.staged_subtotal),
+            receipt_pending: !hasReceipt,
           } as never,
         },
         update: {},

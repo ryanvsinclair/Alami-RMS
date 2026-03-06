@@ -66,7 +66,12 @@ export default function ScheduleClient() {
   const { industryType } = useBusinessConfig();
   const showServicesCta = industryType === "restaurant";
 
-  const [viewMode, setViewMode] = useState<CalendarViewMode>(DEFAULT_CALENDAR_VIEW);
+  const [viewMode, setViewMode] = useState<CalendarViewMode>(() => {
+    if (typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches) {
+      return "day";
+    }
+    return DEFAULT_CALENDAR_VIEW;
+  });
   const [visibleSources, setVisibleSources] = useState<Set<CalendarEventSource>>(
     new Set(CALENDAR_EVENT_SOURCES)
   );
@@ -184,16 +189,26 @@ export default function ScheduleClient() {
       {/* ------------------------------------------------------------------ */}
       {/* Source health bar â€” provider sync status summary (OC-03)           */}
       {/* ------------------------------------------------------------------ */}
-      <SourceHealthBar providerCards={providerSyncCards} />
-
-      <OperationalSuggestionsRail suggestions={operationalSuggestions} />
-      <OpsDiagnosticsBar summary={opsSummary} />
+      <div className="xl:hidden">
+        <SourceHealthBar providerCards={providerSyncCards} />
+        <OperationalSuggestionsRail suggestions={operationalSuggestions} />
+        <OpsDiagnosticsBar summary={opsSummary} />
+      </div>
 
       {/* ------------------------------------------------------------------ */}
       {/* Calendar grid area â€” shell / populated in OC-04+                   */}
       {/* ------------------------------------------------------------------ */}
       <div className="flex-1 px-4 pb-4">
-        <CalendarGridShell viewMode={viewMode} />
+        <div className="grid h-full gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(280px,340px)]">
+          <div className="min-h-0">
+            <CalendarGridShell viewMode={viewMode} />
+          </div>
+          <aside className="hidden xl:block xl:self-start">
+            <SourceHealthBar providerCards={providerSyncCards} />
+            <OperationalSuggestionsRail suggestions={operationalSuggestions} />
+            <OpsDiagnosticsBar summary={opsSummary} />
+          </aside>
+        </div>
       </div>
     </div>
   );

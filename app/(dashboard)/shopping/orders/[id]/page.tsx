@@ -1,14 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { DashboardPageContainer } from "@/components/layout/dashboard-page-container";
 import {
   getShoppingSession,
   reorderShoppingSession,
+  scanAndReconcileReceipt,
 } from "@/app/actions/modules/shopping";
+import { uploadReceiptImageAction } from "@/app/actions/core/upload";
+import { compressImage } from "@/shared/utils/compress-image";
 
 interface SessionItem {
   id: string;
@@ -55,7 +59,9 @@ export default function OrderDetailPage() {
   const [session, setSession] = useState<SessionDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [reordering, setReordering] = useState(false);
+  const [receiptScanning, setReceiptScanning] = useState(false);
   const [error, setError] = useState("");
+  const receiptInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     async function load() {
@@ -70,6 +76,32 @@ export default function OrderDetailPage() {
     }
     load();
   }, [sessionId]);
+
+  async function handleReceiptScan(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !session) return;
+
+    setReceiptScanning(true);
+    setError("");
+    try {
+      const base64 = await compressImage(file, 1600, 1600, 0.8);
+      const imageUrlPromise = uploadReceiptImageAction(base64, session.id).catch(() => null);
+      await Promise.all([
+        scanAndReconcileReceipt({
+          session_id: session.id,
+          base64_image: base64,
+        }),
+        imageUrlPromise,
+      ]);
+      const refreshed = await getShoppingSession(session.id);
+      setSession(refreshed as SessionDetail);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to scan receipt");
+    } finally {
+      setReceiptScanning(false);
+      if (receiptInputRef.current) receiptInputRef.current.value = "";
+    }
+  }
 
   async function handleReorder() {
     setReordering(true);
@@ -86,17 +118,21 @@ export default function OrderDetailPage() {
 
   if (loading) {
     return (
-      <>
-        <div className="p-6 text-sm text-muted">Loading...</div>
-      </>
+      <main className="py-4 md:py-6">
+        <DashboardPageContainer variant="standard">
+          <div className="p-2 text-sm text-muted">Loading...</div>
+        </DashboardPageContainer>
+      </main>
     );
   }
 
   if (!session) {
     return (
-      <>
-        <div className="p-6 text-sm text-danger">{error || "Order not found"}</div>
-      </>
+      <main className="py-4 md:py-6">
+        <DashboardPageContainer variant="standard">
+          <div className="p-2 text-sm text-danger">{error || "Order not found"}</div>
+        </DashboardPageContainer>
+      </main>
     );
   }
 
@@ -109,8 +145,10 @@ export default function OrderDetailPage() {
     }, 0);
 
   return (
-    <>
-      <div className="p-4 space-y-4">
+    <main className="py-4 md:py-6">
+      <DashboardPageContainer variant="wide">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+          <div className="space-y-4">
         {/* Store + Summary */}
         <Card className="p-5">
           <p className="text-xs text-muted normal-case tracking-normal">Store</p>
@@ -144,6 +182,30 @@ export default function OrderDetailPage() {
           </div>
         </Card>
 
+        {!session.receipt?.id && (
+          <Card className="p-5">
+            <p className="text-xs text-muted normal-case tracking-normal">Receipt Pending</p>
+            <p className="mt-1 text-sm text-muted">
+              This checkout was finalized without a receipt image. Scan the receipt now to resolve discrepancies.
+            </p>
+            <Button
+              className="mt-4 w-full"
+              onClick={() => receiptInputRef.current?.click()}
+              loading={receiptScanning}
+            >
+              Scan Receipt
+            </Button>
+            <input
+              ref={receiptInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleReceiptScan}
+              className="hidden"
+            />
+          </Card>
+        )}
+
         {/* Receipt Image */}
         {session.receipt?.image_url && (
           <Card className="p-5">
@@ -166,6 +228,15 @@ export default function OrderDetailPage() {
           </Card>
         )}
 
+            {/* Re-order */}
+            <Button className="w-full" size="lg" onClick={handleReorder} loading={reordering}>
+              Re-order This Trip
+            </Button>
+
+            {error && <p className="text-sm text-danger">{error}</p>}
+          </div>
+
+          <div className="space-y-4">
         {/* Items */}
         <p className="text-sm font-semibold">{session.items.length} Items</p>
         <div className="space-y-2">
@@ -195,14 +266,9 @@ export default function OrderDetailPage() {
             );
           })}
         </div>
-
-        {/* Re-order */}
-        <Button className="w-full" size="lg" onClick={handleReorder} loading={reordering}>
-          Re-order This Trip
-        </Button>
-
-        {error && <p className="text-sm text-danger">{error}</p>}
-      </div>
-    </>
+          </div>
+        </div>
+      </DashboardPageContainer>
+    </main>
   );
 }

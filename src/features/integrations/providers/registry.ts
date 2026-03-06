@@ -1,5 +1,6 @@
 import type { IncomeProviderId } from "@/features/integrations/shared";
 import { INCOME_PROVIDER_IDS } from "@/features/integrations/shared";
+import { createUberEatsOAuthAdapter } from "./uber-eats.marketplace";
 
 export interface IncomeOAuthStartParams {
   state: string;
@@ -177,8 +178,15 @@ function createGenericOAuthAdapter(providerId: IncomeProviderId): IncomeOAuthPro
   };
 }
 
+function createProviderAdapter(providerId: IncomeProviderId): IncomeOAuthProviderAdapter {
+  if (providerId === "uber_eats") {
+    return createUberEatsOAuthAdapter();
+  }
+  return createGenericOAuthAdapter(providerId);
+}
+
 const adapterRegistry: Record<IncomeProviderId, IncomeOAuthProviderAdapter> = Object.fromEntries(
-  INCOME_PROVIDER_IDS.map((providerId) => [providerId, createGenericOAuthAdapter(providerId)])
+  INCOME_PROVIDER_IDS.map((providerId) => [providerId, createProviderAdapter(providerId)])
 ) as Record<IncomeProviderId, IncomeOAuthProviderAdapter>;
 
 export function getIncomeOAuthProviderAdapter(

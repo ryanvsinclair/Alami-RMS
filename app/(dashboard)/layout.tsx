@@ -1,5 +1,5 @@
 import type { Viewport } from "next";
-import { BottomNav } from "@/components/nav/bottom-nav";
+import { DashboardLockShell } from "@/components/layout/dashboard-lock-shell";
 import { getEnabledModules } from "@/core/modules/guard";
 import { requireBusinessMembership } from "@/core/auth/tenant";
 import { BusinessConfigProvider } from "@/lib/config/context";
@@ -9,10 +9,7 @@ import { getTerminology } from "@/lib/config/terminology";
 // Pages with a distinct top section (e.g. home hero) override this via their
 // own viewport export in a thin server wrapper page.
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#0b1120" },
-    { media: "(prefers-color-scheme: light)", color: "#f0f4f8" },
-  ],
+  themeColor: "#f0f4f8",
 };
 
 export default async function DashboardLayout({
@@ -34,10 +31,9 @@ export default async function DashboardLayout({
         terminology,
       }}
     >
-      <div className="min-h-screen max-w-lg mx-auto pb-24 bg-background text-foreground">
+      <DashboardLockShell enabledModules={enabledModules}>
         {children}
-        <BottomNav enabledModules={enabledModules} />
-      </div>
+      </DashboardLockShell>
     </BusinessConfigProvider>
   );
 }

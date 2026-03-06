@@ -6,7 +6,18 @@ export type HomeFinancialSource =
   | "doordash"
   | "shopping"
   | "manual"
-  | "document_intake";
+  | "document_intake"
+  | "recurring_bill";
+
+export interface PendingBillOccurrenceSummary {
+  id: string;
+  billId: string;
+  billName: string;
+  amount: number;
+  category: string;
+  recurrence: string;
+  dueAt: string;
+}
 
 export interface HomeDashboardFinancialTx {
   id: string;
@@ -17,6 +28,7 @@ export interface HomeDashboardFinancialTx {
   description: string | null;
   occurred_at: string;
   shopping_session: {
+    id: string;
     store_name: string | null;
     store_address: string | null;
     receipt_id: string | null;
@@ -37,4 +49,5 @@ export interface HomeDashboardSummary {
   net: number;
   incomeBreakdown: HomeIncomeBreakdownEntry[];
   transactions: HomeDashboardFinancialTx[];
+  pendingBills: PendingBillOccurrenceSummary[];
 }

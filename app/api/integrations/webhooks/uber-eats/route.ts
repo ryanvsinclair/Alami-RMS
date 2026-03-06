@@ -9,13 +9,17 @@ import { prisma } from "@/core/prisma";
  *   X-Uber-Signature: sha256=<hex>
  *   Content-Type: application/json
  *
- * Required env var: INCOME_WEBHOOK_SECRET_UBER_EATS
+ * Required env var:
+ *   - INCOME_WEBHOOK_SECRET_UBER_EATS
+ *   - or fallback to INCOME_OAUTH_UBER_EATS_CLIENT_SECRET
  *
  * On receipt, we mark last_webhook_at and enqueue the payload for
  * async processing (or process inline if event count is small).
  */
 export async function POST(request: NextRequest) {
-  const secret = process.env.INCOME_WEBHOOK_SECRET_UBER_EATS;
+  const secret =
+    process.env.INCOME_WEBHOOK_SECRET_UBER_EATS ??
+    process.env.INCOME_OAUTH_UBER_EATS_CLIENT_SECRET;
   if (!secret) {
     return NextResponse.json({ error: "Webhook not configured" }, { status: 503 });
   }
@@ -46,14 +50,27 @@ export async function POST(request: NextRequest) {
   const externalAccountId =
     typeof eventPayload.restaurant_id === "string" ? eventPayload.restaurant_id :
     typeof eventPayload.store_id === "string" ? eventPayload.store_id : null;
-
+  const externalLocationId =
+    typeof eventPayload.store_id === "string" ? eventPayload.store_id :
+    typeof eventPayload.location_id === "string" ? eventPayload.location_id : null;
+  const connectionTargets: Array<
+    { external_account_id: string } |
+    { external_location_id: string }
+  > = [];
   if (externalAccountId) {
+    connectionTargets.push({ external_account_id: externalAccountId });
+  }
+  if (externalLocationId) {
+    connectionTargets.push({ external_location_id: externalLocationId });
+  }
+
+  if (connectionTargets.length > 0) {
     // Update last_webhook_at for the matching connection
     await prisma.businessIncomeConnection.updateMany({
       where: {
         provider_id: "uber_eats",
-        external_account_id: externalAccountId,
         status: "connected",
+        OR: connectionTargets,
       },
       data: { last_webhook_at: new Date() },
     }).catch(() => {

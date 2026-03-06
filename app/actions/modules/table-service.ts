@@ -20,6 +20,8 @@ import {
   importMenuItemsFromCsv as _importMenuItemsFromCsv,
   regenerateDiningTableQrToken as _regenerateDiningTableQrToken,
   requireTableServiceAccess,
+  requestKitchenOrderItemChange as _requestKitchenOrderItemChange,
+  uploadMenuItemImage as _uploadMenuItemImage,
   updateDiningTable as _updateDiningTable,
   updateKitchenOrderItemStatus as _updateKitchenOrderItemStatus,
   updateMenuCategory as _updateMenuCategory,
@@ -29,6 +31,7 @@ import type {
   AppendKitchenOrderItemsInput,
   CloseKitchenOrderInput,
   ConfirmKitchenOrderInput,
+  RequestKitchenOrderItemChangeInput,
   UpdateKitchenOrderItemStatusInput,
   UpsertMenuCategoryInput,
   UpsertMenuItemInput,
@@ -78,6 +81,16 @@ export async function deleteMenuItem(menuItemId: string) {
 export async function importMenuItemsFromCsv(csvText: string) {
   const { businessId } = await requireTableServiceAccess();
   return _importMenuItemsFromCsv(businessId, csvText);
+}
+
+export async function uploadMenuItemImage(formData: FormData) {
+  const { businessId } = await requireTableServiceAccess();
+  const file = formData.get("file");
+  if (!(file instanceof File)) {
+    throw new Error("Menu item image file is required");
+  }
+
+  return _uploadMenuItemImage(businessId, file);
 }
 
 export async function getDiningTables() {
@@ -138,4 +151,11 @@ export async function updateKitchenOrderItemStatus(
 ) {
   const { businessId } = await requireTableServiceAccess();
   return _updateKitchenOrderItemStatus(businessId, input);
+}
+
+export async function requestKitchenOrderItemChange(
+  input: RequestKitchenOrderItemChangeInput,
+) {
+  const { businessId } = await requireTableServiceAccess();
+  return _requestKitchenOrderItemChange(businessId, input);
 }

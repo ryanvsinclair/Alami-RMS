@@ -5,53 +5,89 @@
 // Types extracted to: src/features/shopping/ui/contracts.ts
 // The JSX remains here (Route page must stay in app/) but delegates all state to the hook.
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { DashboardPageContainer } from "@/components/layout/dashboard-page-container";
 import { ItemNotFound } from "@/components/flows/item-not-found";
 import { useShoppingSession } from "@/features/shopping/ui/use-shopping-session";
 import { ItemImage } from "@/shared/ui/item-image";
 import { BarcodeCameraScanner } from "@/shared/ui/barcode-camera-scanner";
+import { RECEIVE_UNIT_OPTIONS_COMPACT } from "@/features/receiving/shared/unit-options";
 import {
   asNumber,
   formatMoney,
   displayShoppingItemName,
   getItemBarcodeBadgeValue,
-  reconLabel,
-  reconVariant,
+  type ShoppingBarcodeLookup,
+  type ShoppingBarcodePhotoDraft,
 } from "@/features/shopping/ui/contracts";
+
+const SHOPPING_HOST_SURFACE_CLASS = "design-glass-surface p-5";
+const SHOPPING_HOST_SUBSURFACE_CLASS = "rounded-xl border border-border bg-foreground/[0.03] p-3";
+const ITEM_PLU_SUFFIX_REGEX = /\(PLU\s*(\d{3,6})\)\s*$/i;
+
+function splitItemNameAndPlu(rawName: string): {
+  displayName: string;
+  pluCode: string | null;
+} {
+  const displayName = displayShoppingItemName(rawName);
+  const match = displayName.match(ITEM_PLU_SUFFIX_REGEX);
+  if (!match) {
+    return { displayName, pluCode: null };
+  }
+
+  const withoutPlu = displayName.replace(ITEM_PLU_SUFFIX_REGEX, "").trim();
+  return {
+    displayName: withoutPlu || displayName,
+    pluCode: match[1] ?? null,
+  };
+}
 
 export default function ShoppingPage() {
   const router = useRouter();
 
   // Refs must live in the component (React Compiler rule: no ref access during render from hooks)
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const quickBarcodeInputRef = useRef<HTMLInputElement>(null);
-  const receiptSectionRef = useRef<HTMLDivElement>(null);
+  const barcodePhotoInputRef = useRef<HTMLInputElement>(null);
   const fallbackPhotoInputRef = useRef<HTMLInputElement>(null);
   const scanFileRef = useRef<HTMLInputElement>(null);
 
   const s = useShoppingSession({
     fileInputRef,
-    quickBarcodeInputRef,
-    receiptSectionRef,
     fallbackPhotoInputRef,
     scanFileRef,
   });
 
+  const [barcodeModalOpen, setBarcodeModalOpen] = useState(false);
+  const [barcodeScannerStartSignal, setBarcodeScannerStartSignal] = useState(0);
+  const [barcodeStep, setBarcodeStep] = useState<"scanner" | "result" | "photo">("scanner");
+  const [barcodeLookup, setBarcodeLookup] = useState<ShoppingBarcodeLookup | null>(null);
+  const [barcodePhotoDraft, setBarcodePhotoDraft] = useState<ShoppingBarcodePhotoDraft | null>(null);
+  const [barcodeNameDraft, setBarcodeNameDraft] = useState("");
+  const [barcodeUnitDraft, setBarcodeUnitDraft] = useState("each");
+  const [lastScannedBarcode, setLastScannedBarcode] = useState<string | null>(null);
+
   if (s.loading) {
     return (
-      <div className="p-6 text-sm text-muted">Loading Shopping Mode...</div>
+      <main className="py-4 md:py-6">
+        <DashboardPageContainer variant="standard">
+          <div className="p-2 text-sm text-muted">Loading Shopping Mode...</div>
+        </DashboardPageContainer>
+      </main>
     );
   }
 
   if (!s.session) {
     return (
-      <div className="p-4 space-y-4">
-          <Card className="p-5">
+      <main className="py-4 md:py-6">
+        <DashboardPageContainer variant="standard">
+          <div className="space-y-4">
+            <section className={SHOPPING_HOST_SURFACE_CLASS}>
             <p className="text-sm font-semibold mb-1">Start Shopping Session</p>
             <p className="text-xs text-muted mb-4">
               Use Google Places to choose your store. Free-text stores are disabled.
@@ -83,10 +119,10 @@ export default function ShoppingPage() {
                 ))}
               </div>
             )}
-          </Card>
+          </section>
 
           {s.selectedStore && (
-            <Card className="p-5">
+            <section className={SHOPPING_HOST_SURFACE_CLASS}>
               <p className="text-xs text-muted normal-case tracking-normal">Confirm Store</p>
               <h3 className="text-xl font-bold mt-1">{s.selectedStore.name}</h3>
               <p className="text-sm text-muted mt-1">{s.selectedStore.formatted_address}</p>
@@ -109,7 +145,7 @@ export default function ShoppingPage() {
                   Start Shopping
                 </Button>
               </div>
-            </Card>
+            </section>
           )}
 
           {s.error && <p className="text-sm text-danger">{s.error}</p>}
@@ -120,159 +156,171 @@ export default function ShoppingPage() {
           >
             View Past Orders
           </button>
-      </div>
+          </div>
+        </DashboardPageContainer>
+      </main>
     );
   }
 
   const session = s.session;
 
+  async function handleCheckout() {
+    const committedSessionId = await s.handleCommit();
+    if (!committedSessionId) return;
+    router.push(`/shopping/orders/${committedSessionId}`);
+  }
+
+  function openBarcodeModal() {
+    setBarcodeLookup(null);
+    setBarcodePhotoDraft(null);
+    setBarcodeNameDraft("");
+    setBarcodeUnitDraft("each");
+    setLastScannedBarcode(null);
+    setBarcodeStep("scanner");
+    setBarcodeModalOpen(true);
+    setBarcodeScannerStartSignal((prev) => prev + 1);
+  }
+
+  function closeBarcodeModal() {
+    setBarcodeModalOpen(false);
+    setBarcodeStep("scanner");
+    setBarcodeLookup(null);
+    setBarcodePhotoDraft(null);
+    setBarcodeNameDraft("");
+    setBarcodeUnitDraft("each");
+  }
+
+  function scanAgain() {
+    setBarcodeLookup(null);
+    setBarcodePhotoDraft(null);
+    setBarcodeNameDraft("");
+    setBarcodeStep("scanner");
+    setBarcodeScannerStartSignal((prev) => prev + 1);
+  }
+
+  async function handleDetectedBarcode(barcode: string) {
+    setLastScannedBarcode(barcode);
+    const lookup = await s.lookupBarcodeForCheckout(barcode);
+    if (!lookup) return;
+    setBarcodeLookup(lookup);
+    setBarcodeStep("result");
+  }
+
+  async function handleConfirmResolvedAdd() {
+    if (!barcodeLookup || barcodeLookup.status !== "resolved") return;
+    const saved = await s.addResolvedBarcodeLookupToSession(barcodeLookup);
+    if (!saved) return;
+    closeBarcodeModal();
+  }
+
+  async function handleBarcodePhotoCapture(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const barcodeHint = barcodeLookup?.normalized_barcode ?? lastScannedBarcode ?? null;
+    const draft = await s.analyzeMissingBarcodePhoto(file, barcodeHint);
+    if (barcodePhotoInputRef.current) {
+      barcodePhotoInputRef.current.value = "";
+    }
+    if (!draft) return;
+
+    setBarcodePhotoDraft(draft);
+    setBarcodeNameDraft(draft.suggested_name);
+    setBarcodeUnitDraft(draft.suggested_unit || "each");
+    setBarcodeStep("photo");
+  }
+
+  async function handleCreateFromPhoto() {
+    if (!barcodePhotoDraft) return;
+    const barcodeToPersist =
+      barcodePhotoDraft.inferred_barcode ??
+      barcodeLookup?.normalized_barcode ??
+      lastScannedBarcode;
+    const saved = await s.createPhotoFallbackItemAndAddToSession({
+      name: barcodeNameDraft,
+      unit: barcodeUnitDraft,
+      raw_text: barcodePhotoDraft.raw_text,
+      barcode: barcodeToPersist,
+    });
+    if (!saved) return;
+    closeBarcodeModal();
+  }
+
+  const commitSummaryCard = (
+    <div className="design-glass-surface space-y-3 p-4 text-foreground">
+      <div>
+        <p className="text-xs text-muted">Basket Total</p>
+        <p className="text-xl font-bold">{formatMoney(s.basketTotal)}</p>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <Button
+          onClick={handleCheckout}
+          loading={s.commitLoading || s.receiptScanning}
+        >
+          Checkout
+        </Button>
+        <Button
+          variant="secondary"
+          onClick={openBarcodeModal}
+          disabled={s.commitLoading || s.receiptScanning || s.barcodeLookupLoading || s.barcodeCreateLoading}
+        >
+          Barcode
+        </Button>
+      </div>
+      {session.receipt_id && (
+        <p className="mt-2 text-xs text-muted">
+          Receipt total: {formatMoney(session.receipt_total)}{" "}
+          <span className="text-muted/60">|</span>{" "}
+          Selected + tax: {formatMoney(s.selectedTotalWithTax)}
+        </p>
+      )}
+      {s.receiptScanIncomplete && !s.receiptScanning && (
+        <div className="rounded-xl border border-amber-400/30 bg-amber-500/10 p-3">
+          <p className="text-sm font-semibold text-amber-300">
+            Receipt scan incomplete
+          </p>
+          <p className="mt-1 text-xs text-amber-200/90">
+            {s.receiptTotalMismatch
+              ? (
+                  s.receiptTotalMissing
+                    ? "We could not read the receipt total from this scan. Scan the receipt again from Checkout."
+                    : `Selected items + tax = ${formatMoney(s.selectedTotalWithTax)}, but scanned receipt total = ${formatMoney(session.receipt_total)}. Scan the receipt again from Checkout.`
+                )
+              : "This receipt scan was not 100% successful. Scan the receipt again from Checkout."}
+          </p>
+          {s.receiptTotalMismatch && s.receiptSubtotalMismatch && session.receipt_subtotal != null && (
+            <p className="mt-1 text-xs text-amber-200/80">
+              Selected subtotal = {formatMoney(s.basketTotal)}; scanned subtotal = {formatMoney(session.receipt_subtotal)}.
+            </p>
+          )}
+        </div>
+      )}
+      <Button
+        variant="danger"
+        className="w-full"
+        onClick={s.handleCancelSession}
+        loading={s.cancelLoading}
+      >
+        Cancel Session
+      </Button>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={s.handleReceiptScan}
+        className="hidden"
+      />
+    </div>
+  );
+
   return (
     <>
-      <div className="p-4 pb-44 space-y-4">
-        <Card className="p-5">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs text-muted normal-case tracking-normal">Store</p>
-              <h2 className="text-xl font-bold">{session.store_name}</h2>
-              <p className="text-xs text-muted">{session.store_address}</p>
-            </div>
-            <Badge variant={session.status === "ready" ? "success" : "warning"}>
-              {session.status}
-            </Badge>
-          </div>
-          <div className="mt-3 flex justify-end">
-            <Button
-              variant="danger"
-              size="sm"
-              onClick={s.handleCancelSession}
-              loading={s.cancelLoading}
-            >
-              Cancel Session
-            </Button>
-          </div>
-          <div className="grid grid-cols-3 gap-2 mt-4">
-            <div>
-              <p className="text-xs text-muted">Staged</p>
-              <p className="font-bold">{formatMoney(session.staged_subtotal)}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted">Receipt</p>
-              <p className="font-bold">{formatMoney(session.receipt_total)}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted">Issues</p>
-              <p className="font-bold">{s.blockingIssueCount}</p>
-            </div>
-          </div>
-          {s.receiptScanIncomplete && !s.receiptScanning && (
-            <div className="mt-3 rounded-xl border border-amber-400/30 bg-amber-500/10 p-3">
-              <p className="text-sm font-semibold text-amber-300">
-                Receipt scan incomplete
-              </p>
-              <p className="mt-1 text-xs text-amber-200/90">
-                {s.receiptTotalMismatch
-                  ? (
-                      s.receiptTotalMissing
-                        ? "We could not read the receipt total from this scan. Please rescan the receipt before committing."
-                        : `Selected items + tax = ${formatMoney(s.selectedTotalWithTax)}, but scanned receipt total = ${formatMoney(session.receipt_total)}. Please rescan the receipt before committing.`
-                    )
-                  : "This receipt scan was not 100% successful. Please rescan the receipt before committing."}
-              </p>
-              {s.receiptTotalMismatch && s.receiptSubtotalMismatch && session.receipt_subtotal != null && (
-                <p className="mt-1 text-xs text-amber-200/80">
-                  Selected subtotal = {formatMoney(s.basketTotal)}; scanned subtotal = {formatMoney(session.receipt_subtotal)}.
-                </p>
-              )}
-              <Button
-                variant="secondary"
-                size="sm"
-                className="mt-3"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                Rescan Receipt
-              </Button>
-            </div>
-          )}
-        </Card>
-
-        <Card className="p-5">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-sm font-semibold">Quick Shop (Barcode)</p>
-              <p className="mt-1 text-xs text-muted">
-                Scan UPC/EAN, save to cart, scan next item. We check internal barcode mappings first, then the layered barcode provider stack, and defer web/AI fallback until after receipt scan.
-              </p>
-            </div>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={s.handleConcludeQuickShop}
-              disabled={s.receiptScanning}
-            >
-              Conclude Quick Shop
-            </Button>
-          </div>
-
-          <div className="mt-3 flex items-end gap-2">
-            <div className="flex-1">
-              <Input
-                ref={quickBarcodeInputRef}
-                label="Scan UPC / EAN"
-                placeholder="Scan or type barcode..."
-                value={s.quickBarcode}
-                onChange={(e) => s.setQuickBarcode(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key !== "Enter") return;
-                  e.preventDefault();
-                  if (!s.quickScanLoading) void s.handleQuickBarcodeAdd();
-                }}
-              />
-            </div>
-            <Button onClick={() => void s.handleQuickBarcodeAdd()} loading={s.quickScanLoading}>
-              Scan & Save
-            </Button>
-          </div>
-          <div className="mt-2">
-            <BarcodeCameraScanner
-              disabled={s.quickScanLoading || s.receiptScanning}
-              triggerLabel="Scan UPC / EAN With Camera"
-              onDetected={(detectedBarcode) => {
-                void s.handleQuickBarcodeAdd(detectedBarcode);
-              }}
-            />
-          </div>
-
-          {s.quickScanFeedback && (
-            <div
-              className={`mt-3 rounded-xl border p-3 ${
-                s.quickScanFeedback.status === "resolved_inventory"
-                  ? "border-success/25 bg-success/10"
-                  : s.quickScanFeedback.status === "resolved_barcode_metadata"
-                    ? "border-sky-400/25 bg-sky-500/10"
-                  : "border-amber-400/25 bg-amber-500/10"
-              }`}
-            >
-              <p className="text-sm font-semibold">
-                {s.quickScanFeedback.status !== "unresolved"
-                  ? s.quickScanFeedback.display_name
-                  : "Unresolved Item"}
-              </p>
-              <p className="mt-1 text-xs text-muted">
-                UPC {s.quickScanFeedback.normalized_barcode}
-              </p>
-              <p className="mt-1 text-xs text-muted">
-                Source: {s.quickScanFeedback.source} Ã¢â‚¬Â¢ Confidence: {s.quickScanFeedback.confidence}
-              </p>
-              {s.quickScanFeedback.deferred_resolution && (
-                <p className="mt-1 text-xs text-muted">
-                  Added as a provisional cart item. Receipt scan remains the authoritative phase for final matching, unresolved pairing, and any deferred web/AI fallback.
-                </p>
-              )}
-            </div>
-          )}
-        </Card>
-
-        <Card className="p-5">
+      <main className="py-4 md:py-6">
+        <DashboardPageContainer variant="full">
+          <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] xl:grid-cols-[minmax(0,1fr)_minmax(320px,400px)]">
+            <div className="space-y-4 pb-52 md:pb-0">
+        <section className={SHOPPING_HOST_SURFACE_CLASS}>
           <p className="text-sm font-semibold mb-3">Add To Basket</p>
           <Input
             placeholder="Search or type item name"
@@ -294,9 +342,9 @@ export default function ShoppingPage() {
                   <p className="text-sm font-medium">{suggestion.display_name}</p>
                   <p className="mt-0.5 text-xs text-muted">
                     PLU {suggestion.plu_code}
-                    {suggestion.variety ? ` Ã¢â‚¬Â¢ ${suggestion.variety}` : ""}
-                    {suggestion.commodity ? ` Ã¢â‚¬Â¢ ${suggestion.commodity}` : ""}
-                    {" Ã¢â‚¬Â¢ "}
+                    {suggestion.variety ? ` • ${suggestion.variety}` : ""}
+                    {suggestion.commodity ? ` • ${suggestion.commodity}` : ""}
+                    {" • "}
                     Add qty {Number(s.qty) > 0 ? Number(s.qty) : 1}
                   </p>
                 </button>
@@ -327,7 +375,7 @@ export default function ShoppingPage() {
 
           <div className="relative mt-3">
             <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
-            <div className="relative flex justify-center"><span className="bg-[#080d14] px-2 text-xs text-muted">or</span></div>
+            <div className="relative flex justify-center"><span className="bg-background px-2 text-xs text-muted">or</span></div>
           </div>
 
           <input
@@ -346,11 +394,11 @@ export default function ShoppingPage() {
           >
             Scan Shelf Label
           </Button>
-        </Card>
+        </section>
 
         {/* Shelf Label Scan Flow */}
         {s.scanStep !== "idle" && (
-          <Card className="p-5">
+          <section className={SHOPPING_HOST_SURFACE_CLASS}>
             <div className="flex items-center justify-between mb-3">
               <p className="text-sm font-semibold">Shelf Label Scan</p>
               <button onClick={s.resetScan} className="text-xs text-primary">Cancel</button>
@@ -368,7 +416,7 @@ export default function ShoppingPage() {
 
             {s.scanStep === "matched" && s.scanParsed && (
               <>
-                <Card className="bg-white/5 mb-3">
+                <div className={`${SHOPPING_HOST_SUBSURFACE_CLASS} mb-3`}>
                   <p className="text-xs text-muted">Detected</p>
                   <p className="font-medium">{s.scanParsed.product_name ?? s.scanParsed.raw_text}</p>
                   <div className="mt-1 flex items-center gap-2">
@@ -378,12 +426,16 @@ export default function ShoppingPage() {
                       {s.scanParsed.quantity > 1 ? ` x${s.scanParsed.quantity}` : ""}
                     </p>
                   </div>
-                </Card>
+                </div>
 
                 <p className="text-sm text-muted mb-2">Select the matching item:</p>
                 <div className="space-y-2">
                   {s.scanMatches.map((match) => (
-                    <Card key={match.inventory_item_id} onClick={() => s.handleConfirmScanMatch(match)}>
+                    <Card
+                      key={match.inventory_item_id}
+                      className="border-border bg-foreground/[0.03] p-3"
+                      onClick={() => s.handleConfirmScanMatch(match)}
+                    >
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-medium">{match.item_name}</p>
@@ -406,10 +458,10 @@ export default function ShoppingPage() {
 
                 <div className="relative mt-3">
                   <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
-                  <div className="relative flex justify-center"><span className="bg-[#080d14] px-2 text-xs text-muted">not listed?</span></div>
+                  <div className="relative flex justify-center"><span className="bg-background px-2 text-xs text-muted">not listed?</span></div>
                 </div>
                 <Button variant="secondary" className="w-full mt-3" onClick={() => s.resetScan()}>
-                  None of these Ã¢â‚¬â€ add new item
+                  None of these - add new item
                 </Button>
               </>
             )}
@@ -423,68 +475,122 @@ export default function ShoppingPage() {
             )}
 
             {s.scanError && <p className="text-sm text-danger mt-2">{s.scanError}</p>}
-          </Card>
+          </section>
         )}
 
-        <div className="space-y-2">
-          {(session.items ?? []).map((item) => (
-            <Card key={item.id} className="p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex items-start gap-3">
-                  <ItemImage
-                    src={item.inventory_item?.image_url ?? null}
-                    name={displayShoppingItemName(item.raw_name)}
-                    category={item.inventory_item?.category?.name ?? null}
-                    size="md"
-                  />
-                  <div className="min-w-0">
-                    <p className="font-semibold truncate">{displayShoppingItemName(item.raw_name)}</p>
-                    <div className="mt-1 flex items-center gap-2">
-                      <Badge variant={reconVariant[item.reconciliation_status]}>
-                        {reconLabel[item.reconciliation_status]}
-                      </Badge>
-                      <p className="text-xs text-muted">
-                        x{asNumber(item.quantity) || 1}{item.unit ? ` ${item.unit}` : ""}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <button
-                  onClick={() => s.handleRemoveItem(item.id)}
-                  className="text-xs text-danger hover:underline"
-                >
-                  Remove
-                </button>
-              </div>
+        <div className="design-glass-surface p-4">
+          {s.items.map((item, index) => {
+            const { displayName, pluCode } = splitItemNameAndPlu(item.raw_name);
+            return (
+              <div
+                key={item.id}
+                className={`py-3 ${index !== s.items.length - 1 ? "border-b border-border/60" : ""}`}
+              >
+              <div className="flex items-center gap-3">
+                <ItemImage
+                  src={item.inventory_item?.image_url ?? null}
+                  name={displayName}
+                  category={item.inventory_item?.category?.name ?? null}
+                  size="md"
+                />
 
-              <div className="grid grid-cols-3 gap-2 mt-3">
-                <Input
-                  type="number"
-                  defaultValue={asNumber(item.quantity)}
-                  min="0.01"
-                  step="any"
-                  onBlur={(e) => s.handleUpdateItem(item, { quantity: Number(e.target.value) || 1 })}
-                />
-                <Input
-                  type="number"
-                  defaultValue={item.staged_unit_price != null ? asNumber(item.staged_unit_price) : ""}
-                  min="0"
-                  step="0.01"
-                  onBlur={(e) => {
-                    const val = e.target.value.trim();
-                    s.handleUpdateItem(item, { unit_price: val ? Number(val) : null });
-                  }}
-                />
-                <Button variant="secondary" onClick={() => s.handleUpdateItem(item, { name: item.raw_name })}>
-                  Save
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-base font-semibold">
+                    {displayName}
+                  </p>
+                  <p className="mt-1 text-xl font-semibold text-foreground">
+                    {formatMoney(
+                      item.staged_line_total != null
+                        ? item.staged_line_total
+                        : item.staged_unit_price
+                    )}
+                  </p>
+                  {pluCode && (
+                    <p className="mt-0.5 text-xs text-muted">PLU {pluCode}</p>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1 rounded-full border border-border bg-foreground/[0.03] p-1">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 w-8 rounded-full px-0"
+                    onClick={() =>
+                      s.handleUpdateItem(item, {
+                        quantity: Math.max(1, (asNumber(item.quantity) || 1) - 1),
+                      })
+                    }
+                    aria-label="Decrease quantity"
+                  >
+                    <svg
+                      viewBox="0 0 20 20"
+                      fill="none"
+                      className="h-4 w-4"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M4.5 10h11"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </Button>
+                  <span className="w-7 text-center text-sm font-semibold text-foreground">
+                    {asNumber(item.quantity) || 1}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 w-8 rounded-full px-0"
+                    onClick={() =>
+                      s.handleUpdateItem(item, {
+                        quantity: (asNumber(item.quantity) || 1) + 1,
+                      })
+                    }
+                    aria-label="Increase quantity"
+                  >
+                    <svg
+                      viewBox="0 0 20 20"
+                      fill="none"
+                      className="h-4 w-4"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M10 4.5v11M4.5 10h11"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </Button>
+                </div>
+
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-9 w-9 rounded-full px-0 text-danger hover:bg-danger/10 hover:text-danger"
+                  onClick={() => s.handleRemoveItem(item.id)}
+                  aria-label="Remove item"
+                >
+                  <svg
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    className="h-4 w-4"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M5.8 6.2h8.4l-.5 9a1.2 1.2 0 0 1-1.2 1.1H7.5a1.2 1.2 0 0 1-1.2-1.1l-.5-9ZM7.8 6.2V5.1c0-.6.5-1.1 1.1-1.1h2.2c.6 0 1.1.5 1.1 1.1v1.1M4.8 6.2h10.4"
+                      stroke="currentColor"
+                      strokeWidth="1.4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
                 </Button>
               </div>
 
-              <div className="mt-2 text-xs text-muted">
-                Staged: {formatMoney(item.staged_line_total)} {item.receipt_line_total != null && `Ã¢â‚¬Â¢ Receipt: ${formatMoney(item.receipt_line_total)}`}
-              </div>
-
-              {item.reconciliation_status !== "exact" && item.resolution === "pending" && (
+                {item.reconciliation_status !== "exact" && item.resolution === "pending" && (
                 s.receiptScanIncomplete ? (
                   <div className="mt-3 rounded-xl border border-amber-400/25 bg-amber-500/10 p-3">
                     <p className="text-xs text-amber-200/90">
@@ -500,7 +606,7 @@ export default function ShoppingPage() {
                     </Button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-3 gap-1 mt-3">
+                  <div className="mt-3 grid grid-cols-3 gap-1">
                     <Button size="sm" variant="secondary" onClick={() => s.handleResolve(item.id, "accept_staged")}>
                       Keep Staged
                     </Button>
@@ -513,9 +619,10 @@ export default function ShoppingPage() {
                   </div>
                 )
               )}
-            </Card>
-          ))}
-          {session.items.length === 0 && (
+              </div>
+            );
+          })}
+          {s.items.length === 0 && (
             <p className="text-sm text-muted text-center py-6">Your basket is empty</p>
           )}
         </div>
@@ -530,7 +637,7 @@ export default function ShoppingPage() {
         />
 
         {session.receipt_id && !s.receiptScanIncomplete && s.unresolvedScannedBarcodeItems.length > 0 && (
-          <Card className="p-5">
+          <section className={SHOPPING_HOST_SURFACE_CLASS}>
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold">Manual Barcode-to-Receipt Pairing</p>
@@ -552,7 +659,7 @@ export default function ShoppingPage() {
                 {s.unresolvedScannedBarcodeItems.map((barcodeItem) => (
                   <div
                     key={`pair-${barcodeItem.id}`}
-                    className="rounded-xl border border-border p-3"
+                    className={SHOPPING_HOST_SUBSURFACE_CLASS}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
@@ -562,7 +669,7 @@ export default function ShoppingPage() {
                         <p className="mt-1 text-xs text-muted">
                           UPC {getItemBarcodeBadgeValue(barcodeItem)}
                           {barcodeItem.staged_line_total != null
-                            ? ` Ã¢â‚¬Â¢ Staged ${formatMoney(barcodeItem.staged_line_total)}`
+                            ? ` • Staged ${formatMoney(barcodeItem.staged_line_total)}`
                             : ""}
                         </p>
                       </div>
@@ -589,7 +696,7 @@ export default function ShoppingPage() {
                     </div>
 
                     {s.photoFallbackAnalysisByItemId[barcodeItem.id] && (
-                      <div className="mt-3 rounded-xl border border-border p-3">
+                      <div className={`mt-3 ${SHOPPING_HOST_SUBSURFACE_CLASS}`}>
                         <p className="text-xs font-semibold normal-case tracking-normal text-muted">
                           Photo Hints
                         </p>
@@ -610,7 +717,7 @@ export default function ShoppingPage() {
                     )}
 
                     {s.webFallbackSuggestionByItemId[barcodeItem.id] && (
-                      <div className="mt-3 rounded-xl border border-border p-3">
+                      <div className={`mt-3 ${SHOPPING_HOST_SUBSURFACE_CLASS}`}>
                         <p className="text-xs font-semibold normal-case tracking-normal text-muted">
                           Web/AI Fallback Suggestion
                         </p>
@@ -723,67 +830,220 @@ export default function ShoppingPage() {
                 ))}
               </div>
             )}
-          </Card>
+          </section>
         )}
 
-        <div ref={receiptSectionRef}>
-          <Card className="p-5">
-          <p className="text-sm font-semibold mb-2">Checkout Receipt</p>
-          <p className="text-xs text-muted mb-3">
-            Take a photo of your receipt to auto-scan and reconcile items. This is the authoritative phase for final matching and deferred fallback resolution.
-          </p>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            onChange={s.handleReceiptScan}
-            className="hidden"
-          />
-          <Button
-            className="w-full"
-            onClick={() => fileInputRef.current?.click()}
-            loading={s.receiptScanning}
-          >
-            {s.receiptScanning ? "Scanning Receipt..." : "Scan Receipt"}
-          </Button>
-          {s.receiptScanning && (
-            <p className="text-xs text-muted text-center mt-2 animate-pulse">
-              Processing with TabScanner Ã¢â‚¬â€ this may take a few seconds...
-            </p>
-          )}
-          </Card>
-        </div>
 
-        {s.notice && <p className="text-sm text-cyan-300">{s.notice}</p>}
+        {s.notice && <p className="text-sm text-primary">{s.notice}</p>}
         {s.error && <p className="text-sm text-danger">{s.error}</p>}
-      </div>
-
-      <div className="fixed left-0 right-0 bottom-24 z-40 px-3">
-        <div className="max-w-lg mx-auto rounded-xl border border-white/18 bg-[linear-gradient(160deg,rgba(8,24,43,0.9)_0%,rgba(5,17,32,0.86)_55%,rgba(7,18,34,0.9)_100%)] p-3 text-white shadow-[0_12px_20px_rgba(3,8,18,0.5),inset_0_1px_0_rgba(255,255,255,0.2)] backdrop-blur-xl">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs text-white/70">Basket Total</p>
-              <p className="text-xl font-bold">{formatMoney(s.basketTotal)}</p>
             </div>
-            <Button
-              className="min-w-[160px]"
-              onClick={s.handleCommit}
-              loading={s.commitLoading}
-              disabled={session.status !== "ready" || s.receiptTotalMismatch}
-            >
-              Confirm & Commit
-            </Button>
+
+            <aside className="hidden md:block">
+              <div className="sticky top-4">
+                {commitSummaryCard}
+              </div>
+            </aside>
           </div>
-          {session.receipt_id && (
-            <p className="mt-2 text-xs text-white/65">
-              Receipt total: {formatMoney(session.receipt_total)}{" "}
-              <span className="text-white/35">|</span>{" "}
-              Selected + tax: {formatMoney(s.selectedTotalWithTax)}
-            </p>
-          )}
+        </DashboardPageContainer>
+      </main>
+
+      <div className="fixed left-0 right-0 bottom-0 z-40 px-3 pb-3 md:hidden">
+        <div className="mx-auto max-w-lg">
+          {commitSummaryCard}
         </div>
       </div>
+
+      <input
+        ref={barcodePhotoInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={handleBarcodePhotoCapture}
+        className="hidden"
+      />
+
+      {barcodeModalOpen && (
+        <div className="fixed inset-0 z-[210] flex items-center justify-center bg-black/60 p-3">
+          <div className="w-full max-w-[540px] rounded-2xl border border-border bg-card p-4 shadow-[var(--surface-card-shadow)]">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm font-semibold text-foreground">
+                {barcodeStep === "scanner"
+                  ? "Scan Barcode"
+                  : barcodeStep === "result"
+                    ? "Review Scan"
+                    : "Create Item From Photo"}
+              </p>
+              <Button variant="ghost" size="sm" onClick={closeBarcodeModal}>
+                Close
+              </Button>
+            </div>
+
+            {barcodeStep === "scanner" && (
+              <div className="mt-3 space-y-3">
+                <p className="text-xs text-muted">
+                  Point the camera at the barcode. If decode fails, use photo fallback.
+                </p>
+                <BarcodeCameraScanner
+                  showTrigger={false}
+                  startSignal={barcodeScannerStartSignal}
+                  disabled={s.barcodeLookupLoading || s.barcodePhotoAnalyzeLoading || s.barcodeCreateLoading}
+                  onDetected={(detectedBarcode) => {
+                    void handleDetectedBarcode(detectedBarcode);
+                  }}
+                  helperText="The scanner auto-detects UPC/EAN and moves to review."
+                  cancelLabel="Stop Scanner"
+                />
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant="secondary"
+                    onClick={() => barcodePhotoInputRef.current?.click()}
+                    loading={s.barcodePhotoAnalyzeLoading}
+                  >
+                    Take Item Photo
+                  </Button>
+                  <Button variant="ghost" onClick={closeBarcodeModal}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {barcodeStep === "result" && barcodeLookup?.status === "resolved" && (
+              <div className="mt-3 space-y-3">
+                <div className={SHOPPING_HOST_SUBSURFACE_CLASS}>
+                  <div className="flex items-start gap-3">
+                    <ItemImage
+                      src={barcodeLookup.item.image_url}
+                      name={barcodeLookup.item.name}
+                      category={barcodeLookup.item.category?.name ?? null}
+                      size="md"
+                    />
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-foreground">{barcodeLookup.item.name}</p>
+                      <p className="text-xs text-muted">UPC {barcodeLookup.normalized_barcode}</p>
+                      <p className="text-xs text-muted">
+                        Source {barcodeLookup.source.replace(/_/g, " ")} • {barcodeLookup.confidence} confidence
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button onClick={() => void handleConfirmResolvedAdd()} loading={s.barcodeCreateLoading}>
+                    Confirm &amp; Add
+                  </Button>
+                  <Button variant="secondary" onClick={scanAgain}>
+                    Scan Again
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {barcodeStep === "result" && barcodeLookup && barcodeLookup.status !== "resolved" && (
+              <div className="mt-3 space-y-3">
+                <div className="rounded-xl border border-amber-400/35 bg-amber-500/12 p-3">
+                  <p className="text-sm font-semibold text-amber-200">Item not found in your inventory</p>
+                  <p className="mt-1 text-xs text-amber-100/90">
+                    {barcodeLookup.status === "resolved_external"
+                      ? "We found external metadata, but this barcode is not mapped to your items yet."
+                      : "No internal item mapping was found for this scan."}
+                  </p>
+                  {barcodeLookup.normalized_barcode && (
+                    <p className="mt-1 text-xs text-amber-100/90">UPC {barcodeLookup.normalized_barcode}</p>
+                  )}
+                </div>
+
+                {barcodeLookup.status === "resolved_external" && (
+                  <div className={SHOPPING_HOST_SUBSURFACE_CLASS}>
+                    <div className="flex items-start gap-3">
+                      <ItemImage
+                        src={barcodeLookup.metadata.image_url}
+                        name={barcodeLookup.metadata.name}
+                        category={barcodeLookup.metadata.category_hint}
+                        size="sm"
+                      />
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-foreground">{barcodeLookup.metadata.name}</p>
+                        <p className="text-xs text-muted">
+                          {[barcodeLookup.metadata.brand, barcodeLookup.metadata.size_text]
+                            .filter(Boolean)
+                            .join(" • ")}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant="secondary"
+                    onClick={() => barcodePhotoInputRef.current?.click()}
+                    loading={s.barcodePhotoAnalyzeLoading}
+                  >
+                    Take Item Photo
+                  </Button>
+                  <Button variant="secondary" onClick={scanAgain}>
+                    Scan Again
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {barcodeStep === "photo" && barcodePhotoDraft && (
+              <div className="mt-3 space-y-3">
+                <div className={SHOPPING_HOST_SUBSURFACE_CLASS}>
+                  <p className="text-xs text-muted">Detected from photo</p>
+                  <p className="text-sm font-semibold text-foreground">{barcodeNameDraft || "New Item"}</p>
+                  <p className="mt-1 text-xs text-muted">
+                    {barcodePhotoDraft.inferred_barcode
+                      ? `Barcode to save: ${barcodePhotoDraft.inferred_barcode}`
+                      : "No barcode detected from image; item will be created without barcode mapping."}
+                  </p>
+                </div>
+
+                <Input
+                  label="Item Name"
+                  value={barcodeNameDraft}
+                  onChange={(e) => setBarcodeNameDraft(e.target.value)}
+                  placeholder="Enter item name"
+                />
+                <Select
+                  label="Unit"
+                  value={barcodeUnitDraft}
+                  onChange={(e) => setBarcodeUnitDraft(e.target.value)}
+                  options={RECEIVE_UNIT_OPTIONS_COMPACT.map((option) => ({
+                    value: option.value,
+                    label: option.label,
+                  }))}
+                />
+
+                {barcodePhotoDraft.product_info && (
+                  <p className="text-xs text-muted">
+                    {[barcodePhotoDraft.product_info.brand, barcodePhotoDraft.product_info.quantity_description, barcodePhotoDraft.product_info.weight]
+                      .filter(Boolean)
+                      .join(" • ")}
+                  </p>
+                )}
+
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    onClick={() => void handleCreateFromPhoto()}
+                    loading={s.barcodeCreateLoading}
+                    disabled={!barcodeNameDraft.trim()}
+                  >
+                    Save &amp; Add
+                  </Button>
+                  <Button variant="secondary" onClick={scanAgain}>
+                    Scan Again
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {s.error && <p className="mt-3 text-sm text-danger">{s.error}</p>}
+          </div>
+        </div>
+      )}
     </>
   );
 }
+

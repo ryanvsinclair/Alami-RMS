@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { DashboardPageContainer } from "@/components/layout/dashboard-page-container";
 import { HostOrderComposerPageClient } from "@/features/table-service/ui";
 import {
   getDiningTableById,
@@ -30,14 +31,15 @@ export default async function TableServiceHostPage({
   const availableMenuItems = menuSetup.items.filter((item) => item.isAvailable);
 
   return (
-    <main className="mx-auto max-w-3xl p-4 pt-8">
-      <HostOrderComposerPageClient
-        table={table}
-        session={session}
-        kitchenOrder={kitchenOrder}
-        categories={menuSetup.categories}
-        items={availableMenuItems}
-      />
+    <main className="py-4 md:py-6">
+      <DashboardPageContainer variant="wide">
+        <HostOrderComposerPageClient
+          session={session}
+          kitchenOrder={kitchenOrder}
+          categories={menuSetup.categories}
+          items={availableMenuItems}
+        />
+      </DashboardPageContainer>
     </main>
   );
 }

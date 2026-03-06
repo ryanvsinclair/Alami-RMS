@@ -232,7 +232,10 @@ export async function reconcileShoppingSessionReceipt(data: {
       },
     });
 
-    if (session.status === "committed" || session.status === "cancelled") {
+    if (
+      session.status === "cancelled" ||
+      (session.status === "committed" && Boolean(session.receipt_id))
+    ) {
       throw new Error("Session is closed");
     }
 
@@ -325,7 +328,10 @@ export async function reconcileWithTabScannerData(params: {
       },
     });
 
-    if (session.status === "committed" || session.status === "cancelled") {
+    if (
+      session.status === "cancelled" ||
+      (session.status === "committed" && Boolean(session.receipt_id))
+    ) {
       throw new Error("Session is closed");
     }
 

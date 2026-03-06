@@ -109,9 +109,9 @@ export function DocumentInboxClient() {
   }, [filter]);
 
   return (
-    <div className="space-y-4 p-4">
+    <div className="space-y-4 p-4 md:p-5 xl:p-6">
       <section className="rounded-3xl border border-border bg-card p-5 shadow-[var(--surface-card-shadow)]">
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-xs font-semibold normal-case tracking-normal text-primary">Documents</p>
             <h1 className="mt-1 text-2xl font-bold text-foreground">{title}</h1>
@@ -131,7 +131,7 @@ export function DocumentInboxClient() {
         </div>
       </section>
 
-      <section className="flex flex-wrap gap-2">
+      <section className="flex flex-wrap gap-2 md:gap-2.5">
         {FILTERS.map((entry) => {
           const active = filter === entry.key;
           return (
@@ -185,22 +185,24 @@ export function DocumentInboxClient() {
               href={`/documents/${draft.id}`}
               className="block rounded-xl border border-border bg-card p-4 transition-colors hover:border-foreground/20"
             >
-              <div className="flex items-start justify-between gap-3">
+              <div className="grid gap-2 md:grid-cols-2 md:items-center xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-foreground">
                     {draft.parsed_vendor_name ?? draft.vendor_profile?.vendor_name ?? "Unknown Vendor"}
                   </p>
-                  <p className="mt-1 text-xs text-muted">
-                    {formatDate(draft.parsed_date ?? draft.created_at)}
-                  </p>
-                  <p className="mt-1 text-sm font-semibold text-foreground">
-                    {formatMoney(draft.parsed_total)}
-                  </p>
+                  <p className="mt-1 text-xs text-muted">{formatDate(draft.parsed_date ?? draft.created_at)}</p>
                 </div>
-                <div className="flex flex-col items-end gap-1">
+                <p className="text-sm font-semibold text-foreground md:text-right xl:text-left">
+                  {formatMoney(draft.parsed_total)}
+                </p>
+                <p className="text-xs text-muted md:text-right xl:text-left">
+                  Confidence: {draft.confidence_band ?? "none"}
+                </p>
+                <div className="flex items-center gap-2 md:justify-end">
                   <Badge variant={statusVariant(draft.status)}>
                     {draft.status.replace(/_/g, " ")}
                   </Badge>
+                  {draft.auto_posted ? <Badge variant="info">auto</Badge> : null}
                 </div>
               </div>
             </Link>

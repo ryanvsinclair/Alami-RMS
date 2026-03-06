@@ -17,7 +17,6 @@ export type KitchenOrderItemStatusContract = (typeof KITCHEN_ORDER_ITEM_STATUSES
 
 export const KITCHEN_TERMINAL_ITEM_STATUSES = [
   "served",
-  "cancelled",
 ] as const satisfies readonly KitchenOrderItemStatusContract[];
 const KITCHEN_TERMINAL_STATUS_SET = new Set<KitchenOrderItemStatusContract>(
   KITCHEN_TERMINAL_ITEM_STATUSES,
@@ -54,6 +53,7 @@ export interface TableServiceMenuItemSummary {
   categoryId: string | null;
   name: string;
   description: string | null;
+  imageUrl: string | null;
   price: number | string;
   isAvailable: boolean;
   sortOrder: number;
@@ -101,6 +101,8 @@ export interface TableServiceKitchenQueueItemSummary {
   id: string;
   menuItemId: string;
   menuItemName: string;
+  categoryId: string | null;
+  categoryName: string | null;
   quantity: number;
   notes: string | null;
   status: KitchenOrderItemStatusContract;
@@ -136,9 +138,15 @@ export interface UpsertMenuItemInput {
   categoryId?: string | null;
   name: string;
   description?: string | null;
+  imageUrl?: string | null;
   price: number;
   isAvailable?: boolean;
   sortOrder?: number;
+}
+
+export interface MenuItemImageUploadResult {
+  publicUrl: string;
+  storagePath: string;
 }
 
 export interface UpsertDiningTableInput {
@@ -168,6 +176,13 @@ export interface KitchenOrderDraftItemInput {
 export interface UpdateKitchenOrderItemStatusInput {
   kitchenOrderItemId: string;
   status: KitchenOrderItemStatusContract;
+  bumpQueuePosition?: boolean;
+}
+
+export interface RequestKitchenOrderItemChangeInput {
+  kitchenOrderItemId: string;
+  quantity?: number;
+  notes?: string | null;
 }
 
 export interface CloseKitchenOrderInput {

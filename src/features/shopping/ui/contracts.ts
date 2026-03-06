@@ -4,6 +4,7 @@
  */
 
 import type { ProductInfo } from "@/domain/parsers/product-name";
+import type { IntakeItemSource } from "@/features/intake/shared";
 
 export type SessionStatus = "draft" | "reconciling" | "ready" | "committed" | "cancelled";
 
@@ -19,6 +20,7 @@ export interface ShoppingItem {
   } | null;
   receipt_line_item_id?: string | null;
   scanned_barcode?: string | null;
+  intake_source?: IntakeItemSource | null;
   raw_name: string;
   quantity: number | string;
   unit: string;
@@ -107,6 +109,49 @@ export type QuickScanFeedback = {
   deferred_resolution: boolean;
   source: string;
   confidence: string;
+};
+
+export type ShoppingBarcodeLookup =
+  | {
+      status: "resolved";
+      normalized_barcode: string;
+      source: string;
+      confidence: string;
+      item: {
+        id: string;
+        name: string;
+        unit: string;
+        image_url: string | null;
+        category: { name: string } | null;
+      };
+    }
+  | {
+      status: "resolved_external";
+      normalized_barcode: string;
+      source: string;
+      confidence: string;
+      metadata: {
+        name: string;
+        brand: string | null;
+        size_text: string | null;
+        category_hint: string | null;
+        image_url: string | null;
+      };
+    }
+  | {
+      status: "unresolved";
+      normalized_barcode: string | null;
+      source: string;
+      confidence: string;
+      reason: "invalid_barcode" | "not_found";
+    };
+
+export type ShoppingBarcodePhotoDraft = {
+  raw_text: string;
+  product_info: ProductInfo | null;
+  suggested_name: string;
+  suggested_unit: string;
+  inferred_barcode: string | null;
 };
 
 // ─── Display constants ───────────────────────────────────────

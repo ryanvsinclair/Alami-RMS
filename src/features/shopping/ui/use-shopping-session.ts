@@ -7,25 +7,25 @@
 
 import { useEffect, useMemo, useState, type RefObject } from "react";
 import {
-  addShoppingSessionItem,
-  addShoppingSessionItemByBarcodeQuick,
-  addShelfLabelItem,
   analyzeShoppingSessionBarcodeItemPhoto,
   cancelShoppingSession,
-  commitShoppingSession,
+  checkoutShoppingSession,
   getActiveShoppingSession,
   pairShoppingSessionBarcodeItemToReceiptItem,
   searchProduceCatalog,
   scanAndReconcileReceipt,
   suggestShoppingSessionBarcodeReceiptPairWithWebFallback,
-  removeShoppingSessionItem,
   resolveShoppingSessionItem,
   scanShelfLabel,
   startShoppingSession,
-  updateShoppingSessionItem,
 } from "@/app/actions/modules/shopping";
+import { resolveBarcode } from "@/app/actions/core/barcode-resolver";
+import { ocrImage } from "@/app/actions/modules/ocr";
 import { uploadReceiptImageAction } from "@/app/actions/core/upload";
 import { compressImage } from "@/shared/utils/compress-image";
+import { normalizeBarcode } from "@/core/utils/barcode";
+import type { IntakeItemSource } from "@/features/intake/shared";
+import type { UnitType } from "@/lib/generated/prisma/client";
 import {
   autocompletePlaces,
   getPlaceDetails,
@@ -42,7 +42,8 @@ import {
   type ShoppingItem,
   type ShoppingFallbackPhotoAnalysis,
   type ShoppingWebFallbackSuggestion,
-  type QuickScanFeedback,
+  type ShoppingBarcodeLookup,
+  type ShoppingBarcodePhotoDraft,
 } from "./contracts";
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
@@ -51,8 +52,6 @@ type ScanStep = "idle" | "scanning" | "matched" | "not_found";
 
 export type ShoppingSessionRefs = {
   fileInputRef: RefObject<HTMLInputElement | null>;
-  quickBarcodeInputRef: RefObject<HTMLInputElement | null>;
-  receiptSectionRef: RefObject<HTMLDivElement | null>;
   fallbackPhotoInputRef: RefObject<HTMLInputElement | null>;
   scanFileRef: RefObject<HTMLInputElement | null>;
 };
@@ -64,8 +63,65 @@ type ProduceSuggestion = {
   variety: string | null;
 };
 
+type ShoppingDraftItemInput = {
+  name: string;
+  quantity: number;
+  unit?: string;
+  unit_price?: number | null;
+  inventory_item_id?: string | null;
+  scanned_barcode?: string | null;
+  inventory_item?: ShoppingItem["inventory_item"];
+  intake_source?: IntakeItemSource;
+};
+
+function createDraftItemId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return `draft_${crypto.randomUUID()}`;
+  }
+  return `draft_${Date.now()}_${Math.round(Math.random() * 1_000_000)}`;
+}
+
+const BARCODE_DIGIT_SEQUENCE = /\b\d{8,14}\b/g;
+
+function extractBarcodeCandidates(rawText: string): string[] {
+  const matches = rawText.match(BARCODE_DIGIT_SEQUENCE) ?? [];
+  const unique = Array.from(new Set(matches));
+  unique.sort((a, b) => b.length - a.length);
+  return unique
+    .map((value) => normalizeBarcode(value))
+    .filter((value): value is string => Boolean(value));
+}
+
+function deriveSuggestedName(rawText: string, productName: string | null | undefined): string {
+  const candidate = productName?.trim();
+  if (candidate && candidate.toLowerCase() !== "unknown product") {
+    return candidate.slice(0, 120);
+  }
+
+  const firstLine = rawText
+    .split("\n")
+    .map((line) => line.trim())
+    .find((line) => line.length >= 3);
+  if (!firstLine) return "New Item";
+  return firstLine.slice(0, 120);
+}
+
+function inferSuggestedUnit(text: string): string {
+  const sample = text.toLowerCase();
+  if (sample.includes("kg")) return "kg";
+  if (/\bgrams?\b|\bg\b/.test(sample)) return "g";
+  if (sample.includes("lb")) return "lb";
+  if (sample.includes("oz")) return "oz";
+  if (/\bml\b/.test(sample)) return "ml";
+  if (/\bl\b|\blitre|\bliter/.test(sample)) return "l";
+  if (sample.includes("pack")) return "pack";
+  if (sample.includes("box")) return "box";
+  if (sample.includes("bag")) return "bag";
+  return "each";
+}
+
 export function useShoppingSession(refs: ShoppingSessionRefs) {
-  const { fileInputRef, quickBarcodeInputRef, receiptSectionRef, fallbackPhotoInputRef, scanFileRef } = refs;
+  const { fileInputRef, fallbackPhotoInputRef, scanFileRef } = refs;
 
   const [session, setSession] = useState<ShoppingSession | null>(null);
   const [loading, setLoading] = useState(true);
@@ -75,9 +131,6 @@ export function useShoppingSession(refs: ShoppingSessionRefs) {
   const [itemName, setItemName] = useState("");
   const [qty, setQty] = useState("1");
   const [price, setPrice] = useState("");
-  const [quickBarcode, setQuickBarcode] = useState("");
-  const [quickScanLoading, setQuickScanLoading] = useState(false);
-  const [quickScanFeedback, setQuickScanFeedback] = useState<QuickScanFeedback | null>(null);
   const [produceSuggestions, setProduceSuggestions] = useState<ProduceSuggestion[]>([]);
   const [produceSearchLoading, setProduceSearchLoading] = useState(false);
 
@@ -93,6 +146,9 @@ export function useShoppingSession(refs: ShoppingSessionRefs) {
   >({});
   const [fallbackPhotoLoadingItemId, setFallbackPhotoLoadingItemId] = useState<string | null>(null);
   const [webFallbackLoadingItemId, setWebFallbackLoadingItemId] = useState<string | null>(null);
+  const [barcodeLookupLoading, setBarcodeLookupLoading] = useState(false);
+  const [barcodePhotoAnalyzeLoading, setBarcodePhotoAnalyzeLoading] = useState(false);
+  const [barcodeCreateLoading, setBarcodeCreateLoading] = useState(false);
   const [notice, setNotice] = useState("");
 
   // Shelf label scan state
@@ -107,20 +163,49 @@ export function useShoppingSession(refs: ShoppingSessionRefs) {
   const [selectedStore, setSelectedStore] = useState<PlaceDetails | null>(null);
   const [placesLoading, setPlacesLoading] = useState(false);
   const [placesReady, setPlacesReady] = useState(false);
+  const [draftItems, setDraftItems] = useState<ShoppingItem[]>([]);
+
+  function createDraftItem(input: ShoppingDraftItemInput): ShoppingItem {
+    const quantity = input.quantity > 0 ? input.quantity : 1;
+    const unitPrice =
+      input.unit_price != null && input.unit_price >= 0 ? input.unit_price : null;
+    const lineTotal = unitPrice != null ? roundMoney(unitPrice * quantity) : null;
+
+    return {
+      id: createDraftItemId(),
+      origin: "staged",
+      raw_name: input.name,
+      quantity,
+      unit: input.unit ?? "each",
+      staged_unit_price: unitPrice,
+      staged_line_total: lineTotal,
+      receipt_quantity: null,
+      receipt_unit_price: null,
+      receipt_line_total: null,
+      delta_quantity: null,
+      delta_price: null,
+      reconciliation_status: "exact",
+      resolution: "accept_staged",
+      receipt_line_item_id: null,
+      scanned_barcode: input.scanned_barcode ?? null,
+      inventory_item_id: input.inventory_item_id ?? null,
+      inventory_item: input.inventory_item ?? null,
+      intake_source: input.intake_source ?? null,
+    };
+  }
 
   // ─── Computed values ─────────────────────────────────────
 
   const unresolvedCount = useMemo(
     () =>
-      (session?.items ?? []).filter(
+      (session?.receipt_id ? session.items : []).filter(
         (item) => item.reconciliation_status !== "exact" && item.resolution === "pending"
       ).length,
     [session]
   );
 
   const basketTotal = useMemo(() => {
-    if (!session) return 0;
-    return session.items
+    return draftItems
       .filter((item) => item.resolution !== "skip")
       .reduce((sum, item) => {
         const useReceipt =
@@ -131,7 +216,7 @@ export function useShoppingSession(refs: ShoppingSessionRefs) {
         }
         return sum + asNumber(item.staged_line_total);
       }, 0);
-  }, [session]);
+  }, [draftItems]);
 
   const selectedTotalWithTax = useMemo(() => {
     if (!session) return 0;
@@ -210,6 +295,24 @@ export function useShoppingSession(refs: ShoppingSessionRefs) {
     }
     load();
   }, []);
+
+  useEffect(() => {
+    if (!session) {
+      setDraftItems([]);
+      return;
+    }
+
+    setDraftItems(
+      (session.items ?? [])
+        .filter((item) => item.origin === "staged")
+        .map((item) => ({
+          ...item,
+          reconciliation_status: "exact",
+          resolution: "accept_staged",
+          intake_source: item.intake_source ?? null,
+        }))
+    );
+  }, [session]);
 
   useEffect(() => {
     if (!placesReady) return;
@@ -298,14 +401,13 @@ export function useShoppingSession(refs: ShoppingSessionRefs) {
     setSaving(true);
     setError("");
     try {
-      const updated = await addShoppingSessionItem({
-        session_id: session.id,
+      const nextItem = createDraftItem({
         name: itemName.trim(),
         quantity: Number(qty) || 1,
         unit_price: price ? Number(price) : undefined,
         intake_source: "manual_entry",
       });
-      setSession(updated as ShoppingSession);
+      setDraftItems((prev) => [...prev, nextItem]);
       setItemName("");
       setQty("1");
       setPrice("");
@@ -322,14 +424,13 @@ export function useShoppingSession(refs: ShoppingSessionRefs) {
     setSaving(true);
     setError("");
     try {
-      const updated = await addShoppingSessionItem({
-        session_id: session.id,
+      const nextItem = createDraftItem({
         name: `${suggestion.display_name} (PLU ${suggestion.plu_code})`,
         quantity: Number(qty) || 1,
         unit_price: price ? Number(price) : undefined,
         intake_source: "produce_search",
       });
-      setSession(updated as ShoppingSession);
+      setDraftItems((prev) => [...prev, nextItem]);
       setItemName("");
       setQty("1");
       setPrice("");
@@ -341,31 +442,162 @@ export function useShoppingSession(refs: ShoppingSessionRefs) {
     }
   }
 
-  async function handleQuickBarcodeAdd(barcodeOverride?: string) {
-    const normalizedBarcode = (barcodeOverride ?? quickBarcode).trim();
-    if (!session || !normalizedBarcode) return;
+  async function lookupBarcodeForCheckout(barcode: string): Promise<ShoppingBarcodeLookup | null> {
+    const raw = barcode.trim();
+    if (!raw) return null;
 
-    if (barcodeOverride) {
-      setQuickBarcode(normalizedBarcode);
-    }
-
-    setQuickScanLoading(true);
+    setBarcodeLookupLoading(true);
     setError("");
     try {
-      const result = await addShoppingSessionItemByBarcodeQuick({
-        session_id: session.id,
-        barcode: normalizedBarcode,
-      });
-      setSession(result.session as ShoppingSession);
-      setQuickScanFeedback(result.quick_scan);
-      setQuickBarcode("");
-      if (typeof window !== "undefined") {
-        window.requestAnimationFrame(() => quickBarcodeInputRef.current?.focus());
+      const resolution = await resolveBarcode({ barcode: raw });
+      if (resolution.status === "resolved") {
+        return {
+          status: "resolved",
+          normalized_barcode: resolution.normalized_barcode,
+          source: resolution.source,
+          confidence: resolution.confidence,
+          item: {
+            id: resolution.item.id,
+            name: resolution.item.name,
+            unit: resolution.item.unit,
+            image_url: resolution.item.image_url ?? null,
+            category: resolution.item.category ? { name: resolution.item.category.name } : null,
+          },
+        };
       }
+
+      if (resolution.status === "resolved_external") {
+        return {
+          status: "resolved_external",
+          normalized_barcode: resolution.normalized_barcode,
+          source: resolution.source,
+          confidence: resolution.confidence,
+          metadata: {
+            name: resolution.metadata.name,
+            brand: resolution.metadata.brand,
+            size_text: resolution.metadata.size_text,
+            category_hint: resolution.metadata.category_hint,
+            image_url: resolution.metadata.image_url,
+          },
+        };
+      }
+
+      return {
+        status: "unresolved",
+        normalized_barcode: resolution.normalized_barcode,
+        source: resolution.source,
+        confidence: resolution.confidence,
+        reason: resolution.reason,
+      };
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to look up barcode");
+      return null;
+    } finally {
+      setBarcodeLookupLoading(false);
+    }
+  }
+
+  async function addResolvedBarcodeLookupToSession(lookup: ShoppingBarcodeLookup): Promise<boolean> {
+    if (!session || lookup.status !== "resolved") return false;
+
+    setBarcodeCreateLoading(true);
+    setError("");
+    setNotice("");
+    try {
+      const nextItem = createDraftItem({
+        name: lookup.item.name,
+        quantity: 1,
+        unit: lookup.item.unit,
+        inventory_item_id: lookup.item.id,
+        scanned_barcode: lookup.normalized_barcode,
+        inventory_item: {
+          id: lookup.item.id,
+          name: lookup.item.name,
+          image_url: lookup.item.image_url,
+          category: lookup.item.category,
+        },
+        intake_source: "barcode_scan",
+      });
+      setDraftItems((prev) => [...prev, nextItem]);
+      setNotice(`${lookup.item.name} added to basket.`);
+      return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to add barcode item");
+      return false;
     } finally {
-      setQuickScanLoading(false);
+      setBarcodeCreateLoading(false);
+    }
+  }
+
+  async function analyzeMissingBarcodePhoto(
+    file: File,
+    barcodeHint?: string | null,
+  ): Promise<ShoppingBarcodePhotoDraft | null> {
+    setBarcodePhotoAnalyzeLoading(true);
+    setError("");
+    setNotice("");
+    try {
+      const base64 = await compressImage(file, 1600, 1600, 0.8);
+      const ocr = await ocrImage(base64);
+      if (!ocr.success) {
+        throw new Error(ocr.error ?? "Could not analyze this photo");
+      }
+
+      const rawText = (ocr.raw_text ?? "").trim();
+      const inferredFromText = extractBarcodeCandidates(rawText)[0] ?? null;
+      const inferredBarcode = normalizeBarcode(barcodeHint ?? "") || inferredFromText;
+      return {
+        raw_text: rawText,
+        product_info: ocr.product_info ?? null,
+        suggested_name: deriveSuggestedName(rawText, ocr.product_info?.product_name),
+        suggested_unit: inferSuggestedUnit(
+          `${ocr.product_info?.weight ?? ""} ${ocr.product_info?.quantity_description ?? ""}`,
+        ),
+        inferred_barcode: inferredBarcode,
+      };
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to analyze photo");
+      return null;
+    } finally {
+      setBarcodePhotoAnalyzeLoading(false);
+    }
+  }
+
+  async function createPhotoFallbackItemAndAddToSession(data: {
+    name: string;
+    unit: string;
+    raw_text: string;
+    barcode?: string | null;
+  }): Promise<boolean> {
+    if (!session) return false;
+
+    const normalizedName = data.name.trim();
+    if (!normalizedName) {
+      setError("Item name is required");
+      return false;
+    }
+
+    const normalizedBarcode = normalizeBarcode(data.barcode ?? "");
+
+    setBarcodeCreateLoading(true);
+    setError("");
+    setNotice("");
+    try {
+      const nextItem = createDraftItem({
+        name: normalizedName,
+        quantity: 1,
+        unit: data.unit || "each",
+        scanned_barcode: normalizedBarcode || undefined,
+        intake_source: "barcode_scan",
+      });
+      setDraftItems((prev) => [...prev, nextItem]);
+      setNotice(`${normalizedName} added to basket.`);
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save scanned item");
+      return false;
+    } finally {
+      setBarcodeCreateLoading(false);
     }
   }
 
@@ -373,8 +605,33 @@ export function useShoppingSession(refs: ShoppingSessionRefs) {
     setSaving(true);
     setError("");
     try {
-      const updated = await updateShoppingSessionItem(item.id, updates);
-      setSession(updated as ShoppingSession);
+      setDraftItems((prev) =>
+        prev.map((current) => {
+          if (current.id !== item.id) return current;
+          const nextQuantity =
+            updates.quantity != null
+              ? updates.quantity > 0
+                ? updates.quantity
+                : 1
+              : asNumber(current.quantity) || 1;
+          const nextUnitPrice =
+            updates.unit_price !== undefined
+              ? updates.unit_price
+              : current.staged_unit_price != null
+                ? asNumber(current.staged_unit_price)
+                : null;
+          const nextLineTotal =
+            nextUnitPrice != null ? roundMoney(nextUnitPrice * nextQuantity) : null;
+
+          return {
+            ...current,
+            raw_name: updates.name?.trim() || current.raw_name,
+            quantity: nextQuantity,
+            staged_unit_price: nextUnitPrice,
+            staged_line_total: nextLineTotal,
+          };
+        })
+      );
     } catch {
       setError("Failed to update item");
     } finally {
@@ -386,8 +643,7 @@ export function useShoppingSession(refs: ShoppingSessionRefs) {
     setSaving(true);
     setError("");
     try {
-      const updated = await removeShoppingSessionItem(itemId);
-      setSession(updated as ShoppingSession);
+      setDraftItems((prev) => prev.filter((item) => item.id !== itemId));
     } catch {
       setError("Failed to remove item");
     } finally {
@@ -424,8 +680,16 @@ export function useShoppingSession(refs: ShoppingSessionRefs) {
     setSaving(true);
     setError("");
     try {
-      const updated = await resolveShoppingSessionItem(itemId, { resolution });
-      setSession(updated as ShoppingSession);
+      if (itemId.startsWith("draft_")) {
+        setDraftItems((prev) =>
+          prev.map((item) =>
+            item.id === itemId ? { ...item, resolution } : item
+          )
+        );
+      } else {
+        const updated = await resolveShoppingSessionItem(itemId, { resolution });
+        setSession(updated as ShoppingSession);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to resolve mismatch");
     } finally {
@@ -433,15 +697,37 @@ export function useShoppingSession(refs: ShoppingSessionRefs) {
     }
   }
 
-  async function handleCommit() {
-    if (!session) return;
+  async function handleCommit(): Promise<string | null> {
+    if (!session) return null;
+    if (draftItems.length === 0) {
+      setError("Add at least one item before checkout");
+      return null;
+    }
     setCommitLoading(true);
     setError("");
     try {
-      await commitShoppingSession(session.id);
+      await checkoutShoppingSession({
+        session_id: session.id,
+        items: draftItems.map((item) => ({
+          name: item.raw_name,
+          quantity: asNumber(item.quantity) || 1,
+          unit: item.unit as UnitType,
+          unit_price:
+            item.staged_unit_price != null
+              ? asNumber(item.staged_unit_price)
+              : null,
+          inventory_item_id: item.inventory_item_id ?? null,
+          scanned_barcode: item.scanned_barcode ?? null,
+          intake_source: item.intake_source ?? undefined,
+        })),
+      });
+      const committedSessionId = session.id;
+      setDraftItems([]);
       setSession(null);
+      return committedSessionId;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to commit shopping session");
+      return null;
     } finally {
       setCommitLoading(false);
     }
@@ -575,10 +861,6 @@ export function useShoppingSession(refs: ShoppingSessionRefs) {
     }
   }
 
-  function handleConcludeQuickShop() {
-    receiptSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-
   function resetScan() {
     setScanStep("idle");
     setScanParsed(null);
@@ -623,12 +905,15 @@ export function useShoppingSession(refs: ShoppingSessionRefs) {
     if (!session || !scanParsed) return;
     setScanLoading(true);
     try {
-      const updated = await addShelfLabelItem({
-        session_id: session.id,
-        parsed: scanParsed,
+      const nextItem = createDraftItem({
+        name: scanParsed.product_name ?? scanParsed.raw_text,
+        quantity: scanParsed.quantity,
+        unit: "each",
+        unit_price: scanParsed.unit_price ?? undefined,
         inventory_item_id: match.inventory_item_id,
+        intake_source: "shelf_label_scan",
       });
-      setSession(updated as ShoppingSession);
+      setDraftItems((prev) => [...prev, nextItem]);
       resetScan();
     } catch {
       setScanError("Failed to add item");
@@ -641,12 +926,21 @@ export function useShoppingSession(refs: ShoppingSessionRefs) {
     if (!session || !scanParsed) return;
     setScanLoading(true);
     try {
-      const updated = await addShelfLabelItem({
-        session_id: session.id,
-        parsed: scanParsed,
+      const nextItem = createDraftItem({
+        name: (scanParsed.product_name ?? scanParsed.raw_text) || item.name,
+        quantity: scanParsed.quantity,
+        unit: item.unit || "each",
+        unit_price: scanParsed.unit_price ?? undefined,
         inventory_item_id: item.id,
+        inventory_item: {
+          id: item.id,
+          name: item.name,
+          image_url: null,
+          category: null,
+        },
+        intake_source: "shelf_label_scan",
       });
-      setSession(updated as ShoppingSession);
+      setDraftItems((prev) => [...prev, nextItem]);
       resetScan();
     } catch {
       setScanError("Failed to add item");
@@ -667,15 +961,15 @@ export function useShoppingSession(refs: ShoppingSessionRefs) {
     setQty,
     price,
     setPrice,
-    quickBarcode,
-    setQuickBarcode,
-    quickScanLoading,
-    quickScanFeedback,
     produceSuggestions,
     produceSearchLoading,
+    items: draftItems,
     receiptScanning,
     commitLoading,
     cancelLoading,
+    barcodeLookupLoading,
+    barcodePhotoAnalyzeLoading,
+    barcodeCreateLoading,
     notice,
     scanStep,
     scanParsed,
@@ -712,7 +1006,10 @@ export function useShoppingSession(refs: ShoppingSessionRefs) {
     confirmStoreAndStart,
     handleAddItem,
     handleAddProduceSuggestion,
-    handleQuickBarcodeAdd,
+    lookupBarcodeForCheckout,
+    addResolvedBarcodeLookupToSession,
+    analyzeMissingBarcodePhoto,
+    createPhotoFallbackItemAndAddToSession,
     handleUpdateItem,
     handleRemoveItem,
     handleReceiptScan,
@@ -723,7 +1020,6 @@ export function useShoppingSession(refs: ShoppingSessionRefs) {
     handleFallbackPhotoCapture,
     handleTryWebFallbackSuggestion,
     handleCancelSession,
-    handleConcludeQuickShop,
     resetScan,
     handleShelfLabelCapture,
     handleConfirmScanMatch,

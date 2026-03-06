@@ -42,7 +42,10 @@
       "Bash(npx eslint app/page.tsx app/layout.tsx \"app/(dashboard)/layout.tsx\" src/features/home/ui/HomeDashboardClient.tsx src/features/home/ui/index.ts)",
       "Bash(npx eslint components/nav/bottom-nav.tsx)",
       "Bash(npx eslint src/features/home/ui/HomeTransactionsLayer.tsx src/features/home/ui/HomeIncomeLayer.tsx src/features/integrations/ui/IncomeConnectionsPageClient.tsx \"app/(dashboard)/profile/page.tsx\")",
-      "Bash(npx eslint \"app/(dashboard)/integrations/layout.tsx\" lib/modules/registry.ts lib/config/presets.ts src/features/home/ui/HomeDashboardClient.tsx)"
+      "Bash(npx eslint \"app/(dashboard)/integrations/layout.tsx\" lib/modules/registry.ts lib/config/presets.ts src/features/home/ui/HomeDashboardClient.tsx)",
+      "Bash(find \"c:\\Users\\XFlor\\OneDrive\\Desktop\\alamirms\\app\\(dashboard)\\service\" -name \"*.tsx\")",
+      "Bash(npx prisma generate)",
+      "Bash(npx eslint src/features/finance/shared/recurring-bill.contracts.ts src/features/finance/server/recurring-bill.repository.ts src/features/finance/server/recurring-bill.service.ts app/actions/modules/recurring-bills.ts src/features/finance/ui/RecurringBillsPageClient.tsx src/features/home/ui/HomeActivityList.tsx src/features/home/server/dashboard-summary.repository.ts src/features/home/server/dashboard-summary.service.ts)"
     ],
     "deny": [],
     "ask": []

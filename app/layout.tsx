@@ -1,9 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
-import Script from "next/script";
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
 import { WelcomeSplash } from "@/components/ui/welcome-splash";
-import { DEFAULT_THEME, THEME_STORAGE_KEY } from "@/lib/theme";
+import { DEFAULT_THEME } from "@/lib/theme";
 import "./globals.css";
 
 const headingSans = Inter({
@@ -37,7 +36,7 @@ export const metadata: Metadata = {
   },
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default",
     title: "Vynance",
   },
 };
@@ -52,30 +51,16 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const themeInitScript = `
-    (function () {
-      try {
-        var key = ${JSON.stringify(THEME_STORAGE_KEY)};
-        var fallback = ${JSON.stringify(DEFAULT_THEME)};
-        var stored = window.localStorage.getItem(key);
-        var theme = stored === "light" || stored === "dark" ? stored : fallback;
-        document.documentElement.dataset.theme = theme;
-        document.documentElement.style.colorScheme = theme;
-      } catch (_) {
-        document.documentElement.dataset.theme = ${JSON.stringify(DEFAULT_THEME)};
-        document.documentElement.style.colorScheme = ${JSON.stringify(DEFAULT_THEME)};
-      }
-    })();
-  `;
-
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      data-theme={DEFAULT_THEME}
+      style={{ colorScheme: DEFAULT_THEME }}
+    >
       <body
         className={`${headingSans.variable} ${codeMono.variable} antialiased`}
       >
-        <Script id="theme-init" strategy="beforeInteractive">
-          {themeInitScript}
-        </Script>
         <ServiceWorkerRegister />
         <WelcomeSplash />
         {children}

@@ -224,7 +224,7 @@ export function DocumentAnalyticsClient() {
   const supportsAnalytics = vendorSpend?.minimumDataSatisfied ?? false;
 
   return (
-    <div className="space-y-4 p-4">
+    <div className="space-y-4 p-4 md:p-5 xl:p-6">
       <section className="rounded-3xl border border-border bg-card p-5 shadow-[var(--surface-card-shadow)]">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -319,8 +319,8 @@ export function DocumentAnalyticsClient() {
       ) : null}
 
       {!loading && vendorSpend && supportsAnalytics ? (
-        <>
-          <section className="rounded-xl border border-border bg-card p-4">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <section className="rounded-xl border border-border bg-card p-4 md:col-span-2 xl:col-span-1">
             <div className="flex items-center justify-between gap-2">
               <p className="text-xs font-semibold normal-case tracking-normal text-primary">Vendor Spend (Top 10)</p>
               <p className="text-xs text-muted">
@@ -356,7 +356,7 @@ export function DocumentAnalyticsClient() {
             </div>
           </section>
 
-          <section className="rounded-xl border border-border bg-card p-4">
+          <section className="rounded-xl border border-border bg-card p-4 md:col-span-2 xl:col-span-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-xs font-semibold normal-case tracking-normal text-primary">Price Trend</p>
               <div className="flex flex-wrap items-center gap-2">
@@ -463,7 +463,7 @@ export function DocumentAnalyticsClient() {
             </div>
           </section>
 
-          <section className="rounded-xl border border-border bg-card p-4">
+          <section className="rounded-xl border border-border bg-card p-4 md:col-span-2 xl:col-span-1">
             <p className="text-xs font-semibold normal-case tracking-normal text-primary">Reorder Signals (7 days or less)</p>
             <div className="mt-3 space-y-2">
               {(reorderSignals?.signals ?? []).map((signal) => (
@@ -479,7 +479,7 @@ export function DocumentAnalyticsClient() {
               ) : null}
             </div>
           </section>
-        </>
+        </div>
       ) : null}
     </div>
   );

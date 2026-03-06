@@ -14,7 +14,7 @@ export async function getHomeDashboardSummaryRows(
   rollingExpenseStart.setDate(rollingExpenseStart.getDate() - 29);
   rollingExpenseStart.setHours(0, 0, 0, 0);
 
-  const [business, incomeAgg, expenseAgg, incomeBySource, transactions] = await Promise.all([
+  const [business, incomeAgg, expenseAgg, incomeBySource, transactions, pendingBillOccurrences] = await Promise.all([
     prisma.business.findUnique({
       where: { id: businessId },
       select: { name: true },
@@ -54,7 +54,21 @@ export async function getHomeDashboardSummaryRows(
       orderBy: { occurred_at: "desc" },
       include: {
         shopping_session: {
-          select: { store_name: true, store_address: true, receipt_id: true },
+          select: { id: true, store_name: true, store_address: true, receipt_id: true },
+        },
+      },
+    }),
+    // Pending recurring bill occurrences due on or before today.
+    prisma.recurringBillOccurrence.findMany({
+      where: {
+        business_id: businessId,
+        status: "pending",
+        due_at: { lte: end },
+      },
+      orderBy: { due_at: "asc" },
+      include: {
+        bill: {
+          select: { name: true, amount: true, category: true, recurrence: true },
         },
       },
     }),
@@ -66,5 +80,6 @@ export async function getHomeDashboardSummaryRows(
     expenseAgg,
     incomeBySource,
     transactions,
+    pendingBillOccurrences,
   };
 }

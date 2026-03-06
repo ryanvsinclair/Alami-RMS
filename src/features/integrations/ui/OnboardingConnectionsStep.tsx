@@ -175,7 +175,7 @@ export function OnboardingConnectionsStep({
   return (
     <div className="relative min-h-dvh overflow-hidden bg-background">
       <div
-        className={`mx-auto flex min-h-dvh w-full max-w-lg flex-col px-4 pb-32 pt-[calc(env(safe-area-inset-top)+40px)] transition-all duration-300 ease-out ${animationClass}`}
+        className={`mx-auto flex min-h-dvh w-full max-w-lg flex-col px-4 pb-32 pt-[calc(env(safe-area-inset-top)+40px)] transition-all duration-300 ease-out md:max-w-3xl md:px-6 xl:max-w-5xl xl:px-8 ${animationClass}`}
       >
         <button
           type="button"
@@ -192,7 +192,7 @@ export function OnboardingConnectionsStep({
         <h1 className="px-1 pt-10 text-2xl font-bold text-foreground">{title}</h1>
 
         <div className="flex min-h-0 flex-1 flex-col justify-center py-4">
-          <div className="mx-auto w-full max-w-md space-y-3">
+          <div className="mx-auto w-full max-w-md space-y-3 md:max-w-3xl xl:max-w-4xl">
             {incomes.length > 0 && (
               <div className="overflow-hidden rounded-3xl bg-card shadow-(--surface-card-shadow)">
                 {incomes.map((card, index) => (
@@ -227,7 +227,7 @@ export function OnboardingConnectionsStep({
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-10 h-24 bg-gradient-to-t from-background via-background/90 to-transparent" />
 
       <div className="fixed inset-x-0 bottom-0 z-20 px-4 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-3">
-        <div className="mx-auto grid w-full max-w-lg grid-cols-2 gap-3">
+        <div className="mx-auto grid w-full max-w-lg grid-cols-2 gap-3 md:max-w-3xl xl:max-w-5xl">
           <button
             type="button"
             onClick={() => navigateTo(skipHref, "forward")}

@@ -498,6 +498,115 @@ export async function commitShoppingSession(sessionId: string) {
   return _commit(sessionId, businessId);
 }
 
+export async function checkoutShoppingSession(data: {
+  session_id: string;
+  items: Array<{
+    name: string;
+    quantity: number;
+    unit?: UnitType;
+    unit_price?: number | null;
+    inventory_item_id?: string | null;
+    scanned_barcode?: string | null;
+    intake_source?: IntakeItemSource;
+  }>;
+}) {
+  await requireModule("shopping");
+  const businessId = await requireBusinessId();
+
+  const preparedItems = data.items
+    .map((item) => {
+      const name = item.name.trim();
+      if (!name) return null;
+      const quantity = item.quantity > 0 ? item.quantity : 1;
+      const unitPrice =
+        item.unit_price != null && item.unit_price >= 0 ? item.unit_price : null;
+      const lineTotal = unitPrice != null ? round(quantity * unitPrice) : null;
+      const intakeSource = resolveIntakeSource(item.intake_source);
+      const intakePolicy = INTAKE_SOURCE_ELIGIBILITY[intakeSource];
+      return {
+        name,
+        quantity,
+        unit: item.unit ?? "each",
+        unitPrice,
+        lineTotal,
+        inventoryItemId: item.inventory_item_id ?? null,
+        scannedBarcode: item.scanned_barcode
+          ? normalizeBarcode(item.scanned_barcode)
+          : null,
+        intakeSource,
+        intakePolicy,
+      };
+    })
+    .filter(
+      (
+        item
+      ): item is {
+        name: string;
+        quantity: number;
+        unit: UnitType;
+        unitPrice: number | null;
+        lineTotal: number | null;
+        inventoryItemId: string | null;
+        scannedBarcode: string | null;
+        intakeSource: IntakeItemSource;
+        intakePolicy: (typeof INTAKE_SOURCE_ELIGIBILITY)[IntakeItemSource];
+      } => Boolean(item)
+    );
+
+  if (preparedItems.length === 0) {
+    throw new Error("Add at least one item before checkout");
+  }
+
+  await prisma.$transaction(async (tx) => {
+    const session = await tx.shoppingSession.findFirstOrThrow({
+      where: { id: data.session_id, business_id: businessId },
+      select: { status: true, receipt_id: true },
+    });
+
+    if (session.status === "committed" || session.status === "cancelled") {
+      throw new Error("Session is closed");
+    }
+    if (session.receipt_id) {
+      throw new Error(
+        "This session already has a receipt. Start a new shopping session for checkout."
+      );
+    }
+
+    await tx.shoppingSessionItem.deleteMany({
+      where: { session_id: data.session_id },
+    });
+
+    for (const item of preparedItems) {
+      await tx.shoppingSessionItem.create({
+        data: {
+          session_id: data.session_id,
+          inventory_item_id: item.inventoryItemId,
+          scanned_barcode: item.scannedBarcode,
+          raw_name: item.name,
+          normalized_name: normalizeName(item.name),
+          quantity: item.quantity,
+          unit: item.unit,
+          staged_unit_price: item.unitPrice,
+          staged_line_total: item.lineTotal,
+          reconciliation_status: "exact",
+          resolution: "accept_staged",
+          resolution_audit: {
+            intake_source: item.intakeSource,
+            inventory_eligibility: item.intakePolicy.inventory_eligibility,
+            requires_explicit_confirmation:
+              item.intakePolicy.requires_explicit_confirmation,
+            checkout_persisted_at: new Date().toISOString(),
+          } as never,
+        },
+      });
+    }
+
+    await recomputeSessionState(tx, data.session_id);
+  });
+
+  return _commit(data.session_id, businessId);
+}
+
 // ─── Price history (delegated) ───────────────────────────────
 
 export async function getItemPriceHistory(inventoryItemId: string, limit = 20) {

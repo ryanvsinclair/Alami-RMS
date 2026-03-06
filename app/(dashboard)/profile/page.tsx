@@ -1,12 +1,8 @@
 import { Card } from "@/components/ui/card";
 import Link from "next/link";
-import { ThemeToggle } from "@/components/theme/theme-toggle";
-import { signOutAction } from "@/app/actions/core/auth";
+import { DashboardPageContainer } from "@/components/layout/dashboard-page-container";
 import { requireBusinessMembership } from "@/core/auth/tenant";
-import { prisma } from "@/core/prisma";
 import { getTerminology } from "@/lib/config/terminology";
-import { TABLE_SERVICE_MODULE_ID } from "@/features/table-service/shared";
-import { TableServiceModeToggleCard } from "@/features/table-service/ui";
 
 function toTitleCase(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
@@ -41,112 +37,63 @@ export default async function ProfilePage() {
   const metadata = (user.user_metadata ?? null) as Record<string, unknown> | null;
   const displayName = getDisplayName(metadata, user.email);
   const initials = getInitials(displayName);
-  const tableServiceModule =
-    business.industry_type === "restaurant"
-      ? await prisma.businessModule.findFirst({
-          where: {
-            business_id: business.id,
-            module_id: TABLE_SERVICE_MODULE_ID,
-            enabled: true,
-          },
-          select: { id: true },
-        })
-      : null;
-  const showTableServiceModeToggle = Boolean(tableServiceModule);
 
   return (
-    <div className="p-4">
-      <div className="mx-auto max-w-xl space-y-4">
-        <div>
-          <h1 className="text-[2rem] font-bold tracking-tight text-foreground">Settings</h1>
-        </div>
-
-        <Card className="p-2">
-          <div className="flex items-center gap-3 rounded-xl bg-foreground/[0.03] px-3 py-3">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-foreground/[0.1] text-base font-semibold text-foreground">
-              {initials}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-lg font-semibold text-foreground">{displayName}</p>
-              <p className="truncate text-xs text-muted">
-                {user.email ?? `${toTitleCase(membership.role)} Â· ${business.name}`}
-              </p>
-            </div>
-            <svg
-              viewBox="0 0 20 20"
-              className="h-5 w-5 text-muted"
-              fill="none"
-              aria-hidden="true"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path d="M7 5l5 5-5 5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
-        </Card>
-
-        <Card className="divide-y divide-border/40 overflow-hidden p-0">
-          <div className="flex items-center justify-between gap-3 px-4 py-3.5">
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-foreground">Dark Mode</p>
-              <p className="text-xs text-muted">Switch between dark and light themes.</p>
-            </div>
-            <ThemeToggle />
-          </div>
-
+    <main className="py-4 md:py-6">
+      <DashboardPageContainer variant="narrow">
+        <div className="space-y-4">
+        <div className="flex items-center gap-3">
           <Link
-            href="/integrations"
-            className="flex items-center justify-between gap-3 px-4 py-3.5 transition-colors hover:bg-foreground/[0.04]"
+            href="/settings"
+            aria-label="Back to settings"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-foreground/[0.03] text-foreground/80 transition-colors hover:bg-foreground/[0.07]"
           >
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-foreground">Integrations</p>
-              <p className="text-xs text-muted">
-                Connect external sources for income, scheduling, and reservations.
-              </p>
-            </div>
             <svg
               viewBox="0 0 20 20"
-              className="h-5 w-5 shrink-0 text-muted"
+              className="h-5 w-5"
               fill="none"
               aria-hidden="true"
               stroke="currentColor"
               strokeWidth={2}
             >
-              <path d="M7 5l5 5-5 5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M12 5l-5 5 5 5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </Link>
+          <h1 className="text-[2rem] font-bold tracking-tight text-foreground">Profile</h1>
+        </div>
 
-          {showTableServiceModeToggle && (
-            <div className="px-4 py-3.5">
-              <TableServiceModeToggleCard />
+        <div className="grid gap-4 md:grid-cols-[minmax(0,220px)_minmax(0,1fr)]">
+          <Card className="p-2">
+            <div className="flex items-center gap-3 rounded-xl bg-foreground/[0.03] px-3 py-3 md:flex-col md:items-start">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-foreground/[0.1] text-base font-semibold text-foreground">
+                {initials}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-lg font-semibold text-foreground">{displayName}</p>
+                <p className="truncate text-xs text-muted">{user.email ?? "-"}</p>
+              </div>
             </div>
-          )}
+          </Card>
 
-          <div className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
-            <span className="text-muted">{terms.business}</span>
-            <span className="max-w-[60%] truncate text-right font-medium text-foreground">
-              {business.name}
-            </span>
-          </div>
-          <div className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
-            <span className="text-muted">Role</span>
-            <span className="font-medium text-foreground">{toTitleCase(membership.role)}</span>
-          </div>
-          <div className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
-            <span className="text-muted">Email</span>
-            <span className="max-w-[60%] truncate text-right text-foreground">{user.email ?? "-"}</span>
-          </div>
-        </Card>
-
-        <form action={signOutAction} className="flex justify-center pt-1">
-          <button
-            type="submit"
-            className="rounded-full px-4 py-2 text-xs font-semibold text-muted transition-colors hover:bg-foreground/[0.06] hover:text-foreground"
-          >
-            Logout
-          </button>
-        </form>
-      </div>
-    </div>
+          <Card className="divide-y divide-border/40 overflow-hidden p-0">
+            <div className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+              <span className="text-muted">{terms.business}</span>
+              <span className="max-w-[60%] truncate text-right font-medium text-foreground">
+                {business.name}
+              </span>
+            </div>
+            <div className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+              <span className="text-muted">Role</span>
+              <span className="font-medium text-foreground">{toTitleCase(membership.role)}</span>
+            </div>
+            <div className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+              <span className="text-muted">Email</span>
+              <span className="max-w-[60%] truncate text-right text-foreground">{user.email ?? "-"}</span>
+            </div>
+          </Card>
+        </div>
+        </div>
+      </DashboardPageContainer>
+    </main>
   );
 }

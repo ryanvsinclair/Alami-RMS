@@ -6,6 +6,7 @@ import type {
   ConfirmKitchenOrderInput,
   KitchenOrderDraftItemInput,
   KitchenOrderItemStatusContract,
+  RequestKitchenOrderItemChangeInput,
   TableServiceKitchenQueueEntry,
   TableServiceKitchenOrderSummary,
   UpdateKitchenOrderItemStatusInput,
@@ -36,6 +37,10 @@ type KitchenOrderRecord = {
 };
 
 const KITCHEN_ORDER_ITEM_STATUS_SET = new Set<string>(KITCHEN_ORDER_ITEM_STATUSES);
+const HOST_MUTABLE_ORDER_ITEM_STATUS_SET = new Set<KitchenOrderItemStatusContract>([
+  "pending",
+  "preparing",
+]);
 
 function normalizeOptionalText(value: string | null | undefined) {
   const trimmed = value?.trim();
@@ -142,6 +147,12 @@ export async function getKitchenQueue(businessId: string) {
           menu_item: {
             select: {
               name: true,
+              category_id: true,
+              category: {
+                select: {
+                  name: true,
+                },
+              },
             },
           },
         },
@@ -166,6 +177,8 @@ export async function getKitchenQueue(businessId: string) {
         id: item.id,
         menuItemId: item.menu_item_id,
         menuItemName: item.menu_item.name,
+        categoryId: item.menu_item.category_id,
+        categoryName: item.menu_item.category?.name ?? null,
         quantity: item.quantity,
         notes: item.notes,
         status: item.status,
@@ -328,6 +341,16 @@ export async function appendKitchenOrderItems(
       })),
     });
 
+    // Host amendments should send the ticket back to the end of active queue timing.
+    const amendedAt = new Date();
+    await tx.kitchenOrder.update({
+      where: { id: existingOrder.id },
+      data: {
+        confirmed_at: amendedAt,
+        due_at: getKitchenOrderDueAt(amendedAt),
+      },
+    });
+
     const updatedOrder = await tx.kitchenOrder.findUnique({
       where: { id: existingOrder.id },
       include: {
@@ -344,6 +367,95 @@ export async function appendKitchenOrderItems(
   });
 }
 
+export async function requestKitchenOrderItemChange(
+  businessId: string,
+  input: RequestKitchenOrderItemChangeInput,
+) {
+  const kitchenOrderItemId = input.kitchenOrderItemId.trim();
+  if (!kitchenOrderItemId) {
+    throw new Error("Kitchen order item id is required");
+  }
+
+  const quantityInput = input.quantity;
+  const hasQuantityChange = quantityInput != null;
+  const nextQuantity = hasQuantityChange ? Math.trunc(Number(quantityInput)) : null;
+  if (hasQuantityChange && (!Number.isFinite(nextQuantity) || (nextQuantity as number) < 1)) {
+    throw new Error("Quantity must be a whole number greater than 0");
+  }
+
+  const hasNotesChange = Object.prototype.hasOwnProperty.call(input, "notes");
+  const nextNotes = hasNotesChange ? normalizeOptionalText(input.notes) : null;
+
+  return prisma.$transaction(async (tx) => {
+    const existingItem = await tx.kitchenOrderItem.findFirst({
+      where: {
+        id: kitchenOrderItemId,
+        business_id: businessId,
+        kitchen_order: {
+          closed_at: null,
+          table_session: {
+            closed_at: null,
+          },
+        },
+      },
+      select: {
+        id: true,
+        business_id: true,
+        kitchen_order_id: true,
+        menu_item_id: true,
+        quantity: true,
+        notes: true,
+        status: true,
+      },
+    });
+
+    if (!existingItem) {
+      throw new Error("Kitchen order item not found");
+    }
+
+    if (!HOST_MUTABLE_ORDER_ITEM_STATUS_SET.has(existingItem.status)) {
+      throw new Error("This item can no longer be changed");
+    }
+
+    const updatedItem = await tx.kitchenOrderItem.update({
+      where: { id: existingItem.id },
+      data: {
+        quantity: hasQuantityChange ? (nextQuantity as number) : existingItem.quantity,
+        notes: hasNotesChange ? nextNotes : existingItem.notes,
+      },
+      select: {
+        id: true,
+        business_id: true,
+        kitchen_order_id: true,
+        menu_item_id: true,
+        quantity: true,
+        notes: true,
+        status: true,
+      },
+    });
+
+    // Host edits should re-queue the ticket to the end of the active line.
+    const amendedAt = new Date();
+    await tx.kitchenOrder.update({
+      where: { id: existingItem.kitchen_order_id },
+      data: {
+        confirmed_at: amendedAt,
+        due_at: getKitchenOrderDueAt(amendedAt),
+      },
+    });
+
+    return serialize({
+      id: updatedItem.id,
+      businessId: updatedItem.business_id,
+      kitchenOrderId: updatedItem.kitchen_order_id,
+      menuItemId: updatedItem.menu_item_id,
+      quantity: updatedItem.quantity,
+      notes: updatedItem.notes,
+      status: updatedItem.status as KitchenOrderItemStatusContract,
+    });
+  });
+}
+
 export async function updateKitchenOrderItemStatus(
   businessId: string,
   input: UpdateKitchenOrderItemStatusInput,
@@ -356,32 +468,50 @@ export async function updateKitchenOrderItemStatus(
     throw new Error("Invalid kitchen order item status");
   }
 
-  const existingItem = await prisma.kitchenOrderItem.findFirst({
-    where: {
-      id: kitchenOrderItemId,
-      business_id: businessId,
-      kitchen_order: {
-        closed_at: null,
-        table_session: {
+  const updatedItem = await prisma.$transaction(async (tx) => {
+    const existingItem = await tx.kitchenOrderItem.findFirst({
+      where: {
+        id: kitchenOrderItemId,
+        business_id: businessId,
+        kitchen_order: {
           closed_at: null,
+          table_session: {
+            closed_at: null,
+          },
         },
       },
-    },
-    select: { id: true },
-  });
-  if (!existingItem) {
-    throw new Error("Kitchen order item not found");
-  }
+      select: {
+        id: true,
+        kitchen_order_id: true,
+      },
+    });
+    if (!existingItem) {
+      throw new Error("Kitchen order item not found");
+    }
 
-  const updatedItem = await prisma.kitchenOrderItem.update({
-    where: { id: existingItem.id },
-    data: {
-      status: input.status,
-    },
-    select: {
-      id: true,
-      status: true,
-    },
+    const nextItem = await tx.kitchenOrderItem.update({
+      where: { id: existingItem.id },
+      data: {
+        status: input.status,
+      },
+      select: {
+        id: true,
+        status: true,
+      },
+    });
+
+    if (input.bumpQueuePosition === true) {
+      const amendedAt = new Date();
+      await tx.kitchenOrder.update({
+        where: { id: existingItem.kitchen_order_id },
+        data: {
+          confirmed_at: amendedAt,
+          due_at: getKitchenOrderDueAt(amendedAt),
+        },
+      });
+    }
+
+    return nextItem;
   });
 
   return serialize({

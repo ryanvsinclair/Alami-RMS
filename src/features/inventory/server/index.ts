@@ -50,6 +50,11 @@ export {
 } from "./item-image-storage.service";
 
 export {
+  findSpoonacularIngredientImageUrlByName,
+  resolveAndPersistMissingInventoryItemImage,
+} from "./spoonacular-image.service";
+
+export {
   findProduceImage,
   listUnenrichedPluCodes,
   upsertProduceImage,

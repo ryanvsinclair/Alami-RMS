@@ -1,45 +1,45 @@
 @import "tailwindcss";
 
 :root {
-  --background: #000000;
-  --foreground: #ffffff;
-  --foreground-secondary: rgba(255, 255, 255, 0.60);
-  --foreground-tertiary: rgba(255, 255, 255, 0.30);
-  --primary: #0a84ff;
-  --primary-hover: #409cff;
-  --primary-light: rgba(0, 127, 255, 0.12);
-  --success: #30d158;
-  --warning: #ff9f0a;
-  --danger: #ff453a;
-  --muted: #808088;
-  --border: #242428;
-  --card: #161618;
-  --surface-card-border: rgba(255, 255, 255, 0.08);
-  --surface-card-bg: #161618;
-  --surface-card-shadow: none;
+  --background: #f2f2f7;
+  --foreground: #0f1b2d;
+  --foreground-secondary: rgba(0, 0, 0, 0.60);
+  --foreground-tertiary: rgba(0, 0, 0, 0.30);
+  --primary: #007aff;
+  --primary-hover: #006ee0;
+  --primary-light: rgba(0, 127, 255, 0.1);
+  --success: #34c759;
+  --warning: #ff9500;
+  --danger: #ff3b30;
+  --muted: #6e6e76;
+  --border: #d8d8dc;
+  --card: #ffffff;
+  --surface-card-border: transparent;
+  --surface-card-bg: #ffffff;
+  --surface-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
   --surface-card-border-hover: transparent;
-  --surface-card-shadow-hover: none;
-  --surface-nav-border: rgba(255, 255, 255, 0.10);
-  --surface-nav-bg: rgba(18, 18, 20, 0.70);
-  --surface-nav-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  --surface-card-shadow-hover: 0 2px 6px rgba(0, 0, 0, 0.10), 0 6px 16px rgba(0, 0, 0, 0.06);
+  --surface-nav-border: transparent;
+  --surface-nav-bg: rgba(255, 255, 255, 0.70);
+  --surface-nav-shadow: none;
   --surface-nav-active-bg: transparent;
   --surface-nav-active-ring: none;
-  --surface-control-bg: rgba(255, 255, 255, 0.05);
-  --surface-control-bg-hover: rgba(255, 255, 255, 0.09);
-  --surface-control-border: rgba(255, 255, 255, 0.08);
-  --fill-tertiary: rgba(118, 118, 128, 0.24);
-  --hero-bg: linear-gradient(160deg, #007fff 0%, #0066d6 52%, #004fa8 100%);
-  --hero-shadow: 0 8px 20px rgba(0, 60, 160, 0.18);
-  --hero-inset-bg: rgba(255, 255, 255, 0.1);
-  --hero-inset-border: rgba(255, 255, 255, 0.12);
-  --hero-toggle-bg: rgba(0, 0, 0, 0.18);
-  --hero-toggle-active: rgba(255, 255, 255, 0.16);
-  --sheet-bg: rgba(18, 18, 20, 0.96);
-  --sheet-border: rgba(255, 255, 255, 0.10);
-  --sheet-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-  --sheet-row-bg: rgba(255, 255, 255, 0.03);
+  --surface-control-bg: rgba(0, 0, 0, 0.04);
+  --surface-control-bg-hover: rgba(0, 0, 0, 0.07);
+  --surface-control-border: rgba(0, 0, 0, 0.08);
+  --fill-tertiary: rgba(118, 118, 128, 0.12);
+  --hero-bg: linear-gradient(160deg, #0080ff 0%, #0066d6 52%, #004fa8 100%);
+  --hero-shadow: 0 8px 20px rgba(0, 80, 180, 0.18);
+  --hero-inset-bg: rgba(255, 255, 255, 0.14);
+  --hero-inset-border: rgba(255, 255, 255, 0.18);
+  --hero-toggle-bg: rgba(0, 0, 0, 0.1);
+  --hero-toggle-active: rgba(255, 255, 255, 0.2);
+  --sheet-bg: rgba(255, 255, 255, 0.98);
+  --sheet-border: transparent;
+  --sheet-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --sheet-row-bg: rgba(0, 0, 0, 0.02);
   --sheet-row-border: transparent;
-  --sheet-subtle: rgba(238, 243, 248, 0.50);
+  --sheet-subtle: rgba(15, 27, 45, 0.50);
 }
 
 [data-theme="light"] {
@@ -140,6 +140,144 @@ body {
   color: var(--sheet-subtle);
 }
 
+/* Design-language glass system */
+.design-glass-page {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #020617;
+}
+
+.design-glass-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.design-glass-layer-base {
+  background: linear-gradient(
+    to bottom right,
+    rgba(23, 37, 84, 0.8),
+    rgba(15, 23, 42, 0.9),
+    rgba(29, 16, 72, 0.8)
+  );
+}
+
+.design-glass-layer-top-left {
+  background: radial-gradient(circle at 30% 20%, rgba(59, 130, 246, 0.12), transparent 40%);
+}
+
+.design-glass-layer-bottom-right {
+  background: radial-gradient(circle at 70% 70%, rgba(99, 102, 241, 0.15), transparent 45%);
+}
+
+.design-glass-surface {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid rgba(51, 65, 85, 0.5);
+  background: rgba(15, 23, 42, 0.7);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(20px);
+}
+
+.design-glass-surface::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(to bottom right, rgba(59, 130, 246, 0.05), transparent, transparent);
+}
+
+.design-glass-chip {
+  border-radius: 9999px;
+  border: 1px solid rgba(71, 85, 105, 0.5);
+  background: rgba(30, 41, 59, 0.6);
+  color: #cbd5e1;
+  backdrop-filter: blur(8px);
+  transition: all 300ms;
+}
+
+.design-glass-chip:hover {
+  color: #ffffff;
+}
+
+.design-glass-chip-active {
+  border-color: rgba(59, 130, 246, 0.5);
+  background: rgba(37, 99, 235, 0.25);
+  color: #ffffff;
+}
+
+.design-glass-ghost-button {
+  border-radius: 6px;
+  border: 1px solid rgba(71, 85, 105, 0.5);
+  background: rgba(30, 41, 59, 0.6);
+  color: #e2e8f0;
+  backdrop-filter: blur(8px);
+  transition: all 300ms;
+}
+
+.design-glass-ghost-button:hover {
+  background: rgba(51, 65, 85, 0.6);
+}
+
+[data-theme="light"] .design-glass-page {
+  background: #ffffff;
+}
+
+[data-theme="light"] .design-glass-layer-base {
+  background: linear-gradient(
+    to bottom right,
+    rgba(56, 189, 248, 0.2),
+    rgba(59, 130, 246, 0.2),
+    rgba(99, 102, 241, 0.2)
+  );
+}
+
+[data-theme="light"] .design-glass-layer-top-left {
+  background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.35), transparent 40%);
+}
+
+[data-theme="light"] .design-glass-layer-bottom-right {
+  background: radial-gradient(circle at 70% 70%, rgba(59, 130, 246, 0.25), transparent 45%);
+}
+
+[data-theme="light"] .design-glass-surface {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="light"] .design-glass-surface::after {
+  background: linear-gradient(to bottom right, rgba(255, 255, 255, 0.2), transparent, transparent);
+}
+
+[data-theme="light"] .design-glass-chip {
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.6);
+  color: #334155;
+}
+
+[data-theme="light"] .design-glass-chip:hover {
+  color: #0f172a;
+}
+
+[data-theme="light"] .design-glass-chip-active {
+  border-color: rgba(59, 130, 246, 0.45);
+  background: rgba(59, 130, 246, 0.18);
+  color: #1e3a8a;
+}
+
+[data-theme="light"] .design-glass-ghost-button {
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.6);
+  color: #1e293b;
+}
+
+[data-theme="light"] .design-glass-ghost-button:hover {
+  background: rgba(255, 255, 255, 0.8);
+}
+
 /* ── Stacked-layer home design ─────────────────────────────── */
 
 /*
@@ -165,7 +303,7 @@ body {
 }
 
 .layer-summary {
-  background: #1c1c1e;
+  background: var(--card);
   border-radius: 22px 22px 0 0;
   position: relative;
   z-index: 10;
